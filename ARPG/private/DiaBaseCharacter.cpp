@@ -4,8 +4,8 @@
 #include "DiaBaseCharacter.h"
 #include "DiaComponent/DiaCombatComponent.h"
 #include "DiaComponent/DiaStatusEffectComponent.h"
+#include "Components/CapsuleComponent.h"
 
-// Sets default values
 ADiaBaseCharacter::ADiaBaseCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -67,6 +67,8 @@ float ADiaBaseCharacter::TakeDamage(float DamageAmount, const FDamageEvent& Dama
 	return ActualDamage;
 }
 
+
+
 float ADiaBaseCharacter::PlayCharacterMontage(UAnimMontage* MontageToPlay, float PlayRate)
 {
 	if (!IsValid(GetMesh())) return 0.f;
@@ -127,6 +129,21 @@ void ADiaBaseCharacter::StopAnimMontage(UAnimMontage* Montage)
 	}
 }
 
+void ADiaBaseCharacter::UpdateHPGauge(float CurHealth, float MaxHelath)
+{
+}
+
+void ADiaBaseCharacter::PlayDieAnimation()
+{
+	Die();
+}
+
+void ADiaBaseCharacter::Die()
+{
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	SetLifeSpan(3.0f);
+}
 
 void ADiaBaseCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {

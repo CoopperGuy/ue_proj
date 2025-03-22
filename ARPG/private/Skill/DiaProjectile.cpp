@@ -63,13 +63,12 @@ void ADiaProjectile::Tick(float DeltaTime)
 void ADiaProjectile::Initialize(float InDamage, AActor* InOwner)
 {
     Damage = InDamage;
-    ProjectileOwner = InOwner;
     SetOwner(InOwner);
     
     // 발사체 소유자와의 충돌 방지
-    if (IsValid(ProjectileOwner))
+    if (IsValid(Owner))
     {
-        CollisionComp->IgnoreActorWhenMoving(ProjectileOwner, true);
+        CollisionComp->IgnoreActorWhenMoving(Owner, true);
     }
 }
 
@@ -78,17 +77,17 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     int32 OtherBodyIndex, bool bFromSweep,
     const FHitResult& HitResult)
 {
-    if (!IsValid(OtherActor) || OtherActor == this || OtherActor == ProjectileOwner)
+    if (!IsValid(OtherActor) || OtherActor == this || OtherActor == Owner)
     {
         return;
     }
 
     // 소유자와 타겟의 태그를 비교
     bool bHasSameTag = false;
-    if (IsValid(ProjectileOwner))
+    if (IsValid(Owner))
     {
         // 소유자의 모든 태그에 대해 검사
-        for (const FName& OwnerTag : ProjectileOwner->Tags)
+        for (const FName& OwnerTag : Owner->Tags)
         {
             //character 태그에 대한 체크는 넘긴다.
             if (OwnerTag == FName(TEXT("Character"))) continue;
@@ -130,7 +129,7 @@ void ADiaProjectile::OnProjectileHit(ADiaBaseCharacter* HitActor, const FHitResu
 
 void ADiaProjectile::ProcessDamage(ADiaBaseCharacter* Target, const FHitResult& HitResult)
 {
-    if (!IsValid(Target) || !IsValid(ProjectileOwner))
+    if (!IsValid(Target) || !IsValid(Owner))
     {
         return;
     }
@@ -170,7 +169,7 @@ void ADiaProjectile::SpawnHitEffect(const FVector& ImpactPoint, const FVector& I
         
         if (NiagaraComp)
         {
-            NiagaraComp->SetNiagaraVariableFloat(FString("EffectScale"), 1.0f);
+            NiagaraComp->SetVariableFloat(FName("EffectScale"), 1.0f);
         }
     }
 }

@@ -22,6 +22,8 @@ public:
     virtual void Tick(float DeltaTime) override;
 
     virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+    virtual void PlayDieAnimation();
 protected:
 	virtual void BeginPlay() override;
 
@@ -32,12 +34,12 @@ protected:
     virtual bool IsInCombat() const;
 private:
     // ��� ó��
-    void PlayDieAnimation();
-    void Die();
+    virtual void Die();
 public:	
 
 	// ������ ó�� �Լ�
     virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+    virtual void UpdateHPGauge(float CurHealth, float MaxHelath);
 protected:
     // �ǰ� ����Ʈ
     UPROPERTY(EditDefaultsOnly, Category = "Effects")

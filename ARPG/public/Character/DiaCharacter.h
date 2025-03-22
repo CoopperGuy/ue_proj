@@ -24,10 +24,12 @@ public:
 	ADiaCharacter();
 
     bool GetMouseWorldLocation(FVector& OutLocation) const;
+    virtual void PlayDieAnimation();
     //Method
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+    virtual void Tick(float DeltaTime) override;
 
     // Input Action Functions
     void Move(const FInputActionValue& Value);
@@ -45,11 +47,13 @@ protected:
 
     // 초기 스킬 설정
     virtual void SetupInitialSkills() override;
-public:	
-	virtual void Tick(float DeltaTime) override;
 
     // 공격 처리 함수
     virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+    virtual void Die();
+public:	
+    virtual void UpdateHPGauge(float CurHealth, float MaxHelath);
 protected:
     // Enhanced Input Actions
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)

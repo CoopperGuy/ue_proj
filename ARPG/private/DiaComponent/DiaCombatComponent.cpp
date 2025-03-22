@@ -48,6 +48,8 @@ void UDiaCombatComponent::BeginPlay()
 		// 상태 이상 효과 추가/제거 시 이벤트 등록
 		StatusEffectComp->OnStatusEffectAdded.AddDynamic(this, &UDiaCombatComponent::OnStatusEffectAdded);
 		StatusEffectComp->OnStatusEffectRemoved.AddDynamic(this, &UDiaCombatComponent::OnStatusEffectRemoved);
+        OnHealthChanged.AddDynamic(this, &UDiaCombatComponent::OnUpdateHpGauge);
+        OnDeath.AddDynamic(this, &UDiaCombatComponent::OnDeathProcess);
 	}
 }
 
@@ -166,7 +168,7 @@ float UDiaCombatComponent::ApplyDamage(AActor* Target, float BaseDamage, TSubcla
     
     // 위협도 증가
     AddThreatToActor(Target, ActualDamage);
-    
+   
     return ActualDamage;
 }
 
@@ -243,6 +245,30 @@ void UDiaCombatComponent::SetCurrentTarget(AActor* NewTarget)
            IsValid(NewTarget) ? *NewTarget->GetName() : TEXT("none"));
 }
 
+
+void UDiaCombatComponent::OnUpdateHpGauge(float CurHP, float MaxHP)
+{
+    if (!IsValid(GetOwner())) return;
+
+    ADiaBaseCharacter* DiaOwner = Cast<ADiaBaseCharacter>(GetOwner());
+    if (!IsValid(DiaOwner)) return;
+
+
+    UE_LOG(LogTemp, Log, TEXT("Update HP %f/%f"),
+        CurHP, MaxHP);
+
+    DiaOwner->UpdateHPGauge(CurHP, MaxHP);
+}
+
+void UDiaCombatComponent::OnDeathProcess()
+{
+    if (!IsValid(GetOwner())) return;
+
+    ADiaBaseCharacter* DiaOwner = Cast<ADiaBaseCharacter>(GetOwner());
+    if (!IsValid(DiaOwner)) return;
+
+    DiaOwner->PlayDieAnimation();
+}
 
 bool UDiaCombatComponent::ExecuteBasicAttack()
 {

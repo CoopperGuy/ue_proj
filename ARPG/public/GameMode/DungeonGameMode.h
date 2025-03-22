@@ -27,4 +27,6 @@ protected:
     // HUD ���� �ν��Ͻ�
     UPROPERTY()
     UHUDWidget* HUDWidgetInstance;
+public:
+    UHUDWidget* const GetHUDWidget() const { return HUDWidgetInstance; }
 };

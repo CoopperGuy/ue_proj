@@ -31,6 +31,9 @@ public:
 	
 	virtual void StopAnimMontage(UAnimMontage* Montage) override;
 
+	virtual void UpdateHPGauge(float CurHealth, float MaxHelath);
+
+	virtual void PlayDieAnimation();
 protected:
 	virtual void BeginPlay() override;
 
@@ -44,6 +47,8 @@ protected:
 	// ������ ó�� �Լ�
 	virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
+	virtual void Die();
+private:
 	// 현재 재생중인 몽타주
 	UPROPERTY()
 	UAnimMontage* CurrentMontage;

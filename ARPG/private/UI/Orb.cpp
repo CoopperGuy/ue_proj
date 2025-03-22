@@ -18,7 +18,7 @@ void UOrb::NativeConstruct()
     // HP 오브 머티리얼 초기화
     if (IsValid(OrbImage) /*&& IsValid(OrbImage->GetBrushResource())*/)
     {
-        UMaterialInterface* baseMaterial = Cast<UMaterialInterface>(OrbImage->Brush.GetResourceObject());
+        UMaterialInterface* baseMaterial = Cast<UMaterialInterface>(OrbImage->GetBrush().GetResourceObject());
         if (IsValid(baseMaterial))
         {
             OrbMaterial = UMaterialInstanceDynamic::Create(baseMaterial, this);

@@ -11,10 +11,15 @@
 #include "DiaInstance.h"
 #include "Skill/DiaSkillManager.h"
 
+#include "GameMode/DungeonGameMode.h"
+
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
+
+#include "UI/HUDWidget.h"
 
 #include "Camera/CameraComponent.h"
 
@@ -102,6 +107,33 @@ float ADiaCharacter::TakeDamage(float DamageAmount, const FDamageEvent& DamageEv
     return damage;
 }
 
+void ADiaCharacter::Die()
+{
+    Super::Die();
+}
+
+void ADiaCharacter::UpdateHPGauge(float CurHealth, float MaxHelath)
+{
+    ADungeonGameMode* DungeonGameMode = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());
+
+    // 로그 추가 (디버깅용)
+    if (!DungeonGameMode)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("UpdateHPGauge: DungeonGameMode is null"));
+        return;
+    }
+
+    UHUDWidget* HUD = DungeonGameMode->GetHUDWidget();
+    if (HUD)
+    {
+        float HPPersentage = CurHealth / MaxHelath;
+        HUD->UpdateOrbPercentage(OrbType::OT_HP, HPPersentage);
+    }
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("UpdateHPGauge: HUD Widget is null"));
+    }
+}
 // Called to bind functionality to input
 void ADiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -153,6 +185,11 @@ void ADiaCharacter::Move(const FInputActionValue& Value)
 bool ADiaCharacter::GetMouseWorldLocation(FVector& OutLocation) const
 {
     return false;
+}
+
+void ADiaCharacter::PlayDieAnimation()
+{
+    Super::PlayDieAnimation();
 }
 
 bool ADiaCharacter::CanAttack() const

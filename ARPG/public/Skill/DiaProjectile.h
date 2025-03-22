@@ -45,11 +45,7 @@ public:
     // 피격 이펙트 생성
     void SpawnHitEffect(const FVector& ImpactPoint, const FVector& ImpactNormal);
 
-protected:
-    // 발사체 소유자
-    UPROPERTY()
-    AActor* ProjectileOwner;
-    
+protected:    
     // 발사체 메시 컴포넌트
     UPROPERTY(VisibleAnywhere)
     UStaticMeshComponent* ProjectileMesh;

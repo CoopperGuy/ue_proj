@@ -93,7 +93,7 @@ void ADiaProjectileSkill::SpawnProjectile()
 
 		// GameplayStatics를 사용하여 스폰
 		AActor* NewActor = UGameplayStatics::BeginDeferredActorSpawnFromClass(
-			this, ProjectileClassObj, FTransform(Rotation, Location), ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+			this, ProjectileClassObj, FTransform(Rotation, Location), ESpawnActorCollisionHandlingMethod::AlwaysSpawn, SkillOwner);
 		
 		if (NewActor)
 		{

@@ -50,10 +50,10 @@ struct ARPG_API FCombatStats
 UENUM(BlueprintType)
 enum class ECombatState : uint8
 {
-    Idle,           // 전투 중이 아님
-    InCombat,       // 전투 중
-    Retreating,     // 전투에서 빠져나오는 중
-    Dead            // 사망
+    Idle UMETA(DisplayName = "Idle"),           // 전투 중이 아님
+    InCombat UMETA(DisplayName = "InCombat"),       // 전투 중
+    Retreating UMETA(DisplayName = "Retreating"),     // 전투에서 빠져나오는 중
+    Dead UMETA(DisplayName = "Dead")            // 사망
 };
 
 // 델리게이트 선언
@@ -88,16 +88,6 @@ public:
 
     void AddThreatToActor(AActor* Actor, float ThreatAmount);
     void ClearAllThreats();
-
-    // 델리게이트 인스턴스
-    UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
-    FOnHealthChangedDelegate OnHealthChanged;
-    
-    UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
-    FOnManaChangedDelegate OnManaChanged;
-    
-    UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
-    FOnSkillExecutedDelegate OnSkillExecuted;
 protected:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -112,7 +102,7 @@ protected:
     void ConsumeMana(float ManaAmount);
     void RestoreMana(float ManaAmount);
     void RestoreHealth(float HealthAmount);
-public:	
+public:
     // 기본 공격 실행
     UFUNCTION(Category = "Combat")
     bool ExecuteBasicAttack();
@@ -144,10 +134,88 @@ public:
     UFUNCTION()
     void OnStatusEffectRemoved(UDiaStatusEffect* StatusEffect);
 
+    UFUNCTION()
+    void OnUpdateHpGauge(float CurHP, float MaxHP);
+
+    UFUNCTION()
+    void OnDeathProcess();
    //// 스텟 변경 통지
    // UFUNCTION()
    // void OnStatChanged(EStatType StatType, float NewValue);
 protected:
+    // 스킬 초기화
+    void InitializeSkills();
+
+    AActor* FindNearestPlayer();
+private:
+    bool bCanAttack = false;
+
+/// <summary>
+/// Getter Setter
+/// </summary>
+public:
+    // 스탯 정보 가져오기
+    const FCharacterData& GetCharacterData() const { return CharacterData; }
+    void SetCharacterData(const FCharacterData& NewData) { CharacterData = NewData; }
+    FORCEINLINE float GetCurrentHealth() const { return CharacterData.Health; }
+    FORCEINLINE float GetMaxHealth() const { return CharacterData.MaxHealth; }
+    FORCEINLINE float GetCurrentMana() const { return CharacterData.Mana; }
+    FORCEINLINE float GetMaxMana() const { return CharacterData.MaxMana; }
+    FORCEINLINE float GetAttackPower() const { return CombatStats.AttackPower; }
+    FORCEINLINE float GetAttackSpeed() const { return CombatStats.AttackSpeed; }
+    FORCEINLINE float GetAttackRange() const { return CombatStats.AttackRange; }
+    FORCEINLINE float GetHealthPercentage() const { return CharacterData.Health  / CharacterData.MaxHealth; }
+
+    // 스탯 정보 설정
+    void SetMaxHealth(float NewMaxHealth);
+    void SetMaxMana(float NewMaxMana);
+
+    // 스킬 관련 함수
+    TArray<int32> GetActiveSkillIDs() const;
+    ADiaSkillBase* GetSkillByID(int32 SkillID) const;
+
+    // 전투 상태 관리
+    void SetCombatState(ECombatState NewState);
+    
+    ECombatState GetCombatState() const { return CurrentCombatState; }
+    
+    bool IsInCombat() const { return CurrentCombatState == ECombatState::InCombat; }
+    
+    bool IsDead() const { return CurrentCombatState == ECombatState::Dead; }
+    
+    // 타겟 관리
+    void SetCurrentTarget(AActor* NewTarget);
+    
+    AActor* GetCurrentTarget() const { return CurrentTarget; }
+    
+    AActor* GetHighestThreatActor() const;
+protected:
+    // 이벤트 델리게이트
+    UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
+    FOnCombatStateChangedDelegate OnCombatStateChanged;
+    
+    UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
+    FOnDamageTakenDelegate OnDamageTaken;
+    
+    UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
+    FOnDamageDealtDelegate OnDamageDealt;
+    
+    UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
+    FOnDeathDelegate OnDeath;
+    
+    UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
+    FOnHealthChangedDelegate OnHealthChanged;
+    
+    UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
+    FOnManaChangedDelegate OnManaChanged;
+    
+    UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
+    FOnSkillExecutedDelegate OnSkillExecuted;
+
+    // 위협 테이블 (액터 -> 위협도)
+    UPROPERTY()
+    TMap<AActor*, float> ThreatTable;
+
     UPROPERTY(EditAnywhere, Category = "Combat")
     FCombatStats CombatStats;
 
@@ -180,71 +248,6 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "Combat|Skills")
     int32 BasicAttackSkillID = 1;
 
-    // 스킬 초기화
-    void InitializeSkills();
-
-    // 위협 테이블 (액터 -> 위협도)
-    UPROPERTY()
-    TMap<AActor*, float> ThreatTable;
-
-    AActor* FindNearestPlayer();
-private:
-    bool bCanAttack = false;
-public:
-    // 스탯 정보 가져오기
-
-    const FCharacterData& GetCharacterData() const { return CharacterData; }
-    void SetCharacterData(const FCharacterData& NewData) { CharacterData = NewData; }
-    FORCEINLINE float GetCurrentHealth() const { return CharacterData.Health; }
-    FORCEINLINE float GetMaxHealth() const { return CharacterData.MaxHealth; }
-    FORCEINLINE float GetCurrentMana() const { return CharacterData.Mana; }
-    FORCEINLINE float GetMaxMana() const { return CharacterData.MaxMana; }
-    FORCEINLINE float GetAttackPower() const { return CombatStats.AttackPower; }
-    FORCEINLINE float GetAttackSpeed() const { return CombatStats.AttackSpeed; }
-    FORCEINLINE float GetAttackRange() const { return CombatStats.AttackRange; }
-    
-    // 스탯 정보 설정
-    void SetMaxHealth(float NewMaxHealth);
-    void SetMaxMana(float NewMaxMana);
-
-    // 스킬 관련 함수
-    TArray<int32> GetActiveSkillIDs() const;
-    ADiaSkillBase* GetSkillByID(int32 SkillID) const;
-
-    // 전투 상태 관리
-    void SetCombatState(ECombatState NewState);
-    
-    ECombatState GetCombatState() const { return CurrentCombatState; }
-    
-    bool IsInCombat() const { return CurrentCombatState == ECombatState::InCombat; }
-    
-    bool IsDead() const { return CurrentCombatState == ECombatState::Dead; }
-    
-
-    
-    
-    // 타겟 관리
-    void SetCurrentTarget(AActor* NewTarget);
-    
-    AActor* GetCurrentTarget() const { return CurrentTarget; }
-    
-    
-    AActor* GetHighestThreatActor() const;
-    
-    // 이벤트 델리게이트
-    UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
-    FOnCombatStateChangedDelegate OnCombatStateChanged;
-    
-    UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
-    FOnDamageTakenDelegate OnDamageTaken;
-    
-    UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
-    FOnDamageDealtDelegate OnDamageDealt;
-    
-    UPROPERTY(BlueprintAssignable, Category = "Combat|Events")
-    FOnDeathDelegate OnDeath;
-    
-protected:
     // 전투 상태
     UPROPERTY(BlueprintReadOnly, Category = "Combat|State")
     ECombatState CurrentCombatState;

@@ -12,7 +12,15 @@ enum class OrbType
 	OT_MP,
 	OT_MAX
 };
+
+enum class BarType
+{
+	BT_HP,
+	BT_MAX
+};
+
 class UOrb;
+class UMonsterHP;
 /**
  * 
  */
@@ -25,6 +33,8 @@ public:
 	virtual void NativeConstruct() override;
 	
 	void UpdateOrbPercentage(OrbType _Type, float _Percentage);
+	void UpdateMonsterPercentage(BarType _Type, float _Percentage);
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UOrb* HpWidget;
@@ -32,4 +42,8 @@ protected:
 	
 	UPROPERTY(meta = (BindWidget))
 	UOrb* MpWidget;
+
+	UPROPERTY(meta = (BindWidget))
+	UMonsterHP* MonsterHPWidget;
+
 };
