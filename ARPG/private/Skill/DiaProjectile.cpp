@@ -6,6 +6,7 @@
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "DiaBaseCharacter.h"
+#include "DiaComponent/DiaCombatComponent.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "Engine/DamageEvents.h"
@@ -77,45 +78,72 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     int32 OtherBodyIndex, bool bFromSweep,
     const FHitResult& HitResult)
 {
-    if (OtherActor && OtherActor != this && OtherActor != ProjectileOwner)
+    if (!IsValid(OtherActor) || OtherActor == this || OtherActor == ProjectileOwner)
     {
-        // 플레이어 태그가 있는지 확인
-        if (OtherActor->Tags.Contains(FName("Player")))
+        return;
+    }
+
+    // 소유자와 타겟의 태그를 비교
+    bool bHasSameTag = false;
+    if (IsValid(ProjectileOwner))
+    {
+        // 소유자의 모든 태그에 대해 검사
+        for (const FName& OwnerTag : ProjectileOwner->Tags)
         {
-            // 플레이어에게는 데미지를 주지 않음
-            return;
+            //character 태그에 대한 체크는 넘긴다.
+            if (OwnerTag == FName(TEXT("Character"))) continue;
+
+            //다른 태그에 대해서만 체크
+            if (OtherActor->Tags.Contains(OwnerTag))
+            {
+                bHasSameTag = true;
+                break;
+            }
         }
-        
+    }
+
+    // 같은 태그를 가진 액터는 데미지를 받지 않음
+    if (bHasSameTag)    return;
+
+
+    // 데미지 처리
+    ADiaBaseCharacter* DiaOtherActor = Cast<ADiaBaseCharacter>(OtherActor);
+    if (IsValid(DiaOtherActor))
+    {
         // 데미지 처리
-        ProcessDamage(OtherActor, HitResult);
+        ProcessDamage(DiaOtherActor, HitResult);
         
         // 피격 이펙트 생성
         SpawnHitEffect(HitResult.ImpactPoint, HitResult.ImpactNormal);
         
         // 피격 이벤트 호출
-        OnProjectileHit(OtherActor, HitResult);
-        
-        // 발사체 제거
-        Destroy();
+        OnProjectileHit(DiaOtherActor, HitResult);
     }
+    
+    // 발사체 제거
+    Destroy();
 }
 
-void ADiaProjectile::OnProjectileHit(AActor* HitActor, const FHitResult& HitResult)
+void ADiaProjectile::OnProjectileHit(ADiaBaseCharacter* HitActor, const FHitResult& HitResult)
 {
 }
 
-void ADiaProjectile::ProcessDamage(AActor* Target, const FHitResult& HitResult)
+void ADiaProjectile::ProcessDamage(ADiaBaseCharacter* Target, const FHitResult& HitResult)
 {
     if (!IsValid(Target) || !IsValid(ProjectileOwner))
     {
         return;
     }
     
+    UDiaCombatComponent* DiaCombatComp = Target->GetComponentByClass<UDiaCombatComponent>();
+
+    if (!DiaCombatComp)
+    {
+        return;
+    }
     // 데미지 적용
     FDamageEvent DamageEvent;
-    float AppliedDamage = Target->TakeDamage(Damage, DamageEvent, 
-                                            ProjectileOwner->GetInstigatorController(), 
-                                            ProjectileOwner);
+    float AppliedDamage = DiaCombatComp->ApplyDamage(Target, Damage, DamageType);
     
     // 데미지 적용 로그
     UE_LOG(LogTemp, Log, TEXT("Projectile hit %s for %.2f damage"), 

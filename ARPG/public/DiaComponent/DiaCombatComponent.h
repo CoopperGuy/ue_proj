@@ -5,13 +5,13 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Skill/DiaSkillManager.h"
-#include "Skill/DiaSkillType.h"
 #include "DiaCombatComponent.generated.h"
 
 
 class ADiaSkillBase;
 class ADiaProjectileSkill;
 class UDiaStatusEffect;
+class UDiaDamageType;
 
 USTRUCT(BlueprintType)
 struct ARPG_API FCharacterData
@@ -77,13 +77,6 @@ class ARPG_API UDiaCombatComponent : public UActorComponent
 public:	
 	UDiaCombatComponent();
 
-   // 스탯 정보 제공 및 관리 함수
-    void ApplyDamage(float DamageAmount);
-    bool HasEnoughMana(float ManaAmount) const;
-    void ConsumeMana(float ManaAmount);
-    void RestoreMana(float ManaAmount);
-    void RestoreHealth(float HealthAmount);
-
     // 전투 타이머 관리
     void EnterCombat(AActor* CombatTarget = nullptr);
     void ExitCombat();
@@ -114,6 +107,11 @@ protected:
     // 전투 타임아웃 처리
     void HandleCombatTimeout();
 
+    // 스탯 정보 제공 및 관리 함수
+    bool HasEnoughMana(float ManaAmount) const;
+    void ConsumeMana(float ManaAmount);
+    void RestoreMana(float ManaAmount);
+    void RestoreHealth(float HealthAmount);
 public:	
     // 기본 공격 실행
     UFUNCTION(Category = "Combat")

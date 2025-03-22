@@ -4,6 +4,8 @@
 #include "Skill/Active/DiaMeleeSkill.h"
 #include "Engine/DamageEvents.h"
 
+#include "DiaComponent/DiaCombatComponent.h"
+
 #include "DiaBaseCharacter.h"
 #include "GameFramework/Character.h"
 #include "NiagaraFunctionLibrary.h"
@@ -144,7 +146,7 @@ void ADiaMeleeSkill::ApplyDamage(AActor* Target)
     }
     
     // 전투 컴포넌트 가져오기
-    UDiaCombatComponent* CombatComp = SkillOwner->FindComponentByClass<UDiaCombatComponent>();
+    UDiaCombatComponent* CombatComp = SkillOwner->GetComponentByClass<UDiaCombatComponent>();
     if (!IsValid(CombatComp))
     {
         return;

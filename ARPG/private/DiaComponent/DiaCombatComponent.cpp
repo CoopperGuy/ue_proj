@@ -11,6 +11,7 @@
 #include "Skill/DiaSkillManager.h"
 #include "Skill/DiaDamageCalculator.h"
 #include "Skill/Effect/DiaStatusEffect.h"
+#include "Skill/DiaSkillType.h"
 
 #include "GameFramework/PlayerController.h"
 #include "EngineUtils.h"
@@ -117,8 +118,11 @@ void UDiaCombatComponent::EnterCombat(AActor* CombatTarget)
         return;
     }
     
+    //전투 상태 진입
     SetCombatState(ECombatState::InCombat);
     
+    //ai일 경우 사용 추천.
+    //플레이어일 경우 고려.
     if (IsValid(CombatTarget))
     {
         SetCurrentTarget(CombatTarget);
@@ -180,9 +184,11 @@ void UDiaCombatComponent::ReceiveDamage(float DamageAmount, AActor* DamageCauser
     CharacterData.Health = FMath::Max(0.0f, CharacterData.Health - DamageAmount);
     
     // 체력 변경 이벤트 발생
+    //UI 변경 이벤트
     OnHealthChanged.Broadcast(CharacterData.Health, CharacterData.MaxHealth);
     
     // 데미지 이벤트 발생
+    //애니메이션 재생
     OnDamageTaken.Broadcast(DamageAmount, DamageCauser);
     
     // 위협도 증가

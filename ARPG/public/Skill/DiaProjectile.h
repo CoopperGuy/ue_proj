@@ -4,14 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Skill/DiaSkillType.h"
 #include "DiaProjectile.generated.h"
 
 class USphereComponent;
 class UProjectileMovementComponent;
 class USoundBase;
 class UNiagaraSystem;
-
-UCLASS(Abstract)
+class ADiaBaseCharacter;
+class UDiaDamageType;
+UCLASS()
 class ARPG_API ADiaProjectile : public AActor
 {
 	GENERATED_BODY()
@@ -35,10 +37,10 @@ public:
         const FHitResult& HitResult);
 
     // 발사체가 타겟에 적중했을 때 실행될 함수
-    virtual void OnProjectileHit(AActor* HitActor, const FHitResult& HitResult);
+    virtual void OnProjectileHit(ADiaBaseCharacter* HitActor, const FHitResult& HitResult);
     
     // 실제 데미지를 처리하는 함수
-    virtual void ProcessDamage(AActor* Target, const FHitResult& HitResult);
+    virtual void ProcessDamage(ADiaBaseCharacter* Target, const FHitResult& HitResult);
     
     // 피격 이펙트 생성
     void SpawnHitEffect(const FVector& ImpactPoint, const FVector& ImpactNormal);
@@ -95,4 +97,7 @@ protected:
     // 최소 속도 제한
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile|Movement", meta = (EditCondition = "bUseSpeedInterpolation"))
     float MinSpeed = 100.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile")
+    TSubclassOf<UDiaDamageType> DamageType{nullptr};
 };

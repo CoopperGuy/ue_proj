@@ -4,6 +4,7 @@
 #include "Skill/Active/DiaProjectileSkill.h"
 #include "Skill/DiaProjectile.h"
 #include "Character/DiaCharacter.h"
+#include "Kismet/GameplayStatics.h"
 
 ADiaProjectileSkill::ADiaProjectileSkill()
 {
@@ -42,10 +43,11 @@ void ADiaProjectileSkill::SpawnProjectile()
 {
 	if (!IsValid(SkillOwner) || !IsValid(ProjectileClass))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("SpawnProjectile Failed: Invalid SkillOwner or ProjectileClass"));
 		return;
 	}
 
-	// 발사 위치 계산
+	// 발사 위치 및 방향 계산
 	FVector Location = SkillOwner->GetActorLocation() + 
 					  SkillOwner->GetActorRotation().RotateVector(ProjectileOffset);
 	
@@ -80,19 +82,42 @@ void ADiaProjectileSkill::SpawnProjectile()
 		}
 	}
 
-	// 발사체 생성 파라미터
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = SkillOwner;
-	SpawnParams.Instigator = Cast<APawn>(SkillOwner);
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-	// 발사체 생성
-	ADiaProjectile* Projectile = GetWorld()->SpawnActor<ADiaProjectile>(
-		ProjectileClass, Location, Rotation, SpawnParams);
-
-	if (IsValid(Projectile) == true)
+	// 블루프린트 방식으로 우회하여 스폰
+	UClass* ProjectileClassObj = ProjectileClass.Get();
+	if (ProjectileClassObj)
 	{
-		Projectile->Initialize(GetDamage(), SkillOwner);
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = SkillOwner;
+		SpawnParams.Instigator = Cast<APawn>(SkillOwner);
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+		// GameplayStatics를 사용하여 스폰
+		AActor* NewActor = UGameplayStatics::BeginDeferredActorSpawnFromClass(
+			this, ProjectileClassObj, FTransform(Rotation, Location), ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+		
+		if (NewActor)
+		{
+			ADiaProjectile* Projectile = Cast<ADiaProjectile>(NewActor);
+			if (Projectile)
+			{
+				UGameplayStatics::FinishSpawningActor(NewActor, FTransform(Rotation, Location));
+				Projectile->Initialize(GetDamage(), SkillOwner);
+				UE_LOG(LogTemp, Log, TEXT("Projectile spawned and initialized via GameplayStatics"));
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Failed to cast spawned actor to ADiaProjectile"));
+				NewActor->Destroy();
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to begin deferred actor spawn"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to get UClass from TSubclassOf"));
 	}
 }
 

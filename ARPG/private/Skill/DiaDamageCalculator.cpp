@@ -2,9 +2,11 @@
 
 
 #include "Skill/DiaDamageCalculator.h"
+
 #include "DiaBaseCharacter.h"
 #include "DiaComponent/DiaCombatComponent.h"
 #include "DiaComponent/DiaStatusEffectComponent.h"
+
 #include "GameFramework/CharacterMovementComponent.h"
 
 FDamageResult UDiaDamageCalculator::CalculateDamage(
@@ -216,6 +218,7 @@ float UDiaDamageCalculator::ApplyDefense(float Damage, float Defense, float Armo
     return Damage * (1.0f - DamageReduction);
 }
 
+//랜덤 확률 
 bool UDiaDamageCalculator::RollForCritical(float CriticalChance)
 {
     return FMath::FRand() < CriticalChance;

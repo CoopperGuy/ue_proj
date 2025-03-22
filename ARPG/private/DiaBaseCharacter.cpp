@@ -16,6 +16,8 @@ ADiaBaseCharacter::ADiaBaseCharacter()
 	
 	// 상태 이상 효과 컴포넌트 생성
 	StatusEffectComponent = CreateDefaultSubobject<UDiaStatusEffectComponent>(TEXT("StatusEffectComponent"));
+
+	Tags.Add(FName(TEXT("Character")));
 }
 
 // Called when the game starts or when spawned
