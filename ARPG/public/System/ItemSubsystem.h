@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "Types/ItemBase.h"
+#include "Types/ItemBase.h"  
 #include "ItemSubsystem.generated.h"
 
 /**
@@ -16,38 +16,39 @@ class ARPG_API UItemSubsystem : public UGameInstanceSubsystem
 	GENERATED_BODY()
 	
 public:
-    // USubsystem ÀÎÅÍÆäÀÌ½º
+    // USubsystem ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì½ï¿½
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
     
-    // ¾ÆÀÌÅÛ µ¥ÀÌÅÍ ·Îµå
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Îµï¿½
     UFUNCTION(BlueprintCallable, Category = "Items")
     void LoadItemData();
     
-    // ¾ÆÀÌÅÛ µ¥ÀÌÅÍ Á¶È¸
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½È¸
     UFUNCTION(BlueprintCallable, Category = "Items")
-    FItemBase* GetItemData(const FName& ItemID) const;
+    const FItemBase& GetItemData(const FName& ItemID) const;
     
-    // ÀÎ½ºÅÏ½º ¾ÆÀÌÅÛ »ý¼º
+    // ï¿½Î½ï¿½ï¿½Ï½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     UFUNCTION(BlueprintCallable, Category = "Items")
     FInventoryItem CreateItemInstance(const FName& ItemID, int32 Level = 1, bool bRandomStats = false);
     
-    // Æ¯Á¤ Á¶°ÇÀÇ ¾ÆÀÌÅÛ °Ë»ö
-    UFUNCTION(BlueprintCallable, Category = "Items")
-    TArray<FName> GetItemsByFilter(const FItemFilter& Filter);
+    // Æ¯ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ë»ï¿½
+    //UFUNCTION(BlueprintCallable, Category = "Items")
+    //TArray<FName> GetItemsByFilter(const FItemFilter& Filter);
     
 private:
     UPROPERTY()
     UDataTable* ItemDataTable;
     
-    // °æ·Î ¼³Á¤
+    // ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     UPROPERTY()
-    FString ItemDataTablePath = TEXT("/Game/Data/DT_Items");
+    FString ItemDataTablePath = TEXT("/Game/Datatable/DT_DiaitemTable.DT_DiaitemTable");
     
-    // Ä³½Ì ÄÜÅ×ÀÌ³Ê
+    // Ä³ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ì³ï¿½
     UPROPERTY()
-    TMap<FName, FItemBase> ItemCache;
+    mutable TMap<FName, FItemBase> ItemCache;
     
-    // µð¾Æºí·Î ½ºÅ¸ÀÏ ·£´ý ¼Ó¼º »ý¼º
+    // ï¿½ï¿½Æºï¿½ï¿½ï¿½ ï¿½ï¿½Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ó¼ï¿½ 
     void GenerateRandomStats(FInventoryItem& Item, int32 Level);
 };
+    

@@ -24,7 +24,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
     
     // 아이템을 그리드에 추가 시도
-    bool TryAddItem(const FItemBase& ItemData, int32 PosX, int32 PosY);
+    bool TryAddItem(const FInventoryItem& ItemData, int32 PosX, int32 PosY);
     
     // 그리드 위치에 아이템 배치 가능 여부 확인
     bool CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);	
@@ -32,7 +32,7 @@ public:
 private:
     // 아이템 데이터 저장
     UPROPERTY()
-    TArray<FItemBase> Items;
+    TArray<FInventoryItem> Items;
 
     // 그리드 크기 설정
     UPROPERTY(EditDefaultsOnly, Category = "Inventory")

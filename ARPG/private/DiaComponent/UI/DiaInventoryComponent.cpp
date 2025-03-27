@@ -25,3 +25,13 @@ void UDiaInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 }
 
+bool UDiaInventoryComponent::TryAddItem(const FInventoryItem& ItemData, int32 PosX, int32 PosY)
+{
+	return false;
+}
+
+bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
+{
+	return false;
+}
+

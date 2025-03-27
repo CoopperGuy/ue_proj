@@ -3,7 +3,6 @@
 #include "Engine/DataTable.h"
 #include "ItemBase.generated.h"  
 
-class UTexture2D;
 UENUM(BlueprintType)
 enum class EItemRarity : uint8
 {
@@ -26,6 +25,17 @@ enum class EItemType : uint8
 	EIT_MAX
 };
 
+UENUM(BlueprintType)
+enum class EItemStat : uint8
+{
+	EIS_Health,
+	EIS_Mana,
+	EIS_Attack,
+	EIS_Defense,
+	EIS_Speed,
+	EIS_MAX
+};
+
 
 USTRUCT(BlueprintType)
 struct ARPG_API FItemBase : public FTableRowBase
@@ -41,30 +51,30 @@ struct ARPG_API FItemBase : public FTableRowBase
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FText Description;
     
-    // ±×¸®µå Å©±â
+    // ï¿½×¸ï¿½ï¿½ï¿½ Å©ï¿½ï¿½
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 Width = 1;
     
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 Height = 1;
     
-    // ¾ÆÀÌÅÛ µî±Þ
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     EItemRarity Rarity = EItemRarity::EIR_Common;
     
-    // ¾ÆÀÌÅÛ Å¸ÀÔ
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     EItemType ItemType = EItemType::EIT_Misc;
-    
-    // ½ºÅÃ °ü·Ã
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    bool bStackable = false;
-    
+        
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 MaxStackSize = 1;
 
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    UTexture2D* ItemIcon = nullptr;
+    bool bStackable = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FSoftObjectPath IconPath;
 };
 
 
@@ -72,6 +82,11 @@ USTRUCT(BlueprintType)
 struct ARPG_API FGrid
 {
     GENERATED_BODY()
+
+	FGrid() :Width(5), Height(5) 
+    {
+		Cells.SetNum(Width * Height);
+    }
 
     TArray<bool> Cells;
 
@@ -95,4 +110,101 @@ struct ARPG_API FGrid
     {
         return Cells[Y * Width + X];
     }
+};
+
+//// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Î»ï¿½/ï¿½ï¿½ï¿½Ì»ï¿½ (ï¿½ï¿½Æºï¿½ï¿½ï¿½ ï¿½ï¿½Å¸ï¿½ï¿½)
+//USTRUCT(BlueprintType)
+//struct YOURGAME_API FItemAffix
+//{
+//    GENERATED_BODY()
+//    
+//    // ï¿½ï¿½ï¿½Î»ï¿½/ï¿½ï¿½ï¿½Ì»ï¿½ ID
+//    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+//    FName AffixID;
+//    
+//    // ï¿½ï¿½ï¿½Î»ï¿½(true) ï¿½Ç´ï¿½ ï¿½ï¿½ï¿½Ì»ï¿½(false)
+//    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+//    bool bIsPrefix = true;
+//    
+//    // ï¿½Î¿ï¿½ï¿½Ï´ï¿½ È¿ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½, ï¿½ï¿½Ä¡)
+//    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+//    TMap<EItemStat, float> StatModifiers;
+//    
+//    // ï¿½Ø½ï¿½Æ® Ç¥ï¿½Ã¿ï¿½
+//    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+//    FText DisplayText;
+//};
+//
+//// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½ï¿½Æºï¿½ï¿½ï¿½ ï¿½ï¿½Å¸ï¿½ï¿½)
+//USTRUCT(BlueprintType)
+//struct YOURGAME_API FItemSocket
+//{
+//    GENERATED_BODY()
+//    
+//    // ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½ (ï¿½ï¿½ï¿½, ï¿½ï¿½ï¿½Þ¶ï¿½ï¿½ï¿½ ï¿½ï¿½)
+//    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+//    ESocketType SocketType = ESocketType::Empty;
+//    
+//    // ï¿½ï¿½ï¿½Ôµï¿½ ï¿½ï¿½ï¿½ï¿½ ID (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½)
+//    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+//    FName GemItemID;
+//    
+//    // ï¿½Î¿ï¿½ï¿½ï¿½ È¿ï¿½ï¿½
+//    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+//    TArray<FItemEffect> SocketEffects;
+//};
+
+USTRUCT(BlueprintType)
+struct ARPG_API FInventoryItem
+{
+    GENERATED_BODY()
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+    FName ItemID;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+    FGuid InstanceID;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+    int32 Quantity = 1;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Grid")
+    int32 GridX = 0;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Grid")
+    int32 GridY = 0;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Grid")
+    int32 Level = 0;
+    
+    //UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Affixes")
+    //TArray<FItemAffix> Affixes;
+    
+    //UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Sockets")
+    //TArray<FItemSocket> Sockets;
+            
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+    bool bIsLocked = false;
+    
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+    bool bRandomStats = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+    FText CustomDescription;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+	TMap<EItemStat, float> Stats;
+
+    FInventoryItem()
+        : InstanceID(FGuid::NewGuid())
+    {
+    }
+    
+    //FItemBase* GetBaseItemData() const;
+    
+    bool IsValid() const { return !ItemID.IsNone() && Quantity > 0; }
+    
+    //void GetItemSize(int32& OutWidth, int32& OutHeight) const;
+    
+    FText GenerateTooltip() const { return FText(); };
 };
