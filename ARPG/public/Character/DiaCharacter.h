@@ -16,45 +16,56 @@ class UCameraComponent;
 class UDiaCombatComponent;
 class ADiaSkillBase;
 UCLASS()
-class ARPG_API ADiaCharacter : public ADiaBaseCharacter, public ICombatable
+class ARPG_API ADiaCharacter : public ADiaBaseCharacter
 {
 	GENERATED_BODY()
 
 public:
 	ADiaCharacter();
 
-    bool GetMouseWorldLocation(FVector& OutLocation) const;
+
+    /// <summary>
+    /// 애니메이션 관련 처리
+    /// </summary>
     virtual void PlayDieAnimation();
-    //Method
+    virtual void Die();
+
+    /// <summary>
+    /// UI관련 함수
+    /// </summary>
+    virtual void UpdateHPGauge(float CurHealth, float MaxHelath);
+
+    // 움직임 관련 함수 
+    bool GetMouseWorldLocation(FVector& OutLocation) const;
 protected:
+	/// <summary>
+	/// 엔진 기본 함수
+	/// </summary>
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
     virtual void Tick(float DeltaTime) override;
 
-    // Input Action Functions
+	/// <summary>
+	/// 움직임 관련 함수
+    /// </summary>
     void Move(const FInputActionValue& Value);
     void Look(const FInputActionValue& Value);
-    // 공격 입력 처리
     void ExecuteSkillByIndex(int32 ActionIndex);
-    // 콤보 처리
+
+    // 공격 입력 처리
     void UpdateCharacterRotation();
 
-    // 어택 가능 여부
-    virtual bool CanAttack() const;
 
-    // 공격 여부
-    virtual bool IsInCombat() const;
-
+    /// <summary>
+    /// 전투 관련 함수
+    /// </summary>
+    virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+    
     // 초기 스킬 설정
     virtual void SetupInitialSkills() override;
 
-    // 공격 처리 함수
-    virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-
-    virtual void Die();
-public:	
-    virtual void UpdateHPGauge(float CurHealth, float MaxHelath);
 protected:
+    /// 입력 관련 변수
     // Enhanced Input Actions
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
     UInputAction* MovementAction;
@@ -70,6 +81,7 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
     UInputMappingContext* DefaultMappingContext;
 
+    ///화면 관련 변수
     // 카메라 암
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera)
     USpringArmComponent* CameraBoom;
@@ -79,6 +91,8 @@ protected:
     
     UPROPERTY(EditAnywhere, Category = "Movement")
     float RotationInterpSpeed = 15.0f;
+
+    //스킬 관련 변수
     // 스킬 ID 매핑 (키 인덱스 -> 스킬 ID)
     UPROPERTY(EditDefaultsOnly, Category = "Skills")
     TArray<int32> SkillIDMapping;

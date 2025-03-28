@@ -10,7 +10,7 @@ void UHUDWidget::NativeConstruct()
 	Super::NativeConstruct();
 }
 
-//widgetÀÇ ÆÛ¼¾Å×ÀÌÁö¸¸ Á¶ÀýÇÑ´Ù
+//widgetï¿½ï¿½ ï¿½Û¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½
 void UHUDWidget::UpdateOrbPercentage(OrbType _Type, float _Percentage)
 {
 	switch (_Type)
@@ -24,8 +24,8 @@ void UHUDWidget::UpdateOrbPercentage(OrbType _Type, float _Percentage)
 	}
 }
 
-//widgetÀÇ ÆÛ¼¾Å×ÀÌÁö¸¸ Á¶ÀýÇÑ´Ù
-//¾î¶² ¸ó½ºÅÍÀÇ °ÍÀ» ¾÷µ¥ÀÌÆ® ÇÒ Áö´Â ´Ù¸¥ °÷¿¡¼­ Ã³¸®ÇÏÀÚ.
+//widgetï¿½ï¿½ ï¿½Û¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ñ´ï¿½
+//ï¿½î¶² ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
 //-> DiaCombatComponent 
 void UHUDWidget::UpdateMonsterPercentage(BarType _Type, float _Percentage)
 {

@@ -2,13 +2,18 @@
 
 
 #include "Monster/Controller/DiaAIController.h"
+#include "GameFramework/PlayerController.h"
+
+#include "EngineUtils.h"
+
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
-
 #include "BehaviorTree/BTTaskNode.h"
 #include "BehaviorTree/BTService.h"
 #include "BehaviorTree/BTDecorator.h"
+#include "Monster/DiaMonster.h"
+#include "DiaComponent/DiaCombatComponent.h"
 
 #include "NavigationSystem.h"
 #include "Navigation/PathFollowingComponent.h"
@@ -20,20 +25,31 @@ ADiaAIController::ADiaAIController()
 void ADiaAIController::BeginPlay()
 {
 	Super::BeginPlay();
+	InitBehaviorTree(behaviorTree);
+}
 
-	if (behaviorTree)
+void ADiaAIController::InitBehaviorTree(UBehaviorTree* _behaiviortree)
+{
+	if (_behaiviortree)
 	{
-		RunBehaviorTree(behaviorTree);
+		behaviorTree = _behaiviortree;
+		RunBehaviorTree(_behaiviortree);
 	}
 }
 
 void ADiaAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	if (blackboardData)
+	InitBlackBoardData(InPawn, blackboardData);
+}
+
+void ADiaAIController::InitBlackBoardData(APawn* InPawn, UBlackboardData* _blackboardData)
+{
+	if (_blackboardData)
 	{
+		blackboardData = _blackboardData;
 		auto blackBorad = Blackboard.Get();
-		if (UseBlackboard(blackboardData, blackBorad))
+		if (UseBlackboard(_blackboardData, blackBorad))
 		{
 			Blackboard->SetValueAsVector("HomeLocation", InPawn->GetActorLocation());
 		}
@@ -41,15 +57,13 @@ void ADiaAIController::OnPossess(APawn* InPawn)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("BlackboardData or BehaviorTree is not valid!"));
 		}
-
-
 	}
 }
 
 void ADiaAIController::UpdateCombatState()
 {
 	// 소유한 몬스터 가져오기
-	ADiaMonster* ControlledMonster = GetControlledMonster();
+	const ADiaMonster* ControlledMonster = GetControlledMonster();
 	if (!IsValid(ControlledMonster))
 	{
 		return;
@@ -78,7 +92,7 @@ void ADiaAIController::UpdateCombatState()
 void ADiaAIController::UpdateTarget()
 {
 	// 소유한 몬스터 가져오기
-	ADiaMonster* ControlledMonster = GetControlledMonster();
+	const ADiaMonster* ControlledMonster = GetControlledMonster();
 	if (!IsValid(ControlledMonster))
 	{
 		return;
@@ -188,6 +202,7 @@ AActor* ADiaAIController::FindNearestPlayer()
 	float NearestDistance = TNumericLimits<float>::Max();
 	
 	// 월드에서 모든 플레이어 컨트롤러 찾기
+	//TActorIterator < 특정 타입의 actor를 찾는 것
 	for (TActorIterator<APlayerController> It(GetWorld()); It; ++It)
 	{
 		APlayerController* PC = *It;
@@ -224,10 +239,10 @@ float ADiaAIController::GetDistanceToTarget() const
 	{
 		return TNumericLimits<float>::Max();
 	}
-	
+
 	FVector MyLocation = GetPawn()->GetActorLocation();
 	FVector TargetLocation = CurrentTarget->GetActorLocation();
-	
+
 	return FVector::Dist(MyLocation, TargetLocation);
 }
 

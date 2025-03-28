@@ -18,7 +18,11 @@ class ARPG_API ADiaBaseCharacter : public ACharacter
 public:
 	ADiaBaseCharacter();
 
-	// 애님 몽타주 재생 함수
+	//////////////////////////////////////////////////////////////////////////
+	// Animation Montage
+	// Montage 재생, 정지, 체크
+	// Montage 종료 시 delegate 처리
+	//////////////////////////////////////////////////////////////////////////
 	UFUNCTION(Category = "Animation")
 	float PlayCharacterMontage(UAnimMontage* MontageToPlay, float PlayRate = 1.0f);
 
@@ -26,45 +30,61 @@ public:
 	UFUNCTION(Category = "Animation")
 	void StopCharacterMontage(float BlendOutTime = 0.2f);
 
-	UFUNCTION(BlueprintCallable, Category = "Animation")
+	UFUNCTION(Category = "Animation")
 	bool IsPlayingMontage(UAnimMontage* Montage) const;
 	
+	virtual void PlayDieAnimation();
+
 	virtual void StopAnimMontage(UAnimMontage* Montage) override;
 
+	UFUNCTION()
+	virtual void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	/// <summary>
+	/// UI 관련 함수
+	/// UI Update용 함수 
+	/// 차후 SPGuage 추가 가능함
+	/// </summary>
+	/// <param name="CurHealth"></param>
+	/// <param name="MaxHelath"></param>
 	virtual void UpdateHPGauge(float CurHealth, float MaxHelath);
 
-	virtual void PlayDieAnimation();
+	/// <summary>
+	/// 전투 관련 함수 
+	/// </summary>
+	/// CombatStatCompent를 통해 데미지를 받음
+	virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	//사망 처리
+	virtual void Die();
+
 protected:
+	// 기본적인 함수
 	virtual void BeginPlay() override;
 
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-
+	/// <summary>
+	/// 스킬 관련 함수 및 초기화
+	/// </summary>
 	virtual void SetupInitialSkills();
-
-	// ������ ó�� �Լ�
-	virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-
-	virtual void Die();
-private:
-	// 현재 재생중인 몽타주
-	UPROPERTY()
-	UAnimMontage* CurrentMontage;
-
 protected:
+	//전투 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat)
     UDiaCombatComponent* CombatStatsComponent;	
-
-	UPROPERTY(EditAnywhere, Category = "Skills")
-    TArray<int32> InitialSkills;
-
-	UFUNCTION()
-	virtual void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	// 상태 이상 효과 관리 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatusEffects")
 	UDiaStatusEffectComponent* StatusEffectComponent;
+
+	//초기 보유 스킬
+	UPROPERTY(EditAnywhere, Category = "Skills")
+    TArray<int32> InitialSkills;
+
+	// 현재 재생중인 몽타주
+	UPROPERTY()
+	UAnimMontage* CurrentMontage;
 
 };

@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
-#include "DiaDropTable.generated.h"
+#include "DiaMonsterTable.generated.h"
 
 class UBlackboardData;
 class UBehaviorTree;
@@ -28,10 +28,9 @@ struct FMonsterInfo : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Exp;
 
-	//애니메이션 블루프린트
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    TSubclassOf<UAnimBlueprint> AnimationBP;
-	//매쉬
+    TSubclassOf<UAnimInstance> AnimationInstance;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TSoftObjectPtr<USkeletalMesh> MonsterMesh;
 

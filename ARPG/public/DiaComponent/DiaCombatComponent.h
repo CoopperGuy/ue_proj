@@ -77,23 +77,26 @@ class ARPG_API UDiaCombatComponent : public UActorComponent
 public:	
 	UDiaCombatComponent();
 
-    // 전투 타이머 관리
+    // 전투 프로세스 관련
     void EnterCombat(AActor* CombatTarget = nullptr);
     void ExitCombat();
-
-    float ApplyDamage(AActor* Target, float BaseDamage, TSubclassOf<UDiaDamageType> DamageTypeClass = nullptr);
-    void ReceiveDamage(float DamageAmount, AActor* DamageCauser);
     // 사망 처리
     void HandleDeath();
 
+    //데미지 관련 
+    float ApplyDamage(AActor* Target, float BaseDamage, TSubclassOf<UDiaDamageType> DamageTypeClass = nullptr);
+    void ReceiveDamage(float DamageAmount, AActor* DamageCauser);
+    
+    //어그로 관리
     void AddThreatToActor(AActor* Actor, float ThreatAmount);
     void ClearAllThreats();
 protected:
+    // 엔진 기본 함수
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
     // 전투 타이머 업데이트
     void UpdateCombatTimer(float DeltaTime);
-    
     // 전투 타임아웃 처리
     void HandleCombatTimeout();
 
@@ -103,6 +106,10 @@ protected:
     void RestoreMana(float ManaAmount);
     void RestoreHealth(float HealthAmount);
 public:
+    //////////////////////////////////////////////////////////////////////////
+    // 전투 관련 함수 
+	//////////////////////////////////////////////////////////////////////////
+    // 
     // 기본 공격 실행
     UFUNCTION(Category = "Combat")
     bool ExecuteBasicAttack();
@@ -128,15 +135,22 @@ public:
     UFUNCTION()
     bool ProcessSkillCost(ADiaSkillBase* Skill);
 
+    /// <summary>
+    /// 델리게이트 함수들
+    /// ->아직 미사용
+    /// </summary>
+    /// <param name="StatusEffect"></param>
     UFUNCTION()
     void OnStatusEffectAdded(UDiaStatusEffect* StatusEffect);
 
     UFUNCTION()
     void OnStatusEffectRemoved(UDiaStatusEffect* StatusEffect);
 
-    UFUNCTION()
-    void OnUpdateHpGauge(float CurHP, float MaxHP);
+    //ui관련 
+	UFUNCTION()
+	void OnUpdateHpGauge(float CurHP, float MaxHP);
 
+    //사망 처리
     UFUNCTION()
     void OnDeathProcess();
    //// 스텟 변경 통지
@@ -146,6 +160,7 @@ protected:
     // 스킬 초기화
     void InitializeSkills();
 
+    //로직 관련
     AActor* FindNearestPlayer();
 private:
     bool bCanAttack = false;

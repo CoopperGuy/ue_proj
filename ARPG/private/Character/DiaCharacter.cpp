@@ -88,11 +88,6 @@ void ADiaCharacter::SetupInitialSkills()
     }
 }
 
-bool ADiaCharacter::IsInCombat() const
-{
-    return false;
-}
-
 // Called every frame
 void ADiaCharacter::Tick(float DeltaTime)
 {
@@ -190,11 +185,6 @@ bool ADiaCharacter::GetMouseWorldLocation(FVector& OutLocation) const
 void ADiaCharacter::PlayDieAnimation()
 {
     Super::PlayDieAnimation();
-}
-
-bool ADiaCharacter::CanAttack() const
-{
-    return false;
 }
 
 void ADiaCharacter::UpdateCharacterRotation()

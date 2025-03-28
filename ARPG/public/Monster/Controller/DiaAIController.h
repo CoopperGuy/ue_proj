@@ -15,7 +15,7 @@ class UBehaviorTree;
 class UBlackboardData;
 class ADiaMonster;
 /**
- * ���̽� ���� AIController
+ * 
  */
 UCLASS()
 class ARPG_API ADiaAIController : public AAIController
@@ -42,22 +42,35 @@ public:
     
     // 현재 타겟 가져오기
     UFUNCTION(BlueprintCallable, Category = "AI|Combat")
-    AActor* GetCurrentTarget() const { return CurrentTarget; }
+    const AActor* GetCurrentTarget() const { return CurrentTarget; }
+    
+    // 타겟 감지
+    void DetectTargets();
+    
+    // 가장 가까운 플레이어 찾기
+    AActor* FindNearestPlayer();
+    
+    // 타겟까지의 거리 계산
+    float GetDistanceToTarget() const;
+    
+    // 소유한 몬스터 가져오기
+    ADiaMonster* GetControlledMonster() const;
+
+    void InitBehaviorTree(UBehaviorTree* _behaiviortree);
+    void InitBlackBoardData(APawn* InPawn, UBlackboardData* blackboardData);
 
 protected:
     virtual void BeginPlay() override;
     virtual void OnPossess(APawn* InPawn) override;
 
+
 protected:
-    // �ൿ Ʈ��
     UPROPERTY(EditDefaultsOnly, Category = "AI")
     UBehaviorTree* behaviorTree;
 
-    // ��������
     UPROPERTY(EditDefaultsOnly, Category = "AI")
     UBlackboardData* blackboardData;
 
-    // �������� Ű
     static const FName TargetKey;
     static const FName PatrolLocationKey;
     static const FName IsInAttackRangeKey;
@@ -73,16 +86,5 @@ protected:
     // 공격 가능 거리
     UPROPERTY(EditDefaultsOnly, Category = "AI|Combat")
     float AttackRange = 150.0f;
-    
-    // 타겟 감지
-    void DetectTargets();
-    
-    // 가장 가까운 플레이어 찾기
-    AActor* FindNearestPlayer();
-    
-    // 타겟까지의 거리 계산
-    float GetDistanceToTarget() const;
-    
-    // 소유한 몬스터 가져오기
-    ADiaMonster* GetControlledMonster() const;
+
 };

@@ -14,6 +14,9 @@ void UItemSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 void UItemSubsystem::Deinitialize()
 {
     Super::Deinitialize();
+
+	ItemDataTable = nullptr;
+	ItemCache.Empty();
 }
 
 void UItemSubsystem::LoadItemData()
@@ -40,8 +43,6 @@ void UItemSubsystem::LoadItemData()
 #endif
 }
 
-//아이템 드롭 시 인스턴스 사용.
-//아이템 내용 저장해야할거같은데.
 FInventoryItem UItemSubsystem::CreateItemInstance(const FName& ItemID, int32 Level, bool bRandomStats)
 {
     const FItemBase& ItemData = GetItemData(ItemID);

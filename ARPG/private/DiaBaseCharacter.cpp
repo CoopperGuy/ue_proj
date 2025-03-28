@@ -142,7 +142,7 @@ void ADiaBaseCharacter::Die()
 {
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	SetLifeSpan(3.0f);
+	//SetLifeSpan(3.0f);
 }
 
 void ADiaBaseCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)

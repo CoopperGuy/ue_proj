@@ -11,6 +11,13 @@
 #include "NiagaraComponent.h"
 #include "NiagaraSystem.h"
 
+#include "BehaviorTree/BehaviorTree.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
+#include "BehaviorTree/BTTaskNode.h"
+#include "BehaviorTree/BTService.h"
+#include "BehaviorTree/BTDecorator.h"
+
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -26,20 +33,159 @@ ADiaMonster::ADiaMonster()
 	Tags.Add(FName(TEXT("Monster")));
 }
 
+void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
+{
+	//// 몬스터 기본 정보 설정
+	//MonsterID = MonsterInfo.MonsterID;
+	//
+	//// 스탯 설정
+	//Level = MonsterInfo.Level;
+	//MaxHealth = MonsterInfo.MaxHP;
+	//Health = MaxHealth;
+	//AttackPower = MonsterInfo.Attack;
+	//DefensePower = MonsterInfo.Defense;
+	//ExpReward = MonsterInfo.Exp;
+	
+	// 로그 기록
+	//UE_LOG(LogTemp, Log, TEXT("몬스터 [%s](ID: %s) 초기화: Lv.%d, HP:%d, ATK:%d, DEF:%d"), 
+	//	*GetName(), *MonsterID.ToString(), Level, MaxHealth, AttackPower, DefensePower);
+	
+	// 외형 설정 (메시)
+	if (MonsterInfo.MonsterMesh.IsValid())
+	{
+		USkeletalMesh* MonsterMeshAsset = MonsterInfo.MonsterMesh.LoadSynchronous();
+		if (MonsterMeshAsset)
+		{
+			GetMesh()->SetSkeletalMesh(MonsterMeshAsset);
+			UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s] 메시 설정 완료: %s"), 
+				*GetName(), *MonsterMeshAsset->GetName());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s] 메시 로드 실패: %s"), 
+				*GetName(), *MonsterInfo.MonsterMesh.ToString());
+		}
+	}
+	
+	// 애니메이션 설정
+	if (MonsterInfo.AnimationInstance)
+	{
+		GetMesh()->SetAnimInstanceClass(MonsterInfo.AnimationInstance);
+		UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s] 애니메이션 클래스 설정 완료"), *GetName());
+	}
+	
+	// AI 컨트롤러 설정
+	ADiaAIController* AIController = Cast<ADiaAIController>(GetController());
+	if (AIController)
+	{
+		// Blackboard 설정
+		if (MonsterInfo.BlackboardAsset.IsValid())
+		{
+			UBlackboardData* BlackboardData = MonsterInfo.BlackboardAsset.LoadSynchronous();
+			if (BlackboardData)
+			{
+				AIController->InitBlackBoardData(this, BlackboardData);
+				UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s] 블랙보드 설정 완료"), *GetName());
+			}
+		}
+		
+		// Behavior Tree 설정
+		if (MonsterInfo.BehaviorTree.IsValid())
+		{
+			UBehaviorTree* BehaviorTreeAsset = MonsterInfo.BehaviorTree.LoadSynchronous();
+			if (BehaviorTreeAsset)
+			{
+				AIController->InitBehaviorTree(BehaviorTreeAsset);
+				UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s] 비헤이비어 트리 실행 시작"), *GetName());
+			}
+		}
+		
+		// 컨트롤러 초기화 함수 호출
+		//AIController->InitializeAI();
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s]에 유효한 AI 컨트롤러가 없습니다"), *GetName());
+	}
+	
+	// 기본 AI 활성화
+	ActivateAI();
+}
+
+// AI 비활성화 함수 구현
+void ADiaMonster::DeactivateAI()
+{
+	// AI 컨트롤러 획득
+	ADiaAIController* AIController = Cast<ADiaAIController>(GetController());
+	if (AIController)
+	{
+		// AI 로직 중지
+		AIController->StopMovement();
+		AIController->SetActorTickEnabled(false);
+		
+		// 비헤이비어 트리 중지
+		UBehaviorTreeComponent* BehaviorTreeComp = AIController->FindComponentByClass<UBehaviorTreeComponent>();
+		if (BehaviorTreeComp)
+		{
+			BehaviorTreeComp->StopTree();
+		}
+		
+		UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s]의 AI 비활성화됨"), *GetName());
+	}
+}
+
+// AI 활성화 함수 구현
+void ADiaMonster::ActivateAI()
+{
+	// AI 컨트롤러 획득
+	ADiaAIController* AIController = Cast<ADiaAIController>(GetController());
+	if (AIController)
+	{
+		// AI 로직 활성화
+		AIController->SetActorTickEnabled(true);
+		
+		// AI 컨트롤러 초기화
+		//AIController->InitializeAI();
+		
+		UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s]의 AI 활성화됨"), *GetName());
+	}
+}
+
+// 몬스터 리셋 함수 구현
+void ADiaMonster::ResetMonster()
+{
+	// 체력 및 상태 리셋
+	//Health = MaxHealth;
+	//bIsDead = false;
+	
+	// 모든 피해 및 버프 효과 제거
+	GetWorldTimerManager().ClearAllTimersForObject(this);
+	
+	// 애니메이션 초기화
+	if (GetMesh() && GetMesh()->GetAnimInstance())
+	{
+		GetMesh()->GetAnimInstance()->Montage_Stop(0.25f);
+	}
+	
+	// 자식 컴포넌트 리셋
+	TArray<UActorComponent*> Components;
+	GetComponents(Components);
+	
+	for (UActorComponent* Component : Components)
+	{
+		Component->Activate();
+	}
+	
+	// 캡슐 콜리전 활성화
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	
+	UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s] 상태 리셋 완료"), *GetName());
+}
+
 void ADiaMonster::BeginPlay()
 {
 	Super::BeginPlay();
 	
-}
-
-bool ADiaMonster::CanAttack() const
-{
-	return false;
-}
-
-bool ADiaMonster::IsInCombat() const
-{
-	return false;
 }
 
 void ADiaMonster::Tick(float DeltaTime)
