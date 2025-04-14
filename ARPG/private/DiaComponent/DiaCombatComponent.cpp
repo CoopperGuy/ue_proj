@@ -426,6 +426,12 @@ void UDiaCombatComponent::ClearAllThreats()
     ThreatTable.Empty();
 }
 
+void UDiaCombatComponent::InitializeFromData(const FMonsterInfo& MonsterInfo)
+{
+    CombatStats = MonsterInfo;
+    CharacterData = MonsterInfo;
+}
+
 AActor* UDiaCombatComponent::GetHighestThreatActor() const
 {
     AActor* HighestThreatActor = nullptr;

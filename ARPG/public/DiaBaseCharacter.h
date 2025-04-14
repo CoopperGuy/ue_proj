@@ -58,6 +58,7 @@ public:
 	//사망 처리
 	virtual void Die();
 
+	void SetGravity(bool bEnableGravityAndCollision);
 protected:
 	// 기본적인 함수
 	virtual void BeginPlay() override;

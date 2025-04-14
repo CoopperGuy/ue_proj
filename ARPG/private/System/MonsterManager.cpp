@@ -64,3 +64,12 @@ void UMonsterManager::DespawnMonster(ADiaMonster* Monster)
         PoolSystem->ReturnMonsterToPool(Monster);
     }
 }
+
+const FMonsterInfo* UMonsterManager::GetMonsterInfo(FName MonsterID) const
+{
+	if (const FMonsterInfo* MonsterInfo = MonsterCache.Find(MonsterID))
+	{
+		return MonsterInfo;
+	}
+    return nullptr;
+}

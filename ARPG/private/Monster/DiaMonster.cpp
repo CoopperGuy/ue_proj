@@ -21,6 +21,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 
+#include "DiaComponent/DiaCombatComponent.h"
+
 #include "UI/HUDWidget.h"
 
 ADiaMonster::ADiaMonster()
@@ -30,41 +32,48 @@ ADiaMonster::ADiaMonster()
 	//Default Monster AIController
 	AIControllerClass = ADiaAIController::StaticClass();
 
+	AutoPossessAI = EAutoPossessAI::Disabled;
+
 	Tags.Add(FName(TEXT("Monster")));
 }
 
 void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 {
 	//// 몬스터 기본 정보 설정
-	//MonsterID = MonsterInfo.MonsterID;
+	MonsterID = MonsterInfo.MonsterID;
 	//
 	//// 스탯 설정
-	//Level = MonsterInfo.Level;
-	//MaxHealth = MonsterInfo.MaxHP;
-	//Health = MaxHealth;
-	//AttackPower = MonsterInfo.Attack;
-	//DefensePower = MonsterInfo.Defense;
-	//ExpReward = MonsterInfo.Exp;
-	
-	// 로그 기록
-	//UE_LOG(LogTemp, Log, TEXT("몬스터 [%s](ID: %s) 초기화: Lv.%d, HP:%d, ATK:%d, DEF:%d"), 
-	//	*GetName(), *MonsterID.ToString(), Level, MaxHealth, AttackPower, DefensePower);
-	
+	UDiaCombatComponent* CombatComponent = FindComponentByClass<UDiaCombatComponent>();
+	if (CombatComponent)
+	{
+		CombatComponent->InitializeFromData(MonsterInfo);
+	}
+		
 	// 외형 설정 (메시)
 	if (MonsterInfo.MonsterMesh.IsValid())
 	{
-		USkeletalMesh* MonsterMeshAsset = MonsterInfo.MonsterMesh.LoadSynchronous();
+		UE_LOG(LogTemp, Log, TEXT("몬스터 [%s] 메시 로드 시도: %s"), *GetName(), *MonsterInfo.MonsterMesh.ToString());
+		USkeletalMesh* MonsterMeshAsset = MonsterInfo.MonsterMesh.LoadSynchronous(); // 동기 로딩 확인
 		if (MonsterMeshAsset)
 		{
+			//메시 설정
 			GetMesh()->SetSkeletalMesh(MonsterMeshAsset);
-			UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s] 메시 설정 완료: %s"), 
-				*GetName(), *MonsterMeshAsset->GetName());
+			//보이게 설정
+			GetMesh()->SetVisibility(true);
+			GetMesh()->SetHiddenInGame(false);
+
+			UE_LOG(LogTemp, Log, TEXT("몬스터 [%s] 메시 설정 완료: %s"), *GetName(), *MonsterMeshAsset->GetName());
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s] 메시 로드 실패: %s"), 
-				*GetName(), *MonsterInfo.MonsterMesh.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s] 메시 로드 실패: %s"), *GetName(), *MonsterInfo.MonsterMesh.ToString());
+			GetMesh()->SetSkeletalMesh(nullptr); // 로드 실패 시 명시적으로 nullptr 설정
 		}
+	}
+	else
+	{
+		 UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s] 데이터에 유효한 메시 경로가 없습니다."), *GetName());
+		 GetMesh()->SetSkeletalMesh(nullptr);
 	}
 	
 	// 애니메이션 설정
@@ -101,7 +110,7 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 		}
 		
 		// 컨트롤러 초기화 함수 호출
-		//AIController->InitializeAI();
+		AIController->InitializeAI();
 	}
 	else
 	{
@@ -145,7 +154,7 @@ void ADiaMonster::ActivateAI()
 		AIController->SetActorTickEnabled(true);
 		
 		// AI 컨트롤러 초기화
-		//AIController->InitializeAI();
+		AIController->InitializeAI();
 		
 		UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s]의 AI 활성화됨"), *GetName());
 	}

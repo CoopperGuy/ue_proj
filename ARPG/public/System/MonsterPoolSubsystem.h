@@ -114,4 +114,5 @@ private:
 
 	FTimerHandle CleanupTimerHandle;
 	float CleanupInterval = 300.0f;
+	const FVector InactiveLocation = FVector(0, 0, -10000); // 비활성화된 몬스터 위치
 };

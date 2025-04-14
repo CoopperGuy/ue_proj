@@ -3,8 +3,12 @@
 
 #include "GameMode/DungeonGameMode.h"
 #include "Character/DiaCharacter.h"
+
 #include "UI/HUDWidget.h"
 #include "Blueprint/UserWidget.h"
+
+#include "System/MapInfoSubsystem.h"
+
 #include "Kismet/GameplayStatics.h"
 
 ADungeonGameMode::ADungeonGameMode()
@@ -24,6 +28,7 @@ void ADungeonGameMode::BeginPlay()
 {
     Super::BeginPlay();
     
+
     // HUD 위젯 생성 및 표시
     if (HUDWidgetClass)
     {
@@ -36,6 +41,16 @@ void ADungeonGameMode::BeginPlay()
                 HUDWidgetInstance->AddToViewport();
             }
         }
+    }
+
+	//subsystem 초기화
+    UGameInstance* GI = GetGameInstance();
+    if (!GI) return;
+    UMapInfoSubsystem* MapInfo = GI->GetSubsystem<UMapInfoSubsystem>();
+
+    if (IsValid(MapInfo))
+    {
+        MapInfo->CreateMapSpawnData();
     }
 }
 

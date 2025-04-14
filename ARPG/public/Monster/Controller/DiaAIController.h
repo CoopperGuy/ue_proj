@@ -58,7 +58,7 @@ public:
 
     void InitBehaviorTree(UBehaviorTree* _behaiviortree);
     void InitBlackBoardData(APawn* InPawn, UBlackboardData* blackboardData);
-
+    void InitializeAI();
 protected:
     virtual void BeginPlay() override;
     virtual void OnPossess(APawn* InPawn) override;

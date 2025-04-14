@@ -31,6 +31,8 @@ public:
     void DespawnMonster(ADiaMonster* Monster);
 
 	const TMap<FName, FMonsterInfo>& GetMonsterCache() const { return MonsterCache; }
+	//정보 가져오기
+	const FMonsterInfo* GetMonsterInfo(FName MonsterID) const;
 private:
 	UPROPERTY()
     UDataTable* MonDataTable;

@@ -60,6 +60,19 @@ void ADiaAIController::InitBlackBoardData(APawn* InPawn, UBlackboardData* _black
 	}
 }
 
+void ADiaAIController::InitializeAI()
+{
+	SetActorTickEnabled(true);
+	UBehaviorTreeComponent* BehaviorTreeComp = FindComponentByClass<UBehaviorTreeComponent>();
+
+	if (IsValid(BehaviorTreeComp) && IsValid(behaviorTree))
+	{
+		BehaviorTreeComp->StartTree(*behaviorTree, EBTExecutionMode::Looped);
+	}
+
+	UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s]의 AI 활성화"), *GetName());
+}
+
 void ADiaAIController::UpdateCombatState()
 {
 	// 소유한 몬스터 가져오기

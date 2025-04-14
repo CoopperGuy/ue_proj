@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Skill/DiaSkillManager.h"
+#include "Types/DiaMonsterTable.h"
 #include "DiaCombatComponent.generated.h"
 
 
@@ -29,6 +30,23 @@ struct ARPG_API FCharacterData
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     float MaxMana = 100.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Exp = 100.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float MaxExp = 100.f;
+
+	FCharacterData& operator=(const FMonsterInfo& Other)
+	{
+		Health = Other.MaxHP;
+		MaxHealth = Other.MaxHP;
+		Mana = Other.MaxMP;
+		MaxMana = Other.MaxMP;
+        MaxExp = Other.Exp;
+        Exp = 0;
+		return *this;
+	}
 };
 
 USTRUCT(BlueprintType)
@@ -44,6 +62,19 @@ struct ARPG_API FCombatStats
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     float AttackRange = 200.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Defencse = 100.f;
+
+    FCombatStats& operator=(const FMonsterInfo& Other)
+    {
+        AttackPower = Other.Attack;
+        AttackSpeed = Other.AttackSpeed;
+        AttackRange = Other.AttackRange;
+        Defencse = Other.Defense;
+        return *this;
+    }
+
 };
 
 // 전투 상태 열거형
@@ -90,6 +121,9 @@ public:
     //어그로 관리
     void AddThreatToActor(AActor* Actor, float ThreatAmount);
     void ClearAllThreats();
+
+    //FMonsterInfo를 이용한 몬스터 초기화
+	void InitializeFromData(const FMonsterInfo& MonsterInfo);
 protected:
     // 엔진 기본 함수
 	virtual void BeginPlay() override;

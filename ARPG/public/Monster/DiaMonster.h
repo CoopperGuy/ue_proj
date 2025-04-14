@@ -41,7 +41,7 @@ public:
     void ActivateAI();
     void DeactivateAI();
     void ResetMonster();
-
+    
 protected:
 	/// <summary>
 	/// 엔진 기본 기능 
@@ -57,6 +57,9 @@ protected:
 public:	
 
 protected:
+    UPROPERTY()
+    FName MonsterID;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
 	UNiagaraSystem* hitEffect;
 

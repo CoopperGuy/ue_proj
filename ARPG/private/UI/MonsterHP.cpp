@@ -8,13 +8,13 @@ void UMonsterHP::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // ±âº» ÆÄ¶ó¹ÌÅÍ ÀÌ¸§ ¼³Á¤
+    // ï¿½âº» ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½ ï¿½ï¿½ï¿½ï¿½
     if (percentageParamName.IsNone())
     {
         percentageParamName = FName("Percentage");
     }
 
-    // HP ¿Àºê ¸ÓÆ¼¸®¾ó ÃÊ±âÈ­
+    // HP ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½ ï¿½Ê±ï¿½È­
     if (IsValid(HPGauge) /*&& IsValid(OrbImage->GetBrushResource())*/)
     {
         UMaterialInterface* baseMaterial = Cast<UMaterialInterface>(HPGauge->GetBrush().GetResourceObject());
@@ -31,10 +31,10 @@ void UMonsterHP::NativeConstruct()
 
 void UMonsterHP::UpdatePercentage(float percentage)
 {
-    // °ª ¹üÀ§ Á¦ÇÑ
+    // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     float clampedValue = FMath::Clamp(percentage, 0.0f, 1.0f);
 
-    // ¸ÓÆ¼¸®¾ó ÆÄ¶ó¹ÌÅÍ ¾÷µ¥ÀÌÆ®
+    // ï¿½ï¿½Æ¼ï¿½ï¿½ï¿½ï¿½ ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
     if (IsValid(HPMaterial))
     {
         HPMaterial->SetScalarParameterValue(percentageParamName, clampedValue);
