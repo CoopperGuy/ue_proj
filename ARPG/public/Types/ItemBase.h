@@ -75,6 +75,9 @@ struct ARPG_API FItemBase : public FTableRowBase
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FSoftObjectPath IconPath;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TSoftObjectPtr<UStaticMesh> ItemMesh;
 };
 
 

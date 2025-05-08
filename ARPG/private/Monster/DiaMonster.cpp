@@ -4,6 +4,7 @@
 #include "Monster/DiaMonster.h"
 #include "Components/CapsuleComponent.h"
 #include "Monster/Controller/DiaAIController.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 #include "GameMode/DungeonGameMode.h"
 
@@ -49,31 +50,39 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 		CombatComponent->InitializeFromData(MonsterInfo);
 	}
 		
+	// 메시 설정 전에 먼저 컴포넌트 활성화
+	USkeletalMeshComponent* MeshComp = GetMesh();
+	if (MeshComp)
+	{
+		// 메시 컴포넌트 초기 설정
+		MeshComp->SetVisibility(true);
+		MeshComp->SetHiddenInGame(false);
+		MeshComp->SetActive(true);
+	}
+	
 	// 외형 설정 (메시)
 	if (MonsterInfo.MonsterMesh.IsValid())
 	{
 		UE_LOG(LogTemp, Log, TEXT("몬스터 [%s] 메시 로드 시도: %s"), *GetName(), *MonsterInfo.MonsterMesh.ToString());
-		USkeletalMesh* MonsterMeshAsset = MonsterInfo.MonsterMesh.LoadSynchronous(); // 동기 로딩 확인
+		USkeletalMesh* MonsterMeshAsset = MonsterInfo.MonsterMesh.LoadSynchronous();
 		if (MonsterMeshAsset)
 		{
-			//메시 설정
-			GetMesh()->SetSkeletalMesh(MonsterMeshAsset);
-			//보이게 설정
-			GetMesh()->SetVisibility(true);
-			GetMesh()->SetHiddenInGame(false);
-
+			// 메시 설정
+			MeshComp->SetSkeletalMesh(MonsterMeshAsset);
+			
+			// 중요: 메시 설정 후 강제 업데이트
+			MeshComp->RecreateRenderState_Concurrent();
+			
 			UE_LOG(LogTemp, Log, TEXT("몬스터 [%s] 메시 설정 완료: %s"), *GetName(), *MonsterMeshAsset->GetName());
 		}
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s] 메시 로드 실패: %s"), *GetName(), *MonsterInfo.MonsterMesh.ToString());
-			GetMesh()->SetSkeletalMesh(nullptr); // 로드 실패 시 명시적으로 nullptr 설정
 		}
 	}
 	else
 	{
-		 UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s] 데이터에 유효한 메시 경로가 없습니다."), *GetName());
-		 GetMesh()->SetSkeletalMesh(nullptr);
+		UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s] 데이터에 유효한 메시 경로가 없습니다."), *GetName());
 	}
 	
 	// 애니메이션 설정
@@ -119,6 +128,16 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 	
 	// 기본 AI 활성화
 	ActivateAI();
+
+	RegisterAllComponents();
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Block);
+
+	SetActorEnableCollision(true);
+
+	GetCharacterMovement()->Velocity = FVector::ZeroVector;
+
 }
 
 // AI 비활성화 함수 구현
@@ -186,8 +205,9 @@ void ADiaMonster::ResetMonster()
 	}
 	
 	// 캡슐 콜리전 활성화
-	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
+
 	UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s] 상태 리셋 완료"), *GetName());
 }
 
@@ -282,4 +302,10 @@ void ADiaMonster::PlayDieAnimation()
 void ADiaMonster::Die()
 {
 	Super::Die();
+}
+
+// SetGravity 메서드 추가
+void ADiaMonster::SetGravity(bool bEnableGravity)
+{
+	Super::SetGravity(bEnableGravity);
 }

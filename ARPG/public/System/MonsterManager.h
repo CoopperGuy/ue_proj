@@ -27,7 +27,7 @@ public:
 	void LoadMonsterData();
 
 	// 몬스터 풀링
-	ADiaMonster* SpawnMonster(UWorld* World, FName MonsterID, FVector Location);
+	ADiaMonster* SpawnMonster(UWorld* World, FName MonsterID, const FVector& Location);
     void DespawnMonster(ADiaMonster* Monster);
 
 	const TMap<FName, FMonsterInfo>& GetMonsterCache() const { return MonsterCache; }

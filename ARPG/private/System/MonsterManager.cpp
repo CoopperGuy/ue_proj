@@ -43,7 +43,7 @@ void UMonsterManager::LoadMonsterData()
 #endif
 }
 
-ADiaMonster* UMonsterManager::SpawnMonster(UWorld* World, FName MonsterID, FVector Location)
+ADiaMonster* UMonsterManager::SpawnMonster(UWorld* World, FName MonsterID, const FVector& Location)
 {
     // WorldSubsystem에서 풀 가져오기
     UMonsterPoolSubsystem* PoolSystem = World->GetSubsystem<UMonsterPoolSubsystem>();

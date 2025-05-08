@@ -202,7 +202,7 @@ void ADiaBaseCharacter::SetGravity(bool bEnableGravityAndCollision)
 		Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		// 만약 오버랩 이벤트나 라인 트레이스는 감지해야 한다면 QueryOnly 사용
 		// Capsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		// Capsule->SetCollisionResponseToAllChannels(ECR_Overlap); // QueryOnly 사용 시 모든 채널 오버랩으로 설정 가능
+		 Capsule->SetCollisionResponseToAllChannels(ECR_Overlap); // QueryOnly 사용 시 모든 채널 오버랩으로 설정 가능
 	}
 }
 
