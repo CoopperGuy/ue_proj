@@ -16,21 +16,21 @@ class ARPG_API UMonsterHP : public UUserWidget
 	GENERATED_BODY()
 	
 public:
-    // ÃÊ±âÈ­ ÇÔ¼ö
+    // ï¿½Ê±ï¿½È­ ï¿½Ô¼ï¿½
     virtual void NativeConstruct() override;
     
-    // HP °ª ¾÷µ¥ÀÌÆ® (0.0 ~ 1.0 »çÀÌ °ª)
+    // HP ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® (0.0 ~ 1.0 ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½)
     UFUNCTION(Category = "Status")
     void UpdatePercentage(float percentage);
 protected:
-    // À§Á¬ ºí·çÇÁ¸°Æ®¿¡¼­ ¹ÙÀÎµùÇÒ ÀÌ¹ÌÁö ÄÄÆ÷³ÍÆ®
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Îµï¿½ï¿½ï¿½ ï¿½Ì¹ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®
     UPROPERTY(meta = (BindWidget))
     UImage* HPGauge;
 
 	UPROPERTY()
     UMaterialInstanceDynamic* HPMaterial;
 
-        // ÆÛ¼¾Æ¼Áö ÆÄ¶ó¹ÌÅÍ ÀÌ¸§
+        // ï¿½Û¼ï¿½Æ¼ï¿½ï¿½ ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ ï¿½Ì¸ï¿½
     UPROPERTY(EditDefaultsOnly, Category = "Material Parameters")
     FName percentageParamName;
 	

@@ -65,6 +65,12 @@ protected:
     /// 전투 관련 함수
 	/// </summary>
     virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	/// <summary>
+	/// 아이템 생성
+	/// 몬스터 정보 혹은 맵 정보에 등록된 아이템을 생성
+	/// </summary>
+	virtual void DropItem();
 public:	
 
 protected:

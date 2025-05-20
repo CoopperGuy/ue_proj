@@ -9,6 +9,7 @@
 
 class UStaticMeshComponent;
 class UTexture2D;
+class UWidgetComponent;
 UCLASS()
 class ARPG_API ADiaItem : public AActor
 {
@@ -22,11 +23,18 @@ public:
 	void DropItem();
 
 	//테스트용 블루프린트 함수 설정
-	UFUNCTION(BlueprintPure, Category = "Item")
+	UFUNCTION(BlueprintCallable, Category = "Item")
 	void RollingItem();
+	
+	UFUNCTION()
+	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	void LoadItemNameAsync();
+
+	void BindItemName(TSoftClassPtr<UUserWidget>& WidgetAssetPtr);
 
 public:	
 	// Called every frame
@@ -34,11 +42,18 @@ public:
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
-	FItemBase ItemData;
+	FInventoryItem InventoryItem;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* ItemMeshComp;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 	UTexture2D* ItemIcon;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	UWidgetComponent* ItemWidgetComp;
+
+private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
+	float RollingSpeed = 1000.0f;
 };

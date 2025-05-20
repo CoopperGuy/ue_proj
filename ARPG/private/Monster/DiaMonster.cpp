@@ -7,6 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 
 #include "GameMode/DungeonGameMode.h"
+#include "System/ItemSubsystem.h"
 
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
@@ -271,6 +272,24 @@ float ADiaMonster::TakeDamage(float DamageAmount, const FDamageEvent& DamageEven
 	return ActualDamage;
 }
 
+void ADiaMonster::DropItem()
+{
+	// 몬스터가 죽었을 때 아이템 드랍 로직 구현
+	// 예시: 아이템 생성 및 월드에 스폰
+	ADungeonGameMode* DungeonGameMode = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());
+	if (DungeonGameMode)
+	{
+		// 아이템 데이터 생성
+		UItemSubsystem* ItemSubsystem = GetGameInstance()->GetSubsystem<UItemSubsystem>();
+		const FItemBase& ItemBaseData = ItemSubsystem->GetItemData("Potion_Health_S");
+		DungeonGameMode->SpawnItemAtLocation(this, ItemBaseData);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s] 아이템 드랍 실패: 던전 게임 모드가 유효하지 않음"), *GetName());
+	}
+}
+
 void ADiaMonster::UpdateHPGauge(float CurHealth, float MaxHelath)
 {
     ADungeonGameMode* DungeonGameMode = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());
@@ -302,6 +321,18 @@ void ADiaMonster::PlayDieAnimation()
 void ADiaMonster::Die()
 {
 	Super::Die();
+
+	DropItem();
+
+	ADungeonGameMode* DungeonGameMode = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());
+	if (IsValid(DungeonGameMode))
+	{
+		UHUDWidget* HUD = DungeonGameMode->GetHUDWidget();
+		if (IsValid(HUD))
+		{
+			HUD->SetMonsterHPVisibility(ESlateVisibility::Collapsed);
+		}
+	}
 }
 
 // SetGravity 메서드 추가

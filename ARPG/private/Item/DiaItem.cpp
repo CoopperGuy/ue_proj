@@ -4,6 +4,10 @@
 #include "Item/DiaItem.h"
 #include "Engine/Texture2D.h"
 #include "Math/UnrealMathUtility.h"
+
+#include "UI/Item/ItemName.h"
+
+#include "Components/WidgetComponent.h"
 #include "Components/StaticMeshComponent.h"
 
 
@@ -15,14 +19,46 @@ ADiaItem::ADiaItem()
 
 	ItemMeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ItemMesh"));
 	SetRootComponent(ItemMeshComp);
+
+	// 새로 만든 Item 프로필 사용
+
+	ItemMeshComp->SetCollisionObjectType(ECollisionChannel::ECC_EngineTraceChannel1);
+	ItemMeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	ItemMeshComp->SetCollisionProfileName(TEXT("Item"));
+	
+	ItemMeshComp->SetNotifyRigidBodyCollision(true);
+	ItemMeshComp->OnComponentHit.AddDynamic(this, &ADiaItem::OnHit);
+
+	ItemWidgetComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("ItemWidget"));
+	ItemWidgetComp->SetupAttachment(ItemMeshComp);
+	ItemWidgetComp->SetWidgetSpace(EWidgetSpace::Screen);
+	ItemWidgetComp->SetDrawSize(FVector2D(150, 30));
+	ItemWidgetComp->SetRelativeLocation(FVector(0.f, 0.f, 100.f)); 
+	ItemWidgetComp->SetVisibility(false);
+	ItemWidgetComp->SetTwoSided(true);
+
+}
+
+void ADiaItem::BeginPlay()
+{
+	Super::BeginPlay();
+
+}
+
+void ADiaItem::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
 }
 
 void ADiaItem::SetItemProperty(const FItemBase& _ItemData)
 {
-	ItemData = _ItemData;
+	InventoryItem = FInventoryItem::FromBase(_ItemData);
 
 	//아이템 스태틱 매시 로딩
-	UStaticMesh* ItemAsset = ItemData.ItemMesh.LoadSynchronous();
+	//현재 아이템 스태틱 매시 첫 로딩 이후 아이템 메시가 보이지 않는 현상 존재
+	//두번째 생성 시에 보임
+	//수정 필요하다.
+	UStaticMesh* ItemAsset = _ItemData.ItemMesh.LoadSynchronous();
 	if (ItemAsset)
 	{
 		// 메시 설정
@@ -30,32 +66,37 @@ void ADiaItem::SetItemProperty(const FItemBase& _ItemData)
 
 		// 중요: 메시 설정 후 강제 업데이트
 		ItemMeshComp->RecreateRenderState_Concurrent();
+		UE_LOG(LogTemp, Warning, TEXT("아이템 [%s] 메시 로드 성공: %s"), *GetName(), *_ItemData.ItemMesh.ToString());
+
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("아이템 [%s] 메시 로드 실패: %s"), *GetName(), *ItemData.ItemMesh.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("아이템 [%s] 메시 로드 실패: %s"), *GetName(), *_ItemData.ItemMesh.ToString());
 	}
 	
 	//아이템 아이콘 및 기타 등등 변경
-	if (ItemData.IconPath.IsValid())
+	if (_ItemData.IconPath.IsValid())
 	{
-		UObject* LoadedObj = ItemData.IconPath.TryLoad();
+		UObject* LoadedObj = _ItemData.IconPath.TryLoad();
 		UTexture2D* Texture = Cast<UTexture2D>(LoadedObj);
 		if (IsValid(Texture))
 		{
 			ItemIcon = Texture;
+			UE_LOG(LogTemp, Warning,
+				TEXT("아이템 [%s] 아이콘 로드 성공: %s"), *GetName(), *_ItemData.IconPath.ToString());
 		}
 		else
 		{
 			UE_LOG(LogTemp, Warning, 
-				TEXT("아이템 [%s] 아이콘 로드 실패: %s"), *GetName(), *ItemData.IconPath.ToString());
+				TEXT("아이템 [%s] 아이콘 로드 실패: %s"), *GetName(), *_ItemData.IconPath.ToString());
 		}
 	}
 }
 
 void ADiaItem::DropItem()
 {
-
+	RollingItem();
+	LoadItemNameAsync();
 }
 
 void ADiaItem::RollingItem()
@@ -63,25 +104,66 @@ void ADiaItem::RollingItem()
 	ItemMeshComp->SetSimulatePhysics(true);
 	ItemMeshComp->SetEnableGravity(true);
 
-	FVector Impulse = FVector(FMath::FRandRange(-100.f, 100.f), FMath::FRandRange(-100.f, 100.f), 400.0f);
+	FVector Impulse = FVector(
+		FMath::FRandRange(-100.f, 100.f), 
+		FMath::FRandRange(-100.f, 100.f), 
+		RollingSpeed);
 	ItemMeshComp->AddImpulse(Impulse, NAME_None, true);
 
-	FVector Angular = FVector(FMath::FRandRange(200.f, 400.f), FMath::FRandRange(200.f, 400.f), FMath::FRandRange(200.f, 400.f));
+	FVector Angular = FVector(
+		FMath::FRandRange(200.f, 400.f), 
+		FMath::FRandRange(200.f, 400.f), 
+		FMath::FRandRange(200.f, 400.f));
+
 	ItemMeshComp->SetPhysicsAngularVelocityInDegrees(Angular, true);
 
 }
 
-// Called when the game starts or when spawned
-void ADiaItem::BeginPlay()
+
+void ADiaItem::LoadItemNameAsync()
 {
-	Super::BeginPlay();
-	
+	// 비동기 방식으로 위젯 로드
+	TSoftClassPtr<UUserWidget> WidgetAssetPtr;
+	WidgetAssetPtr = TSoftClassPtr<UUserWidget>(FSoftObjectPath(TEXT("/Game/UI/WorldWidget/WBP_ItemName3D.WBP_ItemName3D_C")));
+
+	if (WidgetAssetPtr.IsValid())
+	{
+		BindItemName(WidgetAssetPtr);
+	}
+	else
+	{
+		// 비동기 로드 시작
+		WidgetAssetPtr.LoadSynchronous();
+
+		if (WidgetAssetPtr.Get())
+		{
+			BindItemName(WidgetAssetPtr);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("아이템 위젯 클래스 비동기 로드 실패"));
+		}
+	}
 }
 
-// Called every frame
-void ADiaItem::Tick(float DeltaTime)
+void ADiaItem::BindItemName(TSoftClassPtr<UUserWidget>& WidgetAssetPtr)
 {
-	Super::Tick(DeltaTime);
-
+	ItemWidgetComp->SetWidgetClass(WidgetAssetPtr.Get());
+	UItemName* NameWidget = Cast<UItemName>(ItemWidgetComp->GetWidget());
+	if (IsValid(NameWidget))
+	{
+		NameWidget->SetItemName(FText::FromName(InventoryItem.ItemID));
+		ItemWidgetComp->SetVisibility(true);
+	}
+	UE_LOG(LogTemp, Warning, TEXT("아이템 위젯 클래스 비동기 로드 성공"));
 }
+
+void ADiaItem::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+	if (OtherActor)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Hit with: %s"), *OtherActor->GetName());
+	}
+}
+
 
