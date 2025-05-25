@@ -14,7 +14,8 @@ void UItemWidget::SetItemInfo(const FInventoryItem& ItemData)
 	ItemInfo = ItemData;
 	if (ItemIcon)
 	{
-		//UTexture2D* Icon = ItemInfo.GetIcon();
+		ItemIcon->SetColorAndOpacity(FLinearColor::MakeRandomColor());
+			//UTexture2D* Icon = ItemInfo.GetIcon();
 		//if (Icon)
 		//{
 		//	ItemIcon->SetBrushFromTexture(Icon);

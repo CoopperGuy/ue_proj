@@ -10,6 +10,7 @@
 #include "Components/WidgetComponent.h"
 #include "Components/StaticMeshComponent.h"
 
+#include "Controller/DiaController.h"
 
 // Sets default values
 ADiaItem::ADiaItem()
@@ -43,6 +44,7 @@ void ADiaItem::BeginPlay()
 {
 	Super::BeginPlay();
 
+	LoadItemNameAsync();
 }
 
 void ADiaItem::Tick(float DeltaTime)
@@ -96,7 +98,7 @@ void ADiaItem::SetItemProperty(const FItemBase& _ItemData)
 void ADiaItem::DropItem()
 {
 	RollingItem();
-	LoadItemNameAsync();
+	SetItemName(FText::FromName(InventoryItem.ItemID));
 }
 
 void ADiaItem::RollingItem()
@@ -149,13 +151,27 @@ void ADiaItem::LoadItemNameAsync()
 void ADiaItem::BindItemName(TSoftClassPtr<UUserWidget>& WidgetAssetPtr)
 {
 	ItemWidgetComp->SetWidgetClass(WidgetAssetPtr.Get());
-	UItemName* NameWidget = Cast<UItemName>(ItemWidgetComp->GetWidget());
+	ItemWidgetComp->SetVisibility(false);
+
+	UItemName* NameWidget = Cast<UItemName>(ItemWidgetComp->GetUserWidgetObject());
+	if (IsValid(NameWidget))
+	{
+		NameWidget->SetVisibility(ESlateVisibility::Collapsed);
+		NameWidget->OnItemNameClicked.AddDynamic(this, &ADiaItem::OnItemNameClicked);
+	}
+	UE_LOG(LogTemp, Warning, TEXT("아이템 위젯 클래스 비동기 로드 성공"));
+}
+
+void ADiaItem::SetItemName(const FText& NewName)
+{
+	UItemName* NameWidget = Cast<UItemName>(ItemWidgetComp->GetUserWidgetObject());
 	if (IsValid(NameWidget))
 	{
 		NameWidget->SetItemName(FText::FromName(InventoryItem.ItemID));
+		NameWidget->SetVisibility(ESlateVisibility::Visible);
+
 		ItemWidgetComp->SetVisibility(true);
 	}
-	UE_LOG(LogTemp, Warning, TEXT("아이템 위젯 클래스 비동기 로드 성공"));
 }
 
 void ADiaItem::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -166,4 +182,72 @@ void ADiaItem::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPri
 	}
 }
 
+void ADiaItem::OnItemNameClicked()
+{
+	// 아이템을 줍는 로직 구현
+	// 컨트롤러를 직접 불러와서 넣는다.
+	// 이래도 되나...
+		UE_LOG(LogTemp, Log, TEXT("아이템 클릭됨: %s"), *InventoryItem.ItemID.ToString());
+	
+	// DiaItem에서 가장 적절한 플레이어 찾기
+	ADiaController* TargetController = FindBestPlayerForPickup();
+	
+	if (TargetController)
+	{
+		bool bSuccess = TargetController->ItemAddedToInventory(InventoryItem);
+		if (bSuccess)
+		{
+			UE_LOG(LogTemp, Log, TEXT("아이템이 %s의 인벤토리에 추가됨"), 
+				*TargetController->GetName());
+			
+			// 아이템 제거
+			if (IsValid(ItemWidgetComp))
+			{
+				ItemWidgetComp->SetVisibility(false);
+			}
+			Destroy();
+		}
+	}
+	
+	SetActorHiddenInGame(true);
+	SetActorEnableCollision(false);
+	SetActorTickEnabled(false);
+	ItemWidgetComp->SetVisibility(false);
+}
 
+ADiaController* ADiaItem::FindBestPlayerForPickup()
+{
+	UWorld* World = GetWorld();
+	if (!World) return nullptr;
+	
+	ADiaController* BestController = nullptr;
+	float ClosestDistance = MAX_FLT;
+	const float MaxPickupDistance = 500.0f; // 픽업 가능 거리
+	
+	// 모든 플레이어 컨트롤러 검사
+	for (FConstPlayerControllerIterator Iterator = World->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	{
+		if (ADiaController* DiaController = Cast<ADiaController>(Iterator->Get()))
+		{
+			APawn* Player = DiaController->GetPawn();
+			if (Player)
+			{
+				float Distance = FVector::Dist(GetActorLocation(), Player->GetActorLocation());
+				
+				// 픽업 가능 거리 내에서 가장 가까운 플레이어
+				if (Distance <= MaxPickupDistance && Distance < ClosestDistance)
+				{
+					ClosestDistance = Distance;
+					BestController = DiaController;
+				}
+			}
+		}
+	}
+	
+	if (!BestController)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("픽업 가능한 거리에 플레이어가 없습니다 (최대 거리: %.1f)"), MaxPickupDistance);
+	}
+	
+	return BestController;
+}

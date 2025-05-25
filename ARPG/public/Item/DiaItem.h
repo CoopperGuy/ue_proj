@@ -10,6 +10,7 @@
 class UStaticMeshComponent;
 class UTexture2D;
 class UWidgetComponent;
+class ADiaController;
 UCLASS()
 class ARPG_API ADiaItem : public AActor
 {
@@ -27,7 +28,11 @@ public:
 	void RollingItem();
 	
 	UFUNCTION()
-	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	void OnHit(UPrimitiveComponent* HitComponent, 
+		AActor* OtherActor, UPrimitiveComponent* OtherComp, 
+		FVector NormalImpulse, const FHitResult& Hit);
+	UFUNCTION()
+	void OnItemNameClicked();
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -35,7 +40,9 @@ protected:
 	void LoadItemNameAsync();
 
 	void BindItemName(TSoftClassPtr<UUserWidget>& WidgetAssetPtr);
-
+	void SetItemName(const FText& NewName);
+private:
+	ADiaController* FindBestPlayerForPickup();
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

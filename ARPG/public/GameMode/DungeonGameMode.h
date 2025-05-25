@@ -22,11 +22,9 @@ public:
 
 	void SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData);
 protected:
-    // HUD ���� Ŭ����
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UHUDWidget> HUDWidgetClass;
     
-    // HUD ���� �ν��Ͻ�
     UPROPERTY()
     UHUDWidget* HUDWidgetInstance;
 public:

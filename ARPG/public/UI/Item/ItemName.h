@@ -4,8 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Types/ItemBase.h"
 #include "ItemName.generated.h"
 
+// 수정 후 (올바름)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnItemNameClicked);
 class UTextBlock;
 class URichTextBlock;
 /**
@@ -18,10 +21,19 @@ class ARPG_API UItemName : public UUserWidget
 	
 public:
 	virtual void NativeConstruct() override;
-	FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent);
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 
 	void SetItemName(const FText& NewName);
+public:
+	UPROPERTY()
+	FOnItemNameClicked OnItemNameClicked;
 protected:
 	UPROPERTY(meta = (BindWidget))
 	URichTextBlock* ItemNameText;
+
+	FText ItemName;
+
+
 };

@@ -5,6 +5,9 @@
 #include "Components/TextBlock.h"
 #include "Components/RichTextBlock.h"
 
+#include "Controller/DiaController.h"
+#include "Character/DiaCharacter.h"
+
 void UItemName::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -12,17 +15,42 @@ void UItemName::NativeConstruct()
 
 FReply UItemName::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
+	Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+
+	OnItemNameClicked.Broadcast();
 	UE_LOG(LogTemp, Warning, TEXT("Widget clicked!"));
 	return FReply::Handled();
 }
 
-void UItemName::SetItemName(const FText& NewName)
+void UItemName::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	FText StyleNewName = FText::Format(FText::FromString("<ItemName>{0}</ItemName>"), NewName);
+	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
+	FText StyleNewName = FText::Format(FText::FromString("{0}"), ItemName);
 
 	if (IsValid(ItemNameText))
 	{
 		ItemNameText->SetText(StyleNewName);
 	}
+}
 
+void UItemName::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseLeave(InMouseEvent);
+	FText StyleNewName = FText::Format(FText::FromString("<ItemName>{0}</ItemName>"), ItemName);
+
+	if (IsValid(ItemNameText))
+	{
+		ItemNameText->SetText(StyleNewName);
+	}
+}
+
+void UItemName::SetItemName(const FText& NewName)
+{
+	ItemName = NewName;
+	FText StyleNewName = FText::Format(FText::FromString("<ItemName>{0}</ItemName>"), ItemName);
+
+	if (IsValid(ItemNameText))
+	{
+		ItemNameText->SetText(StyleNewName);
+	}
 }
