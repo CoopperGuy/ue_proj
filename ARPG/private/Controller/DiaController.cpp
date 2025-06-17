@@ -4,6 +4,7 @@
 #include "Controller/DiaController.h"
 #include "DiaComponent/UI/DiaInventoryComponent.h"
 #include "UI/HUDWidget.h"
+#include "UI/Inventory/MainInventory.h"
 #include "GameMode/DungeonGameMode.h"
 
 ADiaController::ADiaController()
@@ -32,7 +33,7 @@ void ADiaController::SetupInputComponent()
 	Super::SetupInputComponent();
 }
 
-UHUDWidget* ADiaController::GetHUDWidget()
+UHUDWidget* ADiaController::GetHUDWidget() const
 {
 	// 캐시된 HUDWidget이 유효하면 그대로 반환
 	if (CachedHUDWidget.IsValid())
@@ -131,4 +132,42 @@ void ADiaController::ItemRemoved(const FInventoryItem& Item)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Failed to remove item from inventory: %s"), *Item.ItemID.ToString());
 	}
+}
+
+void ADiaController::ToggleInventoryVisibility(bool bVisible)
+{
+	UHUDWidget* HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		return;
+	}
+
+	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
+	if (!InventoryWidget)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("InventoryWidget is null"));
+		return;
+	}
+
+	InventoryWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+ESlateVisibility ADiaController::GetInventoryVisibility() const
+{
+	const UHUDWidget* const HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		return ESlateVisibility::Collapsed;
+	}
+
+	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
+	if (!InventoryWidget)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("InventoryWidget is null"));
+		return ESlateVisibility::Collapsed;
+	}
+
+	return InventoryWidget->GetVisibility();
 }

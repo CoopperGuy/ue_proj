@@ -7,6 +7,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
 
+#include "Controller/DiaController.h"
+
 #include "DiaComponent/DiaCombatComponent.h"
 #include "DiaInstance.h"
 #include "Skill/DiaSkillManager.h"
@@ -155,6 +157,12 @@ void ADiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
                 #endif
             }
         }
+
+        // 인벤토리 토글 바인딩
+        if (InventoryAction)
+        {
+            EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Triggered, this, &ADiaCharacter::ToggleInventory);
+        }
     }
 }
 
@@ -266,6 +274,19 @@ void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
         #if WITH_EDITOR || UE_BUILD_DEVELOPMENT
             UE_LOG(LogTemp, Warning, TEXT("유효하지 않은 스킬 인덱스: %d"), ActionIndex);
         #endif
+    }
+}
+
+void ADiaCharacter::ToggleInventory()
+{
+    if (ADiaController* PlayerController = Cast<ADiaController>(Controller))
+    {
+        ESlateVisibility eVisibility =  PlayerController->GetInventoryVisibility();
+		//보이는 상태면 false로 안보이게 끔, 아니면 true로 보이게끔
+#if WITH_EDITOR || UE_BUILD_DEVELOPMENT
+        UE_LOG(LogTemp, Warning, TEXT("인벤토리 토글"));
+#endif
+        PlayerController->ToggleInventoryVisibility(eVisibility == ESlateVisibility::Visible ? false : true);
     }
 }
 

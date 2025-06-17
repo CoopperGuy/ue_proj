@@ -23,16 +23,38 @@ public:
 	
 	// Add item to inventory
 	bool AddItemToInventory(const FInventoryItem& ItemData, int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);
+	// Remove item from inventory
+	bool RemoveItemFromInventory(int32 SlotIndex);
 	//슬롯이 비어있는지 판단한다
 	//해당 슬롯에 들어잇는 아이템의 row colum을 판단해야한다.
 	bool IsSlotEmpty(int32 SlotIndex) const;
+	
+	// 드래그 관련 함수들
+	void StartDraggingItem(int32 SlotIndex, UUserWidget* DragContainer);
+	void StopDraggingItem(int32 SlotIndex);
+	UItemWidget* GetItemWidgetBySlotIndex(FGuid guid) const;
+	
+	// 위치 기반 아이템 검색
+	UItemWidget* GetItemWidgetAtGridPosition(int32 GridX, int32 GridY) const;
+	
+	// 새로운 드래그 프록시 방식
+	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	virtual bool NativeOnDragOver(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	
+	// 그리드 좌표를 슬롯 인덱스로 변환
+	int32 GetSlotIndexFromPosition(const FVector2D& Position) const;
+	FVector2D GetGridPositionFromScreenPosition(const FVector2D& ScreenPosition) const;
+	
+	// 아이템 위치 업데이트
+	void UpdateItemPosition(UItemWidget* ItemWidget, int32 NewGridX, int32 NewGridY);
+
 protected:
 	void CreateInventory();
 	void ConfigInventorySlot(int32 SlotIndex, UCanvasPanelSlot* CanvasSlot);	
 
 protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	int32 szSlot= 42;
+	int32 szSlot= 40;
 
 	UPROPERTY(meta = (BindWidget))
 	UCanvasPanel* InventoryCanvas;
@@ -40,9 +62,11 @@ protected:
 	UPROPERTY()
 	TArray<UCanvasPanelSlot*> InventorySlots;
 	
+	UPROPERTY()
+	TMap<FGuid, UItemWidget*> ItemWidgets;
 public:
 	FORCEINLINE int32 GetInventorySize() const { return InventorySlots.Num(); }
 	FORCEINLINE UCanvasPanel* GetInventoryPanel() const { return InventoryCanvas; }	
-	FORCEINLINE UItemWidget* GetItemWidgetAt(int32 Index) const;
-	void GetAllItemWidgets(TArray<UItemWidget*>& OutItemWidgets) const;
+	FORCEINLINE UUserWidget* GetItemWidgetAt(int32 Index) const;
+	void GetAllItemWidgets(TArray<UUserWidget*>& OutItemWidgets) const;
 };

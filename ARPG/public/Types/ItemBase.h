@@ -185,6 +185,13 @@ struct ARPG_API FInventoryItem
 	int32 GridY = 0;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Grid")
+	int32 Width = 0;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Grid")
+	int32 Height = 0;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Grid")
 	int32 Level = 0;
 	
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Affixes")
@@ -205,6 +212,12 @@ struct ARPG_API FInventoryItem
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
 	TMap<EItemStat, float> Stats;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+	bool bIsStackable = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FSoftObjectPath IconPath;
+
 	FInventoryItem()
 		: InstanceID(FGuid::NewGuid())
 	{
@@ -218,6 +231,9 @@ struct ARPG_API FInventoryItem
 		Result.ItemID = BaseItem.ItemID;
 		Result.Quantity = InQuantity;
 		Result.bRandomStats = bRandomStats;
+		Result.Width = BaseItem.Width;
+		Result.Height = BaseItem.Height;
+		Result.IconPath = BaseItem.IconPath;
 		// 필요 시 기본 CustomDescription 등을 채워줄 수도 있음
 		return Result;
 	}

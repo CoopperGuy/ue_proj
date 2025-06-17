@@ -23,6 +23,10 @@ public:
 
 	bool ItemAddedToInventory(const FInventoryItem& Item);
 	void ItemRemoved(const FInventoryItem& Item);
+
+	void ToggleInventoryVisibility(bool bVisible);
+
+	ESlateVisibility GetInventoryVisibility() const;
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -31,9 +35,9 @@ protected:
 	UDiaInventoryComponent* DiaInventoryComponent;
 
 	UPROPERTY()
-	TWeakObjectPtr<UHUDWidget> CachedHUDWidget = nullptr;
+	mutable TWeakObjectPtr<UHUDWidget> CachedHUDWidget = nullptr;
 
 private:
 	// HUDWidget을 가져오는 헬퍼 함수 (최초 1회만 GameMode에서 가져옴)
-	UHUDWidget* GetHUDWidget();
+	UHUDWidget* GetHUDWidget() const;
 };

@@ -42,12 +42,12 @@ bool UDiaInventoryComponent::TryAddItem(const FInventoryItem& ItemData, UMainInv
 
 	InvenIdx = OutPosX * GridWidth + OutPosY;
 	//ui작업
-	bool res = InvenWidget->AddItemToInventory(ItemData, ItemData.GridX, ItemData.GridY, OutPosX, OutPosY);
+	bool res = InvenWidget->AddItemToInventory(ItemData, ItemData.Width, ItemData.Height, OutPosX, OutPosY);
 	//삽입에 성공하면, 여기서도 아이템이 삽입 되었다는 사실을 추가한다.
 	if (res)
 	{
 		Items.Add(ItemData);
-		FillGrid(ItemData.GridX, ItemData.GridY, OutPosX, OutPosY);
+		FillGrid(ItemData.Width, ItemData.Height, OutPosX, OutPosY);
 		
 		return true;
 	}
@@ -59,16 +59,16 @@ bool UDiaInventoryComponent::FindPlaceItem(const FInventoryItem& ItemData, int32
 {
 	//아이템이 들어갈 위치를 탐색한다.
 	//다 찾으면 treu 리턴 해야함.
-	for (int32 y = 0; y < GridHeight - ItemData.GridY; ++y)
+	for (int32 y = 0; y < GridHeight - ItemData.Height; ++y)
 	{
-		for (int32 x = 0; x < GridWidth - ItemData.GridX; ++x)
+		for (int32 x = 0; x < GridWidth - ItemData.Width; ++x)
 		{
 			//만약 아이템이 들어갈 수 있는 공간이라면 true
 			//체크 로직 좌상단의 좌표를 반환한다.
-			if (CanPlaceItemAt(ItemData.GridX, ItemData.GridY, y, x))
+			if (CanPlaceItemAt(ItemData.Width, ItemData.Height, y, x))
 			{
-				OutPosX = y;
-				OutPosY = x;
+				OutPosX = x;
+				OutPosY = y;
 				return true;
 			}
 		}
@@ -110,7 +110,7 @@ bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID, UMainInventory*
 	//	if (Items[i].InstanceID == InstanceID)
 	//	{
 	//		// 그리드에서 공간 비우기
-	//		ClearGrid(Items[i].GridX, Items[i].GridY, ItemWidth, ItemHeight);
+	//		ClearGrid(Items[i].Width, Items[i].Height, ItemWidth, ItemHeight);
 	//		Items.RemoveAt(i);
 	//		return true;
 	//	}

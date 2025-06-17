@@ -191,22 +191,21 @@ void ADiaItem::OnItemNameClicked()
 	
 	// DiaItem에서 가장 적절한 플레이어 찾기
 	ADiaController* TargetController = FindBestPlayerForPickup();
-	
-	if (TargetController)
+	if (!TargetController)
+		return;
+
+	bool bSuccess = TargetController->ItemAddedToInventory(InventoryItem);
+	if (bSuccess)
 	{
-		bool bSuccess = TargetController->ItemAddedToInventory(InventoryItem);
-		if (bSuccess)
+		UE_LOG(LogTemp, Log, TEXT("아이템이 %s의 인벤토리에 추가됨"),
+			*TargetController->GetName());
+
+		// 아이템 제거
+		if (IsValid(ItemWidgetComp))
 		{
-			UE_LOG(LogTemp, Log, TEXT("아이템이 %s의 인벤토리에 추가됨"), 
-				*TargetController->GetName());
-			
-			// 아이템 제거
-			if (IsValid(ItemWidgetComp))
-			{
-				ItemWidgetComp->SetVisibility(false);
-			}
-			Destroy();
+			ItemWidgetComp->SetVisibility(false);
 		}
+		Destroy();
 	}
 	
 	SetActorHiddenInGame(true);

@@ -56,6 +56,8 @@ protected:
     // 공격 입력 처리
     void UpdateCharacterRotation();
 
+    // 인벤토리 토글 함수
+	void ToggleInventory();
 
     /// <summary>
     /// 전투 관련 함수
@@ -78,6 +80,10 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input|Skills")
     TArray<UInputAction*> SkillActions;
 
+    // UI Input Action
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* InventoryAction;
+
     // Input Mapping Context
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
     UInputMappingContext* DefaultMappingContext;
@@ -99,4 +105,5 @@ protected:
     TArray<int32> SkillIDMapping;
 
     const int32 MaxSkillMapping = 8;
+
 };

@@ -37,10 +37,16 @@ void ADungeonGameMode::BeginPlay()
         APlayerController* playerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
         if (IsValid(playerController))
         {
-            HUDWidgetInstance = CreateWidget<UHUDWidget>(playerController, HUDWidgetClass);
+            HUDWidgetInstance = CreateWidget<UHUDWidget>(playerController, HUDWidgetClass);            
             if (IsValid(HUDWidgetInstance))
             {
                 HUDWidgetInstance->AddToViewport();
+                
+                // 인벤토리 위젯을 초기에 숨김 상태로 설정
+                if (UMainInventory* InventoryWidget = HUDWidgetInstance->GetInventoryWidget())
+                {
+                    InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
+                }
             }
         }
     }

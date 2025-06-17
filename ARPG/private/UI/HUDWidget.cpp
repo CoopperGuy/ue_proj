@@ -11,6 +11,7 @@ void UHUDWidget::NativeConstruct()
 	Super::NativeConstruct();
 
 	SetMonsterHPVisibility(ESlateVisibility::Collapsed);
+	InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UHUDWidget::UpdateOrbPercentage(OrbType _Type, float _Percentage)
