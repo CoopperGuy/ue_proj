@@ -88,22 +88,40 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	
 	// 자기 자신에게 드롭하는 경우 처리하지 않음
 	if (ItemDragOp->SourceWidget == this)
-		return false;
+	{
+		// 자기 자신에게 드롭하는 것은 유효하지 않지만, 드래그를 취소하지 않음
+		UE_LOG(LogTemp, Log, TEXT("ItemWidget::NativeOnDrop - Dropped on self - ignoring"));
+		return true; 
+	}
 	
 	// 부모 인벤토리 위젯 찾기
 	UMainInventory* ParentInventory = Cast<UMainInventory>(GetParent());
-	if (!ParentInventory)
+	if (!IsValid(ParentInventory))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Parent inventory not found"));
-		return false;
+		UE_LOG(LogTemp, Warning, TEXT("ItemWidget::NativeOnDrop - Parent inventory not found"));
+		return false; 
 	}
+
+	// 드롭 위치를 그리드 좌표로 변환
+	FVector2D LocalPosition = InGeometry.AbsoluteToLocal(InDragDropEvent.GetScreenSpacePosition());
+	
+	// 부모 인벤토리의 함수를 사용하여 그리드 좌표 계산
+	FVector2D GridPosition = ParentInventory->GetGridPositionFromScreenPosition(LocalPosition);
+	
+	int32 DropGridX = FMath::FloorToInt(GridPosition.X);
+	int32 DropGridY = FMath::FloorToInt(GridPosition.Y);
+	
+	UE_LOG(LogTemp, Log, TEXT("ItemWidget::NativeOnDrop - Item dropped at grid position: (%d, %d)"), DropGridX, DropGridY);
 
 	// 소스 아이템과 타겟 아이템 정보
 	UItemWidget* SourceWidget = Cast<UItemWidget>(ItemDragOp->SourceWidget);
-	if (!SourceWidget)
+	if (!IsValid(SourceWidget))
 	{
 		return false;
 	}
+
+	// 여기서 드롭된 좌표(DropGridX, DropGridY)를 사용하여 필요한 로직 수행
+	// 예: 아이템 교환, 위치 변경 등
 
 	//FInventoryItem SourceItem = ItemDragOp->ItemData;
 	//FInventoryItem TargetItem = ItemInfo;
@@ -117,7 +135,8 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	//	SourceWidget->SetRenderOpacity(1.0f);
 	//}
 	
-	return bSuccess;
+	UE_LOG(LogTemp, Log, TEXT("Item swap completed successfully"));
+	return true;
 }
 
 void UItemWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)

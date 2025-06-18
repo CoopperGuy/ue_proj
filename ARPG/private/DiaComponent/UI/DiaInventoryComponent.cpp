@@ -7,6 +7,7 @@
 #include "UI/HUDWidget.h"
 #include "UI/Item/ItemWidget.h"
 #include "UI/Inventory/MainInventory.h"
+#include "Utils/InventoryUtils.h"
 
 UDiaInventoryComponent::UDiaInventoryComponent()
 	:InventoryGrid(GridWidth, GridHeight)
@@ -38,7 +39,7 @@ bool UDiaInventoryComponent::TryAddItem(const FInventoryItem& ItemData, UMainInv
 
 	//아이템을 넣을 수 있는 공간을 체크
 	//없다면 false
-	if (!FindPlaceItem(ItemData, OutPosX, OutPosY)) return false;
+	if (!FInventoryUtils::FindPlaceForItem(this, ItemData.Width, ItemData.Height, OutPosX, OutPosY)) return false;
 
 	InvenIdx = OutPosX * GridWidth + OutPosY;
 	//ui작업
@@ -53,42 +54,6 @@ bool UDiaInventoryComponent::TryAddItem(const FInventoryItem& ItemData, UMainInv
 	}
 		
 	return false;
-}
-
-bool UDiaInventoryComponent::FindPlaceItem(const FInventoryItem& ItemData, int32& OutPosX, int32& OutPosY)
-{
-	//아이템이 들어갈 위치를 탐색한다.
-	//다 찾으면 treu 리턴 해야함.
-	for (int32 y = 0; y < GridHeight - ItemData.Height; ++y)
-	{
-		for (int32 x = 0; x < GridWidth - ItemData.Width; ++x)
-		{
-			//만약 아이템이 들어갈 수 있는 공간이라면 true
-			//체크 로직 좌상단의 좌표를 반환한다.
-			if (CanPlaceItemAt(ItemData.Width, ItemData.Height, y, x))
-			{
-				OutPosX = x;
-				OutPosY = y;
-				return true;
-			}
-		}
-	}
-	//하나도 못찾으면 false
-	return false;
-}
-
-bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
-{
-	// 아이템 크기에 따른 그리드 공간 확인
-	for (int32 y = PosY; y < PosY + ItemHeight; ++y)
-	{
-		for (int32 x = PosX; x < PosX + ItemWidth; ++x)
-		{
-			if (x >= GridWidth || y >= GridHeight || InventoryGrid[y * GridWidth + x])
-				return false;
-		}
-	}
-	return true;
 }
 
 void UDiaInventoryComponent::FillGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
@@ -122,5 +87,53 @@ bool UDiaInventoryComponent::MoveItem(const FGuid& InstanceID, int32 NewPosX, in
 {
 	// 기존 위치에서 제거 후 새 위치에 배치
 	return false;
+}
+
+bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY) const
+{
+	// 기본 범위 검사
+	if (PosX < 0 || PosY < 0 || 
+		PosX + ItemWidth > GetGridWidth() || 
+		PosY + ItemHeight > GetGridHeight())
+	{
+		return false;
+	}
+
+	// 그리드에서 셀 점유 상태 확인
+	for (int32 Y = PosY; Y < PosY + ItemHeight; ++Y)
+	{
+		for (int32 X = PosX; X < PosX + ItemWidth; ++X)
+		{
+			int32 CellIndex = Y * GetGridWidth() + X;
+			if (CellIndex >= 0 && CellIndex < InventoryGrid.Cells.Num())
+			{
+				if (InventoryGrid.Cells[CellIndex]) // 셀이 이미 점유됨
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+	return true;
+}
+
+bool UDiaInventoryComponent::FindPlaceForItem(int32 ItemWidth, int32 ItemHeight, int32& OutPosX, int32& OutPosY) const
+{
+	// 좌상단부터 순차적으로 배치 가능한 위치 찾기
+	for (int32 Y = 0; Y <= GetGridHeight() - ItemHeight; ++Y)
+	{
+		for (int32 X = 0; X <= GetGridWidth() - ItemWidth; ++X)
+		{
+			if (CanPlaceItemAt(ItemWidth, ItemHeight, X, Y))
+			{
+				OutPosX = X;
+				OutPosY = Y;
+				return true;
+			}
+		}
+	}
+
+	return false; // 배치할 수 있는 공간이 없음
 }
 

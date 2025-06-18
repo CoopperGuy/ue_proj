@@ -21,6 +21,26 @@ void ADiaController::BeginPlay()
 	if (IsValid(DiaInventoryComponent))
 	{
 		DiaInventoryComponent->RegisterComponent();
+		// 인벤토리 컴포넌트가 초기화되면 HUD 위젯을 가져와서 component와 연결한다.
+		UHUDWidget* HUDWidget = GetHUDWidget();
+		if (IsValid(HUDWidget))
+		{
+			if (UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget())
+			{
+				// DiaInventoryComponent와 MainInventory 연결
+				InventoryWidget->SetInventoryComponent(DiaInventoryComponent);
+				InventoryWidget->InitializeInventory();
+				UE_LOG(LogTemp, Log, TEXT("Connected DiaInventoryComponent with MainInventory"));
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("MainInventory widget not found in HUD"));
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		}
 	}
 	else
 	{

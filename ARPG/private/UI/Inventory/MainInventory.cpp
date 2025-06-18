@@ -11,16 +11,26 @@
 
 #include "System/ItemSubsystem.h"
 
+#include "DiaComponent/UI/DiaInventoryComponent.h"
+
 #include "Blueprint/WidgetTree.h"
+#include "Utils/InventoryUtils.h"
 
 void UMainInventory::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+}
+
+void UMainInventory::InitializeInventory()
+{
 	CreateInventory();
-	
+
 	// 초기 상태는 Hidden으로 설정
 	SetVisibility(ESlateVisibility::Hidden);
+
+	GridWidth = InventoryComponent->GetGridWidth();
+	GridHeight = InventoryComponent->GetGridHeight();
 }
 
 bool UMainInventory::IsSlotEmpty(int32 SlotIndex) const
@@ -40,7 +50,7 @@ bool UMainInventory::IsSlotEmpty(int32 SlotIndex) const
 bool UMainInventory::AddItemToInventory(const FInventoryItem& ItemData, int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
 {
 	// 범위 체크 추가
-	if (PosX < 0 || PosY < 0 || PosX + ItemWidth > 10 || PosY + ItemHeight > 10)
+	if (FInventoryUtils::CanPlaceItemAt(InventoryComponent.Get(), ItemWidth, ItemHeight, PosX, PosY))
 		return false;
 	//이미 존재하는 아이템인지 확인
 	if (ItemWidgets.Find(ItemData.InstanceID))
@@ -61,8 +71,8 @@ bool UMainInventory::AddItemToInventory(const FInventoryItem& ItemData, int32 It
 	}
 
 	// 첫 번째 슬롯에만 아이템 위젯 생성하고 크기 조정
-	int32 LeftTopSlot = PosY * 10 + PosX;
-	int32 RightBottomSlot = (PosY + ItemHeight) * 10 + (PosX + ItemWidth);
+	int32 LeftTopSlot = PosY * GridWidth + PosX;
+	int32 RightBottomSlot = (PosY + ItemHeight) * GridWidth + (PosX + ItemWidth);
 
 	//아이템 위젯 생성
 	//근데 그냥 만들면 안되나??;
@@ -163,8 +173,6 @@ UItemWidget* UMainInventory::GetItemWidgetAtGridPosition(int32 GridX, int32 Grid
 
 void UMainInventory::CreateInventory()
 {
-	constexpr int32 szInventory = 10;
-	
 	// 위젯 클래스 한 번만 로드
 	FSoftObjectPath ItemWidgetPath(TEXT("/Game/UI/Inventory/WBP_ItemSlot.WBP_ItemSlot_C"));
 	TSoftClassPtr<UUserWidget> WidgetAssetPtr(ItemWidgetPath);
@@ -176,16 +184,16 @@ void UMainInventory::CreateInventory()
 		return;
 	}
 	
-	for (int32 y = 0; y < szInventory; ++y)
+	for (int32 y = 0; y < GridHeight; ++y)
 	{
-		for (int32 x = 0; x < szInventory; ++x)
+		for (int32 x = 0; x < GridWidth; ++x)
 		{
 			UUserWidget* ItemWidget = WidgetTree->ConstructWidget<UUserWidget>(ItemWidgetClass);
 			
 			if (ItemWidget)
 			{
 				UCanvasPanelSlot* NewSlot = InventoryCanvas->AddChildToCanvas(ItemWidget);
-				int32 SlotIndex = y * szInventory + x;
+				int32 SlotIndex = y * GridWidth + x;
 				ConfigInventorySlot(SlotIndex, NewSlot);
 				InventorySlots.Add(NewSlot);
 
@@ -200,7 +208,7 @@ void UMainInventory::ConfigInventorySlot(int32 SlotIndex, UCanvasPanelSlot* Canv
 {
 	if (CanvasSlot)
 	{
-		FVector2D Position = FVector2D((SlotIndex % 10) * szSlot, (SlotIndex / 10) * szSlot);
+		FVector2D Position = FVector2D((SlotIndex % GridWidth) * szSlot, (SlotIndex / GridWidth) * szSlot);
 		FVector2D Size = FVector2D(szSlot, szSlot);
 		CanvasSlot->SetPosition(Position);
 		CanvasSlot->SetSize(Size);
@@ -236,39 +244,54 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	if (!ItemDragOp)
 		return false;
 	
-	// 드롭 위치를 그리드 좌표로 변환
-	FVector2D LocalPosition = InGeometry.AbsoluteToLocal(InDragDropEvent.GetScreenSpacePosition());
-	FVector2D GridPosition = GetGridPositionFromScreenPosition(LocalPosition);
+	// 화면 좌표를 InventoryCanvas 기준의 로컬 좌표로 변환
+	FVector2D ScreenPosition = InDragDropEvent.GetScreenSpacePosition();
+	FVector2D CanvasLocalPosition = GetCanvasLocalPositionFromScreenPosition(InGeometry, ScreenPosition);
 	
-	int32 NewGridX = FMath::FloorToInt(GridPosition.X);
-	int32 NewGridY = FMath::FloorToInt(GridPosition.Y);
+	// 그리드 좌표로 변환
+	int32 NewGridX = FMath::FloorToInt(CanvasLocalPosition.X / szSlot);
+	int32 NewGridY = FMath::FloorToInt(CanvasLocalPosition.Y / szSlot);
 	
-	// 유효한 위치인지 확인
-	if (NewGridX < 0 || NewGridY < 0 || 
-		NewGridX + ItemDragOp->ItemWidth > 10 || 
-		NewGridY + ItemDragOp->ItemHeight > 10)
+	UE_LOG(LogTemp, Log, TEXT("MainInventory::NativeOnDrop - Screen: (%f, %f), CanvasLocal: (%f, %f), Grid: (%d, %d)"), 
+		ScreenPosition.X, ScreenPosition.Y, CanvasLocalPosition.X, CanvasLocalPosition.Y, NewGridX, NewGridY);
+	
+	// 인벤토리 슬롯 내의 유효한 위치인지 확인
+	if (InventoryComponent.IsValid() && 
+		!InventoryComponent->CanPlaceItemAt(ItemDragOp->ItemWidth, ItemDragOp->ItemHeight, NewGridX, NewGridY))
 	{
 		// 유효하지 않은 위치 - 원래 위치로 복원
 		if (ItemDragOp->SourceWidget)
 		{
 			ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
 		}
+		UE_LOG(LogTemp, Warning, TEXT("Invalid drop position - failed validation"));
 		return false;
 	}
 	
-	// 기존 아이템과의 충돌 검사 (드래그하는 아이템 자체는 제외)
+	// 드롭 위치에 기존 아이템이 있는지 확인
+	UItemWidget* ExistingItem = GetItemWidgetAtGridPosition(NewGridX, NewGridY);
+	if (ExistingItem && ExistingItem != ItemDragOp->SourceWidget)
+	{
+		// 다른 아이템 위에 드롭하는 경우 - ItemWidget으로 이벤트 전파
+		UE_LOG(LogTemp, Log, TEXT("Dropping on existing item - letting ItemWidget handle it"));
+		return false; // ✅ ItemWidget::NativeOnDrop으로 이벤트 전파
+	}
+	
+	// 빈 공간에 드롭하는 경우 - 직접 처리
+	// 추가 충돌 검사 (멀티 그리드 아이템의 경우)
 	for (int32 CheckY = NewGridY; CheckY < NewGridY + ItemDragOp->ItemHeight; ++CheckY)
 	{
 		for (int32 CheckX = NewGridX; CheckX < NewGridX + ItemDragOp->ItemWidth; ++CheckX)
 		{
-			UItemWidget* ExistingItem = GetItemWidgetAtGridPosition(CheckX, CheckY);
-			if (ExistingItem && ExistingItem != ItemDragOp->SourceWidget)
+			UItemWidget* ExistingItemInArea = GetItemWidgetAtGridPosition(CheckX, CheckY);
+			if (ExistingItemInArea && ExistingItemInArea != ItemDragOp->SourceWidget)
 			{
 				// 다른 아이템과 충돌 - 드롭 거부
 				if (ItemDragOp->SourceWidget)
 				{
 					ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
 				}
+				UE_LOG(LogTemp, Warning, TEXT("Item collision detected at (%d, %d)"), CheckX, CheckY);
 				return false;
 			}
 		}
@@ -282,6 +305,8 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 		
 		// 새로운 위치로 이동
 		UpdateItemPosition(ItemDragOp->SourceWidget, NewGridX, NewGridY);
+		
+		UE_LOG(LogTemp, Log, TEXT("Item moved to new position: (%d, %d)"), NewGridX, NewGridY);
 	}
 	
 	return true;
@@ -299,17 +324,6 @@ bool UMainInventory::NativeOnDragOver(const FGeometry& InGeometry, const FDragDr
 	return true;
 }
 
-int32 UMainInventory::GetSlotIndexFromPosition(const FVector2D& Position) const
-{
-	int32 GridX = FMath::FloorToInt(Position.X / szSlot);
-	int32 GridY = FMath::FloorToInt(Position.Y / szSlot);
-	
-	if (GridX < 0 || GridX >= 10 || GridY < 0 || GridY >= 10)
-		return -1;
-	
-	return GridY * 10 + GridX;
-}
-
 FVector2D UMainInventory::GetGridPositionFromScreenPosition(const FVector2D& ScreenPosition) const
 {
 	// Canvas 내의 로컬 좌표를 그리드 좌표로 변환
@@ -317,6 +331,33 @@ FVector2D UMainInventory::GetGridPositionFromScreenPosition(const FVector2D& Scr
 		ScreenPosition.X / szSlot,
 		ScreenPosition.Y / szSlot
 	);
+}
+
+//인벤토리 내부의 위치 판별 함수
+//다른 위치로 이동할때는 또 다른 함수 호출해야함
+FVector2D UMainInventory::GetCanvasLocalPositionFromScreenPosition(const FGeometry& MainWidgetGeometry, const FVector2D& ScreenPosition) const
+{
+	// MainInventory 위젯 기준의 로컬 좌표로 변환
+	FVector2D MainLocalPosition = MainWidgetGeometry.AbsoluteToLocal(ScreenPosition);
+	
+	// InventoryCanvas가 문제 있으면 return 0;
+	if (!IsValid(InventoryCanvas))
+	{
+		UE_LOG(LogTemp, Error, TEXT("InventoryCanvas is not valid"));
+		return FVector2D::ZeroVector;
+	}
+		
+	// InventoryCanvas의 오프셋을 고려한 실제 로컬 좌표 계산
+	//main에서 해당 위치만큼 떨어져 있으니까 더하기.
+	FVector2D CanvasOffset = InventoryCanvas->GetCachedGeometry().GetAbsolutePosition();
+	FVector2D CanvasLocalPosition = MainLocalPosition + CanvasOffset;
+	
+	UE_LOG(LogTemp, VeryVerbose, TEXT("MainLocal: (%f, %f), CanvasOffset: (%f, %f), CanvasLocal: (%f, %f)"), 
+		MainLocalPosition.X, MainLocalPosition.Y, 
+		CanvasOffset.X, CanvasOffset.Y,
+		CanvasLocalPosition.X, CanvasLocalPosition.Y);
+	
+	return CanvasLocalPosition;
 }
 
 void UMainInventory::UpdateItemPosition(UItemWidget* ItemWidget, int32 NewGridX, int32 NewGridY)

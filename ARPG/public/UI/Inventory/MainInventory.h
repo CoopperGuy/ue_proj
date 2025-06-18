@@ -10,6 +10,7 @@
 class UCanvasPanelSlot;
 class UCanvasPanel;
 class UItemWidget;
+class UDiaInventoryComponent;
 /**
  * 
  */
@@ -20,7 +21,8 @@ class ARPG_API UMainInventory : public UUserWidget
 	
 public:	
 	virtual void NativeConstruct() override;
-	
+	void InitializeInventory();
+
 	// Add item to inventory
 	bool AddItemToInventory(const FInventoryItem& ItemData, int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);
 	// Remove item from inventory
@@ -42,8 +44,9 @@ public:
 	virtual bool NativeOnDragOver(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	
 	// 그리드 좌표를 슬롯 인덱스로 변환
-	int32 GetSlotIndexFromPosition(const FVector2D& Position) const;
+	//int32 GetSlotIndexFromPosition(const FVector2D& Position) const;
 	FVector2D GetGridPositionFromScreenPosition(const FVector2D& ScreenPosition) const;
+	FVector2D GetCanvasLocalPositionFromScreenPosition(const FGeometry& MainWidgetGeometry, const FVector2D& ScreenPosition) const;
 	
 	// 아이템 위치 업데이트
 	void UpdateItemPosition(UItemWidget* ItemWidget, int32 NewGridX, int32 NewGridY);
@@ -64,9 +67,14 @@ protected:
 	
 	UPROPERTY()
 	TMap<FGuid, UItemWidget*> ItemWidgets;
+
+	TWeakObjectPtr<UDiaInventoryComponent> InventoryComponent;
+	int32 GridWidth = 0; // 그리드 너비
+	int32 GridHeight = 0; // 그리드 높이
 public:
 	FORCEINLINE int32 GetInventorySize() const { return InventorySlots.Num(); }
 	FORCEINLINE UCanvasPanel* GetInventoryPanel() const { return InventoryCanvas; }	
 	FORCEINLINE UUserWidget* GetItemWidgetAt(int32 Index) const;
 	void GetAllItemWidgets(TArray<UUserWidget*>& OutItemWidgets) const;
+	void SetInventoryComponent(UDiaInventoryComponent* InComponent) { InventoryComponent = InComponent; }
 };
