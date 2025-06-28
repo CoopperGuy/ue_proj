@@ -10,6 +10,8 @@
 #include "Controller/DiaController.h"
 
 #include "DiaComponent/DiaCombatComponent.h"
+#include "DiaComponent/DiaStatComponent.h"
+
 #include "DiaInstance.h"
 #include "Skill/DiaSkillManager.h"
 
@@ -240,10 +242,10 @@ void ADiaCharacter::Look(const FInputActionValue& Value)
 
 void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
 {
-    if (!IsValid(CombatStatsComponent)) 
+    if (!IsValid(CombatComponent))
     {
         #if WITH_EDITOR || UE_BUILD_DEVELOPMENT
-            UE_LOG(LogTemp, Warning, TEXT("CombatStatsComponent가 유효하지 않습니다."));
+            UE_LOG(LogTemp, Warning, TEXT("CombatComponent가 유효하지 않습니다."));
         #endif
         return;
     }
@@ -267,7 +269,7 @@ void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
             }
         #endif
         
-        CombatStatsComponent->ExecuteSkill(skillID);
+            CombatComponent->ExecuteSkill(skillID);
     }
     else
     {

@@ -57,7 +57,7 @@ protected:
 
 protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
-	int32 szSlot= 40;
+	int32 szSlot= 52;
 
 	UPROPERTY(meta = (BindWidget))
 	UCanvasPanel* InventoryCanvas;

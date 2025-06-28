@@ -24,6 +24,7 @@
 #include "Kismet/GameplayStatics.h"
 
 #include "DiaComponent/DiaCombatComponent.h"
+#include "DiaComponent/DiaStatComponent.h"
 
 #include "UI/HUDWidget.h"
 
@@ -45,10 +46,10 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 	MonsterID = MonsterInfo.MonsterID;
 	//
 	//// 스탯 설정
-	UDiaCombatComponent* CombatComponent = FindComponentByClass<UDiaCombatComponent>();
-	if (CombatComponent)
+	UDiaStatComponent* StatComponent = FindComponentByClass<UDiaStatComponent>();
+	if (StatComponent)
 	{
-		CombatComponent->InitializeFromData(MonsterInfo);
+		StatComponent->InitializeFromData(MonsterInfo);
 	}
 		
 	// 메시 설정 전에 먼저 컴포넌트 활성화

@@ -9,6 +9,9 @@
 
 class UDiaCombatComponent;
 class UAnimMontage;
+class UDiaStatComponent;
+class UDiaStatComponent;
+class UDiaStatusEffectComponent;
 
 UCLASS()
 class ARPG_API ADiaBaseCharacter : public ACharacter
@@ -58,6 +61,8 @@ public:
 	//사망 처리
 	virtual void Die();
 
+	void AddExp(float ExpAmount);
+
 	void SetGravity(bool bEnableGravityAndCollision);
 protected:
 	// 기본적인 함수
@@ -74,7 +79,10 @@ protected:
 protected:
 	//전투 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat)
-    UDiaCombatComponent* CombatStatsComponent;	
+    UDiaCombatComponent* CombatComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat)
+    UDiaStatComponent* StatsComponent;	
 
 	// 상태 이상 효과 관리 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatusEffects")
@@ -88,4 +96,7 @@ protected:
 	UPROPERTY()
 	UAnimMontage* CurrentMontage;
 
+public:
+	UDiaStatComponent* GetStatComponent() const { return StatsComponent; }
+	UDiaCombatComponent* GetCombatComponent() const { return CombatComponent; }
 };

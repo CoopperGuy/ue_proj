@@ -12,6 +12,7 @@ class UNiagaraSystem;
 class USoundBase;
 class UAnimMontage;
 class UDiaCombatComponent;
+class UDiaStatComponent;
 
 /**
  * 몬스터 캐릭터 클래스

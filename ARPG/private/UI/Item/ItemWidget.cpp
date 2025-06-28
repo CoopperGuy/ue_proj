@@ -94,8 +94,19 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 		return true; 
 	}
 	
-	// 부모 인벤토리 위젯 찾기
-	UMainInventory* ParentInventory = Cast<UMainInventory>(GetParent());
+	// 부모 인벤토리 위젯 찾기 - 위젯 계층을 따라 올라가며 UMainInventory 찾기
+	UMainInventory* ParentInventory = nullptr;
+	UWidget* CurrentParent = GetParent();
+	while (CurrentParent)
+	{
+		ParentInventory = Cast<UMainInventory>(CurrentParent);
+		if (IsValid(ParentInventory))
+		{
+			break;
+		}
+		CurrentParent = CurrentParent->GetParent();
+	}
+	
 	if (!IsValid(ParentInventory))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ItemWidget::NativeOnDrop - Parent inventory not found"));

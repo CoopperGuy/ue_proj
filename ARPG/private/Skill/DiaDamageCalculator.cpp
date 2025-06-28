@@ -6,6 +6,7 @@
 #include "DiaBaseCharacter.h"
 #include "DiaComponent/DiaCombatComponent.h"
 #include "DiaComponent/DiaStatusEffectComponent.h"
+#include "DiaComponent/DiaStatComponent.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -29,21 +30,27 @@ FDamageResult UDiaDamageCalculator::CalculateDamage(
     UDiaCombatComponent* AttackerCombat = IsValid(AttackerCharacter) 
         ? AttackerCharacter->FindComponentByClass<UDiaCombatComponent>() 
         : nullptr;
-    
+    UDiaStatComponent* AttackerStatCombat = IsValid(AttackerCharacter)
+        ? AttackerCharacter->FindComponentByClass<UDiaStatComponent>()
+        : nullptr;
+
     // 방어자 전투 컴포넌트 가져오기
     ADiaBaseCharacter* DefenderCharacter = Cast<ADiaBaseCharacter>(DamageReceiver);
     UDiaCombatComponent* DefenderCombat = IsValid(DefenderCharacter) 
         ? DefenderCharacter->FindComponentByClass<UDiaCombatComponent>() 
         : nullptr;
-    
+    UDiaStatComponent* DefenderStatCombat = IsValid(DefenderCharacter)
+        ? DefenderCharacter->FindComponentByClass<UDiaStatComponent>()
+        : nullptr;
+
     // 기본 데미지 설정
     float Damage = BaseDamage;
     
     // 공격자 스탯 적용
-    if (IsValid(AttackerCombat))
+    if (IsValid(AttackerStatCombat))
     {
         // 공격력에 따른 데미지 증가
-        Damage *= (1.0f + AttackerCombat->GetAttackPower() / 100.0f);
+        Damage *= (1.0f + AttackerStatCombat->GetAttackPower() / 100.0f);
     }
     
     // 크리티컬 히트 계산

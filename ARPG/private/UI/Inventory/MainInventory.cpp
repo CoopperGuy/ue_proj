@@ -24,13 +24,14 @@ void UMainInventory::NativeConstruct()
 
 void UMainInventory::InitializeInventory()
 {
-	CreateInventory();
 
 	// 초기 상태는 Hidden으로 설정
 	SetVisibility(ESlateVisibility::Hidden);
 
 	GridWidth = InventoryComponent->GetGridWidth();
 	GridHeight = InventoryComponent->GetGridHeight();
+
+	CreateInventory();
 }
 
 bool UMainInventory::IsSlotEmpty(int32 SlotIndex) const
@@ -50,7 +51,7 @@ bool UMainInventory::IsSlotEmpty(int32 SlotIndex) const
 bool UMainInventory::AddItemToInventory(const FInventoryItem& ItemData, int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
 {
 	// 범위 체크 추가
-	if (FInventoryUtils::CanPlaceItemAt(InventoryComponent.Get(), ItemWidth, ItemHeight, PosX, PosY))
+	if (!FInventoryUtils::CanPlaceItemAt(InventoryComponent.Get(), ItemWidth, ItemHeight, PosX, PosY))
 		return false;
 	//이미 존재하는 아이템인지 확인
 	if (ItemWidgets.Find(ItemData.InstanceID))
@@ -174,7 +175,7 @@ UItemWidget* UMainInventory::GetItemWidgetAtGridPosition(int32 GridX, int32 Grid
 void UMainInventory::CreateInventory()
 {
 	// 위젯 클래스 한 번만 로드
-	FSoftObjectPath ItemWidgetPath(TEXT("/Game/UI/Inventory/WBP_ItemSlot.WBP_ItemSlot_C"));
+	FSoftObjectPath ItemWidgetPath(TEXT("/Game/UI/Inventory/WBP_InvenSlot.WBP_InvenSlot_C"));
 	TSoftClassPtr<UUserWidget> WidgetAssetPtr(ItemWidgetPath);
 	UClass* ItemWidgetClass = WidgetAssetPtr.LoadSynchronous();
 
@@ -349,8 +350,8 @@ FVector2D UMainInventory::GetCanvasLocalPositionFromScreenPosition(const FGeomet
 		
 	// InventoryCanvas의 오프셋을 고려한 실제 로컬 좌표 계산
 	//main에서 해당 위치만큼 떨어져 있으니까 더하기.
-	FVector2D CanvasOffset = InventoryCanvas->GetCachedGeometry().GetAbsolutePosition();
-	FVector2D CanvasLocalPosition = MainLocalPosition + CanvasOffset;
+	FVector2D CanvasOffset = MainWidgetGeometry.AbsoluteToLocal(InventoryCanvas->GetCachedGeometry().GetAbsolutePosition());
+	FVector2D CanvasLocalPosition = MainLocalPosition - CanvasOffset;
 	
 	UE_LOG(LogTemp, VeryVerbose, TEXT("MainLocal: (%f, %f), CanvasOffset: (%f, %f), CanvasLocal: (%f, %f)"), 
 		MainLocalPosition.X, MainLocalPosition.Y, 
