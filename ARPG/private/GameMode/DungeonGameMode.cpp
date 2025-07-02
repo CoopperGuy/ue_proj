@@ -4,6 +4,8 @@
 #include "GameMode/DungeonGameMode.h"
 #include "Character/DiaCharacter.h"
 
+#include "Item/DiaItem.h"
+
 #include "UI/HUDWidget.h"
 #include "Blueprint/UserWidget.h"
 
@@ -35,10 +37,16 @@ void ADungeonGameMode::BeginPlay()
         APlayerController* playerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
         if (IsValid(playerController))
         {
-            HUDWidgetInstance = CreateWidget<UHUDWidget>(playerController, HUDWidgetClass);
+            HUDWidgetInstance = CreateWidget<UHUDWidget>(playerController, HUDWidgetClass);            
             if (IsValid(HUDWidgetInstance))
             {
                 HUDWidgetInstance->AddToViewport();
+                
+                // 인벤토리 위젯을 초기에 숨김 상태로 설정
+                if (UMainInventory* InventoryWidget = HUDWidgetInstance->GetInventoryWidget())
+                {
+                    InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
+                }
             }
         }
     }
@@ -57,4 +65,19 @@ void ADungeonGameMode::BeginPlay()
 void ADungeonGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
     Super::InitGame(MapName, Options, ErrorMessage);
+}
+
+void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData)
+{
+	if (IsValid(SpawnActor))
+	{
+		// 아이템 스폰
+		ADiaItem* SpawnedItem = GetWorld()->SpawnActor<ADiaItem>(ADiaItem::StaticClass(), 
+            SpawnActor->GetActorLocation(), FRotator::ZeroRotator);
+		if (SpawnedItem)
+		{
+			SpawnedItem->SetItemProperty(ItemData);
+			SpawnedItem->DropItem();
+		}
+	}
 }

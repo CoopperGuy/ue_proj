@@ -7,6 +7,7 @@
 #include "Types/ItemBase.h"  
 #include "ItemSubsystem.generated.h"
 
+class UItemWidget;
 /**
  * 
  */
@@ -29,6 +30,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Items")
     FInventoryItem CreateItemInstance(const FName& ItemID, int32 Level = 1, bool bRandomStats = false);
     
+	UItemWidget* CreateItemWidget(const FInventoryItem& Item);
     //UFUNCTION(BlueprintCallable, Category = "Items")
     //TArray<FName> GetItemsByFilter(const FItemFilter& Filter);
     

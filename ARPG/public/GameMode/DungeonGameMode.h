@@ -4,8 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "DungeonGameMode.generated.h"
+#include "Types/ItemBase.h"
 
+#include "DungeonGameMode.generated.h"
 class UHUDWidget;
 
 UCLASS()
@@ -19,12 +20,11 @@ public:
     virtual void BeginPlay() override;
     virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 
+	void SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData);
 protected:
-    // HUD ���� Ŭ����
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UHUDWidget> HUDWidgetClass;
     
-    // HUD ���� �ν��Ͻ�
     UPROPERTY()
     UHUDWidget* HUDWidgetInstance;
 public:

@@ -3,7 +3,7 @@
 
 #include "DiaComponent/DiaCombatComponent.h"
 #include "DiaComponent/DiaStatusEffectComponent.h"
-
+#include "DiaComponent/DiaStatComponent.h"
 
 #include "DiaInstance.h"
 #include "Skill/DiaSkillBase.h"
@@ -30,6 +30,9 @@ void UDiaCombatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	// 스탯 컴포넌트 참조 가져오기
+	StatComponent = GetOwner()->FindComponentByClass<UDiaStatComponent>();
+	
 	// 스킬 매니저 가져오기
 	if (UGameInstance* GameInstance = GetWorld()->GetGameInstance())
 	{
@@ -48,8 +51,13 @@ void UDiaCombatComponent::BeginPlay()
 		// 상태 이상 효과 추가/제거 시 이벤트 등록
 		StatusEffectComp->OnStatusEffectAdded.AddDynamic(this, &UDiaCombatComponent::OnStatusEffectAdded);
 		StatusEffectComp->OnStatusEffectRemoved.AddDynamic(this, &UDiaCombatComponent::OnStatusEffectRemoved);
-        OnHealthChanged.AddDynamic(this, &UDiaCombatComponent::OnUpdateHpGauge);
-        OnDeath.AddDynamic(this, &UDiaCombatComponent::OnDeathProcess);
+	}
+	
+	// 스탯 컴포넌트 이벤트 연결
+	if (IsValid(StatComponent))
+	{
+		StatComponent->GetOnHealthChanged().AddDynamic(this, &UDiaCombatComponent::OnUpdateHpGauge);
+		OnDeath.AddDynamic(this, &UDiaCombatComponent::OnDeathProcess);
 	}
 }
 
@@ -174,7 +182,7 @@ float UDiaCombatComponent::ApplyDamage(AActor* Target, float BaseDamage, TSubcla
 
 void UDiaCombatComponent::ReceiveDamage(float DamageAmount, AActor* DamageCauser)
 {
-    if (CurrentCombatState == ECombatState::Dead)
+    if (CurrentCombatState == ECombatState::Dead || !IsValid(StatComponent))
     {
         return;
     }
@@ -182,15 +190,10 @@ void UDiaCombatComponent::ReceiveDamage(float DamageAmount, AActor* DamageCauser
     // 전투 상태로 변경
     EnterCombat(DamageCauser);
     
-    // 데미지 적용
-    CharacterData.Health = FMath::Max(0.0f, CharacterData.Health - DamageAmount);
+    // 스탯 컴포넌트를 통해 데미지 적용
+    StatComponent->TakeDamage(DamageAmount);
     
-    // 체력 변경 이벤트 발생
-    //UI 변경 이벤트
-    OnHealthChanged.Broadcast(CharacterData.Health, CharacterData.MaxHealth);
-    
-    // 데미지 이벤트 발생
-    //애니메이션 재생
+    // 데미지 이벤트 발생 (애니메이션 재생)
     OnDamageTaken.Broadcast(DamageAmount, DamageCauser);
     
     // 위협도 증가
@@ -200,8 +203,9 @@ void UDiaCombatComponent::ReceiveDamage(float DamageAmount, AActor* DamageCauser
     }
     
     // 사망 체크
-    if (CharacterData.Health <= 0.0f)
+    if (StatComponent->IsDead())
     {
+        Killer = Cast<ADiaBaseCharacter>(DamageCauser);
         SetCombatState(ECombatState::Dead);
     }
 }
@@ -226,6 +230,7 @@ void UDiaCombatComponent::HandleDeath()
     // 사망 이벤트 발생
     OnDeath.Broadcast();
     
+    GiveExperienceToKiller();
     // 사망 로그
     UE_LOG(LogTemp, Log, TEXT("%s has died"), *GetOwner()->GetName());
 }
@@ -253,9 +258,7 @@ void UDiaCombatComponent::OnUpdateHpGauge(float CurHP, float MaxHP)
     ADiaBaseCharacter* DiaOwner = Cast<ADiaBaseCharacter>(GetOwner());
     if (!IsValid(DiaOwner)) return;
 
-
-    UE_LOG(LogTemp, Log, TEXT("Update HP %f/%f"),
-        CurHP, MaxHP);
+    UE_LOG(LogTemp, Log, TEXT("Update HP %f/%f"), CurHP, MaxHP);
 
     DiaOwner->UpdateHPGauge(CurHP, MaxHP);
 }
@@ -282,8 +285,13 @@ bool UDiaCombatComponent::CanExecuteAttack() const
 
 float UDiaCombatComponent::CalculateDamage(float BaseDamage)
 {
+	if (!IsValid(StatComponent))
+	{
+		return BaseDamage;
+	}
+	
 	// 기본 공격력 적용
-	float FinalDamage = BaseDamage * (1.0f + CombatStats.AttackPower / 100.0f);
+	float FinalDamage = BaseDamage * (1.0f + StatComponent->GetAttackPower() / 100.0f);
 	
 	// 크리티컬 확률 계산 (20% 기본 확률)
 	bool bIsCritical = FMath::RandRange(0.0f, 1.0f) < 0.2f;
@@ -299,16 +307,21 @@ float UDiaCombatComponent::CalculateDamage(float BaseDamage)
 // 스킬 비용 처리 함수 추가
 bool UDiaCombatComponent::ProcessSkillCost(ADiaSkillBase* Skill)
 {
+    if (!IsValid(StatComponent))
+    {
+        return false;
+    }
+    
     float ManaCost = Skill->GetManaCost();
 
     // 마나 부족 체크
-    if (CharacterData.Mana < ManaCost)
+    if (!StatComponent->HasEnoughMana(ManaCost))
     {
         return false;
     }
 
     // 마나 소모
-    CharacterData.Mana -= ManaCost;
+    StatComponent->ConsumeMana(ManaCost);
 
     return true;
 }
@@ -426,11 +439,7 @@ void UDiaCombatComponent::ClearAllThreats()
     ThreatTable.Empty();
 }
 
-void UDiaCombatComponent::InitializeFromData(const FMonsterInfo& MonsterInfo)
-{
-    CombatStats = MonsterInfo;
-    CharacterData = MonsterInfo;
-}
+
 
 AActor* UDiaCombatComponent::GetHighestThreatActor() const
 {
@@ -467,6 +476,22 @@ void UDiaCombatComponent::HandleCombatTimeout()
     {
         UE_LOG(LogTemp, Log, TEXT("%s combat timed out"), *GetOwner()->GetName());
         ExitCombat();
+    }
+}
+
+float UDiaCombatComponent::CalculateExpReward() const
+{
+    // 레벨당 25씩 증가
+    int32 MonsterLevel = StatComponent->GetCurrentLevel();
+    return 50.0f + (MonsterLevel * 25.0f); 
+}
+
+void UDiaCombatComponent::GiveExperienceToKiller()
+{
+    if (IsValid(Killer))
+    {
+		float ExpReward = CalculateExpReward();
+        Killer->AddExp(ExpReward);
     }
 }
 
@@ -564,4 +589,9 @@ void UDiaCombatComponent::ExitCombat()
     
     // 로그 출력
     UE_LOG(LogTemp, Log, TEXT("%s exited combat"), *GetOwner()->GetName());
+}
+
+UDiaStatComponent* UDiaCombatComponent::GetStatComponent() const
+{
+    return StatComponent;
 }

@@ -4,6 +4,7 @@
 #include "DiaBaseCharacter.h"
 #include "DiaComponent/DiaCombatComponent.h"
 #include "DiaComponent/DiaStatusEffectComponent.h"
+#include "DiaComponent/DiaStatComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 
@@ -12,9 +13,12 @@ ADiaBaseCharacter::ADiaBaseCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// 전투 스탯 컴포넌트 생성 및 초기화
-	CombatStatsComponent = CreateDefaultSubobject<UDiaCombatComponent>(TEXT("CombatStatsComponent"));
+	// 전투 컴포넌트 생성 및 초기화
+	CombatComponent = CreateDefaultSubobject<UDiaCombatComponent>(TEXT("CombatComponent"));
 	
+	// 스탯 컴포넌트 생성 및 초기화
+	StatsComponent = CreateDefaultSubobject<UDiaStatComponent>(TEXT("StatsComponent"));
+
 	// 상태 이상 효과 컴포넌트 생성
 	StatusEffectComponent = CreateDefaultSubobject<UDiaStatusEffectComponent>(TEXT("StatusEffectComponent"));
 
@@ -45,13 +49,13 @@ void ADiaBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 void ADiaBaseCharacter::SetupInitialSkills()
 {
-	if (!IsValid(CombatStatsComponent) || !GetWorld()) return;
+	if (!IsValid(CombatComponent) || !GetWorld()) return;
 
 	// 초기 스킬 등록
 	for (const auto& _SkillID : InitialSkills)
 	{
 		// 스킬 ID를 통해 스킬 등록
-		CombatStatsComponent->RegisterSkill(_SkillID);
+		CombatComponent->RegisterSkill(_SkillID);
 	}
 }
 
@@ -60,9 +64,9 @@ float ADiaBaseCharacter::TakeDamage(float DamageAmount, const FDamageEvent& Dama
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	
 	// 전투 컴포넌트에 데미지 전달
-	if (IsValid(CombatStatsComponent))
+	if (IsValid(CombatComponent))
 	{
-		CombatStatsComponent->ReceiveDamage(ActualDamage, DamageCauser);
+		CombatComponent->ReceiveDamage(ActualDamage, DamageCauser);
 	}
 	
 	return ActualDamage;
@@ -144,6 +148,11 @@ void ADiaBaseCharacter::Die()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	//SetLifeSpan(3.0f);
+}
+
+void ADiaBaseCharacter::AddExp(float ExpAmount)
+{
+	StatsComponent->AddExperience(ExpAmount);
 }
 
 void ADiaBaseCharacter::SetGravity(bool bEnableGravityAndCollision)

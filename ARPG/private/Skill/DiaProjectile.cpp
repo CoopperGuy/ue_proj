@@ -20,8 +20,10 @@ ADiaProjectile::ADiaProjectile()
     // 콜리전 컴포넌트 생성 및 설정
     CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
     CollisionComp->InitSphereRadius(15.0f);
+    CollisionComp->SetCollisionObjectType(ECollisionChannel::ECC_EngineTraceChannel2);
     CollisionComp->SetCollisionProfileName("Projectile");
     CollisionComp->OnComponentBeginOverlap.AddDynamic(this, &ADiaProjectile::OnHit);
+
     RootComponent = CollisionComp;
 
     // 프로젝타일 무브먼트 컴포넌트 생성 및 설정

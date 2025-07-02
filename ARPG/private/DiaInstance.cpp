@@ -8,7 +8,7 @@ void UDiaInstance::Init()
 {
     Super::Init();
 
-    // ¸Å´ÏÀúµé »ý¼º ¹× ÃÊ±âÈ­
+    // ï¿½Å´ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½Ê±ï¿½È­
     SkillManager = NewObject<UDiaSkillManager>(this);
     SkillManager->Initialize();
 

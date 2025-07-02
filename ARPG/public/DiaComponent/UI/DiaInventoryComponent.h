@@ -8,7 +8,7 @@
 
 #include "DiaInventoryComponent.generated.h"
 
-
+class UMainInventory;
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ARPG_API UDiaInventoryComponent : public UActorComponent
 {
@@ -23,26 +23,31 @@ protected:
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
     
-    // æ∆¿Ã≈€¿ª ±◊∏ÆµÂø° √ﬂ∞° Ω√µµ
-    bool TryAddItem(const FInventoryItem& ItemData, int32 PosX, int32 PosY);
-    
-    // ±◊∏ÆµÂ ¿ßƒ°ø° æ∆¿Ã≈€ πËƒ° ∞°¥… ø©∫Œ »Æ¿Œ
-    bool CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);	
+    bool TryAddItem(const FInventoryItem& ItemData, UMainInventory* InvenWidget);
+	void FillGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);
+
+    bool RemoveItem(const FGuid& InstanceID, UMainInventory* InventoryWidget);
+    bool MoveItem(const FGuid& InstanceID, int32 NewPosX, int32 NewPosY);
+
+	// Í∑∏Î¶¨Îìú ÌÅ¨Í∏∞ Í∞ÄÏ†∏Ïò§Í∏∞
+	FORCEINLINE int32 GetGridWidth() const { return InventoryGrid.Width; }
+	FORCEINLINE int32 GetGridHeight() const { return InventoryGrid.Height; }
+	FORCEINLINE const FGrid& GetInventoryGrid() const { return InventoryGrid; }
+	
+	// Ïù∏Î≤§ÌÜ†Î¶¨ Í≤ÄÏ¶ù Ìï®ÏàòÎì§
+	bool CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY) const;
+	bool FindPlaceForItem(int32 ItemWidth, int32 ItemHeight, int32& OutPosX, int32& OutPosY) const;
 
 private:
-    // æ∆¿Ã≈€ µ•¿Ã≈Õ ¿˙¿Â
     UPROPERTY()
     TArray<FInventoryItem> Items;
 
-    // ±◊∏ÆµÂ ≈©±‚ º≥¡§
     UPROPERTY(EditDefaultsOnly, Category = "Inventory")
     int32 GridWidth = 10;
     
     UPROPERTY(EditDefaultsOnly, Category = "Inventory")
     int32 GridHeight = 5;
     
-    // ±◊∏ÆµÂ ªÛ≈¬ ¿˙¿Â (true = ¡°¿Øµ )
     UPROPERTY()
     FGrid InventoryGrid;
-    
 };

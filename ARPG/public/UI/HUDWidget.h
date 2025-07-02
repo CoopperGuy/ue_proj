@@ -21,6 +21,7 @@ enum class BarType
 
 class UOrb;
 class UMonsterHP;
+class UMainInventory;
 /**
  * 
  */
@@ -39,11 +40,15 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UOrb* HpWidget;
 
-	
 	UPROPERTY(meta = (BindWidget))
 	UOrb* MpWidget;
 
 	UPROPERTY(meta = (BindWidget))
 	UMonsterHP* MonsterHPWidget;
 
+	UPROPERTY(meta = (BindWidget))
+	UMainInventory* InventoryWidget;
+public:
+	void SetMonsterHPVisibility(ESlateVisibility _Visibility);
+	FORCEINLINE UMainInventory* GetInventoryWidget() const { return InventoryWidget; }
 };

@@ -2,6 +2,8 @@
 
 
 #include "System/ItemSubsystem.h"
+#include "UI/Item/ItemWidget.h"
+#include "Types/ItemBase.h"
 
 void UItemSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -53,6 +55,24 @@ FInventoryItem UItemSubsystem::CreateItemInstance(const FName& ItemID, int32 Lev
     Item.bRandomStats = bRandomStats;
     GenerateRandomStats(Item, Level);
     return Item;
+}
+
+UItemWidget* UItemSubsystem::CreateItemWidget(const FInventoryItem& Item)
+{
+    FSoftObjectPath ItemWidgetPath(TEXT("/Game/UI/Inventory/WBP_ItemWidget.WBP_ItemWidget_C"));
+    TSoftClassPtr<UUserWidget> WidgetAssetPtr(ItemWidgetPath);
+    UClass* ItemWidgetClass = WidgetAssetPtr.LoadSynchronous();
+
+    if (ItemWidgetClass)
+    {
+        UItemWidget* ItemWidget = CreateWidget<UItemWidget>(GetWorld(), ItemWidgetClass);
+        if (ItemWidget)
+        {
+            ItemWidget->SetItemInfo(Item);
+            return ItemWidget;
+        }
+	}
+    return nullptr;
 }
 
 void UItemSubsystem::GenerateRandomStats(FInventoryItem& Item, int32 Level)
