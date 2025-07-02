@@ -125,9 +125,6 @@ public:
    // UFUNCTION()
    // void OnStatChanged(EStatType StatType, float NewValue);
 protected:
-	// 스킬 초기화
-	void InitializeSkills();
-
 	//로직 관련
 	AActor* FindNearestPlayer();
 private:
