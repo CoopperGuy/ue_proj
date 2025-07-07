@@ -5,6 +5,7 @@
 #include "DiaComponent/UI/DiaInventoryComponent.h"
 #include "UI/HUDWidget.h"
 #include "UI/Inventory/MainInventory.h"
+#include "UI/CharacterStatus/StatusWidget.h"
 #include "GameMode/DungeonGameMode.h"
 
 ADiaController::ADiaController()
@@ -171,6 +172,25 @@ void ADiaController::ToggleInventoryVisibility(bool bVisible)
 	}
 
 	InventoryWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+void ADiaController::ToggleChracterStatusVisibility(bool bVisible)
+{
+	UHUDWidget* HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		return;
+	}
+
+	UStatusWidget* StatusWidget = HUDWidget->GetCharacterStatusWidget();
+	if (!StatusWidget)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("StatusWidget is null"));
+		return;
+	}
+
+	StatusWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
 ESlateVisibility ADiaController::GetInventoryVisibility() const

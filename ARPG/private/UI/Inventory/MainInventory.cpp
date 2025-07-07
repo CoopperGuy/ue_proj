@@ -7,6 +7,7 @@
 
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/PanelWidget.h"
 #include "Components/Image.h"
 
 #include "System/ItemSubsystem.h"
@@ -14,6 +15,7 @@
 #include "DiaComponent/UI/DiaInventoryComponent.h"
 
 #include "Blueprint/WidgetTree.h"
+#include "Blueprint/UserWidget.h"
 #include "Utils/InventoryUtils.h"
 
 void UMainInventory::NativeConstruct()
@@ -222,7 +224,9 @@ FORCEINLINE UUserWidget* UMainInventory::GetItemWidgetAt(int32 Index) const
 	{
 		return nullptr;
 	}
-	return Cast<UUserWidget>(InventorySlots[Index]->GetContent());
+	
+	UWidget* ContentWidget = InventorySlots[Index]->GetContent();
+	return Cast<UUserWidget>(ContentWidget);
 }
 
 void UMainInventory::GetAllItemWidgets(TArray<UUserWidget*>& OutItemWidgets) const
@@ -231,10 +235,14 @@ void UMainInventory::GetAllItemWidgets(TArray<UUserWidget*>& OutItemWidgets) con
 	
 	for (UCanvasPanelSlot* ItemSlot : InventorySlots)
 	{
-		UUserWidget* ItemWidget = Cast<UUserWidget>(ItemSlot->GetContent());
-		if (ItemWidget)
+		if (IsValid(ItemSlot))
 		{
-			OutItemWidgets.Add(ItemWidget);
+			UWidget* ContentWidget = ItemSlot->GetContent();
+			UUserWidget* ItemWidget = Cast<UUserWidget>(ContentWidget);
+			if (IsValid(ItemWidget))
+			{
+				OutItemWidgets.Add(ItemWidget);
+			}
 		}
 	}	
 }

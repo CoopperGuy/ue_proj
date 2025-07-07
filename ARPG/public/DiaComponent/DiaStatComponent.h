@@ -5,7 +5,10 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Types/DiaMonsterTable.h"
+#include "Types/DiaCharacterTable.h"
 #include "DiaStatComponent.generated.h"
+
+class UCharacterManager;
 
 enum EDefaultStat : uint8
 {
@@ -124,8 +127,11 @@ class ARPG_API UDiaStatComponent : public UActorComponent
 public:
 	UDiaStatComponent();
 
-	// 초기화
+	// 초기화 (몬스터용)
 	void InitializeFromData(const FMonsterInfo& MonsterInfo);
+
+	// 초기화 (플레이어용)
+	void InitializeFromCharacterData(FName CharacterID, int32 Level = 1);
 
 	// 체력 관리
 	void TakeDamage(float DamageAmount);
@@ -217,6 +223,10 @@ protected:
 	// 전투 스탯 데이터
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	FCombatStats CombatStats;
+
+	// 현재 캐릭터 ID (플레이어용, 레벨업 시 사용)
+	UPROPERTY()
+	FName CurrentCharacterID;
 
 public:
 	// 델리게이트 접근자

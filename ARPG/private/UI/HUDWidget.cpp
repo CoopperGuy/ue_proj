@@ -5,6 +5,7 @@
 #include "UI/Orb.h"
 #include "UI/MonsterHP.h"
 #include "UI/Inventory/MainInventory.h"
+#include "UI/CharacterStatus/StatusWidget.h"
 
 void UHUDWidget::NativeConstruct()
 {
@@ -12,6 +13,7 @@ void UHUDWidget::NativeConstruct()
 
 	SetMonsterHPVisibility(ESlateVisibility::Collapsed);
 	InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
+	CharacterStatus->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UHUDWidget::UpdateOrbPercentage(OrbType _Type, float _Percentage)

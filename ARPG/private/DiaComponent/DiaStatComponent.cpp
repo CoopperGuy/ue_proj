@@ -2,6 +2,7 @@
 
 #include "DiaComponent/DiaStatComponent.h"
 #include "DiaBaseCharacter.h"
+#include "System/CharacterManager.h"
 
 UDiaStatComponent::UDiaStatComponent()
 {
@@ -26,6 +27,68 @@ void UDiaStatComponent::InitializeFromData(const FMonsterInfo& MonsterInfo)
 	LevelData.CurrentLevel = 1;
 	LevelData.CurrentExp = 0.f;
 	LevelData.MaxExp = LevelData.GetRequiredExpForLevel(LevelData.CurrentLevel + 1);
+}
+
+void UDiaStatComponent::InitializeFromCharacterData(FName CharacterID, int32 Level)
+{
+	// 게임 인스턴스에서 캐릭터 매니저 가져오기
+	UGameInstance* GI = GetWorld()->GetGameInstance();
+	if (!GI)
+	{
+		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: GameInstance을 찾을 수 없음"));
+		return;
+	}
+
+	UCharacterManager* CharacterManager = GI->GetSubsystem<UCharacterManager>();
+	if (!CharacterManager)
+	{
+		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: CharacterManager를 찾을 수 없음"));
+		return;
+	}
+
+	const FCharacterInfo* CharacterInfo = CharacterManager->GetCharacterInfo(CharacterID);
+	if (!CharacterInfo)
+	{
+		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: 캐릭터 정보를 찾을 수 없음 - ID: %s"), *CharacterID.ToString());
+		return;
+	}
+
+	// 체력/마나 초기화
+	CharacterData.MaxHealth = CharacterManager->CalculateMaxHPForLevel(CharacterInfo, Level);
+	CharacterData.Health = CharacterData.MaxHealth;
+	CharacterData.MaxMana = CharacterManager->CalculateMaxMPForLevel(CharacterInfo, Level);
+	CharacterData.Mana = CharacterData.MaxMana;
+
+	// 기본 스탯 배열 초기화 (Str, Int, Dex, Con)
+	CharacterData.DefStats.SetNum(4);
+	CharacterData.DefStats[0] = CharacterManager->CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseStrength, CharacterInfo->StrengthPerLevel, Level);
+	CharacterData.DefStats[1] = CharacterManager->CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseIntelligence, CharacterInfo->IntelligencePerLevel, Level);
+	CharacterData.DefStats[2] = CharacterManager->CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseDexterity, CharacterInfo->DexterityPerLevel, Level);
+	CharacterData.DefStats[3] = CharacterManager->CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseConstitution, CharacterInfo->ConstitutionPerLevel, Level);
+
+	// 추가 스탯 배열 초기화
+	CharacterData.AdditinalStats.SetNum(4);
+	for (int32 i = 0; i < 4; i++)
+	{
+		CharacterData.AdditinalStats[i] = 0.0f;
+	}
+
+	// 전투 스탯 초기화
+	CombatStats.AttackPower = CharacterManager->CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseAttackPower, CharacterInfo->AttackPowerPerLevel, Level);
+	CombatStats.Defense = CharacterManager->CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseDefense, CharacterInfo->DefensePerLevel, Level);
+	CombatStats.AttackSpeed = CharacterInfo->BaseAttackSpeed;
+	CombatStats.AttackRange = CharacterInfo->BaseAttackRange;
+
+	// 레벨 정보 초기화
+	LevelData.CurrentLevel = Level;
+	LevelData.CurrentExp = 0.0f;
+	LevelData.MaxExp = CharacterManager->CalculateExpRequiredForLevel(CharacterInfo, Level + 1);
+
+	// 캐릭터 정보 저장 (레벨업 시 사용)
+	CurrentCharacterID = CharacterID;
+
+	UE_LOG(LogTemp, Log, TEXT("DiaStatComponent: 플레이어 캐릭터 스탯 초기화 완료 - ID: %s, 레벨: %d"), 
+		*CharacterID.ToString(), Level);
 }
 
 void UDiaStatComponent::TakeDamage(float DamageAmount)

@@ -6,6 +6,7 @@
 #include "UI/Inventory/MainInventory.h"
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/PanelWidget.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 
 void UItemWidget::NativeConstruct()
@@ -96,7 +97,7 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	
 	// 부모 인벤토리 위젯 찾기 - 위젯 계층을 따라 올라가며 UMainInventory 찾기
 	UMainInventory* ParentInventory = nullptr;
-	UWidget* CurrentParent = GetParent();
+	UPanelWidget* CurrentParent = GetParent();
 	while (CurrentParent)
 	{
 		ParentInventory = Cast<UMainInventory>(CurrentParent);

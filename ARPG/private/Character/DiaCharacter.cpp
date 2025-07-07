@@ -2,6 +2,7 @@
 
 
 #include "Character/DiaCharacter.h"
+#include "System/CharacterManager.h"
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
@@ -68,6 +69,25 @@ ADiaCharacter::ADiaCharacter()
 void ADiaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	// 캐릭터 매니저를 통한 플레이어 초기화
+	UGameInstance* GI = GetGameInstance();
+	if (GI)
+	{
+		UCharacterManager* CharacterManager = GI->GetSubsystem<UCharacterManager>();
+		if (CharacterManager)
+		{
+			// 기본 캐릭터로 초기화 (나중에 게임 시작 시 선택된 캐릭터로 변경 가능)
+			FName DefaultCharacterID = CharacterManager->DefaultCharacterID;
+			CharacterManager->InitializePlayerCharacter(this, DefaultCharacterID, 1);
+			
+			UE_LOG(LogTemp, Log, TEXT("DiaCharacter: 캐릭터 초기화 완료 - %s"), *DefaultCharacterID.ToString());
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("DiaCharacter: CharacterManager를 찾을 수 없음"));
+		}
+	}
 	
     // Input Mapping Context 추가
     if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
@@ -164,6 +184,10 @@ void ADiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
         if (InventoryAction)
         {
             EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Triggered, this, &ADiaCharacter::ToggleInventory);
+        }
+        if (CharacterStatusAction)
+        {
+			EnhancedInputComponent->BindAction(CharacterStatusAction, ETriggerEvent::Triggered, this, &ADiaCharacter::ToggleCharacterStatus);
         }
     }
 }
@@ -292,4 +316,16 @@ void ADiaCharacter::ToggleInventory()
     }
 }
 
+void ADiaCharacter::ToggleCharacterStatus()
+{
+    if (ADiaController* PlayerController = Cast<ADiaController>(Controller))
+    {
+        ESlateVisibility eVisibility = PlayerController->GetInventoryVisibility();
+        //보이는 상태면 false로 안보이게 끔, 아니면 true로 보이게끔
+#if WITH_EDITOR || UE_BUILD_DEVELOPMENT
+        UE_LOG(LogTemp, Warning, TEXT("캐릭터 위젯 토글"));
+#endif
+        PlayerController->ToggleChracterStatusVisibility(eVisibility == ESlateVisibility::Visible ? false : true);
+    }
+}
 

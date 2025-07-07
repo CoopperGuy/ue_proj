@@ -25,6 +25,7 @@ public:
 	void ItemRemoved(const FInventoryItem& Item);
 
 	void ToggleInventoryVisibility(bool bVisible);
+	void ToggleChracterStatusVisibility(bool bVisible);
 
 	ESlateVisibility GetInventoryVisibility() const;
 protected:
