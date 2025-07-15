@@ -23,7 +23,7 @@ protected:
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
     
-    bool TryAddItem(const FInventoryItem& ItemData, UMainInventory* InvenWidget);
+    bool TryAddItem(const FInventorySlot& ItemData, UMainInventory* InvenWidget);
 	void FillGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);
 
     bool RemoveItem(const FGuid& InstanceID, UMainInventory* InventoryWidget);
@@ -40,7 +40,7 @@ public:
 
 private:
     UPROPERTY()
-    TArray<FInventoryItem> Items;
+    TArray<FInventorySlot> Items;
 
     UPROPERTY(EditDefaultsOnly, Category = "Inventory")
     int32 GridWidth = 10;

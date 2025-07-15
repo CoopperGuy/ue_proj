@@ -37,6 +37,24 @@ enum class EItemStat : uint8
 };
 
 
+UENUM(BlueprintType)
+enum class EEquipmentSlot : uint8
+{
+	EES_None = 0,
+	EES_Head,
+	EES_Chest,
+	EES_Legs,
+	EES_Feet,
+	EES_Hands,
+	EES_Weapon,
+	EES_Shield,
+	EES_Ring1,
+	EES_Ring2,
+	EES_Amulet,
+	EES_Max
+};
+
+
 USTRUCT(BlueprintType)
 struct ARPG_API FItemBase : public FTableRowBase
 {
@@ -62,6 +80,12 @@ struct ARPG_API FItemBase : public FTableRowBase
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	EItemType ItemType = EItemType::EIT_Misc;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EEquipmentSlot EquipmentSlot = EEquipmentSlot::EES_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsEquippable = false;
 		
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 MaxStackSize = 1;
@@ -74,8 +98,128 @@ struct ARPG_API FItemBase : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UStaticMesh> ItemMesh;
+
+	// 기본 스탯 정보
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<EItemStat, float> BaseStats;
 };
 
+USTRUCT(BlueprintType)
+struct ARPG_API FItemInstance
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+	FItemBase BaseItem;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+	FGuid InstanceID;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+	int32 Quantity = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+	int32 Level = 1;
+			
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+	bool bIsLocked = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+	TMap<EItemStat, float> BonusStats;
+
+	FItemInstance()
+		: InstanceID(FGuid::NewGuid())
+	{
+	}
+
+	bool IsValid() const { return !BaseItem.ItemID.IsNone() && Quantity > 0; }
+
+	FText GetDisplayName() const { return BaseItem.Name; }
+	FText GetDescription() const { return BaseItem.Description; }
+	int32 GetWidth() const { return BaseItem.Width; }
+	int32 GetHeight() const { return BaseItem.Height; }
+	EItemRarity GetRarity() const { return BaseItem.Rarity; }
+	EItemType GetItemType() const { return BaseItem.ItemType; }
+	bool IsEquippable() const { return BaseItem.bIsEquippable; }
+	EEquipmentSlot GetEquipmentSlot() const { return BaseItem.EquipmentSlot; }
+	FSoftObjectPath GetIconPath() const { return BaseItem.IconPath; }
+	
+	TMap<EItemStat, float> GetTotalStats() const
+	{
+		TMap<EItemStat, float> TotalStats = BaseItem.BaseStats;
+		
+		for (const auto& BonusPair : BonusStats)
+		{
+			if (TotalStats.Contains(BonusPair.Key))
+			{
+				TotalStats[BonusPair.Key] += BonusPair.Value;
+			}
+			else
+			{
+				TotalStats.Add(BonusPair.Key, BonusPair.Value);
+			}
+		}
+		
+		return TotalStats;
+	}
+
+	static FItemInstance FromDataTable(UDataTable* ItemTable, FName ItemID, int32 InQuantity = 1)
+	{
+		FItemInstance Result;
+		
+		if (ItemTable)
+		{
+			if (FItemBase* FoundItem = ItemTable->FindRow<FItemBase>(ItemID, TEXT("FItemInstance::FromDataTable")))
+			{
+				Result.BaseItem = *FoundItem;
+				Result.Quantity = InQuantity;
+			}
+		}
+		
+		return Result;
+	}
+
+	static FItemInstance FromBase(const FItemBase& _BaseItem, int32 InQuantity = 1)
+	{
+		FItemInstance Result;
+		Result.BaseItem = _BaseItem;
+		Result.Quantity = InQuantity;
+		return Result;
+	}
+};
+
+// 인벤토리 슬롯
+USTRUCT(BlueprintType)
+struct ARPG_API FInventorySlot
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+	FItemInstance ItemInstance;
+	
+	// 그리드 위치 정보
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
+	int32 GridX = 0;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
+	int32 GridY = 0;
+
+	bool IsEmpty() const { return !ItemInstance.IsValid(); }
+	
+	void Clear() 
+	{ 
+		ItemInstance = FItemInstance();
+		GridX = GridY = 0;
+	}
+
+	static FInventorySlot FromBase(const FItemBase& _BaseItem, int32 InQuantity = 1)
+	{
+		FInventorySlot Result; 
+		Result.ItemInstance = FItemInstance::FromBase(_BaseItem);
+		return Result;
+	}
+
+};
 
 USTRUCT(BlueprintType)
 struct ARPG_API FGrid
@@ -122,6 +266,7 @@ struct ARPG_API FGrid
     }
 };
 
+
 //// ������ ���λ�/���̻� (��ƺ��� ��Ÿ��)
 //USTRUCT(BlueprintType)
 //struct YOURGAME_API FItemAffix
@@ -164,83 +309,5 @@ struct ARPG_API FGrid
 //    TArray<FItemEffect> SocketEffects;
 //};
 
-USTRUCT(BlueprintType)
-struct ARPG_API FInventoryItem
-{
-	GENERATED_BODY()
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	FName ItemID;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	FGuid InstanceID;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	int32 Quantity = 1;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Grid")
-	int32 GridX = 0;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Grid")
-	int32 GridY = 0;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Grid")
-	int32 Width = 0;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Grid")
-	int32 Height = 0;
-
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Grid")
-	int32 Level = 0;
-	
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Affixes")
-	//TArray<FItemAffix> Affixes;
-	
-	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item|Sockets")
-	//TArray<FItemSocket> Sockets;
-			
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	bool bIsLocked = false;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	bool bRandomStats = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	FText CustomDescription;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	TMap<EItemStat, float> Stats;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	bool bIsStackable = false;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FSoftObjectPath IconPath;
-
-	FInventoryItem()
-		: InstanceID(FGuid::NewGuid())
-	{
-	}
-	
-	//FItemBase* GetBaseItemData() const;
-	
-	static FInventoryItem FromBase(const FItemBase& BaseItem, int32 InQuantity = 1, bool bRandomStats = false)
-	{
-		FInventoryItem Result;
-		Result.ItemID = BaseItem.ItemID;
-		Result.Quantity = InQuantity;
-		Result.bRandomStats = bRandomStats;
-		Result.Width = BaseItem.Width;
-		Result.Height = BaseItem.Height;
-		Result.IconPath = BaseItem.IconPath;
-		// 필요 시 기본 CustomDescription 등을 채워줄 수도 있음
-		return Result;
-	}
-
-	bool IsValid() const { return !ItemID.IsNone() && Quantity > 0; }
-	
-	//void GetItemSize(int32& OutWidth, int32& OutHeight) const;
-	
-	FText GenerateTooltip() const { return FText(); };
-};
+//수정하면서 생긴 오류 제거용
+typedef FInventorySlot FInventorySlot;

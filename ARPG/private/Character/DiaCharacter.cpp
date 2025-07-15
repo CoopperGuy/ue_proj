@@ -320,7 +320,7 @@ void ADiaCharacter::ToggleCharacterStatus()
 {
     if (ADiaController* PlayerController = Cast<ADiaController>(Controller))
     {
-        ESlateVisibility eVisibility = PlayerController->GetInventoryVisibility();
+        ESlateVisibility eVisibility = PlayerController->GetWidgetVisibility("CharacterStatus");
         //보이는 상태면 false로 안보이게 끔, 아니면 true로 보이게끔
 #if WITH_EDITOR || UE_BUILD_DEVELOPMENT
         UE_LOG(LogTemp, Warning, TEXT("캐릭터 위젯 토글"));

@@ -140,7 +140,7 @@ UHUDWidget* ADiaController::GetHUDWidget() const
 
 //인벤토리에 아이템 더하기 호출.
 //외부에서 호출하자.
-bool ADiaController::ItemAddedToInventory(const FInventoryItem& Item)
+bool ADiaController::ItemAddedToInventory(const FInventorySlot& Item)
 {
 	if (!IsValid(DiaInventoryComponent))
 	{
@@ -169,13 +169,13 @@ bool ADiaController::ItemAddedToInventory(const FInventoryItem& Item)
 	bool bResult = DiaInventoryComponent->TryAddItem(Item, InventoryWidget);
 	if (bResult)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Item successfully added to inventory: %s"), *Item.ItemID.ToString());
+		UE_LOG(LogTemp, Log, TEXT("Item successfully added to inventory: %s"), *Item.ItemInstance.BaseItem.ItemID.ToString());
 	}
 
 	return bResult;
 }
 
-void ADiaController::ItemRemoved(const FInventoryItem& Item)
+void ADiaController::ItemRemoved(const FInventorySlot& Item)
 {
 	if (!IsValid(DiaInventoryComponent))
 	{
@@ -197,14 +197,14 @@ void ADiaController::ItemRemoved(const FInventoryItem& Item)
 		return;
 	}
 
-	bool bResult = DiaInventoryComponent->RemoveItem(Item.InstanceID, InventoryWidget);
+	bool bResult = DiaInventoryComponent->RemoveItem(Item.ItemInstance.InstanceID, InventoryWidget);
 	if (bResult)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Item successfully removed from inventory: %s"), *Item.ItemID.ToString());
+		UE_LOG(LogTemp, Log, TEXT("Item successfully removed from inventory: %s"), *Item.ItemInstance.BaseItem.ItemID.ToString());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to remove item from inventory: %s"), *Item.ItemID.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Failed to remove item from inventory: %s"), *Item.ItemInstance.BaseItem.ItemID.ToString());
 	}
 }
 
@@ -261,6 +261,25 @@ ESlateVisibility ADiaController::GetInventoryVisibility() const
 		UE_LOG(LogTemp, Warning, TEXT("InventoryWidget is null"));
 		return ESlateVisibility::Collapsed;
 	}
-
+	
 	return InventoryWidget->GetVisibility();
 }
+
+ESlateVisibility ADiaController::GetWidgetVisibility(const FName& FoundName) const
+{
+	UHUDWidget* const HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		return ESlateVisibility::Collapsed;
+	}
+	UUserWidget* FoundWidget = HUDWidget->FindWidgetByName(FoundName);
+	if (!IsValid(FoundWidget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Widget with name '%s' not found in HUDWidget"), *FoundName.ToString());
+		return ESlateVisibility::Collapsed;
+	}
+	return FoundWidget->GetVisibility();
+}
+
+

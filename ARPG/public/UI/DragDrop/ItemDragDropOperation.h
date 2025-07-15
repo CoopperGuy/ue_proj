@@ -20,7 +20,7 @@ class ARPG_API UItemDragDropOperation : public UDragDropOperation
 public:
 	// 드래그되는 아이템 정보
 	UPROPERTY(BlueprintReadOnly)
-	FInventoryItem ItemData;
+	FInventorySlot ItemData;
 	
 	// 원본 위젯 참조
 	UPROPERTY(BlueprintReadOnly)

@@ -58,5 +58,7 @@ public:
 	void SetMonsterHPVisibility(ESlateVisibility _Visibility);
 	FORCEINLINE UMainInventory* GetInventoryWidget() const { return InventoryWidget; }
 	FORCEINLINE UStatusWidget* GetCharacterStatusWidget() const { return CharacterStatus; }
-
+	
+	UUserWidget* FindWidgetByName(const FName& WidgetName);
 };
+

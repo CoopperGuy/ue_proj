@@ -54,7 +54,7 @@ void ADiaItem::Tick(float DeltaTime)
 
 void ADiaItem::SetItemProperty(const FItemBase& _ItemData)
 {
-	InventoryItem = FInventoryItem::FromBase(_ItemData);
+	InventoryItem = FInventorySlot::FromBase(_ItemData);
 
 	//아이템 스태틱 매시 로딩
 	//현재 아이템 스태틱 매시 첫 로딩 이후 아이템 메시가 보이지 않는 현상 존재
@@ -98,7 +98,7 @@ void ADiaItem::SetItemProperty(const FItemBase& _ItemData)
 void ADiaItem::DropItem()
 {
 	RollingItem();
-	SetItemName(FText::FromName(InventoryItem.ItemID));
+	SetItemName(FText::FromName(InventoryItem.ItemInstance.BaseItem.ItemID));
 }
 
 void ADiaItem::RollingItem()
@@ -167,7 +167,7 @@ void ADiaItem::SetItemName(const FText& NewName)
 	UItemName* NameWidget = Cast<UItemName>(ItemWidgetComp->GetUserWidgetObject());
 	if (IsValid(NameWidget))
 	{
-		NameWidget->SetItemName(FText::FromName(InventoryItem.ItemID));
+		NameWidget->SetItemName(InventoryItem.ItemInstance.BaseItem.Name);
 		NameWidget->SetVisibility(ESlateVisibility::Visible);
 
 		ItemWidgetComp->SetVisibility(true);
@@ -183,34 +183,44 @@ void ADiaItem::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPri
 
 void ADiaItem::OnItemNameClicked()
 {
-	// 아이템을 줍는 로직 구현
-	// 컨트롤러를 직접 불러와서 넣는다.
-	// 이래도 되나...
-		UE_LOG(LogTemp, Log, TEXT("아이템 클릭됨: %s"), *InventoryItem.ItemID.ToString());
-	
-	// DiaItem에서 가장 적절한 플레이어 찾기
-	ADiaController* TargetController = FindBestPlayerForPickup();
-	if (!TargetController)
-		return;
-
-	bool bSuccess = TargetController->ItemAddedToInventory(InventoryItem);
-	if (bSuccess)
+	if (UWidgetComponent* WidgetComp = GetComponentByClass<UWidgetComponent>())
 	{
-		UE_LOG(LogTemp, Log, TEXT("아이템이 %s의 인벤토리에 추가됨"),
-			*TargetController->GetName());
-
-		// 아이템 제거
-		if (IsValid(ItemWidgetComp))
+		if (UUserWidget* Widget = WidgetComp->GetUserWidgetObject())
 		{
-			ItemWidgetComp->SetVisibility(false);
+			if (UItemName* NameWidget = Cast<UItemName>(Widget))
+			{
+				NameWidget->SetItemName(FText::FromName(InventoryItem.ItemInstance.BaseItem.ItemID));
+			}
 		}
-		Destroy();
 	}
-	
-	SetActorHiddenInGame(true);
-	SetActorEnableCollision(false);
-	SetActorTickEnabled(false);
-	ItemWidgetComp->SetVisibility(false);
+
+	// 가장 가까운 플레이어에게 아이템 전달
+	if (ADiaController* PlayerController = FindBestPlayerForPickup())
+	{
+		FInventorySlot ItemToAdd = InventoryItem;
+		UE_LOG(LogTemp, Log, TEXT("아이템 클릭됨: %s"), *InventoryItem.ItemInstance.BaseItem.ItemID.ToString());
+
+		// DiaItem에서 가장 적절한 플레이어 찾기
+
+		bool bSuccess = PlayerController->ItemAddedToInventory(ItemToAdd);
+		if (bSuccess)
+		{
+			UE_LOG(LogTemp, Log, TEXT("아이템이 %s의 인벤토리에 추가됨"),
+				*PlayerController->GetName());
+
+			// 아이템 제거
+			if (IsValid(ItemWidgetComp))
+			{
+				ItemWidgetComp->SetVisibility(false);
+			}
+			Destroy();
+		}
+
+		SetActorHiddenInGame(true);
+		SetActorEnableCollision(false);
+		SetActorTickEnabled(false);
+		ItemWidgetComp->SetVisibility(false);
+	}
 }
 
 ADiaController* ADiaItem::FindBestPlayerForPickup()

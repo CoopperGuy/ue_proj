@@ -154,7 +154,7 @@ void ADiaMeleeSkill::ApplyDamage(AActor* Target)
     
     // 데미지 적용
     float FinalDamage = GetDamage();
-    CombatComp->ApplyDamage(Target, FinalDamage);
+    CombatComp->ApplyDamage(Target, GetOwner(), FinalDamage);
     
     // 피격 이펙트 생성
     if (HitEffect)

@@ -50,17 +50,17 @@ bool UMainInventory::IsSlotEmpty(int32 SlotIndex) const
 }
 
 //여기서, 아이템을 추가하며 ItemWidget을 생성하고, 아이템이 차지하는 공간을 조정하는 로직을 구현한다.
-bool UMainInventory::AddItemToInventory(const FInventoryItem& ItemData, int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
+bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
 {
 	// 범위 체크 추가
 	if (!FInventoryUtils::CanPlaceItemAt(InventoryComponent.Get(), ItemWidth, ItemHeight, PosX, PosY))
 		return false;
 	//이미 존재하는 아이템인지 확인
-	if (ItemWidgets.Find(ItemData.InstanceID))
+	if (ItemWidgets.Find(ItemData.ItemInstance.InstanceID))
 	{
 		//스택형 아이템인지 체크 해야한다.
 		//스택형 아이템이 아니라면 그냥 새롭게 추가해야한다.
-		if(ItemData.bIsStackable)
+		if(ItemData.ItemInstance.BaseItem.bStackable)
 		{
 			////스택형 아이템이라면, 해당 아이템의 스택을 증가시키는 로직을 구현해야 한다.
 			//UItemWidget* ExistingItemWidget = GetItemWidgetBySlotIndex(PosY * 10 + PosX);
@@ -105,13 +105,13 @@ bool UMainInventory::AddItemToInventory(const FInventoryItem& ItemData, int32 It
 					ItemSlot->SetZOrder(1); // 슬롯 위에 렌더링되도록 Z 순서 설정
 					
 					// 아이템 위젯을 맵에 저장
-					ItemWidgets.Emplace(ItemData.InstanceID, ItemWidget);
+					ItemWidgets.Emplace(ItemData.ItemInstance.InstanceID, ItemWidget);
 					ItemWidget->SetWidgetGridPos(PosX, PosY);
 
 					//결과에 대한 로그 작성
 					//fguid, name, gridx ,gridy 표현
-					FString guid = ItemData.InstanceID.ToString();
-					UE_LOG(LogTemp, Log, TEXT("Added item to inventory: %s (guid : %s) at Slot (%f, %f)"), *ItemData.ItemID.ToString(), *guid, SlotPosition.X, SlotPosition.Y);
+					FString guid = ItemData.ItemInstance.InstanceID.ToString();
+					UE_LOG(LogTemp, Log, TEXT("Added item to inventory: %s (guid : %s) at Slot (%f, %f)"), *ItemData.ItemInstance.BaseItem.ItemID.ToString(), *guid, SlotPosition.X, SlotPosition.Y);
 				}
 			}
 		}
@@ -162,10 +162,10 @@ UItemWidget* UMainInventory::GetItemWidgetAtGridPosition(int32 GridX, int32 Grid
 		UItemWidget* ItemWidget = ItemPair.Value;
 		if (IsValid(ItemWidget))
 		{
-			const FInventoryItem& ItemData = ItemWidget->GetItemInfo();
+			const FInventorySlot& ItemData = ItemWidget->GetItemInfo();
 			// 아이템이 해당 그리드 위치를 차지하는지 확인
-			if (ItemData.GridX <= GridX && GridX < ItemData.GridX + ItemData.Width &&
-				ItemData.GridY <= GridY && GridY < ItemData.GridY + ItemData.Height)
+			if (ItemData.GridX <= GridX && GridX < ItemData.GridX + ItemData.ItemInstance.GetWidth() &&
+				ItemData.GridY <= GridY && GridY < ItemData.GridY + ItemData.ItemInstance.GetHeight())
 			{
 				return ItemWidget;
 			}
