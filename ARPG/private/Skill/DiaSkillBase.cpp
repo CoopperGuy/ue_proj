@@ -24,6 +24,7 @@ void ADiaSkillBase::Tick(float DeltaTime)
 void ADiaSkillBase::InitializeSkill(AActor* InOwner)
 {
 	SkillOwner = Cast<ADiaBaseCharacter>(InOwner);
+	Owner = SkillOwner;
 }
 
 bool ADiaSkillBase::CanExecuteSkill() const

@@ -9,6 +9,8 @@
 #include "DiaComponent/DiaStatComponent.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Engine/DamageEvents.h"
+#include "GameFramework/Controller.h"
 
 FDamageResult UDiaDamageCalculator::CalculateDamage(
     float BaseDamage,
@@ -141,8 +143,13 @@ float UDiaDamageCalculator::ApplyDamage(
         ApplyKnockback(DamageReceiver, DamageDealer, DamageType->KnockbackForce);
     }
     
-    // 데미지 적용
-    FDamageEvent DamageEvent(DamageTypeClass);
+    // 데미지 적용 - FPointDamageEvent 사용 (더 안전함)
+    FPointDamageEvent DamageEvent;
+    DamageEvent.DamageTypeClass = DamageTypeClass;
+    DamageEvent.HitInfo = FHitResult();  // 기본 히트 정보
+    DamageEvent.ShotDirection = (DamageReceiver->GetActorLocation() - DamageDealer->GetActorLocation()).GetSafeNormal();
+    DamageEvent.Damage = DamageResult.FinalDamage;
+    
     float ActualDamage = DamageReceiver->TakeDamage(
         DamageResult.FinalDamage, 
         DamageEvent, 

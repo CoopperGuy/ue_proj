@@ -178,7 +178,6 @@ void ADiaItem::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPri
 {
 	if (OtherActor)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Hit with: %s"), *OtherActor->GetName());
 	}
 }
 

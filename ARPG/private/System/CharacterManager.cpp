@@ -111,6 +111,7 @@ void UCharacterManager::InitializePlayerCharacter(ADiaCharacter* Character, cons
 		*CreationInfo.PlayerName, CreationInfo.StartLevel);
 }
 
+//초기화
 void UCharacterManager::InitializePlayerCharacter(ADiaCharacter* Character, FName CharacterID, int32 Level)
 {
 	if (!IsValid(Character))
@@ -130,7 +131,7 @@ void UCharacterManager::InitializePlayerCharacter(ADiaCharacter* Character, FNam
 	UDiaStatComponent* StatComponent = Character->GetStatComponent();
 	if (IsValid(StatComponent))
 	{
-		InitializeCharacterStats(StatComponent, CharacterInfo, Level);
+		StatComponent->InitializeFromCharacterData(CharacterID, Level);
 		InitializeCombatStats(StatComponent, CharacterInfo, Level);
 	}
 
@@ -174,21 +175,17 @@ void UCharacterManager::InitializeCharacterStats(UDiaStatComponent* StatComponen
 	CharacterData.MaxMana = CalculateMaxMPForLevel(CharacterInfo, Level);
 	CharacterData.Mana = CharacterData.MaxMana;
 
-	// 기본 스탯 배열 설정 (Str, Int, Dex, Con)
-	CharacterData.DefStats.SetNum(EDefaultStat::eDS_Max);
-	CharacterData.DefStats[EDefaultStat::eDS_Str] = CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseStrength, CharacterInfo->StrengthPerLevel, Level);
-	CharacterData.DefStats[EDefaultStat::eDS_Int] = CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseIntelligence, CharacterInfo->IntelligencePerLevel, Level);
-	CharacterData.DefStats[EDefaultStat::eDS_Dex] = CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseDexterity, CharacterInfo->DexterityPerLevel, Level);
-	CharacterData.DefStats[EDefaultStat::eDS_Con] = CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseConstitution, CharacterInfo->ConstitutionPerLevel, Level);
-
-	// 추가 스탯 배열 초기화
-	CharacterData.AdditinalStats.SetNum(EDefaultStat::eDS_Max);
-	for (int32 i = 0; i < EDefaultStat::eDS_Max; i++)
-	{
-		CharacterData.AdditinalStats[i] = 0.0f;
-	}
-
+	// 스탯 배열 초기화 (헬퍼 함수 사용)
+	CharacterData.InitializeStatArrays();
+	
+	// 캐릭터 데이터 먼저 설정
 	StatComponent->SetCharacterData(CharacterData);
+	
+	// 기본 스탯 설정 (델리게이트 포함 버전 사용)
+	StatComponent->SetStrength(CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseStrength, CharacterInfo->StrengthPerLevel, Level));
+	StatComponent->SetIntelligence(CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseIntelligence, CharacterInfo->IntelligencePerLevel, Level));
+	StatComponent->SetDexterity(CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseDexterity, CharacterInfo->DexterityPerLevel, Level));
+	StatComponent->SetConstitution(CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseConstitution, CharacterInfo->ConstitutionPerLevel, Level));
 
 	// 레벨 정보 설정
 	FLevelData LevelData;

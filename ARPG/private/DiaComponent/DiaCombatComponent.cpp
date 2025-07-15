@@ -492,6 +492,7 @@ void UDiaCombatComponent::GiveExperienceToKiller()
     {
 		float ExpReward = CalculateExpReward();
         Killer->AddExp(ExpReward);
+        UE_LOG(LogTemp, Log, TEXT("get exp : %f"), ExpReward);
     }
 }
 

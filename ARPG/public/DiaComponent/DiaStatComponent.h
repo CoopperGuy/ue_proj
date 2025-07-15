@@ -10,7 +10,8 @@
 
 class UCharacterManager;
 
-enum EDefaultStat : uint8
+UENUM(BlueprintType)
+enum class EDefaultStat : uint8
 {
 	eDS_Str = 0,
 	eDS_Int = 1,
@@ -18,6 +19,15 @@ enum EDefaultStat : uint8
 	eDS_Con = 3,
 	eDS_Max = 4
 };
+
+// enum class를 정수로 변환하는 유틸리티 함수
+FORCEINLINE constexpr int32 ToInt(EDefaultStat StatType)
+{
+	return static_cast<int32>(StatType);
+}
+
+// 스탯 배열 크기를 가져오는 상수
+static constexpr int32 STAT_ARRAY_SIZE = ToInt(EDefaultStat::eDS_Max);
 
 // 캐릭터 기본 스탯 구조체 (체력, 마나만 관리)
 USTRUCT(BlueprintType)
@@ -51,6 +61,56 @@ struct ARPG_API FCharacterData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<float> AdditinalStats; 
 
+	// 스탯 접근 함수들 (타입 안전성 제공)
+	FORCEINLINE float GetStat(EDefaultStat StatType) const
+	{
+		int32 Index = ToInt(StatType);
+		return DefStats.IsValidIndex(Index) ? DefStats[Index] : 0.0f;
+	}
+
+	FORCEINLINE void SetStat(EDefaultStat StatType, float Value)
+	{
+		int32 Index = ToInt(StatType);
+		if (DefStats.IsValidIndex(Index))
+		{
+			DefStats[Index] = Value;
+		}
+	}
+
+	FORCEINLINE float GetAdditionalStat(EDefaultStat StatType) const
+	{
+		int32 Index = ToInt(StatType);
+		return AdditinalStats.IsValidIndex(Index) ? AdditinalStats[Index] : 0.0f;
+	}
+
+	FORCEINLINE void SetAdditionalStat(EDefaultStat StatType, float Value)
+	{
+		int32 Index = ToInt(StatType);
+		if (AdditinalStats.IsValidIndex(Index))
+		{
+			AdditinalStats[Index] = Value;
+		}
+	}
+
+	// 편의를 위한 개별 스탯 접근 함수들
+	FORCEINLINE float GetStrength() const { return GetStat(EDefaultStat::eDS_Str); }
+	FORCEINLINE float GetIntelligence() const { return GetStat(EDefaultStat::eDS_Int); }
+	FORCEINLINE float GetDexterity() const { return GetStat(EDefaultStat::eDS_Dex); }
+	FORCEINLINE float GetConstitution() const { return GetStat(EDefaultStat::eDS_Con); }
+
+	FORCEINLINE void SetStrength(float Value) { SetStat(EDefaultStat::eDS_Str, Value); }
+	FORCEINLINE void SetIntelligence(float Value) { SetStat(EDefaultStat::eDS_Int, Value); }
+	FORCEINLINE void SetDexterity(float Value) { SetStat(EDefaultStat::eDS_Dex, Value); }
+	FORCEINLINE void SetConstitution(float Value) { SetStat(EDefaultStat::eDS_Con, Value); }
+
+	void InitializeStatArrays()
+	{
+		for(int32 i = 0; i < STAT_ARRAY_SIZE; ++i)
+		{
+			DefStats.Add(0.0f);
+			AdditinalStats.Add(0.0f);
+		}
+	}
 
 	// 몬스터에게서도 해당 스탯 구조를 사용하기 위해 만든 것
 	FCharacterData& operator=(const FMonsterInfo& Other)
@@ -119,6 +179,16 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnManaChangedDelegate, float, NewM
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnExpChangedDelegate, float, NewExp, float, MaxExp);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLevelUpDelegate, int32, NewLevel);
 
+// 기본 스탯 변경 델리게이트 (통합)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnBaseStatChangedDelegate, EDefaultStat, StatType, float, NewValue, float, OldValue);
+
+// 전투 스탯 변경 델리게이트
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAttackPowerChangedDelegate, float, NewAttackPower, float, OldAttackPower);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDefenseChangedDelegate, float, NewDefense, float, OldDefense);
+
+// 초기화 완료 델리게이트 (UI 바인딩 타이밍용)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatComponentInitializedDelegate, UDiaStatComponent*, StatComponent);
+
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ARPG_API UDiaStatComponent : public UActorComponent
 {
@@ -152,6 +222,9 @@ public:
 	// 스탯 검증
 	bool IsDead() const { return CharacterData.Health <= 0.0f; }
 	bool IsAlive() const { return CharacterData.Health > 0.0f; }
+	
+	// 초기화 상태 확인
+	bool IsInitialized() const { return bIsInitialized; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -192,11 +265,24 @@ public:
 	FORCEINLINE float GetAttackRange() const { return CombatStats.AttackRange; }
 	FORCEINLINE float GetDefense() const { return CombatStats.Defense; }
 
-	// 스탯 변경
-	void SetAttackPower(float NewAttackPower) { CombatStats.AttackPower = NewAttackPower; }
+	// 스탯 변경 (델리게이트 포함)
+	void SetAttackPower(float NewAttackPower);
 	void SetAttackSpeed(float NewAttackSpeed) { CombatStats.AttackSpeed = NewAttackSpeed; }
 	void SetAttackRange(float NewAttackRange) { CombatStats.AttackRange = NewAttackRange; }
-	void SetDefense(float NewDefense) { CombatStats.Defense = NewDefense; }
+	void SetDefense(float NewDefense);
+
+	// 기본 스탯 변경 함수들 (델리게이트 포함)
+	void SetBaseStat(EDefaultStat StatType, float NewValue);
+	void SetStrength(float NewValue) { SetBaseStat(EDefaultStat::eDS_Str, NewValue); }
+	void SetIntelligence(float NewValue) { SetBaseStat(EDefaultStat::eDS_Int, NewValue); }
+	void SetDexterity(float NewValue) { SetBaseStat(EDefaultStat::eDS_Dex, NewValue); }
+	void SetConstitution(float NewValue) { SetBaseStat(EDefaultStat::eDS_Con, NewValue); }
+
+	// 개별 스탯 Getter (편의 함수)
+	FORCEINLINE float GetStrength() const { return CharacterData.GetStrength(); }
+	FORCEINLINE float GetIntelligence() const { return CharacterData.GetIntelligence(); }
+	FORCEINLINE float GetDexterity() const { return CharacterData.GetDexterity(); }
+	FORCEINLINE float GetConstitution() const { return CharacterData.GetConstitution(); }
 
 protected:
 	// 이벤트 델리게이트
@@ -211,6 +297,17 @@ protected:
 	
 	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
 	FOnLevelUpDelegate OnLevelUp;
+
+	// 기본 스탯 변경 델리게이트
+	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
+	FOnBaseStatChangedDelegate OnBaseStatChanged;
+
+	// 전투 스탯 변경 델리게이트
+	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
+	FOnAttackPowerChangedDelegate OnAttackPowerChanged;
+	
+	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
+	FOnDefenseChangedDelegate OnDefenseChanged;
 
 	// 캐릭터 기본 데이터 (체력, 마나)
 	UPROPERTY(EditAnywhere, Category = "Character")
@@ -228,10 +325,23 @@ protected:
 	UPROPERTY()
 	FName CurrentCharacterID;
 
+	// 초기화 상태
+	UPROPERTY()
+	bool bIsInitialized = false;
+
+public:
+	// 초기화 완료 델리게이트
+	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
+	FOnStatComponentInitializedDelegate OnStatComponentInitialized;
+
 public:
 	// 델리게이트 접근자
 	FOnHealthChangedDelegate& GetOnHealthChanged() { return OnHealthChanged; }
 	FOnManaChangedDelegate& GetOnManaChanged() { return OnManaChanged; }
 	FOnExpChangedDelegate& GetOnExpChanged() { return OnExpChanged; }
 	FOnLevelUpDelegate& GetOnLevelUp() { return OnLevelUp; }
+	FOnBaseStatChangedDelegate& GetOnBaseStatChanged() { return OnBaseStatChanged; }
+	FOnAttackPowerChangedDelegate& GetOnAttackPowerChanged() { return OnAttackPowerChanged; }
+	FOnDefenseChangedDelegate& GetOnDefenseChanged() { return OnDefenseChanged; }
+	FOnStatComponentInitializedDelegate& GetOnStatComponentInitialized() { return OnStatComponentInitialized; }
 }; 

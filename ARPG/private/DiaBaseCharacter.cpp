@@ -63,6 +63,9 @@ float ADiaBaseCharacter::TakeDamage(float DamageAmount, const FDamageEvent& Dama
 {
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	
+	APawn* TempPawn = EventInstigator->GetPawn();
+	AActor* TempOnwer = TempPawn->GetOwner();
+	UE_LOG(LogTemp, Log, TEXT("EventInstigator : %s, Owern : %s"), *TempPawn->GetName() , *TempOnwer->GetName());
 	// 전투 컴포넌트에 데미지 전달
 	if (IsValid(CombatComponent))
 	{
@@ -71,8 +74,6 @@ float ADiaBaseCharacter::TakeDamage(float DamageAmount, const FDamageEvent& Dama
 	
 	return ActualDamage;
 }
-
-
 
 float ADiaBaseCharacter::PlayCharacterMontage(UAnimMontage* MontageToPlay, float PlayRate)
 {

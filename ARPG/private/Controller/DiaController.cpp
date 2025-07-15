@@ -3,6 +3,7 @@
 
 #include "Controller/DiaController.h"
 #include "DiaComponent/UI/DiaInventoryComponent.h"
+#include "DiaComponent/DiaStatComponent.h"
 #include "UI/HUDWidget.h"
 #include "UI/Inventory/MainInventory.h"
 #include "UI/CharacterStatus/StatusWidget.h"
@@ -52,6 +53,58 @@ void ADiaController::BeginPlay()
 void ADiaController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
+}
+
+void ADiaController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+	if (!IsValid(InPawn)) return;
+
+	UDiaStatComponent* StatComponent =
+		Cast<UDiaStatComponent>(InPawn->GetComponentByClass(UDiaStatComponent::StaticClass()));
+	if (IsValid(StatComponent))
+	{
+		// 이미 초기화되었으면 즉시 바인딩
+		if (StatComponent->IsInitialized())
+		{
+			BindUIToStatComponent(StatComponent);
+		}
+		else
+		{
+			// 초기화 완료 시 바인딩하도록 델리게이트 등록
+			StatComponent->GetOnStatComponentInitialized().AddDynamic(this, &ADiaController::OnStatComponentInitialized);
+			UE_LOG(LogTemp, Log, TEXT("StatComponent 초기화 대기 중..."));
+		}
+	}
+}
+
+void ADiaController::OnStatComponentInitialized(UDiaStatComponent* StatComponent)
+{
+	if (IsValid(StatComponent))
+	{
+		BindUIToStatComponent(StatComponent);
+		// 델리게이트 바인딩 해제 (한 번만 실행되도록)
+		StatComponent->GetOnStatComponentInitialized().RemoveDynamic(this, &ADiaController::OnStatComponentInitialized);
+	}
+}
+
+void ADiaController::BindUIToStatComponent(UDiaStatComponent* StatComponent)
+{
+	if (!IsValid(StatComponent)) return;
+	
+	UHUDWidget* HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget)) return;
+
+	UStatusWidget* StatusWidget = HUDWidget->GetCharacterStatusWidget();
+	if (IsValid(StatusWidget))
+	{
+		StatusWidget->BindToStatComponent(StatComponent);
+		UE_LOG(LogTemp, Log, TEXT("StatusWidget이 초기화된 StatComponent에 성공적으로 바인딩되었습니다"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("StatusWidget이 null입니다"));
+	}
 }
 
 UHUDWidget* ADiaController::GetHUDWidget() const

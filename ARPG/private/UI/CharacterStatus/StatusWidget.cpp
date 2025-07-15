@@ -77,23 +77,33 @@ void UStatusWidget::BindToStatComponent(UDiaStatComponent* StatComponent)
 	// 새로운 스탯 컴포넌트 설정
 	BoundStatComponent = StatComponent;
 	
+	bool isBoundedBefore = BoundStatComponent->GetOnExpChanged().IsBound();
 	// 델리게이트 바인딩
 	BoundStatComponent->GetOnHealthChanged().AddDynamic(this, &UStatusWidget::OnHealthChanged);
 	BoundStatComponent->GetOnManaChanged().AddDynamic(this, &UStatusWidget::OnManaChanged);
 	BoundStatComponent->GetOnExpChanged().AddDynamic(this, &UStatusWidget::OnExpChanged);
 	BoundStatComponent->GetOnLevelUp().AddDynamic(this, &UStatusWidget::OnLevelUp);
 	
+	// 새로운 델리게이트 바인딩 - 기본 스탯 및 전투 스탯
+	BoundStatComponent->GetOnBaseStatChanged().AddDynamic(this, &UStatusWidget::OnBaseStatChanged);
+	BoundStatComponent->GetOnAttackPowerChanged().AddDynamic(this, &UStatusWidget::OnAttackPowerChanged);
+	BoundStatComponent->GetOnDefenseChanged().AddDynamic(this, &UStatusWidget::OnDefenseChanged);
+	bool isBoundedAfter = BoundStatComponent->GetOnExpChanged().IsBound();
+	UE_LOG(LogTemp, Log, TEXT("Bound Statd %d -> %d"),isBoundedBefore, isBoundedAfter);
+
 	// 초기 상태 업데이트
 	const FCharacterData& CharData = BoundStatComponent->GetCharacterData();
 	const FLevelData& LevelData = BoundStatComponent->GetLevelData();
 	const FCombatStats& CombatData = BoundStatComponent->GetCombatStats();
 	
-	// 전체 스탯 업데이트 (사용자 이름은 빈 문자열로 설정)
+	// 전체 스탯 업데이트 (실제 스탯 값 사용)
 	UpdateStatus(
 		TEXT("Player"), // 기본값, 필요시 캐릭터에서 가져오도록 수정 가능
 		CharData.Health, CharData.MaxHealth,
 		CharData.Mana, CharData.MaxMana,
-		0.0f, 0.0f, 0.0f, // Str, Dex, Int - DefStats 배열에서 가져올 수 있음
+		BoundStatComponent->GetStrength(), // 실제 스탯 값 사용
+		BoundStatComponent->GetDexterity(),
+		BoundStatComponent->GetIntelligence(),
 		CombatData.AttackPower, CombatData.Defense,
 		LevelData.CurrentExp, LevelData.MaxExp
 	);
@@ -110,6 +120,11 @@ void UStatusWidget::UnbindFromStatComponent()
 		BoundStatComponent->GetOnManaChanged().RemoveDynamic(this, &UStatusWidget::OnManaChanged);
 		BoundStatComponent->GetOnExpChanged().RemoveDynamic(this, &UStatusWidget::OnExpChanged);
 		BoundStatComponent->GetOnLevelUp().RemoveDynamic(this, &UStatusWidget::OnLevelUp);
+		
+		// 새로운 델리게이트 바인딩 해제
+		BoundStatComponent->GetOnBaseStatChanged().RemoveDynamic(this, &UStatusWidget::OnBaseStatChanged);
+		BoundStatComponent->GetOnAttackPowerChanged().RemoveDynamic(this, &UStatusWidget::OnAttackPowerChanged);
+		BoundStatComponent->GetOnDefenseChanged().RemoveDynamic(this, &UStatusWidget::OnDefenseChanged);
 		
 		BoundStatComponent.Reset();
 		
@@ -227,5 +242,70 @@ void UStatusWidget::UpdateExperience(int32 CurrentExp, int32 MaxExp)
 	if (ExpText)
 	{
 		ExpText->SetText(FText::Format(FText::FromString(TEXT("{0}/{1}")), FText::AsNumber(CurrentExp), FText::AsNumber(MaxExp)));
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////
+// 새로운 스탯 델리게이트 콜백 함수들
+//////////////////////////////////////////////////////////////////////////
+
+void UStatusWidget::OnBaseStatChanged(EDefaultStat StatType, float NewValue, float OldValue)
+{
+	// 스탯 타입에 따라 해당 UI 요소 업데이트
+	switch (StatType)
+	{
+	case EDefaultStat::eDS_Str:
+		if (StrText)
+		{
+			StrText->SetText(FText::AsNumber(FMath::FloorToInt(NewValue)));
+		}
+		break;
+		
+	case EDefaultStat::eDS_Int:
+		if (IntText)
+		{
+			IntText->SetText(FText::AsNumber(FMath::FloorToInt(NewValue)));
+		}
+		break;
+		
+	case EDefaultStat::eDS_Dex:
+		if (DexText)
+		{
+			DexText->SetText(FText::AsNumber(FMath::FloorToInt(NewValue)));
+		}
+		break;
+		
+	case EDefaultStat::eDS_Con:
+		// Constitution은 현재 UI에 없으므로 로그만 출력
+		UE_LOG(LogTemp, Log, TEXT("StatusWidget: Constitution 변경 %.1f -> %.1f"), OldValue, NewValue);
+		break;
+		
+	default:
+		break;
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("StatusWidget: %s 스탯 UI 업데이트 - %.1f -> %.1f"), 
+		*UEnum::GetValueAsString(StatType), OldValue, NewValue);
+}
+
+void UStatusWidget::OnAttackPowerChanged(float NewAttackPower, float OldAttackPower)
+{
+	if (AtkText)
+	{
+		AtkText->SetText(FText::AsNumber(FMath::FloorToInt(NewAttackPower)));
+		
+		UE_LOG(LogTemp, Log, TEXT("StatusWidget: 공격력 UI 업데이트 - %.1f -> %.1f"), 
+			OldAttackPower, NewAttackPower);
+	}
+}
+
+void UStatusWidget::OnDefenseChanged(float NewDefense, float OldDefense)
+{
+	if (DefText)
+	{
+		DefText->SetText(FText::AsNumber(FMath::FloorToInt(NewDefense)));
+		
+		UE_LOG(LogTemp, Log, TEXT("StatusWidget: 방어력 UI 업데이트 - %.1f -> %.1f"), 
+			OldDefense, NewDefense);
 	}
 }

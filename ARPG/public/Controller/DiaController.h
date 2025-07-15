@@ -10,6 +10,7 @@
 
 class UDiaInventoryComponent;
 class UHUDWidget;
+class UDiaStatComponent;
 /**
  * 
  */
@@ -28,9 +29,16 @@ public:
 	void ToggleChracterStatusVisibility(bool bVisible);
 
 	ESlateVisibility GetInventoryVisibility() const;
+
+	// StatComponent 초기화 관련 함수들
+	UFUNCTION()
+	void OnStatComponentInitialized(UDiaStatComponent* StatComponent);
+	
+	void BindUIToStatComponent(UDiaStatComponent* StatComponent);
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
+	void OnPossess(APawn* InPawn) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UDiaInventoryComponent* DiaInventoryComponent;

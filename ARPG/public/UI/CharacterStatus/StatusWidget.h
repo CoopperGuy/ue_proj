@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "DiaComponent/DiaStatComponent.h"
 #include "StatusWidget.generated.h"
 
 class UTextBlock;
@@ -60,6 +61,16 @@ public:
 	
 	UFUNCTION()
 	void OnLevelUp(int32 NewLevel);
+
+	// 새로운 스탯 델리게이트 콜백들
+	UFUNCTION()
+	void OnBaseStatChanged(EDefaultStat StatType, float NewValue, float OldValue);
+	
+	UFUNCTION()
+	void OnAttackPowerChanged(float NewAttackPower, float OldAttackPower);
+	
+	UFUNCTION()
+	void OnDefenseChanged(float NewDefense, float OldDefense);
 
 protected:
 	// Tick 기반 업데이트
