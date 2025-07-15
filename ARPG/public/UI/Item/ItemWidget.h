@@ -24,15 +24,15 @@ public:
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual void NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	
-	void SetItemInfo(const FInventoryItem& ItemData);
+	void SetItemInfo(const FInventorySlot& ItemData);
     void SetWidgetGridPos(int32 PositionX, int32 PositionY);
 	
 	// Getter 함수들
-	FORCEINLINE const FInventoryItem& GetItemInfo() const { return ItemInfo; }	
+	FORCEINLINE const FInventorySlot& GetItemInfo() const { return ItemInfo; }
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UImage* ItemIcon;
 
 	UPROPERTY(BlueprintReadOnly)
-	FInventoryItem ItemInfo;
+	FInventorySlot ItemInfo;
 };

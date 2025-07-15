@@ -28,9 +28,9 @@ public:
     const FItemBase& GetItemData(const FName& ItemID) const;
     
     UFUNCTION(BlueprintCallable, Category = "Items")
-    FInventoryItem CreateItemInstance(const FName& ItemID, int32 Level = 1, bool bRandomStats = false);
+    FInventorySlot CreateItemInstance(const FName& ItemID, int32 Level = 1, bool bRandomStats = false);
     
-	UItemWidget* CreateItemWidget(const FInventoryItem& Item);
+	UItemWidget* CreateItemWidget(const FInventorySlot& Item);
     //UFUNCTION(BlueprintCallable, Category = "Items")
     //TArray<FName> GetItemsByFilter(const FItemFilter& Filter);
     
@@ -44,6 +44,6 @@ private:
     UPROPERTY()
     mutable TMap<FName, FItemBase> ItemCache;
     
-    void GenerateRandomStats(FInventoryItem& Item, int32 Level);
+    void GenerateRandomStats(FInventorySlot& Item, int32 Level);
 };
     

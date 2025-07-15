@@ -45,19 +45,18 @@ void UItemSubsystem::LoadItemData()
 #endif
 }
 
-FInventoryItem UItemSubsystem::CreateItemInstance(const FName& ItemID, int32 Level, bool bRandomStats)
+FInventorySlot UItemSubsystem::CreateItemInstance(const FName& ItemID, int32 Level, bool bRandomStats)
 {
     const FItemBase& ItemData = GetItemData(ItemID);
-    FInventoryItem Item;
-    Item.ItemID = ItemData.ItemID;
-    Item.Quantity = 1;
-    Item.Level = Level;
-    Item.bRandomStats = bRandomStats;
+    FInventorySlot Item;
+    Item.ItemInstance.BaseItem = ItemData;
+    Item.ItemInstance.Quantity = 1;
+    Item.ItemInstance.Level = Level;
     GenerateRandomStats(Item, Level);
     return Item;
 }
 
-UItemWidget* UItemSubsystem::CreateItemWidget(const FInventoryItem& Item)
+UItemWidget* UItemSubsystem::CreateItemWidget(const FInventorySlot& Item)
 {
     FSoftObjectPath ItemWidgetPath(TEXT("/Game/UI/Inventory/WBP_ItemWidget.WBP_ItemWidget_C"));
     TSoftClassPtr<UUserWidget> WidgetAssetPtr(ItemWidgetPath);
@@ -75,16 +74,12 @@ UItemWidget* UItemSubsystem::CreateItemWidget(const FInventoryItem& Item)
     return nullptr;
 }
 
-void UItemSubsystem::GenerateRandomStats(FInventoryItem& Item, int32 Level)
+void UItemSubsystem::GenerateRandomStats(FInventorySlot& Item, int32 Level)
 {
-    if (!Item.bRandomStats)
-    {
-        return;
-    }  
-
-    Item.Stats.Empty();
-    Item.Stats.Add(EItemStat::EIS_Health, FMath::RandRange(10, 20));
-    Item.Stats.Add(EItemStat::EIS_Mana, FMath::RandRange(10, 20));
+    // 기본 스탯에 추가로 보너스 스탯 생성
+    Item.ItemInstance.BonusStats.Empty();
+    Item.ItemInstance.BonusStats.Add(EItemStat::EIS_Health, FMath::RandRange(5, 15) * Level);
+    Item.ItemInstance.BonusStats.Add(EItemStat::EIS_Mana, FMath::RandRange(5, 15) * Level);
 }
 
 const FItemBase& UItemSubsystem::GetItemData(const FName& ItemID) const

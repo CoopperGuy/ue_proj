@@ -72,8 +72,6 @@ float ADiaBaseCharacter::TakeDamage(float DamageAmount, const FDamageEvent& Dama
 	return ActualDamage;
 }
 
-
-
 float ADiaBaseCharacter::PlayCharacterMontage(UAnimMontage* MontageToPlay, float PlayRate)
 {
 	if (!IsValid(GetMesh())) return 0.f;

@@ -144,7 +144,7 @@ void ADiaProjectile::ProcessDamage(ADiaBaseCharacter* Target, const FHitResult& 
     }
     // 데미지 적용
     FDamageEvent DamageEvent;
-    float AppliedDamage = DiaCombatComp->ApplyDamage(Target, Damage, DamageType);
+    float AppliedDamage = DiaCombatComp->ApplyDamage(Target, GetOwner(), Damage, DamageType);
     
     // 데미지 적용 로그
     UE_LOG(LogTemp, Log, TEXT("Projectile hit %s for %.2f damage"), 

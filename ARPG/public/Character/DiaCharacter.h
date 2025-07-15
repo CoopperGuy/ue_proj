@@ -58,7 +58,7 @@ protected:
 
     // 인벤토리 토글 함수
 	void ToggleInventory();
-
+	void ToggleCharacterStatus();
     /// <summary>
     /// 전투 관련 함수
     /// </summary>
@@ -83,6 +83,8 @@ protected:
     // UI Input Action
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* InventoryAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* CharacterStatusAction;
 
     // Input Mapping Context
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)

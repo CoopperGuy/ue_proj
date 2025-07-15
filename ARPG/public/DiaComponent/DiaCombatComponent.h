@@ -52,7 +52,7 @@ public:
 	void HandleDeath();
 
 	//데미지 관련 
-	float ApplyDamage(AActor* Target, float BaseDamage, TSubclassOf<UDiaDamageType> DamageTypeClass = nullptr);
+	float ApplyDamage(AActor* Target, AActor* DamageCauser, float BaseDamage, TSubclassOf<UDiaDamageType> DamageTypeClass = nullptr);
 	void ReceiveDamage(float DamageAmount, AActor* DamageCauser);
 	
 	//어그로 관리

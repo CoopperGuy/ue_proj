@@ -2,6 +2,7 @@
 
 #include "DiaComponent/DiaStatComponent.h"
 #include "DiaBaseCharacter.h"
+#include "System/CharacterManager.h"
 
 UDiaStatComponent::UDiaStatComponent()
 {
@@ -26,6 +27,72 @@ void UDiaStatComponent::InitializeFromData(const FMonsterInfo& MonsterInfo)
 	LevelData.CurrentLevel = 1;
 	LevelData.CurrentExp = 0.f;
 	LevelData.MaxExp = LevelData.GetRequiredExpForLevel(LevelData.CurrentLevel + 1);
+
+	// 초기화 완료 표시 및 델리게이트 호출
+	bIsInitialized = true;
+
+	UE_LOG(LogTemp, Log, TEXT("DiaStatComponent: 몬스터 스탯 초기화 완료"));
+}
+
+void UDiaStatComponent::InitializeFromCharacterData(FName CharacterID, int32 Level)
+{
+	// 게임 인스턴스에서 캐릭터 매니저 가져오기
+	UGameInstance* GI = GetWorld()->GetGameInstance();
+	if (!GI)
+	{
+		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: GameInstance을 찾을 수 없음"));
+		return;
+	}
+
+	UCharacterManager* CharacterManager = GI->GetSubsystem<UCharacterManager>();
+	if (!CharacterManager)
+	{
+		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: CharacterManager를 찾을 수 없음"));
+		return;
+	}
+
+	const FCharacterInfo* CharacterInfo = CharacterManager->GetCharacterInfo(CharacterID);
+	if (!CharacterInfo)
+	{
+		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: 캐릭터 정보를 찾을 수 없음 - ID: %s"), *CharacterID.ToString());
+		return;
+	}
+
+	// 체력/마나 초기화
+	CharacterData.MaxHealth = CharacterManager->CalculateMaxHPForLevel(CharacterInfo, Level);
+	CharacterData.Health = CharacterData.MaxHealth;
+	CharacterData.MaxMana = CharacterManager->CalculateMaxMPForLevel(CharacterInfo, Level);
+	CharacterData.Mana = CharacterData.MaxMana;
+
+	// 스탯 배열 초기화 (헬퍼 함수 사용)
+	CharacterData.InitializeStatArrays();
+	
+	// 기본 스탯 설정 (델리게이트 포함 버전 사용)
+	SetStrength(CharacterManager->CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseStrength, CharacterInfo->StrengthPerLevel, Level));
+	SetIntelligence(CharacterManager->CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseIntelligence, CharacterInfo->IntelligencePerLevel, Level));
+	SetDexterity(CharacterManager->CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseDexterity, CharacterInfo->DexterityPerLevel, Level));
+	SetConstitution(CharacterManager->CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseConstitution, CharacterInfo->ConstitutionPerLevel, Level));
+
+	// 전투 스탯 초기화
+	CombatStats.AttackPower = CharacterManager->CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseAttackPower, CharacterInfo->AttackPowerPerLevel, Level);
+	CombatStats.Defense = CharacterManager->CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseDefense, CharacterInfo->DefensePerLevel, Level);
+	CombatStats.AttackSpeed = CharacterInfo->BaseAttackSpeed;
+	CombatStats.AttackRange = CharacterInfo->BaseAttackRange;
+
+	// 레벨 정보 초기화
+	LevelData.CurrentLevel = Level;
+	LevelData.CurrentExp = 0.0f;
+	LevelData.MaxExp = CharacterManager->CalculateExpRequiredForLevel(CharacterInfo, Level + 1);
+
+	// 캐릭터 정보 저장 (레벨업 시 사용)
+	CurrentCharacterID = CharacterID;
+
+	// 초기화 완료 표시 및 델리게이트 호출
+	bIsInitialized = true;
+	OnStatComponentInitialized.Broadcast(this);
+
+	UE_LOG(LogTemp, Log, TEXT("DiaStatComponent: 플레이어 캐릭터 스탯 초기화 완료 - ID: %s, 레벨: %d"), 
+		*CharacterID.ToString(), Level);
 }
 
 void UDiaStatComponent::TakeDamage(float DamageAmount)
@@ -190,7 +257,10 @@ void UDiaStatComponent::AddExperience(float ExpAmount)
 	// 경험치 변경 이벤트 발생
 	if (LevelData.CurrentExp != OldExp)
 	{
+		bool isBound = OnExpChanged.IsBound();
 		OnExpChanged.Broadcast(LevelData.CurrentExp, LevelData.MaxExp);
+
+		UE_LOG(LogTemp, Warning, TEXT("Bound Count : %d"), isBound);
 	}
 }
 
@@ -263,4 +333,68 @@ void UDiaStatComponent::RecalculateStatsForLevel(int32 Level)
 	// 체력과 마나를 완전 회복
 	CharacterData.Health = CharacterData.MaxHealth;
 	CharacterData.Mana = CharacterData.MaxMana;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// 향상된 스탯 변경 함수들 (델리게이트 포함)
+//////////////////////////////////////////////////////////////////////////
+
+void UDiaStatComponent::SetBaseStat(EDefaultStat StatType, float NewValue)
+{
+	float OldValue = CharacterData.GetStat(StatType);
+	
+	// 값이 실제로 변경된 경우에만 처리
+	if (FMath::IsNearlyEqual(OldValue, NewValue, 0.01f))
+	{
+		return;
+	}
+
+	// 스탯 값 설정
+	CharacterData.SetStat(StatType, NewValue);
+	
+	// 델리게이트 호출
+	OnBaseStatChanged.Broadcast(StatType, NewValue, OldValue);
+	
+	UE_LOG(LogTemp, Log, TEXT("%s: %s 스탯 변경 %.1f -> %.1f"), 
+		*GetOwner()->GetName(), 
+		*UEnum::GetValueAsString(StatType), 
+		OldValue, NewValue);
+}
+
+void UDiaStatComponent::SetAttackPower(float NewAttackPower)
+{
+	float OldAttackPower = CombatStats.AttackPower;
+	
+	// 값이 실제로 변경된 경우에만 처리
+	if (FMath::IsNearlyEqual(OldAttackPower, NewAttackPower, 0.01f))
+	{
+		return;
+	}
+
+	CombatStats.AttackPower = NewAttackPower;
+	
+	// 델리게이트 호출
+	OnAttackPowerChanged.Broadcast(NewAttackPower, OldAttackPower);
+	
+	UE_LOG(LogTemp, Log, TEXT("%s: 공격력 변경 %.1f -> %.1f"), 
+		*GetOwner()->GetName(), OldAttackPower, NewAttackPower);
+}
+
+void UDiaStatComponent::SetDefense(float NewDefense)
+{
+	float OldDefense = CombatStats.Defense;
+	
+	// 값이 실제로 변경된 경우에만 처리
+	if (FMath::IsNearlyEqual(OldDefense, NewDefense, 0.01f))
+	{
+		return;
+	}
+
+	CombatStats.Defense = NewDefense;
+	
+	// 델리게이트 호출
+	OnDefenseChanged.Broadcast(NewDefense, OldDefense);
+	
+	UE_LOG(LogTemp, Log, TEXT("%s: 방어력 변경 %.1f -> %.1f"), 
+		*GetOwner()->GetName(), OldDefense, NewDefense);
 } 

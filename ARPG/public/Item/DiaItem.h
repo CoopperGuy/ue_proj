@@ -49,7 +49,7 @@ public:
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
-	FInventoryItem InventoryItem;
+	FInventorySlot InventoryItem;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* ItemMeshComp;

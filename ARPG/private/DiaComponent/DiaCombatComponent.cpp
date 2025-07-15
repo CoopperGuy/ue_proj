@@ -145,7 +145,7 @@ void UDiaCombatComponent::EnterCombat(AActor* CombatTarget)
            IsValid(CombatTarget) ? *CombatTarget->GetName() : TEXT("unknown"));
 }
 
-float UDiaCombatComponent::ApplyDamage(AActor* Target, float BaseDamage, TSubclassOf<UDiaDamageType> DamageTypeClass)
+float UDiaCombatComponent::ApplyDamage(AActor* Target, AActor* DamageCauser, float BaseDamage, TSubclassOf<UDiaDamageType> DamageTypeClass)
 {
     if (!IsValid(Target) || CurrentCombatState == ECombatState::Dead)
     {
@@ -164,7 +164,7 @@ float UDiaCombatComponent::ApplyDamage(AActor* Target, float BaseDamage, TSubcla
     
     // 데미지 계산 및 적용
     float ActualDamage = UDiaDamageCalculator::ApplyDamage(
-        GetOwner(),
+        DamageCauser,
         Target,
         BaseDamage,
         FinalDamageType,
@@ -492,6 +492,7 @@ void UDiaCombatComponent::GiveExperienceToKiller()
     {
 		float ExpReward = CalculateExpReward();
         Killer->AddExp(ExpReward);
+        UE_LOG(LogTemp, Log, TEXT("get exp : %f"), ExpReward);
     }
 }
 

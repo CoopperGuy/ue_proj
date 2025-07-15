@@ -24,7 +24,7 @@ public:
 	void InitializeInventory();
 
 	// Add item to inventory
-	bool AddItemToInventory(const FInventoryItem& ItemData, int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);
+	bool AddItemToInventory(const FInventorySlot& ItemData, int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);
 	// Remove item from inventory
 	bool RemoveItemFromInventory(int32 SlotIndex);
 	//슬롯이 비어있는지 판단한다

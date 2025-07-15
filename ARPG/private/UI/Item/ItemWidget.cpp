@@ -6,6 +6,7 @@
 #include "UI/Inventory/MainInventory.h"
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/PanelWidget.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 
 void UItemWidget::NativeConstruct()
@@ -13,15 +14,15 @@ void UItemWidget::NativeConstruct()
 	Super::NativeConstruct();
 }
 
-void UItemWidget::SetItemInfo(const FInventoryItem& ItemData)
+void UItemWidget::SetItemInfo(const FInventorySlot& ItemData)
 {
 	ItemInfo = ItemData;
 	if (ItemIcon)
 	{
-		if (ItemInfo.IconPath.IsValid())
+		if (ItemInfo.ItemInstance.GetIconPath().IsValid())
 		{
 			// FSoftObjectPath를 통해 텍스처 비동기 로딩
-			TSoftObjectPtr<UTexture2D> IconTexture(ItemInfo.IconPath);
+			TSoftObjectPtr<UTexture2D> IconTexture(ItemInfo.ItemInstance.GetIconPath());
 			if (UTexture2D* Icon = IconTexture.LoadSynchronous())
 			{
 				ItemIcon->SetBrushFromTexture(Icon);
@@ -57,8 +58,8 @@ void UItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPoint
 	// 드래그 정보 설정
 	DragOperation->ItemData = ItemInfo;
 	DragOperation->SourceWidget = this;
-	DragOperation->ItemWidth = ItemInfo.Width;
-	DragOperation->ItemHeight = ItemInfo.Height;
+	DragOperation->ItemWidth = ItemInfo.ItemInstance.GetWidth();
+	DragOperation->ItemHeight = ItemInfo.ItemInstance.GetHeight();
 	
 	// 드래그 시각적 위젯 생성 (원본의 복사본)
 	UItemWidget* DragVisual = CreateWidget<UItemWidget>(GetWorld(), GetClass());
@@ -96,7 +97,7 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	
 	// 부모 인벤토리 위젯 찾기 - 위젯 계층을 따라 올라가며 UMainInventory 찾기
 	UMainInventory* ParentInventory = nullptr;
-	UWidget* CurrentParent = GetParent();
+	UPanelWidget* CurrentParent = GetParent();
 	while (CurrentParent)
 	{
 		ParentInventory = Cast<UMainInventory>(CurrentParent);

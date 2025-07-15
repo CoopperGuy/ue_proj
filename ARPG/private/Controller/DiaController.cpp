@@ -3,8 +3,10 @@
 
 #include "Controller/DiaController.h"
 #include "DiaComponent/UI/DiaInventoryComponent.h"
+#include "DiaComponent/DiaStatComponent.h"
 #include "UI/HUDWidget.h"
 #include "UI/Inventory/MainInventory.h"
+#include "UI/CharacterStatus/StatusWidget.h"
 #include "GameMode/DungeonGameMode.h"
 
 ADiaController::ADiaController()
@@ -53,6 +55,58 @@ void ADiaController::SetupInputComponent()
 	Super::SetupInputComponent();
 }
 
+void ADiaController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+	if (!IsValid(InPawn)) return;
+
+	UDiaStatComponent* StatComponent =
+		Cast<UDiaStatComponent>(InPawn->GetComponentByClass(UDiaStatComponent::StaticClass()));
+	if (IsValid(StatComponent))
+	{
+		// 이미 초기화되었으면 즉시 바인딩
+		if (StatComponent->IsInitialized())
+		{
+			BindUIToStatComponent(StatComponent);
+		}
+		else
+		{
+			// 초기화 완료 시 바인딩하도록 델리게이트 등록
+			StatComponent->GetOnStatComponentInitialized().AddDynamic(this, &ADiaController::OnStatComponentInitialized);
+			UE_LOG(LogTemp, Log, TEXT("StatComponent 초기화 대기 중..."));
+		}
+	}
+}
+
+void ADiaController::OnStatComponentInitialized(UDiaStatComponent* StatComponent)
+{
+	if (IsValid(StatComponent))
+	{
+		BindUIToStatComponent(StatComponent);
+		// 델리게이트 바인딩 해제 (한 번만 실행되도록)
+		StatComponent->GetOnStatComponentInitialized().RemoveDynamic(this, &ADiaController::OnStatComponentInitialized);
+	}
+}
+
+void ADiaController::BindUIToStatComponent(UDiaStatComponent* StatComponent)
+{
+	if (!IsValid(StatComponent)) return;
+	
+	UHUDWidget* HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget)) return;
+
+	UStatusWidget* StatusWidget = HUDWidget->GetCharacterStatusWidget();
+	if (IsValid(StatusWidget))
+	{
+		StatusWidget->BindToStatComponent(StatComponent);
+		UE_LOG(LogTemp, Log, TEXT("StatusWidget이 초기화된 StatComponent에 성공적으로 바인딩되었습니다"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("StatusWidget이 null입니다"));
+	}
+}
+
 UHUDWidget* ADiaController::GetHUDWidget() const
 {
 	// 캐시된 HUDWidget이 유효하면 그대로 반환
@@ -86,7 +140,7 @@ UHUDWidget* ADiaController::GetHUDWidget() const
 
 //인벤토리에 아이템 더하기 호출.
 //외부에서 호출하자.
-bool ADiaController::ItemAddedToInventory(const FInventoryItem& Item)
+bool ADiaController::ItemAddedToInventory(const FInventorySlot& Item)
 {
 	if (!IsValid(DiaInventoryComponent))
 	{
@@ -115,13 +169,13 @@ bool ADiaController::ItemAddedToInventory(const FInventoryItem& Item)
 	bool bResult = DiaInventoryComponent->TryAddItem(Item, InventoryWidget);
 	if (bResult)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Item successfully added to inventory: %s"), *Item.ItemID.ToString());
+		UE_LOG(LogTemp, Log, TEXT("Item successfully added to inventory: %s"), *Item.ItemInstance.BaseItem.ItemID.ToString());
 	}
 
 	return bResult;
 }
 
-void ADiaController::ItemRemoved(const FInventoryItem& Item)
+void ADiaController::ItemRemoved(const FInventorySlot& Item)
 {
 	if (!IsValid(DiaInventoryComponent))
 	{
@@ -143,14 +197,14 @@ void ADiaController::ItemRemoved(const FInventoryItem& Item)
 		return;
 	}
 
-	bool bResult = DiaInventoryComponent->RemoveItem(Item.InstanceID, InventoryWidget);
+	bool bResult = DiaInventoryComponent->RemoveItem(Item.ItemInstance.InstanceID, InventoryWidget);
 	if (bResult)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Item successfully removed from inventory: %s"), *Item.ItemID.ToString());
+		UE_LOG(LogTemp, Log, TEXT("Item successfully removed from inventory: %s"), *Item.ItemInstance.BaseItem.ItemID.ToString());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to remove item from inventory: %s"), *Item.ItemID.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Failed to remove item from inventory: %s"), *Item.ItemInstance.BaseItem.ItemID.ToString());
 	}
 }
 
@@ -173,6 +227,25 @@ void ADiaController::ToggleInventoryVisibility(bool bVisible)
 	InventoryWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
+void ADiaController::ToggleChracterStatusVisibility(bool bVisible)
+{
+	UHUDWidget* HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		return;
+	}
+
+	UStatusWidget* StatusWidget = HUDWidget->GetCharacterStatusWidget();
+	if (!StatusWidget)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("StatusWidget is null"));
+		return;
+	}
+
+	StatusWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
 ESlateVisibility ADiaController::GetInventoryVisibility() const
 {
 	const UHUDWidget* const HUDWidget = GetHUDWidget();
@@ -188,6 +261,25 @@ ESlateVisibility ADiaController::GetInventoryVisibility() const
 		UE_LOG(LogTemp, Warning, TEXT("InventoryWidget is null"));
 		return ESlateVisibility::Collapsed;
 	}
-
+	
 	return InventoryWidget->GetVisibility();
 }
+
+ESlateVisibility ADiaController::GetWidgetVisibility(const FName& FoundName) const
+{
+	UHUDWidget* const HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		return ESlateVisibility::Collapsed;
+	}
+	UUserWidget* FoundWidget = HUDWidget->FindWidgetByName(FoundName);
+	if (!IsValid(FoundWidget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Widget with name '%s' not found in HUDWidget"), *FoundName.ToString());
+		return ESlateVisibility::Collapsed;
+	}
+	return FoundWidget->GetVisibility();
+}
+
+

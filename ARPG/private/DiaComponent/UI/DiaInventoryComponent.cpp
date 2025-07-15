@@ -29,7 +29,7 @@ void UDiaInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 }
 
-bool UDiaInventoryComponent::TryAddItem(const FInventoryItem& ItemData, UMainInventory* InvenWidget)
+bool UDiaInventoryComponent::TryAddItem(const FInventorySlot& ItemData, UMainInventory* InvenWidget)
 {
 	if (!InvenWidget) return false;
 
@@ -39,16 +39,16 @@ bool UDiaInventoryComponent::TryAddItem(const FInventoryItem& ItemData, UMainInv
 
 	//아이템을 넣을 수 있는 공간을 체크
 	//없다면 false
-	if (!FInventoryUtils::FindPlaceForItem(this, ItemData.Width, ItemData.Height, OutPosX, OutPosY)) return false;
+	if (!FInventoryUtils::FindPlaceForItem(this, ItemData.ItemInstance.GetWidth(), ItemData.ItemInstance.GetHeight(), OutPosX, OutPosY)) return false;
 
 	InvenIdx = OutPosX * GridWidth + OutPosY;
 	//ui작업
-	bool res = InvenWidget->AddItemToInventory(ItemData, ItemData.Width, ItemData.Height, OutPosX, OutPosY);
+	bool res = InvenWidget->AddItemToInventory(ItemData, ItemData.ItemInstance.GetWidth(), ItemData.ItemInstance.GetHeight(), OutPosX, OutPosY);
 	//삽입에 성공하면, 여기서도 아이템이 삽입 되었다는 사실을 추가한다.
 	if (res)
 	{
 		Items.Add(ItemData);
-		FillGrid(ItemData.Width, ItemData.Height, OutPosX, OutPosY);
+		FillGrid(ItemData.ItemInstance.GetWidth(), ItemData.ItemInstance.GetHeight(), OutPosX, OutPosY);
 		
 		return true;
 	}

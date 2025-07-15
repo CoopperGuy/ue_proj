@@ -5,6 +5,8 @@
 #include "UI/Orb.h"
 #include "UI/MonsterHP.h"
 #include "UI/Inventory/MainInventory.h"
+#include "UI/CharacterStatus/StatusWidget.h"
+#include "Blueprint/WidgetTree.h"
 
 void UHUDWidget::NativeConstruct()
 {
@@ -12,6 +14,7 @@ void UHUDWidget::NativeConstruct()
 
 	SetMonsterHPVisibility(ESlateVisibility::Collapsed);
 	InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
+	CharacterStatus->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UHUDWidget::UpdateOrbPercentage(OrbType _Type, float _Percentage)
@@ -43,3 +46,19 @@ void UHUDWidget::SetMonsterHPVisibility(ESlateVisibility _Visibility)
 {
 	MonsterHPWidget->SetVisibility(_Visibility);
 }
+
+UUserWidget* UHUDWidget::FindWidgetByName(const FName& WidgetName)
+{
+	if (!WidgetTree)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("WidgetTree is null in UHUDWidget::FindWidgetByName"));
+		return nullptr;
+	}
+	UWidget* FoundWidget = WidgetTree->FindWidget(WidgetName);
+	if (FoundWidget)
+	{
+		return Cast<UUserWidget>(FoundWidget);
+	}
+	return nullptr;
+}
+
