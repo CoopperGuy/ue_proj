@@ -4,6 +4,7 @@
 #include "Types/ItemBase.h"
 
 class UDiaInventoryComponent;
+class UItemWidget;
 
 /**
  * 인벤토리 관련 공통 유틸리티 함수들
@@ -56,4 +57,12 @@ public:
      * @param OutIndices 결과 인덱스들 (출력)
      */
     static void GetOccupiedCellIndices(int32 GridWidth, int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY, TArray<int32>& OutIndices);
+
+    /**
+     * ItemSubsystem을 통해 아이템 위젯 생성
+     * @param WorldContext 월드 컨텍스트를 제공하는 UObject (GameInstance 접근용)
+     * @param ItemData 생성할 아이템 데이터
+     * @return 생성된 ItemWidget (실패 시 nullptr)
+     */
+    static UItemWidget* CreateItemWidget(const UObject* WorldContext, const FInventorySlot& ItemData);
 }; 

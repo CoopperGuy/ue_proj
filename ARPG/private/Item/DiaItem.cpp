@@ -95,7 +95,7 @@ void ADiaItem::SetItemProperty(const FItemBase& _ItemData)
 	}
 }
 
-void ADiaItem::DropItem()
+void ADiaItem::DropItem(const FItemBase& ItemData)
 {
 	RollingItem();
 	SetItemName(FText::FromName(InventoryItem.ItemInstance.BaseItem.ItemID));

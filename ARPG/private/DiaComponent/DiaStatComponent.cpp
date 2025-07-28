@@ -339,7 +339,7 @@ void UDiaStatComponent::RecalculateStatsForLevel(int32 Level)
 // 향상된 스탯 변경 함수들 (델리게이트 포함)
 //////////////////////////////////////////////////////////////////////////
 
-void UDiaStatComponent::SetBaseStat(EDefaultStat StatType, float NewValue)
+void UDiaStatComponent::SetBaseStat(EItemStat StatType, float NewValue)
 {
 	float OldValue = CharacterData.GetStat(StatType);
 	

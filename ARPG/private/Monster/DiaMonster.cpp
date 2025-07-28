@@ -282,7 +282,7 @@ void ADiaMonster::DropItem()
 	{
 		// 아이템 데이터 생성
 		UItemSubsystem* ItemSubsystem = GetGameInstance()->GetSubsystem<UItemSubsystem>();
-		const FItemBase& ItemBaseData = ItemSubsystem->GetItemData("Potion_Health_S");
+		const FItemBase& ItemBaseData = ItemSubsystem->GetItemData("Weapon_Sword_01");
 		DungeonGameMode->SpawnItemAtLocation(this, ItemBaseData);
 	}
 	else
@@ -323,6 +323,7 @@ void ADiaMonster::Die()
 {
 	Super::Die();
 
+	//드랍되는아이템을 가져오는 방법 고안 필요하다.
 	DropItem();
 
 	ADungeonGameMode* DungeonGameMode = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());

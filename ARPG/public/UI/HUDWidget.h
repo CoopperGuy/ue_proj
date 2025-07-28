@@ -23,6 +23,7 @@ class UOrb;
 class UMonsterHP;
 class UMainInventory;
 class UStatusWidget;
+class UEquipWidget;
 /**
  * 
  */
@@ -53,12 +54,15 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UStatusWidget* CharacterStatus;
 
-	
+	UPROPERTY(meta = (BindWidget))
+	UEquipWidget* EquipmentWidget;
+
 public:
 	void SetMonsterHPVisibility(ESlateVisibility _Visibility);
 	FORCEINLINE UMainInventory* GetInventoryWidget() const { return InventoryWidget; }
 	FORCEINLINE UStatusWidget* GetCharacterStatusWidget() const { return CharacterStatus; }
-	
+	FORCEINLINE UEquipWidget* GetEquipmentWidget() const { return EquipmentWidget; }
+
 	UUserWidget* FindWidgetByName(const FName& WidgetName);
 };
 

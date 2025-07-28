@@ -3,6 +3,8 @@
 #include "Engine/DataTable.h"
 #include "ItemBase.generated.h"  
 
+struct FEquippedItem;
+
 UENUM(BlueprintType)
 enum class EItemRarity : uint8
 {
@@ -33,6 +35,11 @@ enum class EItemStat : uint8
 	EIS_Attack,
 	EIS_Defense,
 	EIS_Speed,
+	EIS_Str,
+	EIS_Int,
+	EIS_Dex,
+	EIS_Con,
+	EIS_Max,
 	EIS_MAX
 };
 
@@ -53,6 +60,15 @@ enum class EEquipmentSlot : uint8
 	EES_Amulet,
 	EES_Max
 };
+
+// enum class를 정수로 변환하는 유틸리티 함수
+FORCEINLINE constexpr int32 ToInt(EItemStat StatType)
+{
+	return static_cast<int32>(StatType);
+}
+
+// 스탯 배열 크기를 가져오는 상수
+static constexpr int32 STAT_ARRAY_SIZE = ToInt(EItemStat::EIS_MAX);
 
 
 USTRUCT(BlueprintType)
@@ -102,6 +118,7 @@ struct ARPG_API FItemBase : public FTableRowBase
 	// 기본 스탯 정보
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TMap<EItemStat, float> BaseStats;
+
 };
 
 USTRUCT(BlueprintType)
@@ -124,9 +141,6 @@ struct ARPG_API FItemInstance
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
 	bool bIsLocked = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	TMap<EItemStat, float> BonusStats;
-
 	FItemInstance()
 		: InstanceID(FGuid::NewGuid())
 	{
@@ -143,25 +157,6 @@ struct ARPG_API FItemInstance
 	bool IsEquippable() const { return BaseItem.bIsEquippable; }
 	EEquipmentSlot GetEquipmentSlot() const { return BaseItem.EquipmentSlot; }
 	FSoftObjectPath GetIconPath() const { return BaseItem.IconPath; }
-	
-	TMap<EItemStat, float> GetTotalStats() const
-	{
-		TMap<EItemStat, float> TotalStats = BaseItem.BaseStats;
-		
-		for (const auto& BonusPair : BonusStats)
-		{
-			if (TotalStats.Contains(BonusPair.Key))
-			{
-				TotalStats[BonusPair.Key] += BonusPair.Value;
-			}
-			else
-			{
-				TotalStats.Add(BonusPair.Key, BonusPair.Value);
-			}
-		}
-		
-		return TotalStats;
-	}
 
 	static FItemInstance FromDataTable(UDataTable* ItemTable, FName ItemID, int32 InQuantity = 1)
 	{
@@ -219,7 +214,67 @@ struct ARPG_API FInventorySlot
 		return Result;
 	}
 
+	FEquippedItem ToEquippItem() const;
 };
+
+//장비용
+USTRUCT(BlueprintType)
+struct ARPG_API FEquippedItem
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+	FItemInstance ItemInstance;
+	
+	bool IsEmpty() const { return !ItemInstance.IsValid(); }
+	
+	void Clear() 
+	{ 
+		ItemInstance = FItemInstance();
+	}
+
+	// FInventorySlot에서 FEquippedItem로 변환 (그리드 정보는 손실됨)
+	static FEquippedItem FromInventorySlot(const FInventorySlot& InventorySlot)
+	{
+		FEquippedItem Result;
+		Result.ItemInstance = InventorySlot.ItemInstance;
+		return Result;
+	}
+
+	// 기존 함수명 유지 (하위호환성)
+	static FEquippedItem FromInventoryItem(const FInventorySlot& _BaseItem, int32 InQuantity = 1)
+	{
+		return FromInventorySlot(_BaseItem);
+	}
+
+	// FItemBase에서 직접 생성
+	static FEquippedItem FromBase(const FItemBase& BaseItem, int32 Level = 1)
+	{
+		FEquippedItem Result;
+		Result.ItemInstance = FItemInstance::FromBase(BaseItem);
+		Result.ItemInstance.Level = Level;
+		return Result;
+	}
+
+	// FEquippedItem에서 FInventorySlot로 변환 (그리드 위치는 기본값으로 설정)
+	FInventorySlot ToInventorySlot(int32 GridX = 0, int32 GridY = 0) const;
+};
+
+inline FEquippedItem FInventorySlot::ToEquippItem() const
+{
+	FEquippedItem Result;
+	Result.ItemInstance = ItemInstance;
+	return Result;
+}
+
+inline FInventorySlot FEquippedItem::ToInventorySlot(int32 GridX, int32 GridY) const
+{
+	FInventorySlot Result;
+	Result.ItemInstance = ItemInstance;
+	Result.GridX = GridX;
+	Result.GridY = GridY;
+	return Result;
+}
 
 USTRUCT(BlueprintType)
 struct ARPG_API FGrid

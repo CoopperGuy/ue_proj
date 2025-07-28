@@ -8,6 +8,8 @@
 #include "DiaEquipmentComponent.generated.h"
 
 
+class UDiaStatComponent;
+class UEquipWidget;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ARPG_API UDiaEquipmentComponent : public UActorComponent
@@ -20,12 +22,20 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	void ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot);
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	//아이템이 드래그 되면 호출하여 아이템을 장착한다.
+	void EquipItem(const FEquippedItem& Item, EEquipmentSlot Slot);
 private:
-	//장착용 아이템 맵 -> FInventoryItem에서 다른 구조체 생성 해야한다.
-	TMap<EEquipmentSlot, FInventorySlot> EquipmentMap;
-		
+	//장착한 아이템을 매핑하는 컴포넌트
+	UPROPERTY()
+	TMap<EEquipmentSlot, FEquippedItem> EquipmentMap;
 	
+	//StatComponent를 연결하기 위해 가져온다.
+	UPROPERTY()
+	TWeakObjectPtr<UDiaStatComponent> StatComponent;
+public:
+	void SetStatComponent(UDiaStatComponent* InStatComponent);
 };

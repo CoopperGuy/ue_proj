@@ -8,6 +8,8 @@
 #include "ItemWidget.generated.h"
 
 class UImage;
+class UEquipSlot;
+class USizeBox;
 /**
  * 
  */
@@ -25,14 +27,34 @@ public:
 	virtual void NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	
 	void SetItemInfo(const FInventorySlot& ItemData);
+	FVector2D CalculateIconSize(const FInventorySlot& ItemData) const;
+	void SetIconSize(const FVector2D& NewSize);
     void SetWidgetGridPos(int32 PositionX, int32 PositionY);
+	void SetWidgetPosition(int32 PositionX, int32 PositionY);
 	
+	void ClearItemInfo();
 	// Getter 함수들
 	FORCEINLINE const FInventorySlot& GetItemInfo() const { return ItemInfo; }
+	FORCEINLINE UEquipSlot* GetParentSlot() const { return ParentSlot; }
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UImage* ItemIcon;
 
+	UPROPERTY(meta = (BindWidget))
+	USizeBox* ItemSzBox;
+
 	UPROPERTY(BlueprintReadOnly)
 	FInventorySlot ItemInfo;
+	
+	// 장비 슬롯 부모 위젯 참조
+	UPROPERTY()
+	UEquipSlot* ParentSlot;
+
+	const float BaseSlotSize = 52.0f;
+	
+private:
+	bool ValidateIconComponents() const;
+	void ConfigureSizeBox(const FVector2D& NewSize);
+	void ConfigureCanvasSlot(UWidget* Widget, const FVector2D& NewSize);
+	void ForceLayoutUpdate();
 };

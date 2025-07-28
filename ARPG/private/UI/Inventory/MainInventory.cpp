@@ -13,6 +13,7 @@
 #include "System/ItemSubsystem.h"
 
 #include "DiaComponent/UI/DiaInventoryComponent.h"
+#include "DiaComponent/UI/DiaEquipmentComponent.h"
 
 #include "Blueprint/WidgetTree.h"
 #include "Blueprint/UserWidget.h"
@@ -81,42 +82,37 @@ bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 It
 	//근데 그냥 만들면 안되나??;
 
 	//아이템 위잿 생성
-	UGameInstance* GI = GetGameInstance();
-	if (IsValid(GI))
+
+	// ItemSubsystem에서 아이템 위젯을 생성한다.
+	UItemWidget* ItemWidget = FInventoryUtils::CreateItemWidget(this, ItemData);
+	if (IsValid(ItemWidget))
 	{
-		UItemSubsystem* ItemSubsSystem = GI->GetSubsystem<UItemSubsystem>();
-		if (IsValid(ItemSubsSystem))
+		// ItemWidget을 InventoryCanvas의 자식으로 추가
+		UCanvasPanelSlot* ItemSlot = InventoryCanvas->AddChildToCanvas(ItemWidget);
+
+		if (IsValid(ItemSlot))
 		{
-			// ItemSubsystem에서 아이템 위젯을 생성한다.
-			UItemWidget* ItemWidget = ItemSubsSystem->CreateItemWidget(ItemData);
-			if (IsValid(ItemWidget))
-			{
-				// ItemWidget을 InventoryCanvas의 자식으로 추가
-				UCanvasPanelSlot* ItemSlot = InventoryCanvas->AddChildToCanvas(ItemWidget);
-				if (IsValid(ItemSlot))
-				{
-					// 해당 슬롯과 같은 위치와 크기로 설정
-					
-					FVector2D SlotSize = FVector2D(szSlot * ItemWidth, szSlot * ItemHeight);
-					FVector2D SlotPosition = (InventorySlots[LeftTopSlot]->GetPosition() + InventorySlots[RightBottomSlot]->GetPosition()) * 0.5f - (SlotSize * 0.5f);
+			// 해당 슬롯과 같은 위치와 크기로 설정
+			FVector2D SlotSize = FVector2D(szSlot * ItemWidth, szSlot * ItemHeight);
+			FVector2D SlotPosition = (InventorySlots[LeftTopSlot]->GetPosition() + InventorySlots[RightBottomSlot]->GetPosition()) * 0.5f - (SlotSize * 0.5f);
 
-					ItemSlot->SetPosition(SlotPosition);
-					ItemSlot->SetSize(SlotSize);
-					ItemSlot->SetZOrder(1); // 슬롯 위에 렌더링되도록 Z 순서 설정
-					
-					// 아이템 위젯을 맵에 저장
-					ItemWidgets.Emplace(ItemData.ItemInstance.InstanceID, ItemWidget);
-					ItemWidget->SetWidgetGridPos(PosX, PosY);
-
-					//결과에 대한 로그 작성
-					//fguid, name, gridx ,gridy 표현
-					FString guid = ItemData.ItemInstance.InstanceID.ToString();
-					UE_LOG(LogTemp, Log, TEXT("Added item to inventory: %s (guid : %s) at Slot (%f, %f)"), *ItemData.ItemInstance.BaseItem.ItemID.ToString(), *guid, SlotPosition.X, SlotPosition.Y);
-				}
-			}
+			ItemSlot->SetPosition(SlotPosition);
+			ItemSlot->SetSize(SlotSize);   // 명시적 크기 설정
+						
+			UE_LOG(LogTemp, Log, TEXT("MainInventory: Canvas Panel Slot configured - Position: %s, Size: %s"), 
+				*SlotPosition.ToString(), *SlotSize.ToString());
+			
+			// 아이템 위젯을 맵에 저장
+			ItemWidgets.Emplace(ItemData.ItemInstance.InstanceID, ItemWidget);
+			ItemWidget->SetWidgetGridPos(PosX, PosY);
+			
+			//결과에 대한 로그 작성
+			//fguid, name, gridx ,gridy 표현
+			FString guid = ItemData.ItemInstance.InstanceID.ToString();
+			UE_LOG(LogTemp, Log, TEXT("Added item to inventory: %s (guid : %s) at Slot (%f, %f)"), *ItemData.ItemInstance.BaseItem.ItemID.ToString(), *guid, SlotPosition.X, SlotPosition.Y);
 		}
 	}
-	
+
 	return true;
 }
 

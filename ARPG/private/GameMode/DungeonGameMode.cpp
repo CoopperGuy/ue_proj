@@ -77,7 +77,7 @@ void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& 
 		if (SpawnedItem)
 		{
 			SpawnedItem->SetItemProperty(ItemData);
-			SpawnedItem->DropItem();
+			SpawnedItem->DropItem(ItemData);
 		}
 	}
 }

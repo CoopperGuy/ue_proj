@@ -11,6 +11,7 @@ class UCanvasPanelSlot;
 class UCanvasPanel;
 class UItemWidget;
 class UDiaInventoryComponent;
+class UDiaEquipmentComponent;
 /**
  * 
  */
@@ -69,6 +70,8 @@ protected:
 	TMap<FGuid, UItemWidget*> ItemWidgets;
 
 	TWeakObjectPtr<UDiaInventoryComponent> InventoryComponent;
+	TWeakObjectPtr<UDiaEquipmentComponent> EquippementComponent;
+
 	int32 GridWidth = 0; // 그리드 너비
 	int32 GridHeight = 0; // 그리드 높이
 public:
@@ -77,4 +80,5 @@ public:
 	FORCEINLINE UUserWidget* GetItemWidgetAt(int32 Index) const;
 	void GetAllItemWidgets(TArray<UUserWidget*>& OutItemWidgets) const;
 	void SetInventoryComponent(UDiaInventoryComponent* InComponent) { InventoryComponent = InComponent; }
+	void SetEquipmentComponent(UDiaEquipmentComponent* InComponent) { EquippementComponent = InComponent; }
 };
