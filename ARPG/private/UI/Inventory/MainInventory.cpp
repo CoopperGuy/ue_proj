@@ -4,6 +4,8 @@
 #include "UI/Inventory/MainInventory.h"
 #include "UI/Item/ItemWidget.h"
 #include "UI/DragDrop/ItemDragDropOperation.h"
+#include "UI/HUDWidget.h"
+#include "UI/Inventory/EquipWidget.h"
 
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
@@ -118,25 +120,10 @@ bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 It
 
 bool UMainInventory::RemoveItemFromInventory(int32 SlotIndex)
 {
-	//// 슬롯 인덱스 유효성 검사
-	//if (!InventorySlots.IsValidIndex(SlotIndex))
-	//	return false;
-	//
-	//// 해당 슬롯에 아이템 위젯이 있는지 확인
-	//UItemWidget** FoundItemWidget = ItemWidgets.Find(SlotIndex);
-	//if (!FoundItemWidget || !IsValid(*FoundItemWidget))
-	//	return false;
-	//
-	//UItemWidget* ItemWidgetToRemove = *FoundItemWidget;
-	//
-	//// InventoryCanvas에서 아이템 위젯 제거
-	//if (IsValid(InventoryCanvas))
-	//{
-	//	InventoryCanvas->RemoveChild(ItemWidgetToRemove);
-	//}
-	//
-	//// ItemWidgets 맵에서 제거
-	//ItemWidgets.Remove(SlotIndex);
+	// 슬롯 인덱스 유효성 검사
+	if (!InventorySlots.IsValidIndex(SlotIndex))
+		return false;
+	
 	
 	return true;
 }
@@ -256,9 +243,9 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	// 그리드 좌표로 변환
 	int32 NewGridX = FMath::FloorToInt(CanvasLocalPosition.X / szSlot);
 	int32 NewGridY = FMath::FloorToInt(CanvasLocalPosition.Y / szSlot);
-	
-	UE_LOG(LogTemp, Log, TEXT("MainInventory::NativeOnDrop - Screen: (%f, %f), CanvasLocal: (%f, %f), Grid: (%d, %d)"), 
-		ScreenPosition.X, ScreenPosition.Y, CanvasLocalPosition.X, CanvasLocalPosition.Y, NewGridX, NewGridY);
+
+	//UE_LOG(LogTemp, Log, TEXT("MainInventory::NativeOnDrop - Screen: (%f, %f), CanvasLocal: (%f, %f), Grid: (%d, %d)"),
+	//	ScreenPosition.X, ScreenPosition.Y, CanvasLocalPosition.X, CanvasLocalPosition.Y, NewGridX, NewGridY);
 	
 	// 인벤토리 슬롯 내의 유효한 위치인지 확인
 	if (InventoryComponent.IsValid() && 
@@ -269,7 +256,16 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 		{
 			ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
 		}
-		UE_LOG(LogTemp, Warning, TEXT("Invalid drop position - failed validation"));
+		//인벤토리 바깥인지 체크해야 한다.
+		
+		// 드롭된 위치가 인벤토리와 장착 위젯 모두의 바깥인지 체크
+		if (IsDropOutsideAllWidgets(ScreenPosition))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Item dropped completely outside all widgets - cancelling drop"));
+			return false;
+		}
+
+		//UE_LOG(LogTemp, Warning, TEXT("Invalid drop position - failed validation"));
 		return false;
 	}
 	
@@ -379,4 +375,41 @@ void UMainInventory::UpdateItemPosition(UItemWidget* ItemWidget, int32 NewGridX,
 		FVector2D NewPosition = FVector2D(NewGridX * szSlot, NewGridY * szSlot);
 		CanvasSlot->SetPosition(NewPosition);
 	}
+}
+
+bool UMainInventory::IsDropOutsideAllWidgets(const FVector2D& ScreenPosition) const
+{
+	// 현재 위젯(MainInventory)의 경계 체크
+	FGeometry MyGeometry = GetCachedGeometry();
+	FVector2D LocalPosition = MyGeometry.AbsoluteToLocal(ScreenPosition);
+	FVector2D MySize = MyGeometry.GetLocalSize();
+	
+	// 인벤토리 위젯 경계 내부인지 체크
+	bool bInsideInventory = (LocalPosition.X >= 0 && LocalPosition.X <= MySize.X && 
+	                        LocalPosition.Y >= 0 && LocalPosition.Y <= MySize.Y);
+	
+	// HUD를 통해 장착 위젯 참조 가져오기
+	bool bInsideEquipment = false;
+	UWidget* ParentWidget = GetParent();
+	while (ParentWidget)
+	{
+		if (UHUDWidget* HUDWidget = Cast<UHUDWidget>(ParentWidget))
+		{
+			if (UEquipWidget* EquipWidget = HUDWidget->GetEquipmentWidget())
+			{
+				FGeometry EquipGeometry = EquipWidget->GetCachedGeometry();
+				FVector2D EquipLocalPosition = EquipGeometry.AbsoluteToLocal(ScreenPosition);
+				FVector2D EquipSize = EquipGeometry.GetLocalSize();
+				
+				// 장착 위젯 경계 내부인지 체크
+				bInsideEquipment = (EquipLocalPosition.X >= 0 && EquipLocalPosition.X <= EquipSize.X && 
+				                   EquipLocalPosition.Y >= 0 && EquipLocalPosition.Y <= EquipSize.Y);
+			}
+			break;
+		}
+		ParentWidget = ParentWidget->GetParent();
+	}
+	
+	// 둘 다 바깥이면 true 반환 (완전히 바깥으로 드롭됨)
+	return (!bInsideInventory && !bInsideEquipment);
 }

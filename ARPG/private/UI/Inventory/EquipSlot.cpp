@@ -27,6 +27,7 @@ void UEquipSlot::ClearItemWidget()
 	SlotItemWidget->ClearItemInfo();
 }
 
+//아이템 드래그 앤 드롭 되면 실행된다.
 bool UEquipSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
 	UItemDragDropOperation* ItemDragOp = Cast<UItemDragDropOperation>(InOperation);

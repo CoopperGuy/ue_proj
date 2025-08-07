@@ -3,13 +3,15 @@
 
 #include "DiaInstance.h"
 #include "Skill/DiaSkillManager.h"
+#include "System/GameViewPort/DiaCustomGameViewPort.h"
+#include "Engine/Engine.h"
 
 void UDiaInstance::Init()
 {
     Super::Init();
 
-    // �Ŵ����� ���� �� �ʱ�ȭ
+    // 스킬 매니저 생성 및 초기화
     SkillManager = NewObject<UDiaSkillManager>(this);
     SkillManager->Initialize();
-
+    
 }

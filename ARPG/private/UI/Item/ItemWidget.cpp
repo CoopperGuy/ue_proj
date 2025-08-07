@@ -5,6 +5,8 @@
 #include "UI/DragDrop/ItemDragDropOperation.h"
 #include "UI/Inventory/MainInventory.h"
 #include "UI/Inventory/EquipSlot.h"
+#include "System/GameViewPort/DiaCustomGameViewPort.h"
+#include "Engine/Engine.h"
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/PanelWidget.h"
@@ -135,6 +137,15 @@ void UItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPoint
 	// 원본 위젯은 드래그 중임을 표시
 	SetRenderOpacity(0.5f);
 	
+	// 커스텀 뷰포트 클라이언트에 드래그 시작 알림
+	if (GEngine && GEngine->GameViewport)
+	{
+		if (UDiaCustomGameViewPort* CustomViewport = Cast<UDiaCustomGameViewPort>(GEngine->GameViewport))
+		{
+			CustomViewport->OnDragStarted(DragOperation);
+		}
+	}
+	
 	OutOperation = DragOperation;
 }
 
@@ -215,6 +226,15 @@ void UItemWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, U
 	
 	// 드래그 취소 시 원본 위젯 복원
 	SetRenderOpacity(1.0f);
+	
+	// 커스텀 뷰포트 클라이언트에 드래그 종료 알림
+	if (GEngine && GEngine->GameViewport)
+	{
+		if (UDiaCustomGameViewPort* CustomViewport = Cast<UDiaCustomGameViewPort>(GEngine->GameViewport))
+		{
+			CustomViewport->OnDragEnded();
+		}
+	}
 }
 
 bool UItemWidget::ValidateIconComponents() const

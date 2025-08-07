@@ -81,4 +81,8 @@ public:
 	void GetAllItemWidgets(TArray<UUserWidget*>& OutItemWidgets) const;
 	void SetInventoryComponent(UDiaInventoryComponent* InComponent) { InventoryComponent = InComponent; }
 	void SetEquipmentComponent(UDiaEquipmentComponent* InComponent) { EquippementComponent = InComponent; }
+
+private:
+	// 드롭된 위치가 인벤토리와 장착 위젯 모두의 바깥인지 체크
+	bool IsDropOutsideAllWidgets(const FVector2D& ScreenPosition) const;
 };
