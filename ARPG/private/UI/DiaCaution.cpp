@@ -19,6 +19,8 @@ void UDiaCaution::NativeConstruct()
     {
         CancelButton->OnClicked.AddDynamic(this, &UDiaCaution::OnClickCancelButton);
     }
+
+    SetVisibility(ESlateVisibility::Visible);
 }
 
 void UDiaCaution::SetCautionText(const FText& Text)
@@ -66,10 +68,10 @@ void UDiaCaution::OnClickCancelButton()
 void UDiaCaution::CloseWidget()
 {
     // 위젯을 닫는 로직
-    if (Anim_FadeOut)
-    {
-        PlayAnimation(Anim_FadeOut);
-    }
+    //if (Anim_FadeOut)
+    //{
+    //    PlayAnimation(Anim_FadeOut);
+    //}
     
     // 위젯을 숨김 처리
 	SetVisibility(ESlateVisibility::Hidden);

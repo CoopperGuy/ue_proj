@@ -275,7 +275,7 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	{
 		// 다른 아이템 위에 드롭하는 경우 - ItemWidget으로 이벤트 전파
 		UE_LOG(LogTemp, Log, TEXT("Dropping on existing item - letting ItemWidget handle it"));
-		return false; // ✅ ItemWidget::NativeOnDrop으로 이벤트 전파
+		return false; 
 	}
 	
 	// 빈 공간에 드롭하는 경우 - 직접 처리

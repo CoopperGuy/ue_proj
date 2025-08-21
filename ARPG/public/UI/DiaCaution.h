@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "CommonActivatableWidget.h"
 #include "DiaCaution.generated.h"
 
 class UTextBlock;
@@ -20,7 +21,7 @@ DECLARE_DELEGATE(FOnCancelClicked);
  * 
  */
 UCLASS()
-class ARPG_API UDiaCaution : public UUserWidget
+class ARPG_API UDiaCaution : public UCommonActivatableWidget
 {
 	GENERATED_BODY()
 	
@@ -44,11 +45,11 @@ public:
 	FOnCancelClicked OnCancelClickedDelegate;
 
 protected:
-	UPROPERTY(meta = (BindWidget))
-	UWidgetAnimation* Anim_FadeOut;
+	//UPROPERTY(meta = (BindWidget))
+	//UWidgetAnimation* Anim_FadeOut;
 
-	UPROPERTY(meta = (BindWidget))
-	UWidgetAnimation* Anim_FadeIn;
+	//UPROPERTY(meta = (BindWidget))
+	//UWidgetAnimation* Anim_FadeIn;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* CautionText;

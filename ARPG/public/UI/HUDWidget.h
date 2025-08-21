@@ -24,6 +24,7 @@ class UMonsterHP;
 class UMainInventory;
 class UStatusWidget;
 class UEquipWidget;
+class UDiaPrimaryLayout;
 /**
  * 
  */
@@ -38,6 +39,7 @@ public:
 	void UpdateOrbPercentage(OrbType _Type, float _Percentage);
 	void UpdateMonsterPercentage(BarType _Type, float _Percentage);
 
+	void CreateCautionWidget();
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UOrb* HpWidget;
@@ -57,6 +59,8 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UEquipWidget* EquipmentWidget;
 
+	UPROPERTY()
+	UDiaPrimaryLayout* DiaPrimaryLayout;
 public:
 	void SetMonsterHPVisibility(ESlateVisibility _Visibility);
 	FORCEINLINE UMainInventory* GetInventoryWidget() const { return InventoryWidget; }

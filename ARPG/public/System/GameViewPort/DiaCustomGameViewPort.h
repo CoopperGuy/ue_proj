@@ -8,6 +8,7 @@
 
 class UItemDragDropOperation;
 class UItemWidget;
+class UDiaPrimaryLayout;
 
 /**
  * 
@@ -25,6 +26,7 @@ public:
 	
 	virtual bool InputKey(const FInputKeyEventArgs& EventArgs) override;
 
+	void CreateCautionWidget();
 private:
 	// 현재 드래그 상태 추적
 	bool bIsDraggingItem = false;
@@ -33,6 +35,8 @@ private:
 	// 허공 드롭 처리 함수
 	void HandleDropInVoid(const FIntPoint& MousePosition);
 	
+	UPROPERTY()
+	UDiaPrimaryLayout* DiaPrimaryLayout;
 public:
 	// 드래그 시작/종료 감지 함수들
 	void OnDragStarted(UItemDragDropOperation* DragOp);
