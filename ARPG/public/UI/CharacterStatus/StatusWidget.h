@@ -64,7 +64,7 @@ public:
 
 	// 새로운 스탯 델리게이트 콜백들
 	UFUNCTION()
-	void OnBaseStatChanged(EDefaultStat StatType, float NewValue, float OldValue);
+	void OnBaseStatChanged(EItemStat StatType, float NewValue, float OldValue);
 	
 	UFUNCTION()
 	void OnAttackPowerChanged(float NewAttackPower, float OldAttackPower);

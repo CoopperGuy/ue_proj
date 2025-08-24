@@ -4,9 +4,13 @@
 #include "UI/Item/ItemWidget.h"
 #include "UI/DragDrop/ItemDragDropOperation.h"
 #include "UI/Inventory/MainInventory.h"
+#include "UI/Inventory/EquipSlot.h"
+#include "System/GameViewPort/DiaCustomGameViewPort.h"
+#include "Engine/Engine.h"
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/PanelWidget.h"
+#include "Components/SizeBox.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 
 void UItemWidget::NativeConstruct()
@@ -26,15 +30,71 @@ void UItemWidget::SetItemInfo(const FInventorySlot& ItemData)
 			if (UTexture2D* Icon = IconTexture.LoadSynchronous())
 			{
 				ItemIcon->SetBrushFromTexture(Icon);
+				FVector2D IconSize = CalculateIconSize(ItemData);
+				SetIconSize(IconSize);
 			}
 		}
 	}
+}
+
+FVector2D UItemWidget::CalculateIconSize(const FInventorySlot& ItemData) const
+{
+	int32 ItemWidth = ItemData.ItemInstance.GetWidth();
+	int32 ItemHeight = ItemData.ItemInstance.GetHeight();
+		
+	return FVector2D(
+		ItemWidth * BaseSlotSize * 0.8f, 
+		ItemHeight * BaseSlotSize * 0.8f
+	);
+}
+
+void UItemWidget::SetIconSize(const FVector2D& NewSize)
+{
+	if (!ValidateIconComponents())
+	{
+		return;
+	}
+
+	ConfigureSizeBox(NewSize);
+	
+	ConfigureCanvasSlot(ItemSzBox, NewSize);
+	ConfigureCanvasSlot(ItemIcon, NewSize);
+	
+	// 레이아웃 강제 업데이트
+	ForceLayoutUpdate();
+	
+	UE_LOG(LogTemp, Log, TEXT("SetIconSize completed: %s"), *NewSize.ToString());
 }
 
 void UItemWidget::SetWidgetGridPos(int32 PositionX, int32 PositionY)
 {
 	ItemInfo.GridX = PositionX;
 	ItemInfo.GridY = PositionY;
+}
+
+void UItemWidget::SetWidgetPosition(int32 PositionX, int32 PositionY)
+{
+	if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(Slot))
+	{
+		CanvasSlot->SetPosition(FVector2D(PositionX, PositionY));
+	}
+}
+
+void UItemWidget::ClearItemInfo()
+{
+	ItemInfo = FInventorySlot();
+	if (ItemIcon)
+	{
+		ItemIcon->SetBrushFromTexture(nullptr); // 아이콘 초기화
+	}
+	
+	if (ItemSzBox)
+	{
+		ItemSzBox->SetWidthOverride(0.0f);
+		ItemSzBox->SetHeightOverride(0.0f);
+	}
+	
+	SetRenderOpacity(1.0f); // 투명도 복원
 }
 
 FReply UItemWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -77,6 +137,15 @@ void UItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPoint
 	// 원본 위젯은 드래그 중임을 표시
 	SetRenderOpacity(0.5f);
 	
+	// 커스텀 뷰포트 클라이언트에 드래그 시작 알림
+	if (GEngine && GEngine->GameViewport)
+	{
+		if (UDiaCustomGameViewPort* CustomViewport = Cast<UDiaCustomGameViewPort>(GEngine->GameViewport))
+		{
+			CustomViewport->OnDragStarted(DragOperation);
+		}
+	}
+	
 	OutOperation = DragOperation;
 }
 
@@ -97,15 +166,15 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	
 	// 부모 인벤토리 위젯 찾기 - 위젯 계층을 따라 올라가며 UMainInventory 찾기
 	UMainInventory* ParentInventory = nullptr;
-	UPanelWidget* CurrentParent = GetParent();
-	while (CurrentParent)
+	UWidget* CurrentWidget = GetParent();
+	while (CurrentWidget)
 	{
-		ParentInventory = Cast<UMainInventory>(CurrentParent);
+		ParentInventory = Cast<UMainInventory>(CurrentWidget);
 		if (IsValid(ParentInventory))
 		{
 			break;
 		}
-		CurrentParent = CurrentParent->GetParent();
+		CurrentWidget = CurrentWidget->GetParent();
 	}
 	
 	if (!IsValid(ParentInventory))
@@ -157,4 +226,68 @@ void UItemWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, U
 	
 	// 드래그 취소 시 원본 위젯 복원
 	SetRenderOpacity(1.0f);
+	
+	// 커스텀 뷰포트 클라이언트에 드래그 종료 알림
+	if (GEngine && GEngine->GameViewport)
+	{
+		if (UDiaCustomGameViewPort* CustomViewport = Cast<UDiaCustomGameViewPort>(GEngine->GameViewport))
+		{
+			UItemDragDropOperation* ItemDragOp = Cast<UItemDragDropOperation>(InOperation);
+			CustomViewport->OnDragEnd_CreateCautionWidget(ItemDragOp);
+		}
+	}
+}
+
+bool UItemWidget::ValidateIconComponents() const
+{
+	if (!ItemIcon)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ItemIcon is null!"));
+		return false;
+	}
+	
+	if (!ItemSzBox)
+	{
+		UE_LOG(LogTemp, Error, TEXT("ItemSzBox is null! Check Blueprint binding."));
+		return false;
+	}
+	
+	return true;
+}
+
+void UItemWidget::ConfigureSizeBox(const FVector2D& NewSize)
+{
+	ItemSzBox->SetWidthOverride(NewSize.X);
+	ItemSzBox->SetHeightOverride(NewSize.Y);
+	
+	ItemSzBox->SetMinDesiredWidth(NewSize.X);
+	ItemSzBox->SetMinDesiredHeight(NewSize.Y);
+	ItemSzBox->SetMaxDesiredWidth(NewSize.X);
+	ItemSzBox->SetMaxDesiredHeight(NewSize.Y);
+}
+
+void UItemWidget::ConfigureCanvasSlot(UWidget* Widget, const FVector2D& NewSize)
+{
+	if (!Widget || !Widget->Slot)
+	{
+		return;
+	}
+	
+	if (UCanvasPanelSlot* CanvasSlot = Cast<UCanvasPanelSlot>(Widget->Slot))
+	{
+		CanvasSlot->SetAutoSize(false);
+		CanvasSlot->SetSize(NewSize);
+		CanvasSlot->SetAnchors(FAnchors(0.0f, 0.0f, 0.0f, 0.0f));
+		CanvasSlot->SetAlignment(FVector2D(0.0f, 0.0f));
+	}
+}
+
+void UItemWidget::ForceLayoutUpdate()
+{
+	InvalidateLayoutAndVolatility();
+	
+	if (UWidget* Parent = GetParent())
+	{
+		Parent->InvalidateLayoutAndVolatility();
+	}
 }

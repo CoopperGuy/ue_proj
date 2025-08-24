@@ -11,6 +11,7 @@ class UCanvasPanelSlot;
 class UCanvasPanel;
 class UItemWidget;
 class UDiaInventoryComponent;
+class UDiaEquipmentComponent;
 /**
  * 
  */
@@ -38,7 +39,8 @@ public:
 	
 	// 위치 기반 아이템 검색
 	UItemWidget* GetItemWidgetAtGridPosition(int32 GridX, int32 GridY) const;
-	
+	UItemWidget* GetItemWidgetAt(int32 SlotIndex) const;
+
 	// 새로운 드래그 프록시 방식
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual bool NativeOnDragOver(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
@@ -69,12 +71,18 @@ protected:
 	TMap<FGuid, UItemWidget*> ItemWidgets;
 
 	TWeakObjectPtr<UDiaInventoryComponent> InventoryComponent;
+	TWeakObjectPtr<UDiaEquipmentComponent> EquippementComponent;
+
 	int32 GridWidth = 0; // 그리드 너비
 	int32 GridHeight = 0; // 그리드 높이
 public:
 	FORCEINLINE int32 GetInventorySize() const { return InventorySlots.Num(); }
 	FORCEINLINE UCanvasPanel* GetInventoryPanel() const { return InventoryCanvas; }	
-	FORCEINLINE UUserWidget* GetItemWidgetAt(int32 Index) const;
 	void GetAllItemWidgets(TArray<UUserWidget*>& OutItemWidgets) const;
 	void SetInventoryComponent(UDiaInventoryComponent* InComponent) { InventoryComponent = InComponent; }
+	void SetEquipmentComponent(UDiaEquipmentComponent* InComponent) { EquippementComponent = InComponent; }
+
+private:
+	// 드롭된 위치가 인벤토리와 장착 위젯 모두의 바깥인지 체크
+	bool IsDropOutsideAllWidgets(const FVector2D& ScreenPosition) const;
 };

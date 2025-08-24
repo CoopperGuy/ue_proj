@@ -77,9 +77,6 @@ UItemWidget* UItemSubsystem::CreateItemWidget(const FInventorySlot& Item)
 void UItemSubsystem::GenerateRandomStats(FInventorySlot& Item, int32 Level)
 {
     // 기본 스탯에 추가로 보너스 스탯 생성
-    Item.ItemInstance.BonusStats.Empty();
-    Item.ItemInstance.BonusStats.Add(EItemStat::EIS_Health, FMath::RandRange(5, 15) * Level);
-    Item.ItemInstance.BonusStats.Add(EItemStat::EIS_Mana, FMath::RandRange(5, 15) * Level);
 }
 
 const FItemBase& UItemSubsystem::GetItemData(const FName& ItemID) const

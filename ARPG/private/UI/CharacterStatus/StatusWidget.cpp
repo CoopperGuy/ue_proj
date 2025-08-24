@@ -249,33 +249,33 @@ void UStatusWidget::UpdateExperience(int32 CurrentExp, int32 MaxExp)
 // 새로운 스탯 델리게이트 콜백 함수들
 //////////////////////////////////////////////////////////////////////////
 
-void UStatusWidget::OnBaseStatChanged(EDefaultStat StatType, float NewValue, float OldValue)
+void UStatusWidget::OnBaseStatChanged(EItemStat StatType, float NewValue, float OldValue)
 {
 	// 스탯 타입에 따라 해당 UI 요소 업데이트
 	switch (StatType)
 	{
-	case EDefaultStat::eDS_Str:
+	case EItemStat::EIS_Str:
 		if (StrText)
 		{
 			StrText->SetText(FText::AsNumber(FMath::FloorToInt(NewValue)));
 		}
 		break;
 		
-	case EDefaultStat::eDS_Int:
+	case EItemStat::EIS_Int:
 		if (IntText)
 		{
 			IntText->SetText(FText::AsNumber(FMath::FloorToInt(NewValue)));
 		}
 		break;
 		
-	case EDefaultStat::eDS_Dex:
+	case EItemStat::EIS_Dex:
 		if (DexText)
 		{
 			DexText->SetText(FText::AsNumber(FMath::FloorToInt(NewValue)));
 		}
 		break;
 		
-	case EDefaultStat::eDS_Con:
+	case EItemStat::EIS_Con:
 		// Constitution은 현재 UI에 없으므로 로그만 출력
 		UE_LOG(LogTemp, Log, TEXT("StatusWidget: Constitution 변경 %.1f -> %.1f"), OldValue, NewValue);
 		break;

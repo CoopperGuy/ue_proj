@@ -2,51 +2,64 @@
 
 
 #include "Controller/DiaController.h"
+
 #include "DiaComponent/UI/DiaInventoryComponent.h"
+#include "DiaComponent/UI/DiaEquipmentComponent.h"
+
 #include "DiaComponent/DiaStatComponent.h"
 #include "UI/HUDWidget.h"
 #include "UI/Inventory/MainInventory.h"
+#include "UI/Inventory/EquipWidget.h"
+
 #include "UI/CharacterStatus/StatusWidget.h"
+
 #include "GameMode/DungeonGameMode.h"
 
 ADiaController::ADiaController()
 {
 	bShowMouseCursor = true;
 	DiaInventoryComponent = CreateDefaultSubobject<UDiaInventoryComponent>(TEXT("InventoryComponent"));
-
+	DiaEquipmentComponent = CreateDefaultSubobject<UDiaEquipmentComponent>(TEXT("EquipmentComponent"));
 }
 
 void ADiaController::BeginPlay()
 {
 	Super::BeginPlay();
+	UHUDWidget* HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget))
+	{
+		return;
+	}
+	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
+	UEquipWidget* EquipmentWidget = Cast<UEquipWidget>(HUDWidget->FindWidgetByName("EquipmentWidget"));
+	if (!IsValid(InventoryWidget) && !IsValid(EquipmentWidget))
+	{
+		return;
+	}
 
 	if (IsValid(DiaInventoryComponent))
 	{
 		DiaInventoryComponent->RegisterComponent();
-		// 인벤토리 컴포넌트가 초기화되면 HUD 위젯을 가져와서 component와 연결한다.
-		UHUDWidget* HUDWidget = GetHUDWidget();
-		if (IsValid(HUDWidget))
-		{
-			if (UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget())
-			{
-				// DiaInventoryComponent와 MainInventory 연결
-				InventoryWidget->SetInventoryComponent(DiaInventoryComponent);
-				InventoryWidget->InitializeInventory();
-				UE_LOG(LogTemp, Log, TEXT("Connected DiaInventoryComponent with MainInventory"));
-			}
-			else
-			{
-				UE_LOG(LogTemp, Warning, TEXT("MainInventory widget not found in HUD"));
-			}
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
-		}
+		InventoryWidget->SetInventoryComponent(DiaInventoryComponent);
+		InventoryWidget->InitializeInventory();
+
+		EquipmentWidget->SetInventoryComponent(DiaInventoryComponent);
 	}
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("DiaInventoryComponent is null"));
+	}
+
+	if (IsValid(DiaEquipmentComponent))
+	{
+		DiaEquipmentComponent->RegisterComponent();
+		InventoryWidget->SetEquipmentComponent(DiaEquipmentComponent);
+
+		EquipmentWidget->SetEquipmentComponent(DiaEquipmentComponent);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DiaEquipmentComponent is null"));
 	}
 }
 
@@ -75,6 +88,7 @@ void ADiaController::OnPossess(APawn* InPawn)
 			StatComponent->GetOnStatComponentInitialized().AddDynamic(this, &ADiaController::OnStatComponentInitialized);
 			UE_LOG(LogTemp, Log, TEXT("StatComponent 초기화 대기 중..."));
 		}
+		DiaEquipmentComponent->SetStatComponent(StatComponent);
 	}
 }
 
@@ -190,22 +204,9 @@ void ADiaController::ItemRemoved(const FInventorySlot& Item)
 		return;
 	}
 
-	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
-	if (!InventoryWidget)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("InventoryWidget is null"));
-		return;
-	}
+	//Inventory Component에서 제거 
 
-	bool bResult = DiaInventoryComponent->RemoveItem(Item.ItemInstance.InstanceID, InventoryWidget);
-	if (bResult)
-	{
-		UE_LOG(LogTemp, Log, TEXT("Item successfully removed from inventory: %s"), *Item.ItemInstance.BaseItem.ItemID.ToString());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to remove item from inventory: %s"), *Item.ItemInstance.BaseItem.ItemID.ToString());
-	}
+	DiaInventoryComponent->RemoveItem(Item.ItemInstance.InstanceID, HUDWidget->GetInventoryWidget());
 }
 
 void ADiaController::ToggleInventoryVisibility(bool bVisible)
@@ -223,8 +224,10 @@ void ADiaController::ToggleInventoryVisibility(bool bVisible)
 		UE_LOG(LogTemp, Warning, TEXT("InventoryWidget is null"));
 		return;
 	}
+	UEquipWidget* EquipmentWidget = HUDWidget->GetEquipmentWidget();
 
 	InventoryWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	EquipmentWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
 void ADiaController::ToggleChracterStatusVisibility(bool bVisible)

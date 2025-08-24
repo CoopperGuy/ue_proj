@@ -21,7 +21,7 @@ public:
 	ADiaItem();
 
 	void SetItemProperty(const FItemBase& _ItemData);
-	void DropItem();
+	void DropItem(const FItemBase& ItemData);
 
 	//테스트용 블루프린트 함수 설정
 	UFUNCTION(BlueprintCallable, Category = "Item")

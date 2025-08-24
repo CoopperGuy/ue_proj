@@ -35,7 +35,7 @@ public:
 
     /// <summary>
 	/// UI 관련 함수 
-    /// </summary>
+    /// </summary>  
     virtual void UpdateHPGauge(float CurHealth, float MaxHelath);
 
 	/////////////////////////////////

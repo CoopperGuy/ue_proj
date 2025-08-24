@@ -8,6 +8,9 @@
 
 #include "DiaInventoryComponent.generated.h"
 
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemRemoved, const FGuid&, ItemID);
+
 class UMainInventory;
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ARPG_API UDiaInventoryComponent : public UActorComponent
@@ -17,16 +20,20 @@ class ARPG_API UDiaInventoryComponent : public UActorComponent
 public:	
 	UDiaInventoryComponent();
 
+    UPROPERTY(BlueprintAssignable)
+    FOnItemRemoved OnItemRemoved;
+
 protected:
 	virtual void BeginPlay() override;
-
+	UFUNCTION()
+	void HandleItemRemoved(const FGuid& ItemID);
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
     
     bool TryAddItem(const FInventorySlot& ItemData, UMainInventory* InvenWidget);
 	void FillGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);
 
-    bool RemoveItem(const FGuid& InstanceID, UMainInventory* InventoryWidget);
+    bool RemoveItem(const FGuid& InstanceID, UMainInventory* InvenWidget);
     bool MoveItem(const FGuid& InstanceID, int32 NewPosX, int32 NewPosY);
 
 	// 그리드 크기 가져오기
@@ -38,6 +45,9 @@ public:
 	bool CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY) const;
 	bool FindPlaceForItem(int32 ItemWidth, int32 ItemHeight, int32& OutPosX, int32& OutPosY) const;
 
+private:
+	FInventorySlot* FindItemByInstanceID(const FGuid& InstanceID);
+	bool ClearGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);
 private:
     UPROPERTY()
     TArray<FInventorySlot> Items;

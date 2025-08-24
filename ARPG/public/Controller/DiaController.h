@@ -9,6 +9,7 @@
 
 
 class UDiaInventoryComponent;
+class UDiaEquipmentComponent;
 class UHUDWidget;
 class UDiaStatComponent;
 /**
@@ -43,6 +44,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UDiaInventoryComponent* DiaInventoryComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UDiaEquipmentComponent* DiaEquipmentComponent;
 
 	UPROPERTY()
 	mutable TWeakObjectPtr<UHUDWidget> CachedHUDWidget = nullptr;

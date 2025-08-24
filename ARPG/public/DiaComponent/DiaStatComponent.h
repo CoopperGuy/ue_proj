@@ -6,28 +6,10 @@
 #include "Components/ActorComponent.h"
 #include "Types/DiaMonsterTable.h"
 #include "Types/DiaCharacterTable.h"
+#include "Types/ItemBase.h"
 #include "DiaStatComponent.generated.h"
 
 class UCharacterManager;
-
-UENUM(BlueprintType)
-enum class EDefaultStat : uint8
-{
-	eDS_Str = 0,
-	eDS_Int = 1,
-	eDS_Dex = 2,
-	eDS_Con = 3,
-	eDS_Max = 4
-};
-
-// enum class를 정수로 변환하는 유틸리티 함수
-FORCEINLINE constexpr int32 ToInt(EDefaultStat StatType)
-{
-	return static_cast<int32>(StatType);
-}
-
-// 스탯 배열 크기를 가져오는 상수
-static constexpr int32 STAT_ARRAY_SIZE = ToInt(EDefaultStat::eDS_Max);
 
 // 캐릭터 기본 스탯 구조체 (체력, 마나만 관리)
 USTRUCT(BlueprintType)
@@ -62,13 +44,13 @@ struct ARPG_API FCharacterData
 	TArray<float> AdditinalStats; 
 
 	// 스탯 접근 함수들 (타입 안전성 제공)
-	FORCEINLINE float GetStat(EDefaultStat StatType) const
+	FORCEINLINE float GetStat(EItemStat StatType) const
 	{
 		int32 Index = ToInt(StatType);
 		return DefStats.IsValidIndex(Index) ? DefStats[Index] : 0.0f;
 	}
 
-	FORCEINLINE void SetStat(EDefaultStat StatType, float Value)
+	FORCEINLINE void SetStat(EItemStat StatType, float Value)
 	{
 		int32 Index = ToInt(StatType);
 		if (DefStats.IsValidIndex(Index))
@@ -77,13 +59,13 @@ struct ARPG_API FCharacterData
 		}
 	}
 
-	FORCEINLINE float GetAdditionalStat(EDefaultStat StatType) const
+	FORCEINLINE float GetAdditionalStat(EItemStat StatType) const
 	{
 		int32 Index = ToInt(StatType);
 		return AdditinalStats.IsValidIndex(Index) ? AdditinalStats[Index] : 0.0f;
 	}
 
-	FORCEINLINE void SetAdditionalStat(EDefaultStat StatType, float Value)
+	FORCEINLINE void SetAdditionalStat(EItemStat StatType, float Value)
 	{
 		int32 Index = ToInt(StatType);
 		if (AdditinalStats.IsValidIndex(Index))
@@ -93,15 +75,15 @@ struct ARPG_API FCharacterData
 	}
 
 	// 편의를 위한 개별 스탯 접근 함수들
-	FORCEINLINE float GetStrength() const { return GetStat(EDefaultStat::eDS_Str); }
-	FORCEINLINE float GetIntelligence() const { return GetStat(EDefaultStat::eDS_Int); }
-	FORCEINLINE float GetDexterity() const { return GetStat(EDefaultStat::eDS_Dex); }
-	FORCEINLINE float GetConstitution() const { return GetStat(EDefaultStat::eDS_Con); }
+	FORCEINLINE float GetStrength() const { return GetStat(EItemStat::EIS_Str); }
+	FORCEINLINE float GetIntelligence() const { return GetStat(EItemStat::EIS_Int); }
+	FORCEINLINE float GetDexterity() const { return GetStat(EItemStat::EIS_Dex); }
+	FORCEINLINE float GetConstitution() const { return GetStat(EItemStat::EIS_Con); }
 
-	FORCEINLINE void SetStrength(float Value) { SetStat(EDefaultStat::eDS_Str, Value); }
-	FORCEINLINE void SetIntelligence(float Value) { SetStat(EDefaultStat::eDS_Int, Value); }
-	FORCEINLINE void SetDexterity(float Value) { SetStat(EDefaultStat::eDS_Dex, Value); }
-	FORCEINLINE void SetConstitution(float Value) { SetStat(EDefaultStat::eDS_Con, Value); }
+	FORCEINLINE void SetStrength(float Value) { SetStat(EItemStat::EIS_Str, Value); }
+	FORCEINLINE void SetIntelligence(float Value) { SetStat(EItemStat::EIS_Int, Value); }
+	FORCEINLINE void SetDexterity(float Value) { SetStat(EItemStat::EIS_Dex, Value); }
+	FORCEINLINE void SetConstitution(float Value) { SetStat(EItemStat::EIS_Con, Value); }
 
 	void InitializeStatArrays()
 	{
@@ -180,7 +162,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnExpChangedDelegate, float, NewEx
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLevelUpDelegate, int32, NewLevel);
 
 // 기본 스탯 변경 델리게이트 (통합)
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnBaseStatChangedDelegate, EDefaultStat, StatType, float, NewValue, float, OldValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnBaseStatChangedDelegate, EItemStat, StatType, float, NewValue, float, OldValue);
 
 // 전투 스탯 변경 델리게이트
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAttackPowerChangedDelegate, float, NewAttackPower, float, OldAttackPower);
@@ -272,11 +254,13 @@ public:
 	void SetDefense(float NewDefense);
 
 	// 기본 스탯 변경 함수들 (델리게이트 포함)
-	void SetBaseStat(EDefaultStat StatType, float NewValue);
-	void SetStrength(float NewValue) { SetBaseStat(EDefaultStat::eDS_Str, NewValue); }
-	void SetIntelligence(float NewValue) { SetBaseStat(EDefaultStat::eDS_Int, NewValue); }
-	void SetDexterity(float NewValue) { SetBaseStat(EDefaultStat::eDS_Dex, NewValue); }
-	void SetConstitution(float NewValue) { SetBaseStat(EDefaultStat::eDS_Con, NewValue); }
+	void SetBaseStat(EItemStat StatType, float NewValue);
+	void SetStrength(float NewValue) { SetBaseStat(EItemStat::EIS_Str, NewValue); }
+	void SetIntelligence(float NewValue) { SetBaseStat(EItemStat::EIS_Int, NewValue); }
+	void SetDexterity(float NewValue) { SetBaseStat(EItemStat::EIS_Dex, NewValue); }
+	void SetConstitution(float NewValue) { SetBaseStat(EItemStat::EIS_Con, NewValue); }
+	//추가 스탯 
+	void SetAdditionalStat(EItemStat StatType, float NewValue) { CharacterData.SetAdditionalStat(StatType, NewValue); }
 
 	// 개별 스탯 Getter (편의 함수)
 	FORCEINLINE float GetStrength() const { return CharacterData.GetStrength(); }

@@ -1,5 +1,8 @@
 #include "Utils/InventoryUtils.h"
 #include "DiaComponent/UI/DiaInventoryComponent.h"
+#include "Engine/Engine.h"
+#include "System/ItemSubsystem.h"
+#include "UI/Item/ItemWidget.h"
 
 bool FInventoryUtils::CanPlaceItemAt(UDiaInventoryComponent* InventoryComponent, int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
 {
@@ -98,4 +101,48 @@ void FInventoryUtils::GetOccupiedCellIndices(int32 GridWidth, int32 ItemWidth, i
             OutIndices.Add(CellIndex);
         }
     }
+}
+
+UItemWidget* FInventoryUtils::CreateItemWidget(const UObject* WorldContext, const FInventorySlot& ItemData)
+{
+    if (!IsValid(WorldContext))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - WorldContext is null"));
+        return nullptr;
+    }
+
+    UWorld* World = WorldContext->GetWorld();
+    if (!IsValid(World))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - World is null"));
+        return nullptr;
+    }
+
+    UGameInstance* GameInstance = World->GetGameInstance();
+    if (!IsValid(GameInstance))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - GameInstance is null"));
+        return nullptr;
+    }
+
+    UItemSubsystem* ItemSubsystem = GameInstance->GetSubsystem<UItemSubsystem>();
+    if (!IsValid(ItemSubsystem))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - ItemSubsystem is null"));
+        return nullptr;
+    }
+
+    // ItemSubsystem에서 아이템 위젯을 생성한다.
+    UItemWidget* ItemWidget = ItemSubsystem->CreateItemWidget(ItemData);
+    if (!IsValid(ItemWidget))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - Failed to create ItemWidget for item: %s"), 
+               *ItemData.ItemInstance.BaseItem.ItemID.ToString());
+        return nullptr;
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("FInventoryUtils::CreateItemWidget - Successfully created ItemWidget for item: %s"), 
+           *ItemData.ItemInstance.BaseItem.ItemID.ToString());
+
+    return ItemWidget;
 } 
