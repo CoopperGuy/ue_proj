@@ -20,6 +20,21 @@ void UDiaInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	OnItemRemoved.AddDynamic(this, &UDiaInventoryComponent::HandleItemRemoved);
+}
+
+void UDiaInventoryComponent::HandleItemRemoved(const FGuid& ItemID)
+{
+	//Inventory UI를 가져온다.
+	ADungeonGameMode* GM = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());
+	if (!GM) return;
+	UHUDWidget* HUD = GM->GetHUDWidget();
+	if (!HUD) return;
+	UMainInventory* InvenWidget = HUD->GetInventoryWidget();
+	if (!InvenWidget) return;
+	//아이템을 제거한다.
+
+	RemoveItem(ItemID, InvenWidget);
 }
 
 
@@ -68,18 +83,34 @@ void UDiaInventoryComponent::FillGrid(int32 ItemWidth, int32 ItemHeight, int32 P
 	}
 }
 
-bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID, UMainInventory* InventoryWidget)
+bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID, UMainInventory* InvenWidget)
 {
-	//for (int32 i = 0; i < Items.Num(); i++)
-	//{
-	//	if (Items[i].InstanceID == InstanceID)
-	//	{
-	//		// 그리드에서 공간 비우기
-	//		ClearGrid(Items[i].Width, Items[i].Height, ItemWidth, ItemHeight);
-	//		Items.RemoveAt(i);
-	//		return true;
-	//	}
-	//}
+	for (int32 i = 0; i < Items.Num(); i++)
+	{
+		if (Items[i].ItemInstance.InstanceID == InstanceID)
+		{
+			// 그리드에서 공간 비우기
+			int32 ItemWidth = Items[i].ItemInstance.GetWidth();
+			int32 ItemHeight = Items[i].ItemInstance.GetHeight();
+			int32 PosX = Items[i].GridX;
+			int32 PosY = Items[i].GridY;
+			if (ClearGrid(ItemWidth, ItemHeight, PosX, PosY))
+			{
+				//ui에서 제거
+				if (InvenWidget)
+				{
+					if (InvenWidget->RemoveItemFromInventory(i))
+					{
+						//성공적으로 제거됨 로그 작성
+						UE_LOG(LogTemp, Log, TEXT("Item successfully removed from inventory: %s"), *InstanceID.ToString());
+					}
+				}
+
+			}
+			Items.RemoveAt(i);
+			return true;
+		}
+	}
 	return false;
 }
 
@@ -135,5 +166,24 @@ bool UDiaInventoryComponent::FindPlaceForItem(int32 ItemWidth, int32 ItemHeight,
 	}
 
 	return false; // 배치할 수 있는 공간이 없음
+}
+
+FInventorySlot* UDiaInventoryComponent::FindItemByInstanceID(const FGuid& InstanceID)
+{
+	for (FInventorySlot& Item : Items)
+	{
+		if (Item.ItemInstance.InstanceID == InstanceID)
+		{
+			return &Item;
+		}
+	}
+	return nullptr;
+}
+
+bool UDiaInventoryComponent::ClearGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
+{
+
+
+	return true;
 }
 

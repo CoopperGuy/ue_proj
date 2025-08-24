@@ -121,10 +121,23 @@ bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 It
 bool UMainInventory::RemoveItemFromInventory(int32 SlotIndex)
 {
 	// 슬롯 인덱스 유효성 검사
-	if (!InventorySlots.IsValidIndex(SlotIndex))
+	//SlotIndex를 Gridx, Gridy로 변환해서
+
+	int32 GridX = SlotIndex % GridWidth;
+	int32 GridY = SlotIndex / GridWidth;
+	UItemWidget* ItemWidget = GetItemWidgetAtGridPosition(GridX, GridY);
+	if (!IsValid(ItemWidget))
 		return false;
-	
-	
+
+	// ItemWidget을 InventoryCanvas에서 제거
+	InventoryCanvas->RemoveChild(ItemWidget);
+
+	ItemWidget->RemoveFromViewport();
+	ItemWidget->RemoveFromParent();
+	ItemWidgets.Remove(Cast<UItemWidget>(ItemWidget)->GetItemInfo().ItemInstance.InstanceID);
+	ItemWidget->Destruct();
+	ItemWidget = nullptr;
+
 	return true;
 }
 
@@ -155,6 +168,13 @@ UItemWidget* UMainInventory::GetItemWidgetAtGridPosition(int32 GridX, int32 Grid
 		}
 	}
 	return nullptr;
+}
+
+UItemWidget* UMainInventory::GetItemWidgetAt(int32 SlotIndex) const
+{
+	int32 GridX = SlotIndex % GridWidth;
+	int32 GridY = SlotIndex / GridWidth;
+	return GetItemWidgetAtGridPosition(GridX, GridY);
 }
 
 void UMainInventory::CreateInventory()
@@ -199,17 +219,6 @@ void UMainInventory::ConfigInventorySlot(int32 SlotIndex, UCanvasPanelSlot* Canv
 		CanvasSlot->SetPosition(Position);
 		CanvasSlot->SetSize(Size);
 	}
-}
-
-FORCEINLINE UUserWidget* UMainInventory::GetItemWidgetAt(int32 Index) const
-{
-	if (!InventorySlots.IsValidIndex(Index))
-	{
-		return nullptr;
-	}
-	
-	UWidget* ContentWidget = InventorySlots[Index]->GetContent();
-	return Cast<UUserWidget>(ContentWidget);
 }
 
 void UMainInventory::GetAllItemWidgets(TArray<UUserWidget*>& OutItemWidgets) const

@@ -2,8 +2,14 @@
 
 
 #include "System/GameViewPort/DiaCustomGameViewPort.h"
+
+#include "Controller/DiaController.h"
+#include "DiaComponent/UI/DiaInventoryComponent.h"
+
 #include "Widgets/CommonActivatableWidgetContainer.h"
+
 #include "Engine/Engine.h"
+
 #include "UI/DragDrop/ItemDragDropOperation.h"
 #include "UI/System/DiaPrimaryLayout.h"
 #include "UI/DiaCaution.h"
@@ -57,7 +63,21 @@ void UDiaCustomGameViewPort::OnDragEnded()
 	bIsDraggingItem = false;
 	CurrentDragOperation = nullptr;
 
-	CreateCautionWidget();
+}
+
+void UDiaCustomGameViewPort::OnDragEnd_CreateCautionWidget(UItemDragDropOperation* DragOp)
+{
+	if (!bIsDraggingItem)
+	{
+		OnDragEnded();
+	}
+	else
+	{
+		bIsDraggingItem = false;
+		CurrentDragOperation = nullptr;
+
+		CreateCautionWidget(DragOp);
+	}
 }
 
 void UDiaCustomGameViewPort::HandleDropInVoid(const FIntPoint& MousePosition)
@@ -75,55 +95,142 @@ void UDiaCustomGameViewPort::HandleDropInVoid(const FIntPoint& MousePosition)
 	}
 }
 
-void UDiaCustomGameViewPort::CreateCautionWidget()
+void UDiaCustomGameViewPort::CreateCautionWidget(UItemDragDropOperation* DragOp)
 {
-	// 이미 존재하는 CautionWidget이 있는지 확인
-	UCommonActivatableWidgetStack* HudLayer = DiaPrimaryLayout->GetLayerByTag(DiaPrimaryLayout->DefaultHudTag);
-	if (HudLayer)
-	{
-		// 이미 활성화된 위젯이 있는지 확인
-		if (UCommonActivatableWidget* ActiveWidget = HudLayer->GetActiveWidget())
-		{
-			// UDiaCaution 타입인지 확인
-			if (Cast<UDiaCaution>(ActiveWidget))
-			{
-				return; // 이미 존재하므로 새로 생성하지 않음
-			}
-		}
-	}
-
-	// 새로운 CautionWidget 생성
-	UClass* WidgetClass = LoadClass<UDiaCaution>(nullptr, TEXT("/Game/UI/Caution/WBP_Caution.WBP_Caution_C"));
-	if (!IsValid(WidgetClass))
+	// 이미 CautionWidget이 활성화되어 있는지 확인
+	if (IsCautionWidgetAlreadyActive())
 	{
 		return;
 	}
 
-	// GameInstance를 사용하여 위젯 생성
-	UDiaCaution* CatuionWidget = CreateWidget<UDiaCaution>(GameInstance, WidgetClass);
-	if (IsValid(CatuionWidget))
+	// 인벤토리 컴포넌트 가져오기
+	UDiaInventoryComponent* InvenComp = GetInventoryComponent();
+	if (!IsValid(InvenComp))
 	{
-		// 위젯을 명시적으로 표시
-		CatuionWidget->SetVisibility(ESlateVisibility::Visible);
-		
-		CatuionWidget->SetCautionText(FText::FromString("Are you sure you want to proceed?"));
+		return;
+	}
 
-		// 확인, 캔슬 버튼 바인딩
-		CatuionWidget->BindOnConfirmClicked(FOnConfirmClicked::CreateLambda([CatuionWidget]() {
-			CatuionWidget->RemoveFromParent();
-		}));
+	// CautionWidget 생성 및 초기화
+	UDiaCaution* CautionWidget = CreateAndInitializeCautionWidget(DragOp);
+	if (!IsValid(CautionWidget))
+	{
+		return;
+	}
 
-		CatuionWidget->BindOnCancelClicked(FOnCancelClicked::CreateLambda([CatuionWidget]() {
-			CatuionWidget->RemoveFromParent();
-		}));
+	// 아이템 데이터 가져오기
+	UItemDragDropOperation* ItemDragOp = Cast<UItemDragDropOperation>(DragOp);
+	if (!IsValid(ItemDragOp))
+	{
+		return;
+	}
+	FInventorySlot ItemData = ItemDragOp->ItemData;
 
-		// 직접 AddToViewport 사용
-		CatuionWidget->AddToViewport(999); // 높은 Z-Order
-		
-		// Layer 방식이 필요한 경우
-		if (!CatuionWidget->IsInViewport())
-		{
-			DiaPrimaryLayout->PushToHudLayer(DiaPrimaryLayout->DefaultHudTag, CatuionWidget);
-		}
+	// 이벤트 바인딩
+	BindCautionWidgetEvents(CautionWidget, ItemData, InvenComp);
+
+	// 위젯 표시
+	DisplayCautionWidget(CautionWidget);
+}
+
+bool UDiaCustomGameViewPort::IsCautionWidgetAlreadyActive() const
+{
+	if (!IsValid(DiaPrimaryLayout))
+	{
+		return false;
+	}
+
+	UCommonActivatableWidgetStack* HudLayer = DiaPrimaryLayout->GetLayerByTag(DiaPrimaryLayout->DefaultHudTag);
+	if (!IsValid(HudLayer))
+	{
+		return false;
+	}
+
+	UCommonActivatableWidget* ActiveWidget = HudLayer->GetActiveWidget();
+	return IsValid(ActiveWidget) && IsValid(Cast<UDiaCaution>(ActiveWidget));
+}
+
+UDiaCaution* UDiaCustomGameViewPort::CreateAndInitializeCautionWidget(UItemDragDropOperation* DragOp)
+{
+	// 위젯 클래스 로드
+	UClass* WidgetClass = LoadClass<UDiaCaution>(nullptr, TEXT("/Game/UI/Caution/WBP_Caution.WBP_Caution_C"));
+	if (!IsValid(WidgetClass))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to load CautionWidget class"));
+		return nullptr;
+	}
+
+	// 위젯 생성
+	UDiaCaution* CautionWidget = CreateWidget<UDiaCaution>(GameInstance, WidgetClass);
+	if (!IsValid(CautionWidget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to create CautionWidget instance"));
+		return nullptr;
+	}
+
+	// 위젯 초기화
+	CautionWidget->SetVisibility(ESlateVisibility::Visible);
+	CautionWidget->SetCautionText(FText::FromString("Are you sure you want to proceed?"));
+
+	return CautionWidget;
+}
+
+UDiaInventoryComponent* UDiaCustomGameViewPort::GetInventoryComponent() const
+{
+	APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	if (!IsValid(PC))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PlayerController is not valid"));
+		return nullptr;
+	}
+
+	ADiaController* PlayerControllerRef = Cast<ADiaController>(PC);
+	if (!IsValid(PlayerControllerRef))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to cast to ADiaController"));
+		return nullptr;
+	}
+
+	UDiaInventoryComponent* InvenComp = Cast<UDiaInventoryComponent>(
+		PlayerControllerRef->GetComponentByClass(UDiaInventoryComponent::StaticClass()));
+	
+	if (!IsValid(InvenComp))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UDiaInventoryComponent is not valid"));
+	}
+
+	return InvenComp;
+}
+
+void UDiaCustomGameViewPort::BindCautionWidgetEvents(UDiaCaution* CautionWidget, const FInventorySlot& ItemData, UDiaInventoryComponent* InvenComp)
+{
+	if (!IsValid(CautionWidget) || !IsValid(InvenComp))
+	{
+		return;
+	}
+
+	// 확인 버튼 바인딩
+	CautionWidget->BindOnConfirmClicked(FOnConfirmClicked::CreateLambda([CautionWidget, ItemData, InvenComp]() {
+		CautionWidget->RemoveFromParent();
+		InvenComp->OnItemRemoved.Broadcast(ItemData.ItemInstance.InstanceID);
+	}));
+
+	// 취소 버튼 바인딩
+	CautionWidget->BindOnCancelClicked(FOnCancelClicked::CreateLambda([CautionWidget]() {
+		CautionWidget->RemoveFromParent();
+	}));
+}
+
+void UDiaCustomGameViewPort::DisplayCautionWidget(UDiaCaution* CautionWidget)
+{
+	if (!IsValid(CautionWidget))
+	{
+		return;
+	}
+
+	CautionWidget->AddToViewport(999);
+
+	if (IsValid(DiaPrimaryLayout))
+	{
+		DiaPrimaryLayout->PushToHudLayer(DiaPrimaryLayout->DefaultHudTag, CautionWidget);
 	}
 }

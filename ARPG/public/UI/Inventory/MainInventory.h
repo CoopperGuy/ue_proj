@@ -39,7 +39,8 @@ public:
 	
 	// 위치 기반 아이템 검색
 	UItemWidget* GetItemWidgetAtGridPosition(int32 GridX, int32 GridY) const;
-	
+	UItemWidget* GetItemWidgetAt(int32 SlotIndex) const;
+
 	// 새로운 드래그 프록시 방식
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual bool NativeOnDragOver(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
@@ -77,7 +78,6 @@ protected:
 public:
 	FORCEINLINE int32 GetInventorySize() const { return InventorySlots.Num(); }
 	FORCEINLINE UCanvasPanel* GetInventoryPanel() const { return InventoryCanvas; }	
-	FORCEINLINE UUserWidget* GetItemWidgetAt(int32 Index) const;
 	void GetAllItemWidgets(TArray<UUserWidget*>& OutItemWidgets) const;
 	void SetInventoryComponent(UDiaInventoryComponent* InComponent) { InventoryComponent = InComponent; }
 	void SetEquipmentComponent(UDiaEquipmentComponent* InComponent) { EquippementComponent = InComponent; }

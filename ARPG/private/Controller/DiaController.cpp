@@ -204,22 +204,9 @@ void ADiaController::ItemRemoved(const FInventorySlot& Item)
 		return;
 	}
 
-	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
-	if (!InventoryWidget)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("InventoryWidget is null"));
-		return;
-	}
+	//Inventory Component에서 제거 
 
-	bool bResult = DiaInventoryComponent->RemoveItem(Item.ItemInstance.InstanceID, InventoryWidget);
-	if (bResult)
-	{
-		UE_LOG(LogTemp, Log, TEXT("Item successfully removed from inventory: %s"), *Item.ItemInstance.BaseItem.ItemID.ToString());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to remove item from inventory: %s"), *Item.ItemInstance.BaseItem.ItemID.ToString());
-	}
+	DiaInventoryComponent->RemoveItem(Item.ItemInstance.InstanceID, HUDWidget->GetInventoryWidget());
 }
 
 void ADiaController::ToggleInventoryVisibility(bool bVisible)

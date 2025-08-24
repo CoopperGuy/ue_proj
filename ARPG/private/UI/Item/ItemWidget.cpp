@@ -232,7 +232,8 @@ void UItemWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, U
 	{
 		if (UDiaCustomGameViewPort* CustomViewport = Cast<UDiaCustomGameViewPort>(GEngine->GameViewport))
 		{
-			CustomViewport->OnDragEnded();
+			UItemDragDropOperation* ItemDragOp = Cast<UItemDragDropOperation>(InOperation);
+			CustomViewport->OnDragEnd_CreateCautionWidget(ItemDragOp);
 		}
 	}
 }
