@@ -28,6 +28,7 @@ public:
 	void PopTopFromLayer(const FGameplayTag InTag);
 
 	void InitLayers();
+	void DisableLayers();
 protected:
 	void NativeConstruct() override;
 protected:

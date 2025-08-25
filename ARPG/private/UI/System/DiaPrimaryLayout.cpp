@@ -24,14 +24,12 @@ UUserWidget* UDiaPrimaryLayout::PushToHudLayer(const FGameplayTag InTag, UCommon
 {
 	if (!Widget)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("PushToHudLayer: Widget이 nullptr입니다."));
 		return nullptr;
 	}
 	
 	UCommonActivatableWidgetStack* Layer = GetLayerByTag(InTag);
 	if (!Layer)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No layer found for tag: %s"), *InTag.ToString());
 		return nullptr;
 	}
 	
@@ -76,7 +74,6 @@ void UDiaPrimaryLayout::PopTopFromLayer(const FGameplayTag InTag)
 	UCommonActivatableWidgetStack* Layer = GetLayerByTag(InTag);
 	if (!Layer)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No layer found for tag: %s"), *InTag.ToString());
 		return;
 	}
 	
@@ -106,5 +103,17 @@ void UDiaPrimaryLayout::InitLayers()
 		ModelLayer->SetVisibility(ESlateVisibility::Visible);
 		ModelLayer->SetRenderOpacity(1.0f);
 		HudWidgets.Add(DefaultModelTag, ModelLayer);
+	}
+}
+
+void UDiaPrimaryLayout::DisableLayers()
+{
+	if (HudLayer)
+	{
+		HudLayer->SetVisibility(ESlateVisibility::Collapsed);
+	}
+	if (ModelLayer)
+	{
+		ModelLayer->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }

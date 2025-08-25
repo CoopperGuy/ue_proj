@@ -2,6 +2,7 @@
 
 
 #include "System/GameViewPort/DiaCustomGameViewPort.h"
+#include "GameFramework/InputSettings.h"
 
 #include "Controller/DiaController.h"
 #include "DiaComponent/UI/DiaInventoryComponent.h"
@@ -24,8 +25,6 @@ void UDiaCustomGameViewPort::Init(struct FWorldContext& WorldContext, UGameInsta
 	{
 		DiaPrimaryLayout = CreateWidget<UDiaPrimaryLayout>(OwningGameInstance, WidgetClass);
 		DiaPrimaryLayout->InitLayers();
-		//생성 관련 로그 추가
-		UE_LOG(LogTemp, Warning, TEXT("UDiaPrimaryLayout 생성 성공: %s"), *DiaPrimaryLayout->GetClass()->GetName());
 	}
 
 	DiaPrimaryLayout->AddToViewport();
@@ -65,7 +64,7 @@ void UDiaCustomGameViewPort::OnDragEnded()
 
 }
 
-void UDiaCustomGameViewPort::OnDragEnd_CreateCautionWidget(UItemDragDropOperation* DragOp)
+void UDiaCustomGameViewPort::OnDragEnd_CreateCautionWidget()
 {
 	if (!bIsDraggingItem)
 	{
@@ -73,11 +72,13 @@ void UDiaCustomGameViewPort::OnDragEnd_CreateCautionWidget(UItemDragDropOperatio
 	}
 	else
 	{
-		bIsDraggingItem = false;
-		CurrentDragOperation = nullptr;
+		UItemDragDropOperation* ItemDragOp = Cast<UItemDragDropOperation>(CurrentDragOperation);
 
-		CreateCautionWidget(DragOp);
+		CreateCautionWidget(ItemDragOp);
 	}
+
+	bIsDraggingItem = false;
+	CurrentDragOperation = nullptr;
 }
 
 void UDiaCustomGameViewPort::HandleDropInVoid(const FIntPoint& MousePosition)
@@ -155,7 +156,6 @@ UDiaCaution* UDiaCustomGameViewPort::CreateAndInitializeCautionWidget(UItemDragD
 	UClass* WidgetClass = LoadClass<UDiaCaution>(nullptr, TEXT("/Game/UI/Caution/WBP_Caution.WBP_Caution_C"));
 	if (!IsValid(WidgetClass))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to load CautionWidget class"));
 		return nullptr;
 	}
 
@@ -163,7 +163,6 @@ UDiaCaution* UDiaCustomGameViewPort::CreateAndInitializeCautionWidget(UItemDragD
 	UDiaCaution* CautionWidget = CreateWidget<UDiaCaution>(GameInstance, WidgetClass);
 	if (!IsValid(CautionWidget))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to create CautionWidget instance"));
 		return nullptr;
 	}
 
@@ -179,24 +178,17 @@ UDiaInventoryComponent* UDiaCustomGameViewPort::GetInventoryComponent() const
 	APlayerController* PC = GetWorld()->GetFirstPlayerController();
 	if (!IsValid(PC))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("PlayerController is not valid"));
 		return nullptr;
 	}
 
 	ADiaController* PlayerControllerRef = Cast<ADiaController>(PC);
 	if (!IsValid(PlayerControllerRef))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to cast to ADiaController"));
 		return nullptr;
 	}
 
 	UDiaInventoryComponent* InvenComp = Cast<UDiaInventoryComponent>(
 		PlayerControllerRef->GetComponentByClass(UDiaInventoryComponent::StaticClass()));
-	
-	if (!IsValid(InvenComp))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("UDiaInventoryComponent is not valid"));
-	}
 
 	return InvenComp;
 }
@@ -209,14 +201,28 @@ void UDiaCustomGameViewPort::BindCautionWidgetEvents(UDiaCaution* CautionWidget,
 	}
 
 	// 확인 버튼 바인딩
-	CautionWidget->BindOnConfirmClicked(FOnConfirmClicked::CreateLambda([CautionWidget, ItemData, InvenComp]() {
+	CautionWidget->BindOnConfirmClicked(FOnConfirmClicked::CreateLambda([this, CautionWidget, ItemData, InvenComp]() {
+		CautionWidget->DeactivateWidget();
 		CautionWidget->RemoveFromParent();
+
+		if (IsValid(DiaPrimaryLayout))
+		{
+			DiaPrimaryLayout->PopTopFromLayer(DiaPrimaryLayout->DefaultHudTag);
+		}
+
 		InvenComp->OnItemRemoved.Broadcast(ItemData.ItemInstance.InstanceID);
 	}));
 
 	// 취소 버튼 바인딩
-	CautionWidget->BindOnCancelClicked(FOnCancelClicked::CreateLambda([CautionWidget]() {
+	CautionWidget->BindOnCancelClicked(FOnCancelClicked::CreateLambda([this, CautionWidget]() {
+		CautionWidget->DeactivateWidget();
+		if (IsValid(DiaPrimaryLayout))
+		{
+			DiaPrimaryLayout->PopTopFromLayer(DiaPrimaryLayout->DefaultHudTag);
+		}
+
 		CautionWidget->RemoveFromParent();
+		CautionWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}));
 }
 

@@ -51,5 +51,5 @@ public:
 
 	//아이템의 id를 넘겨서 해당 아이템을 delegate형식으로 삭제하도록 해보자. 
 	//delegate를 인벤토리 위젯에 바인딩해야 할듯.
-	void OnDragEnd_CreateCautionWidget(UItemDragDropOperation* DragOp);
+	void OnDragEnd_CreateCautionWidget();
 };
