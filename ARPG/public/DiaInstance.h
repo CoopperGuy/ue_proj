@@ -17,12 +17,10 @@ class ARPG_API UDiaInstance : public UGameInstance
 public:
     virtual void Init() override;
 
-    // 스킬 매니저 접근자
     UFUNCTION(BlueprintCallable, Category = "Managers")
     UDiaSkillManager* GetSkillManager() const { return SkillManager; }
 
 protected:
-    // 각종 매니저들
     UPROPERTY()
     UDiaSkillManager* SkillManager;
 
