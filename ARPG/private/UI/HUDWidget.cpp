@@ -8,6 +8,8 @@
 #include "UI/CharacterStatus/StatusWidget.h"
 #include "UI/Inventory/EquipWidget.h"
 #include "UI/System/DiaPrimaryLayout.h"
+#include "UI/Skill/SkillPanelWidget.h"
+//#include "UI/SkillQuickSlotPannelWidget.h"
 
 #include "UI/DiaCaution.h"
 
@@ -21,6 +23,7 @@ void UHUDWidget::NativeConstruct()
 	InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
 	CharacterStatus->SetVisibility(ESlateVisibility::Collapsed);
 	EquipmentWidget->SetVisibility(ESlateVisibility::Collapsed);
+	SkillPanelWidget->SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UHUDWidget::UpdateOrbPercentage(OrbType _Type, float _Percentage)

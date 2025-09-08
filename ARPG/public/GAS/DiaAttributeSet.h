@@ -1,0 +1,69 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "AttributeSet.h"
+#include "AbilitySystemComponent.h"
+#include "DiaAttributeSet.generated.h"
+
+#define ATTRIBUTE_ACCESSORS(ClassName, PropertyName) \
+	GAMEPLAYATTRIBUTE_PROPERTY_GETTER(ClassName, PropertyName) \
+	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName) \
+	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
+	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
+
+UCLASS()
+class ARPG_API UDiaAttributeSet : public UAttributeSet
+{
+	GENERATED_BODY()
+
+public:
+	UDiaAttributeSet();
+
+	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
+	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
+
+	// Health Attributes
+	UPROPERTY(BlueprintReadOnly, Category = "Health")
+	FGameplayAttributeData Health;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, Health)
+
+	UPROPERTY(BlueprintReadOnly, Category = "Health")
+	FGameplayAttributeData MaxHealth;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, MaxHealth)
+
+	// Mana Attributes
+	UPROPERTY(BlueprintReadOnly, Category = "Mana")
+	FGameplayAttributeData Mana;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, Mana)
+
+	UPROPERTY(BlueprintReadOnly, Category = "Mana")
+	FGameplayAttributeData MaxMana;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, MaxMana)
+
+	// Combat Attributes
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	FGameplayAttributeData AttackPower;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, AttackPower)
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	FGameplayAttributeData Defense;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, Defense)
+
+	// Movement Attributes
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	FGameplayAttributeData MovementSpeed;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, MovementSpeed)
+
+	// Meta Attributes (for damage calculation, not replicated)
+	UPROPERTY(BlueprintReadOnly, Category = "Meta")
+	FGameplayAttributeData IncomingDamage;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, IncomingDamage)
+
+	UPROPERTY(BlueprintReadOnly, Category = "Meta")
+	FGameplayAttributeData IncomingHealing;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, IncomingHealing)
+
+protected:
+	// Helper function to adjust attributes for changes
+	void AdjustAttributeForMaxChange(FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, float NewMaxValue, const FGameplayAttribute& AffectedAttributeProperty);
+};

@@ -5,6 +5,8 @@
 #include "DiaComponent/DiaCombatComponent.h"
 #include "DiaComponent/DiaStatusEffectComponent.h"
 #include "DiaComponent/DiaStatComponent.h"
+#include "GAS/DiaAttributeSet.h"
+#include "AbilitySystemComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 
@@ -22,6 +24,12 @@ ADiaBaseCharacter::ADiaBaseCharacter()
 	// 상태 이상 효과 컴포넌트 생성
 	StatusEffectComponent = CreateDefaultSubobject<UDiaStatusEffectComponent>(TEXT("StatusEffectComponent"));
 
+	// GAS 컴포넌트 생성
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+
+	// AttributeSet 생성
+	AttributeSet = CreateDefaultSubobject<UDiaAttributeSet>(TEXT("AttributeSet"));
+
 	Tags.Add(FName(TEXT("Character")));
 }
 
@@ -29,6 +37,12 @@ ADiaBaseCharacter::ADiaBaseCharacter()
 void ADiaBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	// Initialize Ability System
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}
 	
 	SetupInitialSkills();
 }
@@ -49,14 +63,13 @@ void ADiaBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 void ADiaBaseCharacter::SetupInitialSkills()
 {
-	if (!IsValid(CombatComponent) || !GetWorld()) return;
-
+	GrantInitialGASAbilities();
 	// 초기 스킬 등록
-	for (const auto& _SkillID : InitialSkills)
-	{
-		// 스킬 ID를 통해 스킬 등록
-		CombatComponent->RegisterSkill(_SkillID);
-	}
+}
+
+void ADiaBaseCharacter::GrantInitialGASAbilities()
+{
+
 }
 
 float ADiaBaseCharacter::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -64,10 +77,12 @@ float ADiaBaseCharacter::TakeDamage(float DamageAmount, const FDamageEvent& Dama
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	
 	// 전투 컴포넌트에 데미지 전달
-	if (IsValid(CombatComponent))
-	{
-		CombatComponent->ReceiveDamage(ActualDamage, DamageCauser);
-	}
+	// - > 이제 gas로 변경한다
+
+	//if (IsValid(CombatComponent))
+	//{
+	//	CombatComponent->ReceiveDamage(ActualDamage, DamageCauser);
+	//}
 	
 	return ActualDamage;
 }
@@ -219,5 +234,10 @@ void ADiaBaseCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 	{
 		CurrentMontage = nullptr;
 	}
+}
+
+UAbilitySystemComponent* ADiaBaseCharacter::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
 }
 

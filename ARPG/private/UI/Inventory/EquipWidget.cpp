@@ -78,6 +78,15 @@ FEquippedItem UEquipWidget::UnequipItemFromSlot(EEquipmentSlot SlotType)
 	return FEquippedItem{};
 }
 
+void UEquipWidget::SetInventoryComponent(UDiaInventoryComponent* InComponent)
+{
+	InventoryComponent = InComponent;
+}
+
+void UEquipWidget::SetEquipmentComponent(UDiaEquipmentComponent* InComponent)
+{
+	EquippementComponent = InComponent;
+}
 
 //EquipSlot이 false일 경우 실행된다.
 bool UEquipWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)

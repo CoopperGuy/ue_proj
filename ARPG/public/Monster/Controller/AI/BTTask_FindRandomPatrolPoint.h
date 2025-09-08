@@ -19,15 +19,12 @@ protected:
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 
 protected:
-    // 순찰 범위 설정
     UPROPERTY(EditAnywhere, Category = "Patrol")
     float patrolRadius = 500.0f;
 
-    // 홈 위치로부터의 최소 거리
     UPROPERTY(EditAnywhere, Category = "Patrol")
     float minDistanceFromHome = 100.0f;
 
-    // 디버그 그리기 여부
     UPROPERTY(EditAnywhere, Category = "Debug")
     bool bShowDebugLines = true;
 };

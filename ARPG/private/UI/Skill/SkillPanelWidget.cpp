@@ -11,6 +11,8 @@
 void USkillPanelWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+
+	InitializeSkillPanel();
 }
 
 //SkillPanel 초기화
@@ -34,13 +36,21 @@ void USkillPanelWidget::InitializeSkillPanel()
 	for (const auto& SkillPair : SkillManager->GetSkillDataMap())
 	{
 		const FSkillData& SkillData = SkillPair.Value;
-		AddSkillToPanel(SkillData, true);
+		AddSkillToPanel(SkillData, SkillPair.Key, true);
 	}
 
 }
 
 void USkillPanelWidget::ToggleSkillPanel()
 {
+	if (IsVisible())
+	{
+		SetVisibility(ESlateVisibility::Collapsed);
+	}
+	else
+	{
+		SetVisibility(ESlateVisibility::Visible);
+	}
 }
 
 void USkillPanelWidget::RegisterSkillPanel(int32 SkillID)
@@ -49,7 +59,33 @@ void USkillPanelWidget::RegisterSkillPanel(int32 SkillID)
 
 void USkillPanelWidget::AddSkillToPanel(const FSkillData& SkillData, int32 SkillID, bool bIsActiveSkill)
 {
+	if (!IsValid(SkillSlotWidgetClass)) return;
+
 	FDiaSkillBaseInfo SkillInfo = FDiaSkillBaseInfo(SkillData, SkillID, 1);
+
+	if (bIsActiveSkill && IsValid(ActiveSkillScrollbar))
+	{
+		if (UUserWidget* NewSkillSlotWidget = CreateWidget(this, SkillSlotWidgetClass))
+		{
+			if (USkillSlotWidget* SkillSlotWidget = Cast<USkillSlotWidget>(NewSkillSlotWidget))
+			{
+				SkillSlotWidget->SetSkillInfo(SkillID, SkillInfo.SkillIcon, SkillInfo.SkillName, 1);
+				ActiveSkillScrollbar->AddChild(SkillSlotWidget);
+			}
+		}
+	}
+	else if (!bIsActiveSkill && IsValid(SubSkillScrollBar))
+	{
+		if (UUserWidget* NewSkillSlotWidget = CreateWidget(this, SkillSlotWidgetClass))
+		{
+			if (USkillSlotWidget* SkillSlotWidget = Cast<USkillSlotWidget>(NewSkillSlotWidget))
+			{
+				SkillSlotWidget->SetSkillInfo(SkillID, SkillInfo.SkillIcon, SkillInfo.SkillName, 1);
+				SubSkillScrollBar->AddChild(SkillSlotWidget);
+			}
+		}
+	}
+
 }
 
 

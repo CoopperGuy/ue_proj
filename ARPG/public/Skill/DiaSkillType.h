@@ -2,7 +2,16 @@
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
 #include "DiaSkillType.generated.h"  
+
 class ADiaSkillBase;
+
+UENUM(BlueprintType)
+enum class ESkillType : uint8
+{
+	Melee		UMETA(DisplayName = "Melee"),
+	Projectile	UMETA(DisplayName = "Projectile"),
+	Passive		UMETA(DisplayName = "Passive")
+};
 USTRUCT(BlueprintType)
 struct ARPG_API FSkillData
 {
@@ -25,6 +34,9 @@ struct ARPG_API FSkillData
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     float Damage;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+    ESkillType SkillType;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
     TSubclassOf<ADiaSkillBase> SkillClass;

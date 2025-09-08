@@ -33,4 +33,7 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	UScrollBox* SubSkillScrollBar;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Slot", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<class USkillSlotWidget> SkillSlotWidgetClass;
 };

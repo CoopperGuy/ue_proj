@@ -59,6 +59,7 @@ protected:
     // 인벤토리 토글 함수
 	void ToggleInventory();
 	void ToggleCharacterStatus();
+	void ToggleSkillPanel();
     /// <summary>
     /// 전투 관련 함수
     /// </summary>
@@ -68,6 +69,9 @@ protected:
     virtual void SetupInitialSkills() override;
 
 protected:
+    // GAS 초기 스킬 부여 및 매핑
+    void GrantInitialGASAbilities();
+
     /// 입력 관련 변수
     // Enhanced Input Actions
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
@@ -85,6 +89,9 @@ protected:
 	UInputAction* InventoryAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* CharacterStatusAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* SkillPanelAction;
+
 
     // Input Mapping Context
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
@@ -107,5 +114,10 @@ protected:
     TArray<int32> SkillIDMapping;
 
     const int32 MaxSkillMapping = 8;
+
+
+    ///치트 관련 변수
+
+    bool isInfMana = false;
 
 };

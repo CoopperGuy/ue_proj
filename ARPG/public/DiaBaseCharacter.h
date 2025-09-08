@@ -4,22 +4,27 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "AbilitySystemInterface.h"
 #include "DiaComponent/DiaStatusEffectComponent.h"
 #include "DiaBaseCharacter.generated.h"
 
 class UDiaCombatComponent;
 class UAnimMontage;
 class UDiaStatComponent;
-class UDiaStatComponent;
 class UDiaStatusEffectComponent;
+class UAbilitySystemComponent;
+class UDiaAttributeSet;
 
 UCLASS()
-class ARPG_API ADiaBaseCharacter : public ACharacter
+class ARPG_API ADiaBaseCharacter : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
 public:
 	ADiaBaseCharacter();
+
+	// IAbilitySystemInterface
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Animation Montage
@@ -76,6 +81,8 @@ protected:
 	/// 스킬 관련 함수 및 초기화
 	/// </summary>
 	virtual void SetupInitialSkills();
+
+	virtual void GrantInitialGASAbilities();
 protected:
 	//전투 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat)
@@ -88,6 +95,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatusEffects")
 	UDiaStatusEffectComponent* StatusEffectComponent;
 
+	// GAS Components
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
+	UAbilitySystemComponent* AbilitySystemComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
+	UDiaAttributeSet* AttributeSet;
+
 	//초기 보유 스킬
 	UPROPERTY(EditAnywhere, Category = "Skills")
     TArray<int32> InitialSkills;
@@ -99,4 +113,5 @@ protected:
 public:
 	UDiaStatComponent* GetStatComponent() const { return StatsComponent; }
 	UDiaCombatComponent* GetCombatComponent() const { return CombatComponent; }
+	UDiaAttributeSet* GetAttributeSet() const { return AttributeSet; }
 };

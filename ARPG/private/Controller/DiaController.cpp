@@ -10,6 +10,7 @@
 #include "UI/HUDWidget.h"
 #include "UI/Inventory/MainInventory.h"
 #include "UI/Inventory/EquipWidget.h"
+#include "UI/Skill/SkillPanelWidget.h"
 
 #include "UI/CharacterStatus/StatusWidget.h"
 
@@ -247,6 +248,23 @@ void ADiaController::ToggleChracterStatusVisibility(bool bVisible)
 	}
 
 	StatusWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+void ADiaController::ToggleSkillPanelVisibility(bool bVisible)
+{
+	UHUDWidget* HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		return;
+	}
+	USkillPanelWidget* SkillPanelWidget = Cast<USkillPanelWidget>(HUDWidget->FindWidgetByName("SkillPanelWidget"));
+	if (!SkillPanelWidget)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SkillPanelWidget is null"));
+		return;
+	}
+	SkillPanelWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
 ESlateVisibility ADiaController::GetInventoryVisibility() const

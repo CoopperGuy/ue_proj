@@ -14,6 +14,8 @@ class UAnimMontage;
 class UDiaCombatComponent;
 class UDiaStatComponent;
 
+class UAIPerceptionComponent;
+
 /**
  * 몬스터 캐릭터 클래스
  * 몬스터의 상태, AI 활성화/비활성화, 풀링 시스템과의 상호작용 담당
@@ -87,4 +89,5 @@ protected:
     // 히트 리액션 몽타주
     UPROPERTY(EditDefaultsOnly, Category = "Animation")
     UAnimMontage* hitReactionMontage;
+
 };

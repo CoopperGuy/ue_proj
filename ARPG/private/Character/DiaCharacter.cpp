@@ -27,6 +27,11 @@
 #include "UI/HUDWidget.h"
 
 #include "Camera/CameraComponent.h"
+#include "GAS/DiaGASHelper.h"
+#include "GAS/Abilities/DiaBasicAttackAbility.h"
+#include "AbilitySystemComponent.h"
+#include "System/GASSkillManager.h"
+#include "GAS/DiaGASHelper.h"
 
 // Sets default values
 ADiaCharacter::ADiaCharacter()
@@ -102,14 +107,7 @@ void ADiaCharacter::BeginPlay()
 void ADiaCharacter::SetupInitialSkills()
 {
     Super::SetupInitialSkills();
-
-    for (int32 i = 0; i < MaxSkillMapping; ++i)
-    {
-        if (InitialSkills.IsValidIndex(i))
-        {
-            SkillIDMapping[i] = InitialSkills[i];
-        }
-    }
+    GrantInitialGASAbilities();
 }
 
 // Called every frame
@@ -189,6 +187,124 @@ void ADiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
         {
 			EnhancedInputComponent->BindAction(CharacterStatusAction, ETriggerEvent::Triggered, this, &ADiaCharacter::ToggleCharacterStatus);
         }
+        if (SkillPanelAction)
+        {
+			EnhancedInputComponent->BindAction(SkillPanelAction, ETriggerEvent::Triggered, this, &ADiaCharacter::ToggleSkillPanel);
+        }
+    }
+}
+
+void ADiaCharacter::GrantInitialGASAbilities()
+{
+    UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+    if (!ASC)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No ASC"));
+        return;
+    }
+
+    UGASSkillManager* GasSkillMgr = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGASSkillManager>() : nullptr;
+    if (!GasSkillMgr)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
+    }
+
+    // 1) 설정된 InitialSkills 기반으로 부여
+    int32 MappingIndex = 0;
+    if (InitialSkills.Num() > 0)
+    {
+        for (int32 SkillID : InitialSkills)
+        {
+            if (MappingIndex >= MaxSkillMapping)
+            {
+                break;
+            }
+
+            TSubclassOf<UGameplayAbility> AbilityClass = nullptr;
+            const FGASSkillData* FoundData = nullptr;
+            if (GasSkillMgr)
+            {
+                FoundData = GasSkillMgr->GetSkillDataPtr(SkillID);
+                if (FoundData)
+                {
+                    AbilityClass = FoundData->AbilityClass ? FoundData->AbilityClass : nullptr;
+                }
+            }
+
+            if (!AbilityClass)
+            {
+                // 폴백: 기본 공격
+                if (SkillID == 1001)
+                {
+                    AbilityClass = UDiaBasicAttackAbility::StaticClass();
+                }
+            }
+
+            if (AbilityClass)
+            {
+                bool bGranted = false;
+                if (FoundData)
+                {
+                    bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID);
+                }
+                if (!bGranted)
+                {
+                    FGameplayAbilitySpec Spec(AbilityClass, 1, SkillID, this);
+                    ASC->GiveAbility(Spec);
+                }
+                if (SkillIDMapping.IsValidIndex(MappingIndex))
+                {
+                    SkillIDMapping[MappingIndex] = SkillID;
+                }
+                MappingIndex++;
+            }
+        }
+    }
+
+    // 2) InitialSkills가 비어있다면 기본 한 개 선택
+    if (MappingIndex == 0)
+    {
+        int32 ChosenSkillID = 1001;
+        TSubclassOf<UGameplayAbility> ChosenAbilityClass = UDiaBasicAttackAbility::StaticClass();
+
+        if (GasSkillMgr)
+        {
+            TArray<FGASSkillData> AllSkills = GasSkillMgr->GetAllSkillData();
+            AllSkills.Sort([](const FGASSkillData& A, const FGASSkillData& B){ return A.SkillID < B.SkillID; });
+            for (const FGASSkillData& Data : AllSkills)
+            {
+                if (Data.AbilityClass)
+                {
+                    ChosenSkillID = Data.SkillID;
+                    ChosenAbilityClass = Data.AbilityClass;
+                    break;
+                }
+            }
+        }
+
+        bool bGranted = false;
+        if (GasSkillMgr)
+        {
+            if (const FGASSkillData* FoundData = GasSkillMgr->GetSkillDataPtr(ChosenSkillID))
+            {
+                bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, ChosenSkillID);
+            }
+        }
+        if (!bGranted)
+        {
+            FGameplayAbilitySpec Spec(ChosenAbilityClass, 1, ChosenSkillID, this);
+            ASC->GiveAbility(Spec);
+        }
+        if (SkillIDMapping.IsValidIndex(0))
+        {
+            SkillIDMapping[0] = ChosenSkillID;
+        }
+
+        UE_LOG(LogTemp, Log, TEXT("GAS Ability added - SkillID: %d, Class: %s"), ChosenSkillID, *GetNameSafe(ChosenAbilityClass.Get()));
+        if (GEngine)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, TEXT("GAS Skill Ready! Press '1' to test"));
+        }
     }
 }
 
@@ -266,34 +382,48 @@ void ADiaCharacter::Look(const FInputActionValue& Value)
 
 void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
 {
-    if (!IsValid(CombatComponent))
-    {
-        #if WITH_EDITOR || UE_BUILD_DEVELOPMENT
-            UE_LOG(LogTemp, Warning, TEXT("CombatComponent가 유효하지 않습니다."));
-        #endif
-        return;
-    }
-
     if (SkillIDMapping.IsValidIndex(ActionIndex) && SkillIDMapping[ActionIndex] != -1)
     {
         int32 skillID = SkillIDMapping[ActionIndex];
         
         #if WITH_EDITOR || UE_BUILD_DEVELOPMENT
-            // 스킬 실행 로그
-            const FSkillData* skillData = GetWorld()->GetGameInstance<UDiaInstance>()->GetSkillManager()->GetSkillData(skillID);
-            if (skillData)
+            UE_LOG(LogTemp, Log, TEXT("스킬 실행 요청 - 인덱스: %d, 스킬ID: %d"), ActionIndex, skillID);
+        #endif
+        
+        // GAS 스킬 먼저 시도 (ID 1000 이상은 GAS 스킬로 간주)
+        if (skillID >= 1000)
+        {
+            UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+            if (ASC && UDiaGASHelper::TryActivateAbilityBySkillID(ASC, skillID))
             {
-                UE_LOG(LogTemp, Log, TEXT("스킬 실행 - 인덱스: %d, 스킬ID: %d, 스킬이름: %s"), 
-                    ActionIndex, skillID, *skillData->SkillName.ToString());
+                UE_LOG(LogTemp, Log, TEXT("GAS 스킬 실행 성공 - ID: %d"), skillID);
+                return;
             }
             else
             {
-                UE_LOG(LogTemp, Warning, TEXT("스킬 실행 - 인덱스: %d, 스킬ID: %d (스킬 데이터 없음)"), 
-                    ActionIndex, skillID);
+                UE_LOG(LogTemp, Warning, TEXT("GAS 스킬 실행 실패 - ID: %d"), skillID);
             }
-        #endif
+        }
         
-            CombatComponent->ExecuteSkill(skillID);
+        //// 기존 스킬 시스템으로 폴백
+        //if (IsValid(CombatComponent))
+        //{
+        //    #if WITH_EDITOR || UE_BUILD_DEVELOPMENT
+        //        // 스킬 실행 로그
+        //        const FSkillData* skillData = GetWorld()->GetGameInstance<UDiaInstance>()->GetSkillManager()->GetSkillData(skillID);
+        //        if (skillData)
+        //        {
+        //            UE_LOG(LogTemp, Log, TEXT("기존 스킬 시스템 실행 - 인덱스: %d, 스킬ID: %d, 스킬이름: %s"), 
+        //                ActionIndex, skillID, *skillData->SkillName.ToString());
+        //        }
+        //    #endif
+        //    
+        //    CombatComponent->ExecuteSkill(skillID);
+        //}
+        //else
+        //{
+        //    UE_LOG(LogTemp, Warning, TEXT("CombatComponent가 유효하지 않습니다."));
+        //}
     }
     else
     {
@@ -329,3 +459,11 @@ void ADiaCharacter::ToggleCharacterStatus()
     }
 }
 
+void ADiaCharacter::ToggleSkillPanel()
+{
+    if (ADiaController* PlayerController = Cast<ADiaController>(Controller))
+    {
+        ESlateVisibility eVisibility = PlayerController->GetWidgetVisibility("SkillPanelWidget");
+        PlayerController->ToggleSkillPanelVisibility(eVisibility == ESlateVisibility::Visible ? false : true);
+    }
+}

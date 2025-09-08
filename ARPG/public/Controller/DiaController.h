@@ -28,6 +28,7 @@ public:
 
 	void ToggleInventoryVisibility(bool bVisible);
 	void ToggleChracterStatusVisibility(bool bVisible);
+	void ToggleSkillPanelVisibility(bool bVisible);
 
 	ESlateVisibility GetInventoryVisibility() const;
 	ESlateVisibility GetWidgetVisibility(const FName& FoundName) const;

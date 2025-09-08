@@ -63,13 +63,13 @@ void UDiaCombatComponent::BeginPlay()
 
 void UDiaCombatComponent::InitializeSkills()
 {
-	if (!IsValid(SkillManager)) return;
+	//if (!IsValid(SkillManager)) return;
 
-	// 기본 공격 스킬 등록
-	const FSkillData* SkillData = SkillManager->GetSkillData(BasicAttackSkillID);
-	if (SkillData == nullptr) return;
+	//// 기본 공격 스킬 등록
+	//const FSkillData* SkillData = SkillManager->GetSkillData(BasicAttackSkillID);
+	//if (SkillData == nullptr) return;
 
-	RegisterSkill(BasicAttackSkillID);
+	//RegisterSkill(BasicAttackSkillID);
 	
 }
 
@@ -353,6 +353,12 @@ bool UDiaCombatComponent::ExecuteSkill(int32 SkillID)
 
 bool UDiaCombatComponent::RegisterSkill(int32 SkillID)
 {
+    return false;
+
+    //기존 combatcomponent 정지
+    // gas로 전환중
+    // 진행되지 않아야 한다.
+    
     // 이미 등록된 스킬인지 확인
     if (ActiveSkills.Contains(SkillID))
     {

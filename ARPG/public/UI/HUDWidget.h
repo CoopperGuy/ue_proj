@@ -25,6 +25,8 @@ class UMainInventory;
 class UStatusWidget;
 class UEquipWidget;
 class UDiaPrimaryLayout;
+class USkillPanelWidget;
+//class USkillQuickSlotPannelWidget;
 /**
  * 
  */
@@ -58,6 +60,12 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UEquipWidget* EquipmentWidget;
+
+	UPROPERTY(meta = (BindWidget))
+	USkillPanelWidget* SkillPanelWidget;
+
+	//UPROPERTY(meta = (BindWidget))
+	//USkillQuickSlotPannelWidget* SkillQuickSlotWidget;
 
 	UPROPERTY()
 	UDiaPrimaryLayout* DiaPrimaryLayout;

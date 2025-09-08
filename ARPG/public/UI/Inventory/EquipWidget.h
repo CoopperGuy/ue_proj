@@ -59,6 +59,6 @@ public:
 		default: return nullptr;
 		}
 	}
-	void SetInventoryComponent(UDiaInventoryComponent* InComponent) { InventoryComponent = InComponent; }
-	void SetEquipmentComponent(UDiaEquipmentComponent* InComponent) { EquippementComponent = InComponent; }
+	void SetInventoryComponent(UDiaInventoryComponent* InComponent);
+	void SetEquipmentComponent(UDiaEquipmentComponent* InComponent);
 };

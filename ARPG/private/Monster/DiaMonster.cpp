@@ -38,6 +38,8 @@ ADiaMonster::ADiaMonster()
 	AutoPossessAI = EAutoPossessAI::Disabled;
 
 	Tags.Add(FName(TEXT("Monster")));
+
+
 }
 
 void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)

@@ -15,11 +15,34 @@
 #include "Monster/DiaMonster.h"
 #include "DiaComponent/DiaCombatComponent.h"
 
+#include "Perception/AIPerceptionComponent.h"
+#include "Perception/AISenseConfig_Sight.h"
+
 #include "NavigationSystem.h"
 #include "Navigation/PathFollowingComponent.h"
 
 ADiaAIController::ADiaAIController()
 {
+	AIPerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerceptionComp"));
+	SetPerceptionComponent(*AIPerceptionComp);
+
+	SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("Sight Config"));
+	if (SightConfig)
+	{
+		SightConfig->SightRadius = 1500.0f;
+		SightConfig->LoseSightRadius = 1800.0f;
+		SightConfig->PeripheralVisionAngleDegrees = 90.0f;
+		SightConfig->SetMaxAge(5.0f);
+		SightConfig->AutoSuccessRangeFromLastSeenLocation = 900.0f;
+		SightConfig->DetectionByAffiliation.bDetectEnemies = true;
+		SightConfig->DetectionByAffiliation.bDetectNeutrals = true;
+		SightConfig->DetectionByAffiliation.bDetectFriendlies = true;
+
+		AIPerceptionComp->ConfigureSense(*SightConfig);
+		AIPerceptionComp->SetDominantSense(SightConfig->GetSenseImplementation());
+
+		AIPerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &ADiaAIController::OnTargetPerceptionUpdated);
+	}
 }
 
 void ADiaAIController::BeginPlay()
@@ -41,6 +64,24 @@ void ADiaAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	InitBlackBoardData(InPawn, blackboardData);
+}
+
+//우선 타겟 설정으로만 한다.
+void ADiaAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
+{
+	if (Actor && Actor->ActorHasTag(FName(TEXT("Player"))))
+	{
+		bIsLineOfSight = Stimulus.WasSuccessfullySensed();
+		if (bIsLineOfSight)
+		{
+			SetTarget(Actor);
+			LastSeenLocation = Actor->GetActorLocation();
+
+			return;
+		}
+	}
+
+	SetTarget(nullptr);
 }
 
 void ADiaAIController::InitBlackBoardData(APawn* InPawn, UBlackboardData* _blackboardData)
