@@ -6,6 +6,8 @@
 
 #include "EngineUtils.h"
 
+#include "Monster/Controller/AI/BlackboardKeys.h"
+
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
@@ -31,7 +33,7 @@ ADiaAIController::ADiaAIController()
 	{
 		SightConfig->SightRadius = 1500.0f;
 		SightConfig->LoseSightRadius = 1800.0f;
-		SightConfig->PeripheralVisionAngleDegrees = 90.0f;
+		SightConfig->PeripheralVisionAngleDegrees = 360.0f;
 		SightConfig->SetMaxAge(5.0f);
 		SightConfig->AutoSuccessRangeFromLastSeenLocation = 900.0f;
 		SightConfig->DetectionByAffiliation.bDetectEnemies = true;
@@ -76,12 +78,15 @@ void ADiaAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stim
 		{
 			SetTarget(Actor);
 			LastSeenLocation = Actor->GetActorLocation();
-
-			return;
 		}
-	}
+		else
+		{
+			SetTarget(nullptr);
+		}
 
-	SetTarget(nullptr);
+		if(GetBlackboardComponent())
+			GetBlackboardComponent()->SetValueAsBool(BlackboardKeys::Monster::LOS, bIsLineOfSight);
+	}
 }
 
 void ADiaAIController::InitBlackBoardData(APawn* InPawn, UBlackboardData* _blackboardData)
@@ -217,18 +222,25 @@ void ADiaAIController::SetTarget(AActor* NewTarget)
 	}
 	
 	CurrentTarget = NewTarget;
-	
-	// 전투 컴포넌트에 타겟 설정
-	ADiaMonster* ControlledMonster = GetControlledMonster();
-	if (!IsValid(ControlledMonster))
+
+	//미사용
+	//// 전투 컴포넌트에 타겟 설정
+	//ADiaMonster* ControlledMonster = GetControlledMonster();
+	//if (!IsValid(ControlledMonster))
+	//{
+	//	return;
+	//}
+	//
+	//UDiaCombatComponent* CombatComp = ControlledMonster->FindComponentByClass<UDiaCombatComponent>();
+	//if (IsValid(CombatComp))
+	//{
+	//	CombatComp->SetCurrentTarget(NewTarget);
+	//}
+
+	if (GetBlackboardComponent())
 	{
-		return;
-	}
-	
-	UDiaCombatComponent* CombatComp = ControlledMonster->FindComponentByClass<UDiaCombatComponent>();
-	if (IsValid(CombatComp))
-	{
-		CombatComp->SetCurrentTarget(NewTarget);
+		GetBlackboardComponent()->SetValueAsObject(BlackboardKeys::Monster::TargetActor, NewTarget);
+		GetBlackboardComponent()->SetValueAsVector(BlackboardKeys::Monster::LastKnownLocation, NewTarget->GetActorLocation());
 	}
 }
 

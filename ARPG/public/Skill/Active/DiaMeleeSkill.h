@@ -54,7 +54,7 @@ protected:
 
 	// 피격 판정 디버그 표시 여부
 	UPROPERTY(EditDefaultsOnly, Category = "Melee|Debug")
-	bool bShowDebugShape = false;
+	bool bShowDebugShape = true;
 	
 	// 피격 이펙트
 	UPROPERTY(EditDefaultsOnly, Category = "Melee|Effects")

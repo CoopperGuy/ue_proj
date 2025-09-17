@@ -5,13 +5,16 @@
 
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
+#include "BehaviorTree/Blackboard/BlackboardKeyType_Object.h"
 
 #include "Monster/Controller/DiaAIController.h"
 
 UUBTD_DistanceInRange::UUBTD_DistanceInRange()
 {
     NodeName = TEXT("Distance In Range");
-
+    
+    // Blackboard Key 설정
+    BlackboardKey.SelectedKeyName = TEXT("TargetActor");
 }
 
 bool UUBTD_DistanceInRange::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const
@@ -23,7 +26,7 @@ bool UUBTD_DistanceInRange::CalculateRawConditionValue(UBehaviorTreeComponent& O
     }
 
     const UBlackboardComponent* BB = OwnerComp.GetBlackboardComponent();
-    AActor* Target = Cast<AActor>(BB->GetValueAsObject(GetSelectedBlackboardKey()));
+    AActor* Target = Cast<AActor>(BB->GetValueAsObject(BlackboardKey.SelectedKeyName));
     if (!Target)
     {
         return false;

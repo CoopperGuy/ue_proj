@@ -3,11 +3,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AbilitySystemInterface.h"
+#include "GameplayTagContainer.h"
+
 #include "Engine/DataTable.h"
 #include "DiaMonsterTable.generated.h"
 
 class UBlackboardData;
 class UBehaviorTree;
+class ADiaMonster;
 
 USTRUCT(BlueprintType)
 struct FMonsterInfo : public FTableRowBase
@@ -47,6 +51,15 @@ struct FMonsterInfo : public FTableRowBase
 	//BehaviorTree
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UBehaviorTree> BehaviorTree;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)	
+	TArray<int32> MonsterSkills;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)	
+	FGameplayTagContainer MonsterTags;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<ADiaMonster> BP_MonsterAsset;
 };
 
 

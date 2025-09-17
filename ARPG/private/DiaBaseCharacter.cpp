@@ -5,10 +5,17 @@
 #include "DiaComponent/DiaCombatComponent.h"
 #include "DiaComponent/DiaStatusEffectComponent.h"
 #include "DiaComponent/DiaStatComponent.h"
-#include "GAS/DiaAttributeSet.h"
+
 #include "AbilitySystemComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
+
+
+#include "GAS/DiaGASHelper.h"
+#include "GAS/Abilities/DiaBasicAttackAbility.h"
+#include "AbilitySystemComponent.h"
+#include "System/GASSkillManager.h"
+#include "GAS/DiaAttributeSet.h"
 
 ADiaBaseCharacter::ADiaBaseCharacter()
 {
@@ -37,14 +44,12 @@ ADiaBaseCharacter::ADiaBaseCharacter()
 void ADiaBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	// Initialize Ability System
 	if (AbilitySystemComponent)
 	{
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
-	}
-	
-	SetupInitialSkills();
+	}	
 }
 
 // Called every frame
@@ -69,7 +74,76 @@ void ADiaBaseCharacter::SetupInitialSkills()
 
 void ADiaBaseCharacter::GrantInitialGASAbilities()
 {
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (!ASC)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No ASC"));
+		return;
+	}
 
+	UGASSkillManager* GasSkillMgr = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGASSkillManager>() : nullptr;
+	if (!GasSkillMgr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
+	}
+
+	int32 MappingIndex = 0;
+	if (InitialSkills.Num() > 0)
+	{
+		for (int32 SkillID : InitialSkills)
+		{
+			if (MappingIndex >= MaxSkillMapping)
+			{
+				break;
+			}
+
+			TSubclassOf<UGameplayAbility> AbilityClass = nullptr;
+			const FGASSkillData* FoundData = nullptr;
+			if (GasSkillMgr)
+			{
+				FoundData = GasSkillMgr->GetSkillDataPtr(SkillID);
+				if (FoundData)
+				{
+					AbilityClass = FoundData->AbilityClass ? FoundData->AbilityClass : nullptr;
+				}
+			}
+
+			if (!AbilityClass)
+			{
+				// 폴백: 기본 공격
+				if (SkillID == 1001)
+				{
+					AbilityClass = UDiaBasicAttackAbility::StaticClass();
+				}
+			}
+
+			if (AbilityClass)
+			{
+				bool bGranted = false;
+				if (FoundData)
+				{
+					bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID, AbilityTags.GetGameplayTagArray().Last());
+				}
+				if (!bGranted)
+				{
+					FGameplayAbilitySpec Spec(AbilityClass, 1, SkillID, this);
+					ASC->GiveAbility(Spec);
+				}
+				if (SkillIDMapping.IsValidIndex(MappingIndex))
+				{
+					SkillIDMapping[MappingIndex] = SkillID;
+				}
+				MappingIndex++;
+			}
+		}
+	}
+
+
+	for (const FGameplayAbilitySpec& S : ASC->GetActivatableAbilities())
+	{
+		UE_LOG(LogTemp, Log, TEXT("[GAS] Granted: Ability=%s, InputID(SkillID)=%d, IsActive=%s"),
+			*GetNameSafe(S.Ability), S.InputID, S.IsActive() ? TEXT("true") : TEXT("false"));
+	}
 }
 
 float ADiaBaseCharacter::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -226,6 +300,11 @@ void ADiaBaseCharacter::SetGravity(bool bEnableGravityAndCollision)
 		// Capsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		 Capsule->SetCollisionResponseToAllChannels(ECR_Overlap); // QueryOnly 사용 시 모든 채널 오버랩으로 설정 가능
 	}
+}
+
+void ADiaBaseCharacter::SetTargetActor(ADiaBaseCharacter* NewTarget)
+{
+
 }
 
 void ADiaBaseCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)

@@ -2,9 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+
 #include "GameplayAbilitySpec.h"
+#include "GameplayTagContainer.h"
+
 #include "Skill/DiaSkillType.h"
 #include "Types/DiaGASSkillData.h"
+
 #include "DiaGASHelper.generated.h"
 
 class UAbilitySystemComponent;
@@ -21,7 +25,7 @@ class ARPG_API UDiaGASHelper : public UBlueprintFunctionLibrary
 public:
 	// Convert skill data to gameplay ability
 	UFUNCTION(BlueprintCallable, Category = "GAS|Helper")
-	static bool GrantAbilityFromSkillData(UAbilitySystemComponent* ASC, const FGASSkillData& SkillData, int32 SkillID);
+	static bool GrantAbilityFromSkillData(UAbilitySystemComponent* ASC, const FGASSkillData& SkillData, int32 SkillID, FGameplayTag AbilityTag = FGameplayTag());
 
 	// Remove ability by skill ID
 	UFUNCTION(BlueprintCallable, Category = "GAS|Helper")

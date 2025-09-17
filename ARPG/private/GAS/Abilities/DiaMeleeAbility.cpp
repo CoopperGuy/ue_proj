@@ -1,11 +1,18 @@
 #include "GAS/Abilities/DiaMeleeAbility.h"
 #include "GAS/DiaAttributeSet.h"
 #include "AbilitySystemComponent.h"
+
 #include "GameFramework/Character.h"
+
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
+
 #include "NiagaraFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
+
+#include "Character/DiaCharacter.h"
+#include "DiaBaseCharacter.h"
+
 #include "Components/AudioComponent.h"
 
 UDiaMeleeAbility::UDiaMeleeAbility()
@@ -14,25 +21,26 @@ UDiaMeleeAbility::UDiaMeleeAbility()
 	AttackRange = 200.0f;
 	AttackAngle = 60.0f;
 	AttackOffset = FVector(100.0f, 0.0f, 0.0f);
-	bShowDebugShape = false;
 
 	// Set ability tags
-	FGameplayTagContainer Tags;
-	Tags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Melee")));
-	SetAssetTags(Tags);
-	
-	FGameplayTagContainer BlockTags;
-	BlockTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability")));
-	BlockAbilitiesWithTag = BlockTags;
+	//FGameplayTagContainer Tags;
+	//Tags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Melee")));
+	//SetAssetTags(Tags);
+	//
+	//FGameplayTagContainer BlockTags;
+	//BlockTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability")));
+	//BlockAbilitiesWithTag = BlockTags;
 }
 
 void UDiaMeleeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
-	// Clear hit actors for this activation
 	HitActors.Empty();
 
-	// Call parent implementation
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+
+	PerformHitDetection();
+
+	EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 }
 
 void UDiaMeleeAbility::PerformHitDetection()
@@ -43,7 +51,7 @@ void UDiaMeleeAbility::PerformHitDetection()
 		return;
 	}
 
-	ACharacter* Character = Cast<ACharacter>(ActorInfo.AvatarActor.Get());
+	ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(ActorInfo.AvatarActor.Get());
 	if (!Character)
 	{
 		return;
@@ -55,14 +63,11 @@ void UDiaMeleeAbility::PerformHitDetection()
 		return;
 	}
 
-	// Get character location and rotation
 	FVector CharacterLocation = Character->GetActorLocation();
 	FRotator CharacterRotation = Character->GetActorRotation();
 
-	// Calculate attack center position
 	FVector AttackCenter = CharacterLocation + CharacterRotation.RotateVector(AttackOffset);
 
-	// Perform sphere sweep
 	TArray<FHitResult> HitResults;
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(Character);
@@ -77,13 +82,11 @@ void UDiaMeleeAbility::PerformHitDetection()
 		FCollisionShape::MakeSphere(AttackRange),
 		QueryParams
 	);
-
-	// Debug drawing
+	
 	if (bShowDebugShape)
 	{
 		DrawDebugSphere(World, AttackCenter, AttackRange, 12, FColor::Red, false, 2.0f);
 		
-		// Draw attack cone
 		FVector ForwardVector = CharacterRotation.Vector();
 		float HalfAngleRad = FMath::DegreesToRadians(AttackAngle * 0.5f);
 		
@@ -108,20 +111,27 @@ void UDiaMeleeAbility::PerformHitDetection()
 				continue;
 			}
 
-			// Check if target is within attack angle
+			//actor 0번 tag는 character
+			//1번은 player or monster
+			//같은 타입은 피격에서 제외
+			TArray<FName> OwnerTags = Character->Tags;
+			if (HitActor->ActorHasTag(OwnerTags[1]))
+			{
+				continue;
+			}
+			
+			Character->SetTargetActor(Cast<ADiaBaseCharacter>(HitActor));
+
 			FVector ToTarget = (HitActor->GetActorLocation() - AttackCenter).GetSafeNormal();
 			float DotProduct = FVector::DotProduct(ForwardVector, ToTarget);
 			float AngleToTarget = FMath::Acos(DotProduct);
 
 			if (AngleToTarget <= HalfAngleRad)
 			{
-				// Add to hit actors to prevent multiple hits
 				HitActors.Add(HitActor);
 
-				// Apply damage
 				ApplyDamageToTarget(HitActor);
 
-				// Play hit effects
 				if (HitEffect)
 				{
 					UNiagaraFunctionLibrary::SpawnSystemAtLocation(
@@ -146,7 +156,6 @@ void UDiaMeleeAbility::PerformHitDetection()
 
 void UDiaMeleeAbility::OnMeleeHitFrame()
 {
-	// This function is called from animation notify
 	PerformHitDetection();
 }
 
@@ -161,10 +170,8 @@ void UDiaMeleeAbility::ApplyDamageToTarget(AActor* Target)
 	UAbilitySystemComponent* TargetASC = Target->FindComponentByClass<UAbilitySystemComponent>();
 	if (!TargetASC)
 	{
-		// If target doesn't have ASC, apply damage directly
 		float DamageAmount = SkillData.BaseDamage;
 		
-		// Apply damage using UE's damage system
 		UGameplayStatics::ApplyPointDamage(
 			Target,
 			DamageAmount,
@@ -177,16 +184,13 @@ void UDiaMeleeAbility::ApplyDamageToTarget(AActor* Target)
 		return;
 	}
 
-	// Apply damage through GAS
-	// For now, we'll apply damage directly to the attribute
-	// In a full implementation, you'd create and apply a GameplayEffect
 	UDiaAttributeSet* TargetAttributeSet = const_cast<UDiaAttributeSet*>(TargetASC->GetSet<UDiaAttributeSet>());
 	if (TargetAttributeSet)
 	{
 		float CurrentHealth = TargetAttributeSet->GetHealth();
 		float DamageAmount = SkillData.BaseDamage;
 		
-		// Get attack power from our character
+		//데미지 계산 식은 추후 변경해야한다 helper함수 있음
 		if (const UDiaAttributeSet* MyAttributeSet = GetAbilitySystemComponentFromActorInfo()->GetSet<UDiaAttributeSet>())
 		{
 			DamageAmount += MyAttributeSet->GetAttackPower();

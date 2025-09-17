@@ -4,8 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+
 #include "AbilitySystemInterface.h"
+
 #include "DiaComponent/DiaStatusEffectComponent.h"
+
+#include "GameplayTagContainer.h"
+
 #include "DiaBaseCharacter.generated.h"
 
 class UDiaCombatComponent;
@@ -48,6 +53,8 @@ public:
 	UFUNCTION()
 	virtual void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
+	virtual void SetTargetActor(ADiaBaseCharacter* NewTarget);
+
 	/// <summary>
 	/// UI 관련 함수
 	/// UI Update용 함수 
@@ -69,6 +76,7 @@ public:
 	void AddExp(float ExpAmount);
 
 	void SetGravity(bool bEnableGravityAndCollision);
+
 protected:
 	// 기본적인 함수
 	virtual void BeginPlay() override;
@@ -109,6 +117,17 @@ protected:
 	// 현재 재생중인 몽타주
 	UPROPERTY()
 	UAnimMontage* CurrentMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS|Ability")
+    FGameplayTagContainer AbilityTags;
+
+	//스킬 관련 변수
+    // 스킬 ID 매핑 (키 인덱스 -> 스킬 ID)
+    UPROPERTY(EditDefaultsOnly, Category = "Skills")
+    TArray<int32> SkillIDMapping;
+
+	const int32 MaxSkillMapping = 8;
+
 
 public:
 	UDiaStatComponent* GetStatComponent() const { return StatsComponent; }

@@ -31,7 +31,6 @@
 #include "GAS/Abilities/DiaBasicAttackAbility.h"
 #include "AbilitySystemComponent.h"
 #include "System/GASSkillManager.h"
-#include "GAS/DiaGASHelper.h"
 
 // Sets default values
 ADiaCharacter::ADiaCharacter()
@@ -102,12 +101,13 @@ void ADiaCharacter::BeginPlay()
             Subsystem->AddMappingContext(DefaultMappingContext, 0);
         }
     }
-    }
+
+    SetupInitialSkills();
+}
 
 void ADiaCharacter::SetupInitialSkills()
 {
     Super::SetupInitialSkills();
-    GrantInitialGASAbilities();
 }
 
 // Called every frame
@@ -196,6 +196,7 @@ void ADiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 void ADiaCharacter::GrantInitialGASAbilities()
 {
+    Super::GrantInitialGASAbilities();
     UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
     if (!ASC)
     {
@@ -209,60 +210,7 @@ void ADiaCharacter::GrantInitialGASAbilities()
         UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
     }
 
-    // 1) 설정된 InitialSkills 기반으로 부여
-    int32 MappingIndex = 0;
-    if (InitialSkills.Num() > 0)
-    {
-        for (int32 SkillID : InitialSkills)
-        {
-            if (MappingIndex >= MaxSkillMapping)
-            {
-                break;
-            }
-
-            TSubclassOf<UGameplayAbility> AbilityClass = nullptr;
-            const FGASSkillData* FoundData = nullptr;
-            if (GasSkillMgr)
-            {
-                FoundData = GasSkillMgr->GetSkillDataPtr(SkillID);
-                if (FoundData)
-                {
-                    AbilityClass = FoundData->AbilityClass ? FoundData->AbilityClass : nullptr;
-                }
-            }
-
-            if (!AbilityClass)
-            {
-                // 폴백: 기본 공격
-                if (SkillID == 1001)
-                {
-                    AbilityClass = UDiaBasicAttackAbility::StaticClass();
-                }
-            }
-
-            if (AbilityClass)
-            {
-                bool bGranted = false;
-                if (FoundData)
-                {
-                    bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID);
-                }
-                if (!bGranted)
-                {
-                    FGameplayAbilitySpec Spec(AbilityClass, 1, SkillID, this);
-                    ASC->GiveAbility(Spec);
-                }
-                if (SkillIDMapping.IsValidIndex(MappingIndex))
-                {
-                    SkillIDMapping[MappingIndex] = SkillID;
-                }
-                MappingIndex++;
-            }
-        }
-    }
-
-    // 2) InitialSkills가 비어있다면 기본 한 개 선택
-    if (MappingIndex == 0)
+    if (false)
     {
         int32 ChosenSkillID = 1001;
         TSubclassOf<UGameplayAbility> ChosenAbilityClass = UDiaBasicAttackAbility::StaticClass();
@@ -330,6 +278,14 @@ void ADiaCharacter::Move(const FInputActionValue& Value)
 bool ADiaCharacter::GetMouseWorldLocation(FVector& OutLocation) const
 {
     return false;
+}
+
+void ADiaCharacter::SetTargetActor(ADiaBaseCharacter* NewTarget)
+{
+    if (NewTarget->ActorHasTag(FName("Monster")))
+    {
+        Cast<ADiaController>(GetController())->SetTarget(NewTarget);
+    }
 }
 
 void ADiaCharacter::PlayDieAnimation()

@@ -6,9 +6,15 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayTagsManager.h"
 
-bool UDiaGASHelper::GrantAbilityFromSkillData(UAbilitySystemComponent* ASC, const FGASSkillData& SkillData, int32 SkillID)
+bool UDiaGASHelper::GrantAbilityFromSkillData(UAbilitySystemComponent* ASC, const FGASSkillData& SkillData, int32 SkillID, FGameplayTag AbilityTag)
 {
 	if (!ASC)
+	{
+		return false;
+	}
+
+	//해당 태그를 보유중이지 않다면 return false;
+	if (!SkillData.AbilityTags.HasTag(AbilityTag))
 	{
 		return false;
 	}

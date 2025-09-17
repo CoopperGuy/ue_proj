@@ -55,7 +55,7 @@ protected:
 
 	// 피격 판정 디버그 표시 여부
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Melee|Debug")
-	bool bShowDebugShape = false;
+	bool bShowDebugShape = true;
 
 private:
 	// 이미 피격된 액터 목록 (ability activation마다 초기화)

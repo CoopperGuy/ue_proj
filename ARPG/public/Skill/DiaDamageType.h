@@ -9,14 +9,14 @@
 UENUM(BlueprintType)
 enum class EDamageElementType : uint8
 {
-    Physical,
-    Fire,
-    Ice,
-    Lightning,
-    Poison,
-    Holy,
-    Shadow,
-    None
+    EDT_Physical,
+    EDT_Fire,
+    EDT_Ice,
+    EDT_Lightning,
+    EDT_Poison,
+    EDT_Holy,
+    EDT_Shadow,
+	EDT_MAX
 };
 
 class UDiaStatusEffect;

@@ -15,14 +15,16 @@ UDiaProjectileAbility::UDiaProjectileAbility()
 	ProjectileCount = 3;
 	SpreadAngle = 15.0f;
 
-	// Set ability tags
-	FGameplayTagContainer Tags;
-	Tags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Projectile")));
-	SetAssetTags(Tags);
-	
-	FGameplayTagContainer BlockTags;
-	BlockTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability")));
-	BlockAbilitiesWithTag = BlockTags;
+	// Set ability tags - 신규 API 사용
+	//{
+	//	FGameplayTagContainer Tags;
+	//	Tags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability.Projectile")));
+	//	SetAssetTags(Tags);
+	//}
+	//
+	//FGameplayTagContainer BlockTags;
+	//BlockTags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability")));
+	//BlockAbilitiesWithTag = BlockTags;
 }
 
 void UDiaProjectileAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)

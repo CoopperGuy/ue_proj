@@ -13,6 +13,7 @@
 #include "NiagaraFunctionLibrary.h"
 
 #include "DiaBaseCharacter.h"
+#include "Character/DiaCharacter.h"
 #include "DiaComponent/DiaCombatComponent.h"
 
 #include "Engine/DamageEvents.h"
@@ -164,26 +165,31 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     }
 
     // 소유자와 타겟의 태그를 비교
-    bool bHasSameTag = false;
+	bool bIsOwnerCharacter = false;
+	bool bIsPlayerCharacter = false;
     if (IsValid(Owner))
     {
         // 소유자의 모든 태그에 대해 검사
         for (const FName& OwnerTag : Owner->Tags)
         {
             //character 태그에 대한 체크는 넘긴다.
-            if (OwnerTag == FName(TEXT("Character"))) continue;
+            if (OwnerTag == FName(TEXT("Character")))
+            {
+                bIsPlayerCharacter = true;
+				continue;
+            }
 
-            //다른 태그에 대해서만 체크
+            //같은 태크가 있으면 피격 x
             if (OtherActor->Tags.Contains(OwnerTag))
             {
-                bHasSameTag = true;
+                bIsOwnerCharacter = true;
                 break;
             }
         }
     }
 
     // 같은 태그를 가진 액터는 데미지를 받지 않음
-    if (bHasSameTag)    return;
+    if (bIsOwnerCharacter)    return;
 
 
     // 데미지 처리
@@ -198,6 +204,10 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
         
         // 피격 이벤트 호출
         OnProjectileHit(DiaOtherActor, HitResult);
+
+        //타격에 성공하면 받으면 일단 타겟으로 올린다.
+        //HACK
+        Cast<ADiaBaseCharacter>(Owner)->SetTargetActor(DiaOtherActor);
     }
     
     // 발사체 제거

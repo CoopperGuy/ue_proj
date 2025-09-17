@@ -11,6 +11,14 @@
 #include "UI/Skill/SkillPanelWidget.h"
 //#include "UI/SkillQuickSlotPannelWidget.h"
 
+#include "GAS/DiaAttributeSet.h"
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemBlueprintLibrary.h"
+#include "Character/DiaCharacter.h"
+#include "Controller/DiaController.h"
+
+#include "Monster/DiaMonster.h"
+
 #include "UI/DiaCaution.h"
 
 #include "Blueprint/WidgetTree.h"
@@ -24,6 +32,33 @@ void UHUDWidget::NativeConstruct()
 	CharacterStatus->SetVisibility(ESlateVisibility::Collapsed);
 	EquipmentWidget->SetVisibility(ESlateVisibility::Collapsed);
 	SkillPanelWidget->SetVisibility(ESlateVisibility::Collapsed);
+
+
+	ADiaBaseCharacter* OwningActor = Cast<ADiaBaseCharacter>(GetOwningPlayerPawn());
+	ADiaController* OwningController = Cast<ADiaController>(GetOwningPlayer());
+	if (IsValid(OwningActor))
+	{
+		UAbilitySystemComponent* AbilitySystem = OwningActor->GetAbilitySystemComponent();
+		if (IsValid(AbilitySystem))
+		{
+			//player는 이런식으로 설정한다 치는데, 몬스터는 어떻게?하지?
+			HealthChangedDelegateHandle =
+				AbilitySystem
+				->GetGameplayAttributeValueChangeDelegate(UDiaAttributeSet::GetHealthAttribute())
+				.AddUObject(this, &UHUDWidget::HandleHealthChanged);
+		}
+	}
+	if (IsValid(OwningController))
+	{
+		OwningController->GetOnTargetChanged().AddUObject(this, &UHUDWidget::UpdateTagetMonster);
+	}
+
+	//// 초기값 1회 반영
+	//const float Health = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute());
+	//const float MaxHealth = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxHealthAttribute());
+	//UpdateHealthUI(Health, MaxHealth);
+
+
 }
 
 void UHUDWidget::UpdateOrbPercentage(OrbType _Type, float _Percentage)
@@ -49,6 +84,52 @@ void UHUDWidget::UpdateMonsterPercentage(BarType _Type, float _Percentage)
 		MonsterHPWidget->UpdatePercentage(_Percentage);
 		break;
 	}
+}
+
+void UHUDWidget::HandleHealthChanged(const FOnAttributeChangeData& Data)
+{
+	const float NewHealth = Data.NewValue;
+
+	ADiaBaseCharacter* OwningActor = Cast<ADiaBaseCharacter>(GetOwningPlayerPawn());
+	UAbilitySystemComponent* AbilitySystem = OwningActor->GetAbilitySystemComponent();
+
+	const float MaxHealth = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxHealthAttribute());
+
+	UpdateOrbPercentage(OrbType::OT_HP, NewHealth / MaxHealth);
+}
+
+void UHUDWidget::UpdateTagetMonster(ADiaBaseCharacter* NewTarget)
+{
+	TargetMonster = NewTarget;
+	if (IsValid(TargetMonster))
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("Target Changed: %s"), *TargetMonster->GetName());
+		MonsterHPWidget->SetVisibility(ESlateVisibility::Visible);
+
+		UAbilitySystemComponent* AbilitySystem = TargetMonster->GetAbilitySystemComponent();
+
+		const float CurHP = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute());
+		const float MaxHP = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxHealthAttribute());
+		UpdateMonsterPercentage(BarType::BT_HP, CurHP / MaxHP);
+	}
+	else
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("Target Cleared"));
+		SetMonsterHPVisibility(ESlateVisibility::Collapsed);
+	}
+
+
+#if defined(WITH_EDITOR) || UE_BUILD_DEVELOPMENT
+	if (TargetMonster)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Target Changed: %s"), *TargetMonster->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("Target Cleared"));
+	}
+#endif
+
 }
 
 void UHUDWidget::SetMonsterHPVisibility(ESlateVisibility _Visibility)

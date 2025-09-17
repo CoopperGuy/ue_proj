@@ -122,6 +122,25 @@ void ADiaController::BindUIToStatComponent(UDiaStatComponent* StatComponent)
 	}
 }
 
+void ADiaController::SetTarget(ADiaBaseCharacter* NewTarget)
+{
+	//nullptr이 가능하다.
+
+	TargetMonster = NewTarget;
+	OnTargetChanged.Broadcast(TargetMonster);
+
+#if defined(WITH_EDITOR) || UE_BUILD_DEVELOPMENT
+	if (TargetMonster)
+	{
+		UE_LOG(LogTemp, Log, TEXT("Target Changed: %s"), *TargetMonster->GetName());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Log, TEXT("Target Cleared"));
+	}
+#endif
+}
+
 UHUDWidget* ADiaController::GetHUDWidget() const
 {
 	// 캐시된 HUDWidget이 유효하면 그대로 반환

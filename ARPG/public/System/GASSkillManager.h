@@ -31,6 +31,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GAS Skills")
 	TArray<FGASSkillData> GetSkillsByType(EGASSkillType SkillType) const;
 
+
 protected:
 	// DataTable에서 스킬 데이터 로드
 	void LoadSkillDataFromTable();

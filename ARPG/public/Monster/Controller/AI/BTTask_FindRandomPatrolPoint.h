@@ -23,7 +23,7 @@ protected:
     float patrolRadius = 500.0f;
 
     UPROPERTY(EditAnywhere, Category = "Patrol")
-    float minDistanceFromHome = 100.0f;
+	float minDistanceFromHome = 100.0f;
 
     UPROPERTY(EditAnywhere, Category = "Debug")
     bool bShowDebugLines = true;

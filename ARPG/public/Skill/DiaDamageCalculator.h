@@ -21,7 +21,7 @@ struct FDamageResult
 		, bIsCritical(false)
 		, bIsBlocked(false)
 		, bIsEvaded(false)
-		, ElementType(EDamageElementType::None)
+		, ElementType(EDamageElementType::EDT_MAX)
 	{}
 };
 

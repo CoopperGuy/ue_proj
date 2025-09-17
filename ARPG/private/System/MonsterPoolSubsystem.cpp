@@ -326,13 +326,54 @@ ADiaMonster* UMonsterPoolSubsystem::CreateNewMonster(FName MonsterID)
 	// 새 몬스터 생성
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	
 
-	ADiaMonster* NewMonster = GetWorld()->SpawnActor<ADiaMonster>(
-		ADiaMonster::StaticClass(),
-		FVector(0, 0, -10000), // 멀리 스폰
-		FRotator::ZeroRotator,
-		SpawnParams
-	);
+	// MonsterManager에서 정보 가져오기
+	UGameInstance* GI = GetWorld()->GetGameInstance();
+	if (!GI) return nullptr;
+
+	UMonsterManager* MM = GI->GetSubsystem<UMonsterManager>();
+	if (!MM)
+	{
+		MONSTER_POOL_LOG(Error, TEXT("InitializeMonster: MonsterManager not found in GameInstance"));
+		return nullptr;
+	}
+
+	const FMonsterInfo* MonsterInfo = MM->GetMonsterInfo(MonsterID);
+	if (!MonsterInfo)
+	{
+		MONSTER_POOL_LOG(Warning, TEXT("InitializeMonster: MonsterInfo not found for ID %s"), *MonsterID.ToString());
+		return nullptr;
+	}
+
+	ADiaMonster* NewMonster = nullptr;
+
+
+	//원래는 하나하나 세팅하는 형식으로 만드려 했는데
+	//2가지 방식으로 하기로 했다
+	// 이유는 일일이 세팅하기 번거롭고 블루프린트로 만들어 놓으면 편하기 때문
+	// 1. 블루프린트가 지정되어 있으면 블루프린트로 생성
+	// 2. 블루프린트가 없으면 C++ 클래스 기본 생성
+
+	//특이 개체를 2번 방식으로 만들고 일반 개체는 1번으로 만들거나 그래야 할 거 같음.
+	if (!MonsterInfo->BP_MonsterAsset)
+	{
+		NewMonster = GetWorld()->SpawnActor<ADiaMonster>(
+			ADiaMonster::StaticClass(),
+			FVector(0, 0, -10000), // 멀리 스폰
+			FRotator::ZeroRotator,
+			SpawnParams
+		);
+	}
+	else
+	{
+		NewMonster = GetWorld()->SpawnActor<ADiaMonster>(
+			MonsterInfo->BP_MonsterAsset,
+			FVector(0, 0, -10000), // 멀리 스폰
+			FRotator::ZeroRotator,
+			SpawnParams
+		);
+	}
 
 	if (IsValid(NewMonster))
 	{

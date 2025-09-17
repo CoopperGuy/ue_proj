@@ -14,10 +14,12 @@ UDiaGameplayAbility::UDiaGameplayAbility()
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::LocalPredicted;
 	
-	// Set default activation requirements
-	FGameplayTagContainer Tags;
-	Tags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability")));
-	SetAssetTags(Tags);
+	// Set default activation requirements - 신규 API 사용
+	{
+		//FGameplayTagContainer Tags;
+		//Tags.AddTag(FGameplayTag::RequestGameplayTag(FName("Ability")));
+		//SetAssetTags(Tags);
+	}
 	
 	CurrentAbilityMontage = nullptr;
 	MontageTask = nullptr;
@@ -67,6 +69,7 @@ void UDiaGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, co
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
+
 bool UDiaGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, OUT FGameplayTagContainer* OptionalRelevantTags) const
 {
 	if (!Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags))
@@ -103,15 +106,11 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 {
 	SkillData = InSkillData;
 	
-	// 태그 합치기
 	if (SkillData.AbilityTags.Num() > 0)
 	{
-		FGameplayTagContainer Tags = GetAssetTags();
-		Tags.AppendTags(SkillData.AbilityTags);
-		SetAssetTags(Tags);
+		AbilityTags.AppendTags(SkillData.AbilityTags);
 	}
 
-	// 소프트 레퍼런스 동기 로드
 	//if (SkillData.CastAnimation.IsValid())
 	{
 		AbilityMontage = SkillData.CastAnimation.LoadSynchronous();

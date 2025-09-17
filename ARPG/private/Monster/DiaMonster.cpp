@@ -38,8 +38,6 @@ ADiaMonster::ADiaMonster()
 	AutoPossessAI = EAutoPossessAI::Disabled;
 
 	Tags.Add(FName(TEXT("Monster")));
-
-
 }
 
 void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
@@ -56,52 +54,49 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 		
 	// 메시 설정 전에 먼저 컴포넌트 활성화
 	USkeletalMeshComponent* MeshComp = GetMesh();
+
+
+
 	if (MeshComp)
 	{
 		// 메시 컴포넌트 초기 설정
 		MeshComp->SetVisibility(true);
 		MeshComp->SetHiddenInGame(false);
 		MeshComp->SetActive(true);
-	}
-	
-	// 외형 설정 (메시)
-	if (MonsterInfo.MonsterMesh.IsValid())
-	{
-		UE_LOG(LogTemp, Log, TEXT("몬스터 [%s] 메시 로드 시도: %s"), *GetName(), *MonsterInfo.MonsterMesh.ToString());
-		USkeletalMesh* MonsterMeshAsset = MonsterInfo.MonsterMesh.LoadSynchronous();
-		if (MonsterMeshAsset)
+
+		if (!MonsterInfo.MonsterMesh.IsNull())
 		{
-			// 메시 설정
-			MeshComp->SetSkeletalMesh(MonsterMeshAsset);
-			
-			// 중요: 메시 설정 후 강제 업데이트
-			MeshComp->RecreateRenderState_Concurrent();
-			
-			UE_LOG(LogTemp, Log, TEXT("몬스터 [%s] 메시 설정 완료: %s"), *GetName(), *MonsterMeshAsset->GetName());
+			UE_LOG(LogTemp, Log, TEXT("몬스터 [%s] 메시 로드 시도: %s"), *GetName(), *MonsterInfo.MonsterMesh.ToString());
+			USkeletalMesh* MonsterMeshAsset = MonsterInfo.MonsterMesh.LoadSynchronous();
+			if (MonsterMeshAsset)
+			{
+				// 메시 설정
+				MeshComp->SetSkeletalMesh(MonsterMeshAsset);
+
+				// 중요: 메시 설정 후 강제 업데이트
+				MeshComp->RecreateRenderState_Concurrent();
+
+				UE_LOG(LogTemp, Log, TEXT("몬스터 [%s] 메시 설정 완료: %s"), *GetName(), *MonsterMeshAsset->GetName());
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s] 메시 로드 실패: %s"), *GetName(), *MonsterInfo.MonsterMesh.ToString());
+			}
+
+			if (MonsterInfo.AnimationInstance)
+			{
+				MeshComp->SetAnimInstanceClass(MonsterInfo.AnimationInstance);
+				UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s] 애니메이션 클래스 설정 완료"), *GetName());
+			}
 		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s] 메시 로드 실패: %s"), *GetName(), *MonsterInfo.MonsterMesh.ToString());
-		}
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s] 데이터에 유효한 메시 경로가 없습니다."), *GetName());
-	}
-	
-	// 애니메이션 설정
-	if (MonsterInfo.AnimationInstance)
-	{
-		GetMesh()->SetAnimInstanceClass(MonsterInfo.AnimationInstance);
-		UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s] 애니메이션 클래스 설정 완료"), *GetName());
-	}
-	
+		
 	// AI 컨트롤러 설정
 	ADiaAIController* AIController = Cast<ADiaAIController>(GetController());
 	if (AIController)
 	{
 		// Blackboard 설정
-		if (MonsterInfo.BlackboardAsset.IsValid())
+		if (!MonsterInfo.BlackboardAsset.IsNull())
 		{
 			UBlackboardData* BlackboardData = MonsterInfo.BlackboardAsset.LoadSynchronous();
 			if (BlackboardData)
@@ -112,7 +107,7 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 		}
 		
 		// Behavior Tree 설정
-		if (MonsterInfo.BehaviorTree.IsValid())
+		if (!MonsterInfo.BehaviorTree.IsNull())
 		{
 			UBehaviorTree* BehaviorTreeAsset = MonsterInfo.BehaviorTree.LoadSynchronous();
 			if (BehaviorTreeAsset)
@@ -142,6 +137,11 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 
 	GetCharacterMovement()->Velocity = FVector::ZeroVector;
 
+	//스킬 초기화
+	InitialSkills = MonsterInfo.MonsterSkills;
+	AbilityTags = MonsterInfo.MonsterTags;
+
+	GrantInitialGASAbilities();
 }
 
 // AI 비활성화 함수 구현
@@ -157,7 +157,7 @@ void ADiaMonster::DeactivateAI()
 		
 		// 비헤이비어 트리 중지
 		UBehaviorTreeComponent* BehaviorTreeComp = AIController->FindComponentByClass<UBehaviorTreeComponent>();
-		if (BehaviorTreeComp)
+		if (IsValid(BehaviorTreeComp))
 		{
 			BehaviorTreeComp->StopTree();
 		}
@@ -171,7 +171,7 @@ void ADiaMonster::ActivateAI()
 {
 	// AI 컨트롤러 획득
 	ADiaAIController* AIController = Cast<ADiaAIController>(GetController());
-	if (AIController)
+	if (IsValid(AIController))
 	{
 		// AI 로직 활성화
 		AIController->SetActorTickEnabled(true);
@@ -291,6 +291,11 @@ void ADiaMonster::DropItem()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s] 아이템 드랍 실패: 던전 게임 모드가 유효하지 않음"), *GetName());
 	}
+}
+
+void ADiaMonster::SetMonsterCollisionSetup(const FMonsterInfo& MonsterInfo)
+{
+	//몬스터가 바라보는 방향 및, collision크기 조절 등등
 }
 
 void ADiaMonster::UpdateHPGauge(float CurHealth, float MaxHelath)
