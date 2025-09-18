@@ -25,43 +25,68 @@ ADiaController::ADiaController()
 
 void ADiaController::BeginPlay()
 {
-	Super::BeginPlay();
-	UHUDWidget* HUDWidget = GetHUDWidget();
-	if (!IsValid(HUDWidget))
-	{
-		return;
-	}
-	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
-	UEquipWidget* EquipmentWidget = Cast<UEquipWidget>(HUDWidget->FindWidgetByName("EquipmentWidget"));
-	if (!IsValid(InventoryWidget) && !IsValid(EquipmentWidget))
-	{
-		return;
-	}
+        Super::BeginPlay();
+        UHUDWidget* HUDWidget = GetHUDWidget();
+        if (!IsValid(HUDWidget))
+        {
+                return;
+        }
+        UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
+        UEquipWidget* EquipmentWidget = Cast<UEquipWidget>(HUDWidget->FindWidgetByName("EquipmentWidget"));
 
-	if (IsValid(DiaInventoryComponent))
-	{
-		DiaInventoryComponent->RegisterComponent();
-		InventoryWidget->SetInventoryComponent(DiaInventoryComponent);
-		InventoryWidget->InitializeInventory();
+        const bool bHasInventoryWidget = IsValid(InventoryWidget);
+        if (!bHasInventoryWidget)
+        {
+                UE_LOG(LogTemp, Warning, TEXT("InventoryWidget is missing from HUDWidget; inventory setup skipped."));
+        }
 
-		EquipmentWidget->SetInventoryComponent(DiaInventoryComponent);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaInventoryComponent is null"));
-	}
+        const bool bHasEquipmentWidget = IsValid(EquipmentWidget);
+        if (!bHasEquipmentWidget)
+        {
+                UE_LOG(LogTemp, Warning, TEXT("EquipmentWidget is missing from HUDWidget; equipment setup skipped."));
+        }
 
-	if (IsValid(DiaEquipmentComponent))
-	{
-		DiaEquipmentComponent->RegisterComponent();
-		InventoryWidget->SetEquipmentComponent(DiaEquipmentComponent);
+        if (!bHasInventoryWidget && !bHasEquipmentWidget)
+        {
+                return;
+        }
 
-		EquipmentWidget->SetEquipmentComponent(DiaEquipmentComponent);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaEquipmentComponent is null"));
-	}
+        if (IsValid(DiaInventoryComponent))
+        {
+                DiaInventoryComponent->RegisterComponent();
+                if (bHasInventoryWidget)
+                {
+                        InventoryWidget->SetInventoryComponent(DiaInventoryComponent);
+                        InventoryWidget->InitializeInventory();
+                }
+
+                if (bHasEquipmentWidget)
+                {
+                        EquipmentWidget->SetInventoryComponent(DiaInventoryComponent);
+                }
+        }
+        else
+        {
+                UE_LOG(LogTemp, Warning, TEXT("DiaInventoryComponent is null"));
+        }
+
+        if (IsValid(DiaEquipmentComponent))
+        {
+                DiaEquipmentComponent->RegisterComponent();
+                if (bHasInventoryWidget)
+                {
+                        InventoryWidget->SetEquipmentComponent(DiaEquipmentComponent);
+                }
+
+                if (bHasEquipmentWidget)
+                {
+                        EquipmentWidget->SetEquipmentComponent(DiaEquipmentComponent);
+                }
+        }
+        else
+        {
+                UE_LOG(LogTemp, Warning, TEXT("DiaEquipmentComponent is null"));
+        }
 }
 
 void ADiaController::SetupInputComponent()
