@@ -101,7 +101,7 @@ void ADiaProjectileSkill::SpawnProjectile()
 			if (Projectile)
 			{
 				UGameplayStatics::FinishSpawningActor(NewActor, FTransform(Rotation, Location));
-				Projectile->Initialize(GetDamage(), SkillOwner);
+				//Projectile->Initialize(GetDamage(), SkillOwner);
 				UE_LOG(LogTemp, Log, TEXT("Projectile spawned and initialized via GameplayStatics"));
 			}
 			else

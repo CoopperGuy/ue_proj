@@ -4,22 +4,32 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+
+#include "AbilitySystemInterface.h"
+
 #include "DiaComponent/DiaStatusEffectComponent.h"
+
+#include "GameplayTagContainer.h"
+
 #include "DiaBaseCharacter.generated.h"
 
 class UDiaCombatComponent;
 class UAnimMontage;
 class UDiaStatComponent;
-class UDiaStatComponent;
 class UDiaStatusEffectComponent;
+class UAbilitySystemComponent;
+class UDiaAttributeSet;
 
 UCLASS()
-class ARPG_API ADiaBaseCharacter : public ACharacter
+class ARPG_API ADiaBaseCharacter : public ACharacter, public IAbilitySystemInterface
 {
 	GENERATED_BODY()
 
 public:
 	ADiaBaseCharacter();
+
+	// IAbilitySystemInterface
+	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
 	//////////////////////////////////////////////////////////////////////////
 	// Animation Montage
@@ -43,6 +53,8 @@ public:
 	UFUNCTION()
 	virtual void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
+	virtual void SetTargetActor(ADiaBaseCharacter* NewTarget);
+
 	/// <summary>
 	/// UI 관련 함수
 	/// UI Update용 함수 
@@ -64,6 +76,7 @@ public:
 	void AddExp(float ExpAmount);
 
 	void SetGravity(bool bEnableGravityAndCollision);
+
 protected:
 	// 기본적인 함수
 	virtual void BeginPlay() override;
@@ -76,6 +89,8 @@ protected:
 	/// 스킬 관련 함수 및 초기화
 	/// </summary>
 	virtual void SetupInitialSkills();
+
+	virtual void GrantInitialGASAbilities();
 protected:
 	//전투 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat)
@@ -88,6 +103,13 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatusEffects")
 	UDiaStatusEffectComponent* StatusEffectComponent;
 
+	// GAS Components
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
+	UAbilitySystemComponent* AbilitySystemComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
+	UDiaAttributeSet* AttributeSet;
+
 	//초기 보유 스킬
 	UPROPERTY(EditAnywhere, Category = "Skills")
     TArray<int32> InitialSkills;
@@ -96,7 +118,19 @@ protected:
 	UPROPERTY()
 	UAnimMontage* CurrentMontage;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS|Ability")
+    FGameplayTagContainer AbilityTags;
+
+	//스킬 관련 변수
+    // 스킬 ID 매핑 (키 인덱스 -> 스킬 ID)
+    UPROPERTY(EditDefaultsOnly, Category = "Skills")
+    TArray<int32> SkillIDMapping;
+
+	const int32 MaxSkillMapping = 8;
+
+
 public:
 	UDiaStatComponent* GetStatComponent() const { return StatsComponent; }
 	UDiaCombatComponent* GetCombatComponent() const { return CombatComponent; }
+	UDiaAttributeSet* GetAttributeSet() const { return AttributeSet; }
 };

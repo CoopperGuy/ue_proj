@@ -9,13 +9,11 @@ void UOrb::NativeConstruct()
 {
     Super::NativeConstruct();
 
-    // �⺻ �Ķ���� �̸� ����
     if (percentageParamName.IsNone())
     {
         percentageParamName = FName("Percentage");
     }
 
-    // HP ���� ��Ƽ���� �ʱ�ȭ
     if (IsValid(OrbImage) /*&& IsValid(OrbImage->GetBrushResource())*/)
     {
         UMaterialInterface* baseMaterial = Cast<UMaterialInterface>(OrbImage->GetBrush().GetResourceObject());
@@ -32,10 +30,8 @@ void UOrb::NativeConstruct()
 
 void UOrb::UpdatePercentage(float percentage)
 {
-    // �� ���� ����
     float clampedValue = FMath::Clamp(percentage, 0.0f, 1.0f);
 
-    // ��Ƽ���� �Ķ���� ������Ʈ
     if (IsValid(OrbMaterial))
     {
         OrbMaterial->SetScalarParameterValue(percentageParamName, clampedValue);

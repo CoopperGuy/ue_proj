@@ -5,6 +5,10 @@
 #include "CoreMinimal.h"
 #include "AIController.h"
 
+#include "Perception/AIPerceptionTypes.h"
+#include "Perception/AIPerceptionSystem.h"
+#include "Perception/AISense.h"
+
 #include "Skill/DiaDamageType.h"
 #include "DiaComponent/DiaCombatComponent.h"
 
@@ -14,6 +18,8 @@
 class UBehaviorTree;
 class UBlackboardData;
 class ADiaMonster;
+class UAISenseConfig_Sight;
+class UAIPerceptionComponent;
 /**
  * 
  */
@@ -63,6 +69,9 @@ protected:
     virtual void BeginPlay() override;
     virtual void OnPossess(APawn* InPawn) override;
 
+	UFUNCTION()
+	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
+
 
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "AI")
@@ -87,4 +96,14 @@ protected:
     UPROPERTY(EditDefaultsOnly, Category = "AI|Combat")
     float AttackRange = 150.0f;
 
+    UPROPERTY(EditDefaultsOnly, Category = "AI|Combat")
+	UAIPerceptionComponent* AIPerceptionComp;
+
+    UPROPERTY(EditDefaultsOnly, Category = "AI|Combat")
+	UAISenseConfig_Sight* SightConfig;
+
+	bool bIsLineOfSight = false;
+
+    UPROPERTY()
+	FVector LastSeenLocation;
 };

@@ -79,8 +79,8 @@ public:
 	FORCEINLINE int32 GetInventorySize() const { return InventorySlots.Num(); }
 	FORCEINLINE UCanvasPanel* GetInventoryPanel() const { return InventoryCanvas; }	
 	void GetAllItemWidgets(TArray<UUserWidget*>& OutItemWidgets) const;
-	void SetInventoryComponent(UDiaInventoryComponent* InComponent) { InventoryComponent = InComponent; }
-	void SetEquipmentComponent(UDiaEquipmentComponent* InComponent) { EquippementComponent = InComponent; }
+	void SetInventoryComponent(UDiaInventoryComponent* InComponent);
+	void SetEquipmentComponent(UDiaEquipmentComponent* InComponent);
 
 private:
 	// 드롭된 위치가 인벤토리와 장착 위젯 모두의 바깥인지 체크

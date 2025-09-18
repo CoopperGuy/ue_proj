@@ -41,8 +41,9 @@ void ADiaMeleeSkill::OnSkillStart()
     if (!IsValid(SkillMontage))
     {
         PerformHitDetection();
-        EndSkill();
     }
+
+    EndSkill();
     // 몽타주가 있으면 애니메이션 노티파이에서 OnMeleeHitFrame이 호출됨
 }
 
@@ -98,12 +99,6 @@ void ADiaMeleeSkill::PerformHitDetection()
     {
         // 이미 데미지를 적용한 액터 스킵
         if (HitActors.Contains(HitActor))
-        {
-            continue;
-        }
-        
-        // 플레이어는 공격하지 않음
-        if (HitActor->Tags.Contains(FName("Player")))
         {
             continue;
         }

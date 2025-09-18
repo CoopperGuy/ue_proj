@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Skill/DiaSkillType.h"
+#include "GameplayEffectTypes.h"
 #include "DiaProjectile.generated.h"
 
 class USphereComponent;
@@ -13,6 +14,10 @@ class USoundBase;
 class UNiagaraSystem;
 class ADiaBaseCharacter;
 class UDiaDamageType;
+class UGameplayEffect;
+class UAbilitySystemComponent;
+class UNiagaraComponent;
+class UParticleSystemComponent;
 UCLASS()
 class ARPG_API ADiaProjectile : public AActor
 {
@@ -23,11 +28,14 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 public:	
 	virtual void Tick(float DeltaTime) override;
 
-	// 발사체 초기화
+	// 발사체 초기화 (GAS 버전)
+	void Initialize(float InDamage, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
+	
+	// 레거시 초기화 (기존 호환성용)
 	void Initialize(float InDamage, AActor* InOwner);
         // 타겟에 적중
     UFUNCTION()
@@ -96,4 +104,29 @@ protected:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Projectile")
     TSubclassOf<UDiaDamageType> DamageType{nullptr};
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
+	UNiagaraComponent* SkillAbilityEffectComp;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
+	UParticleSystemComponent* LagacySkillAbilityEffectComp;
+
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
+	UParticleSystem* LegacySkillEffect;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
+	UNiagaraSystem* SkillEffect;
+
+    // GAS 관련 변수
+    UPROPERTY()
+    TWeakObjectPtr<UAbilitySystemComponent> SourceASC;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Projectile|GAS")
+    TSubclassOf<UGameplayEffect> DamageGameplayEffect;
+
+
+
+    // GAS 지원 여부
+    bool bUseGAS = false;
 };

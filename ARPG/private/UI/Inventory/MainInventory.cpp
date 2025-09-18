@@ -132,7 +132,6 @@ bool UMainInventory::RemoveItemFromInventory(int32 SlotIndex)
 	// ItemWidget을 InventoryCanvas에서 제거
 	InventoryCanvas->RemoveChild(ItemWidget);
 
-	ItemWidget->RemoveFromViewport();
 	ItemWidget->RemoveFromParent();
 	ItemWidgets.Remove(Cast<UItemWidget>(ItemWidget)->GetItemInfo().ItemInstance.InstanceID);
 	ItemWidget->Destruct();
@@ -421,4 +420,14 @@ bool UMainInventory::IsDropOutsideAllWidgets(const FVector2D& ScreenPosition) co
 	
 	// 둘 다 바깥이면 true 반환 (완전히 바깥으로 드롭됨)
 	return (!bInsideInventory && !bInsideEquipment);
+}
+
+void UMainInventory::SetInventoryComponent(UDiaInventoryComponent* InComponent)
+{
+	InventoryComponent = InComponent;
+}
+
+void UMainInventory::SetEquipmentComponent(UDiaEquipmentComponent* InComponent)
+{
+	EquippementComponent = InComponent;
 }

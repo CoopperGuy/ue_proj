@@ -37,6 +37,7 @@ public:
 	// 복사가 필요한 경우를 위한 함수
 	bool CopySkillData(FSkillData& OutSkillData, int32 SkillID) const;
 
+	const TMap<int32, FSkillData>& GetSkillDataMap() const { return SkillDataMap; }
 protected:
     UPROPERTY()
     UDataTable* SkillDataTable;

@@ -5,8 +5,17 @@
 #include "DiaComponent/DiaCombatComponent.h"
 #include "DiaComponent/DiaStatusEffectComponent.h"
 #include "DiaComponent/DiaStatComponent.h"
+
+#include "AbilitySystemComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
+
+
+#include "GAS/DiaGASHelper.h"
+#include "GAS/Abilities/DiaBasicAttackAbility.h"
+#include "AbilitySystemComponent.h"
+#include "System/GASSkillManager.h"
+#include "GAS/DiaAttributeSet.h"
 
 ADiaBaseCharacter::ADiaBaseCharacter()
 {
@@ -22,6 +31,12 @@ ADiaBaseCharacter::ADiaBaseCharacter()
 	// 상태 이상 효과 컴포넌트 생성
 	StatusEffectComponent = CreateDefaultSubobject<UDiaStatusEffectComponent>(TEXT("StatusEffectComponent"));
 
+	// GAS 컴포넌트 생성
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+
+	// AttributeSet 생성
+	AttributeSet = CreateDefaultSubobject<UDiaAttributeSet>(TEXT("AttributeSet"));
+
 	Tags.Add(FName(TEXT("Character")));
 }
 
@@ -29,8 +44,12 @@ ADiaBaseCharacter::ADiaBaseCharacter()
 void ADiaBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	SetupInitialSkills();
+
+	// Initialize Ability System
+	if (AbilitySystemComponent)
+	{
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}	
 }
 
 // Called every frame
@@ -49,13 +68,81 @@ void ADiaBaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 void ADiaBaseCharacter::SetupInitialSkills()
 {
-	if (!IsValid(CombatComponent) || !GetWorld()) return;
-
+	GrantInitialGASAbilities();
 	// 초기 스킬 등록
-	for (const auto& _SkillID : InitialSkills)
+}
+
+void ADiaBaseCharacter::GrantInitialGASAbilities()
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (!ASC)
 	{
-		// 스킬 ID를 통해 스킬 등록
-		CombatComponent->RegisterSkill(_SkillID);
+		UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No ASC"));
+		return;
+	}
+
+	UGASSkillManager* GasSkillMgr = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGASSkillManager>() : nullptr;
+	if (!GasSkillMgr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
+	}
+
+	int32 MappingIndex = 0;
+	if (InitialSkills.Num() > 0)
+	{
+		for (int32 SkillID : InitialSkills)
+		{
+			if (MappingIndex >= MaxSkillMapping)
+			{
+				break;
+			}
+
+			TSubclassOf<UGameplayAbility> AbilityClass = nullptr;
+			const FGASSkillData* FoundData = nullptr;
+			if (GasSkillMgr)
+			{
+				FoundData = GasSkillMgr->GetSkillDataPtr(SkillID);
+				if (FoundData)
+				{
+					AbilityClass = FoundData->AbilityClass ? FoundData->AbilityClass : nullptr;
+				}
+			}
+
+			if (!AbilityClass)
+			{
+				// 폴백: 기본 공격
+				if (SkillID == 1001)
+				{
+					AbilityClass = UDiaBasicAttackAbility::StaticClass();
+				}
+			}
+
+			if (AbilityClass)
+			{
+				bool bGranted = false;
+				if (FoundData)
+				{
+					bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID, AbilityTags.GetGameplayTagArray().Last());
+				}
+				if (!bGranted)
+				{
+					FGameplayAbilitySpec Spec(AbilityClass, 1, SkillID, this);
+					ASC->GiveAbility(Spec);
+				}
+				if (SkillIDMapping.IsValidIndex(MappingIndex))
+				{
+					SkillIDMapping[MappingIndex] = SkillID;
+				}
+				MappingIndex++;
+			}
+		}
+	}
+
+
+	for (const FGameplayAbilitySpec& S : ASC->GetActivatableAbilities())
+	{
+		UE_LOG(LogTemp, Log, TEXT("[GAS] Granted: Ability=%s, InputID(SkillID)=%d, IsActive=%s"),
+			*GetNameSafe(S.Ability), S.InputID, S.IsActive() ? TEXT("true") : TEXT("false"));
 	}
 }
 
@@ -64,10 +151,12 @@ float ADiaBaseCharacter::TakeDamage(float DamageAmount, const FDamageEvent& Dama
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	
 	// 전투 컴포넌트에 데미지 전달
-	if (IsValid(CombatComponent))
-	{
-		CombatComponent->ReceiveDamage(ActualDamage, DamageCauser);
-	}
+	// - > 이제 gas로 변경한다
+
+	//if (IsValid(CombatComponent))
+	//{
+	//	CombatComponent->ReceiveDamage(ActualDamage, DamageCauser);
+	//}
 	
 	return ActualDamage;
 }
@@ -213,11 +302,21 @@ void ADiaBaseCharacter::SetGravity(bool bEnableGravityAndCollision)
 	}
 }
 
+void ADiaBaseCharacter::SetTargetActor(ADiaBaseCharacter* NewTarget)
+{
+
+}
+
 void ADiaBaseCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (CurrentMontage == Montage)
 	{
 		CurrentMontage = nullptr;
 	}
+}
+
+UAbilitySystemComponent* ADiaBaseCharacter::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
 }
 

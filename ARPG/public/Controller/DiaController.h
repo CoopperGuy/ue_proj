@@ -8,10 +8,16 @@
 #include "DiaController.generated.h"
 
 
+
+class ADiaMonster;
 class UDiaInventoryComponent;
 class UDiaEquipmentComponent;
 class UHUDWidget;
 class UDiaStatComponent;
+class ADiaBaseCharacter;
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnTargetChanged, ADiaBaseCharacter*);
+
 /**
  * 
  */
@@ -28,6 +34,7 @@ public:
 
 	void ToggleInventoryVisibility(bool bVisible);
 	void ToggleChracterStatusVisibility(bool bVisible);
+	void ToggleSkillPanelVisibility(bool bVisible);
 
 	ESlateVisibility GetInventoryVisibility() const;
 	ESlateVisibility GetWidgetVisibility(const FName& FoundName) const;
@@ -37,6 +44,8 @@ public:
 	void OnStatComponentInitialized(UDiaStatComponent* StatComponent);
 	
 	void BindUIToStatComponent(UDiaStatComponent* StatComponent);
+
+	void SetTarget(ADiaBaseCharacter* NewTarget);
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -51,8 +60,15 @@ protected:
 	UPROPERTY()
 	mutable TWeakObjectPtr<UHUDWidget> CachedHUDWidget = nullptr;
 
+	FOnTargetChanged OnTargetChanged;
+
+	UPROPERTY()
+	ADiaBaseCharacter* TargetMonster;
+
 private:
 	// HUDWidget을 가져오는 헬퍼 함수 (최초 1회만 GameMode에서 가져옴)
 	UHUDWidget* GetHUDWidget() const;
 
+public:
+	FORCEINLINE FOnTargetChanged& GetOnTargetChanged() { return OnTargetChanged; }
 };

@@ -38,6 +38,7 @@ public:
     // 움직임 관련 함수 
     bool GetMouseWorldLocation(FVector& OutLocation) const;
    
+    virtual void SetTargetActor(ADiaBaseCharacter* NewTarget);
 protected:
 	/// <summary>
 	/// 엔진 기본 함수
@@ -59,6 +60,7 @@ protected:
     // 인벤토리 토글 함수
 	void ToggleInventory();
 	void ToggleCharacterStatus();
+	void ToggleSkillPanel();
     /// <summary>
     /// 전투 관련 함수
     /// </summary>
@@ -68,6 +70,9 @@ protected:
     virtual void SetupInitialSkills() override;
 
 protected:
+    // GAS 초기 스킬 부여 및 매핑
+    virtual void GrantInitialGASAbilities();
+
     /// 입력 관련 변수
     // Enhanced Input Actions
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
@@ -85,6 +90,9 @@ protected:
 	UInputAction* InventoryAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* CharacterStatusAction;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* SkillPanelAction;
+
 
     // Input Mapping Context
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
@@ -101,11 +109,11 @@ protected:
     UPROPERTY(EditAnywhere, Category = "Movement")
     float RotationInterpSpeed = 15.0f;
 
-    //스킬 관련 변수
-    // 스킬 ID 매핑 (키 인덱스 -> 스킬 ID)
-    UPROPERTY(EditDefaultsOnly, Category = "Skills")
-    TArray<int32> SkillIDMapping;
 
-    const int32 MaxSkillMapping = 8;
+
+
+    ///치트 관련 변수
+
+    bool isInfMana = false;
 
 };

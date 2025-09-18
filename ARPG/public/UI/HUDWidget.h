@@ -4,7 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "AttributeSet.h"
+#include "AbilitySystemComponent.h"
+#include <GameplayEffectTypes.h>
+
 #include "HUDWidget.generated.h"
+
 
 enum class OrbType
 {
@@ -25,6 +30,12 @@ class UMainInventory;
 class UStatusWidget;
 class UEquipWidget;
 class UDiaPrimaryLayout;
+class USkillPanelWidget;
+class ADiaBaseCharacter;
+class ADiaController;
+class UAbilitySystemComponent;
+class ADiaMonster;
+//class USkillQuickSlotPannelWidget;
 /**
  * 
  */
@@ -59,8 +70,24 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UEquipWidget* EquipmentWidget;
 
+	UPROPERTY(meta = (BindWidget))
+	USkillPanelWidget* SkillPanelWidget;
+
+	//UPROPERTY(meta = (BindWidget))
+	//USkillQuickSlotPannelWidget* SkillQuickSlotWidget;
+
 	UPROPERTY()
 	UDiaPrimaryLayout* DiaPrimaryLayout;
+
+	UPROPERTY()
+	ADiaBaseCharacter* TargetMonster;
+
+	FDelegateHandle HealthChangedDelegateHandle;
+
+	void HandleHealthChanged(const FOnAttributeChangeData& Data);
+
+	UFUNCTION()
+	void UpdateTagetMonster(ADiaBaseCharacter* NewTarget);
 public:
 	void SetMonsterHPVisibility(ESlateVisibility _Visibility);
 	FORCEINLINE UMainInventory* GetInventoryWidget() const { return InventoryWidget; }

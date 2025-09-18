@@ -5,7 +5,7 @@
 
 UDiaDamageType::UDiaDamageType()
 {
-    ElementType = EDamageElementType::Physical;
+    ElementType = EDamageElementType::EDT_Physical;
     ArmorPenetration = 0.0f;
     CriticalDamageMultiplier = 1.5f;
     KnockbackForce = 0.0f;
