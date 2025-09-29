@@ -10,6 +10,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 
+#include "GameFramework/PlayerState.h"
 
 #include "GAS/DiaGASHelper.h"
 #include "GAS/Abilities/DiaBasicAttackAbility.h"
@@ -45,11 +46,45 @@ void ADiaBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+}
+
+void ADiaBaseCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
 	// Initialize Ability System
 	if (AbilitySystemComponent)
 	{
-		AbilitySystemComponent->InitAbilityActorInfo(this, this);
-	}	
+		if(Tags.Contains(FName("Player")))
+		{
+			APlayerState* PS = GetPlayerState<APlayerState>();
+			if (PS)
+			{
+				AbilitySystemComponent->InitAbilityActorInfo(PS, this);
+			}
+		}
+		else
+		{
+			AbilitySystemComponent->InitAbilityActorInfo(NewController, this);
+		}
+		AbilitySystemComponent->AddSpawnedAttribute(AttributeSet);
+	}
+}
+
+void ADiaBaseCharacter::OnRep_PlayerState()
+{
+    Super::OnRep_PlayerState();
+
+    // 클라이언트에서도 ASC 초기화 보장
+    if (AbilitySystemComponent)
+    {
+        APlayerState* PS = GetPlayerState<APlayerState>();
+        if (PS)
+        {
+            AbilitySystemComponent->InitAbilityActorInfo(PS, this);
+            AbilitySystemComponent->AddSpawnedAttribute(AttributeSet);
+        }
+    }
 }
 
 // Called every frame

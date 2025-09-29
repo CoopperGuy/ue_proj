@@ -83,8 +83,10 @@ protected:
 	ADiaBaseCharacter* TargetMonster;
 
 	FDelegateHandle HealthChangedDelegateHandle;
+	FDelegateHandle ManaChangedDelegateHandle;
 
 	void HandleHealthChanged(const FOnAttributeChangeData& Data);
+	void HandleManaChanged(const FOnAttributeChangeData& Data);
 
 	UFUNCTION()
 	void UpdateTagetMonster(ADiaBaseCharacter* NewTarget);

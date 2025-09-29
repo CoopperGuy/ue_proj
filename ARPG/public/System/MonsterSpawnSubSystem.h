@@ -53,4 +53,19 @@ private:
 
     UPROPERTY()
     TMap<FName, FMapSpawnInfo> MapSpawnCache;
+
+    // 스폰 재시도 관리
+    UPROPERTY()
+    TMap<FName, int32> GroupRetryCount;
+    int32 GetAndIncrementRetry(FName GroupID)
+    {
+        int32& Cnt = GroupRetryCount.FindOrAdd(GroupID);
+        const int32 Prev = Cnt;
+        Cnt = FMath::Min(Cnt + 1, 1000000);
+        return Prev;
+    }
+    void ResetRetry(FName GroupID)
+    {
+        GroupRetryCount.Remove(GroupID);
+    }
 };

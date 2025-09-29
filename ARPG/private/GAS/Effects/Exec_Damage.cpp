@@ -14,8 +14,8 @@ namespace DamageCapture
 
 		FStatics()
 		{
-			DEFINE_ATTRIBUTE_CAPTUREDEF(UARPGAttributeSet, AttackPower, Source, true);
-			DEFINE_ATTRIBUTE_CAPTUREDEF(UARPGAttributeSet, Defense, Target, true);
+			DEFINE_ATTRIBUTE_CAPTUREDEF(UDiaAttributeSet, AttackPower, Source, true);
+			DEFINE_ATTRIBUTE_CAPTUREDEF(UDiaAttributeSet, Defense, Target, true);
 		}
 	};
 	static const FStatics& Statics()
@@ -37,10 +37,10 @@ void UExec_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionPa
 	const FGameplayEffectSpec& Spec = ExecutionParams.GetOwningSpec();
 
 	// SetByCaller로 주입 가능한 런타임 값(선택)
-	const float DamageBase = Spec.GetSetByCallerMagnitude(
-		FGameplayTag::RequestGameplayTag(FName("Data.DamageBase")), false, 0.f);
-	const float CritMul = Spec.GetSetByCallerMagnitude(
-		FGameplayTag::RequestGameplayTag(FName("Data.CritMultiplier")), false, 1.f);
+    const float DamageBase = Spec.GetSetByCallerMagnitude(
+        FGameplayTag::RequestGameplayTag(FName("GASData.DamageBase")), false, 0.f);
+    const float CritMul = Spec.GetSetByCallerMagnitude(
+        FGameplayTag::RequestGameplayTag(FName("GASData.CritMultiplier")), false, 1.f);
 
 	// 캡처된 속성 읽기
 	FAggregatorEvaluateParameters EvalParams;

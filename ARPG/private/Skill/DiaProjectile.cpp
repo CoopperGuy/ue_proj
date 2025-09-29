@@ -21,6 +21,7 @@
 #include "GameplayEffect.h"
 
 #include "GAS/Effects/DiaGameplayEffect_Damage.h"
+#include "GameplayEffectTypes.h"
 
 // Sets default values
 ADiaProjectile::ADiaProjectile()
@@ -76,6 +77,13 @@ ADiaProjectile::ADiaProjectile()
     //Damage = 10.0f;
 	//DamageType = UDiaDamageType::StaticClass();
 }
+void ADiaProjectile::Launch(const FVector& Direction)
+{
+    if (!ProjectileMovement) return;
+    const FVector LaunchVelocity = Direction.GetSafeNormal() * ProjectileSpeed;
+    ProjectileMovement->Velocity = LaunchVelocity;
+}
+
 
 // Called when the game starts or when spawned
 void ADiaProjectile::BeginPlay()
@@ -116,15 +124,12 @@ void ADiaProjectile::BeginPlay()
 void ADiaProjectile::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     Super::EndPlay(EndPlayReason);
-
-    
 }
 
 // Called every frame
 void ADiaProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 void ADiaProjectile::Initialize(float InDamage, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<UGameplayEffect> InDamageEffect)
@@ -197,7 +202,7 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     if (IsValid(DiaOtherActor))
     {
         // 데미지 처리
-       // ProcessDamage(DiaOtherActor, HitResult);
+        ProcessDamage(DiaOtherActor, HitResult);
         
         // 피격 이펙트 생성
         SpawnHitEffect(HitResult.ImpactPoint, HitResult.ImpactNormal);
@@ -231,13 +236,29 @@ void ADiaProjectile::ProcessDamage(ADiaBaseCharacter* Target, const FHitResult& 
     {
         return;
     }
-    // 데미지 적용
-    FDamageEvent DamageEvent;
-    float AppliedDamage = DiaCombatComp->ApplyDamage(Target, GetOwner(), Damage, DamageType);
-    
-    // 데미지 적용 로그
-    UE_LOG(LogTemp, Log, TEXT("Projectile hit %s for %.2f damage"), 
-           *Target->GetName(), AppliedDamage);
+    // GAS가 설정된 경우: GameplayEffect를 통해 대미지 적용
+    if (SourceASC.IsValid() && DamageGameplayEffect)
+    {
+        UAbilitySystemComponent* TargetASC = Target->GetComponentByClass<UAbilitySystemComponent>();
+        if (TargetASC)
+        {
+            FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
+            EffectContext.AddInstigator(GetOwner(), Cast<APawn>(GetOwner()));
+
+            FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageGameplayEffect, 1.0f, EffectContext);
+            if (SpecHandle.IsValid())
+            {
+                // SetByCaller로 기본 대미지 주입(Exec_Damage가 참조 가능)
+                SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.DamageBase")), Damage);
+
+                // 필요 시 치명타 배수 등 추가 세팅 가능
+                // SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.CritMultiplier")), 1.0f);
+
+                SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+            }
+        }
+    }
+
     
     // 피격 사운드 재생
     if (HitSound)

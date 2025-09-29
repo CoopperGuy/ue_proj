@@ -218,24 +218,6 @@ void UGASSkillManager::LoadSkillDataFromTable()
 		FGASSkillData* RowData = DataTable->FindRow<FGASSkillData>(RowName, TEXT("GASSkillManager"));
 		if (RowData)
 		{
-			// Ability 클래스 설정 (타입에 따라)
-			switch (RowData->SkillType)
-			{
-			case EGASSkillType::MeleeAttack:
-				if (RowData->SkillID == 1001) // 기본 공격
-					RowData->AbilityClass = UDiaBasicAttackAbility::StaticClass();
-				else
-					RowData->AbilityClass = UDiaMeleeAbility::StaticClass();
-				break;
-			case EGASSkillType::RangedAttack:
-			case EGASSkillType::Magic:
-				RowData->AbilityClass = UDiaProjectileAbility::StaticClass();
-				break;
-			default:
-				RowData->AbilityClass = UDiaGameplayAbility::StaticClass();
-				break;
-			}
-
 			SkillDataMap.Add(RowData->SkillID, *RowData);
 			UE_LOG(LogTemp, Log, TEXT("GASSkillManager: Loaded skill %d: %s"), 
 				RowData->SkillID, *RowData->SkillName.ToString());

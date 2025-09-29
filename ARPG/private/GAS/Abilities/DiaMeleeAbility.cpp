@@ -130,7 +130,7 @@ void UDiaMeleeAbility::PerformHitDetection()
 			{
 				HitActors.Add(HitActor);
 
-				ApplyDamageToTarget(HitActor);
+                ApplyDamageToTarget(HitActor);
 
 				if (HitEffect)
 				{
@@ -161,47 +161,36 @@ void UDiaMeleeAbility::OnMeleeHitFrame()
 
 void UDiaMeleeAbility::ApplyDamageToTarget(AActor* Target)
 {
-	const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
-	if (!Target || !ActorInfo.AbilitySystemComponent.IsValid())
-	{
-		return;
-	}
+    const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
+    if (!Target || !ActorInfo.AbilitySystemComponent.IsValid())
+    {
+        return;
+    }
 
-	UAbilitySystemComponent* TargetASC = Target->FindComponentByClass<UAbilitySystemComponent>();
-	if (!TargetASC)
-	{
-		float DamageAmount = SkillData.BaseDamage;
-		
-		UGameplayStatics::ApplyPointDamage(
-			Target,
-			DamageAmount,
-			ActorInfo.AvatarActor->GetActorLocation(),
-			FHitResult(),
-			ActorInfo.PlayerController.Get(),
-			ActorInfo.AvatarActor.Get(),
-			UDamageType::StaticClass()
-		);
-		return;
-	}
+    UAbilitySystemComponent* TargetASC = Target->FindComponentByClass<UAbilitySystemComponent>();
+    if (!TargetASC)
+    {
+        // ASC가 없으면 기존 방식으로 최소한의 대미지 처리
+        const float DamageAmount = SkillData.BaseDamage;
+        UGameplayStatics::ApplyPointDamage(
+            Target,
+            DamageAmount,
+            ActorInfo.AvatarActor->GetActorLocation(),
+            FHitResult(),
+            ActorInfo.PlayerController.Get(),
+            ActorInfo.AvatarActor.Get(),
+            UDamageType::StaticClass()
+        );
+        return;
+    }
 
-	UDiaAttributeSet* TargetAttributeSet = const_cast<UDiaAttributeSet*>(TargetASC->GetSet<UDiaAttributeSet>());
-	if (TargetAttributeSet)
-	{
-		float CurrentHealth = TargetAttributeSet->GetHealth();
-		float DamageAmount = SkillData.BaseDamage;
-		
-		//데미지 계산 식은 추후 변경해야한다 helper함수 있음
-		if (const UDiaAttributeSet* MyAttributeSet = GetAbilitySystemComponentFromActorInfo()->GetSet<UDiaAttributeSet>())
-		{
-			DamageAmount += MyAttributeSet->GetAttackPower();
-		}
 
-		// Apply defense
-		DamageAmount = FMath::Max(1.0f, DamageAmount - TargetAttributeSet->GetDefense());
-		
-		float NewHealth = FMath::Max(0.0f, CurrentHealth - DamageAmount);
-		TargetAttributeSet->SetHealth(NewHealth);
+	//피격 판정 후 로그 작성
+	UE_LOG(LogTemp, Log, TEXT("Melee Hit: %s"), *Target->GetName());
 
-		UE_LOG(LogTemp, Warning, TEXT("Melee damage applied: %f, Target health: %f"), DamageAmount, NewHealth);
-	}
+    // GAS 경로: Execution 기반 대미지 적용
+    const UDiaAttributeSet* MyAttr = GetAbilitySystemComponentFromActorInfo()->GetSet<UDiaAttributeSet>();
+    const float AttackPower = MyAttr ? MyAttr->GetAttackPower() : 0.f;
+    const float BaseDamage = SkillData.BaseDamage + AttackPower;
+    ApplyDamageToASC(TargetASC, BaseDamage , 1.0f);
 }

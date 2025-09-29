@@ -142,13 +142,14 @@ void UDiaBasicAttackAbility::PerformAttack()
 							}
 							
 							// GameplayEffect 생성
+							// Check -- user gameplay effect example
 							FGameplayEffectSpecHandle DamageSpecHandle = GetAbilitySystemComponentFromActorInfo()->MakeOutgoingSpec(
 								UDiaGameplayEffect_Damage::StaticClass(), 1, EffectContext);
 								
 							if (DamageSpecHandle.IsValid())
 							{
 								// 대미지 값 설정
-								DamageSpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("Data.Damage")), FinalDamage);
+                                DamageSpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("GASData.Damage")), FinalDamage);
 								
 								// 대미지 적용
 								GetAbilitySystemComponentFromActorInfo()->ApplyGameplayEffectSpecToTarget(*DamageSpecHandle.Data.Get(), TargetASC);

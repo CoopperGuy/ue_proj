@@ -11,23 +11,55 @@
 
 FVector GetLevelCenterFromNavMesh(UWorld* World)
 {
-	if (!World)
-		return FVector::ZeroVector;
+    if (!World)
+        return FVector::ZeroVector;
 
-	UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
-	if (!NavSys)
-		return FVector::ZeroVector;
+    UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(World);
+    if (!NavSys)
+        return FVector::ZeroVector;
 
-	ANavigationData* NavData = NavSys->GetDefaultNavDataInstance();
-	ARecastNavMesh* NavMesh = Cast<ARecastNavMesh>(NavData);
+    ANavigationData* NavData = NavSys->GetDefaultNavDataInstance(FNavigationSystem::DontCreate);
+    ARecastNavMesh* NavMesh = Cast<ARecastNavMesh>(NavData);
 
-	if (NavMesh)
-	{
-		FBox NavBounds = NavMesh->GetNavMeshBounds();
-		return NavBounds.GetCenter();
-	}
+    // 1) NavMesh 바운즈가 유효하면 그 중심 사용
+    if (NavMesh)
+    {
+        const FBox NavBounds = NavMesh->GetNavMeshBounds();
+        const FVector Center = NavBounds.GetCenter();
+        const FVector Extent = NavBounds.GetExtent();
+        if (Extent.SizeSquared() > KINDA_SMALL_NUMBER)
+        {
+            return Center;
+        }
+    }
 
-	return FVector::ZeroVector;
+    // 2) 플레이어 주변을 우선 시드로 사용하여 NavMesh로 투영
+    const APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(World, 0);
+    const FVector Seed = PlayerPawn ? PlayerPawn->GetActorLocation() : FVector::ZeroVector;
+    FNavLocation Projected;
+    const FVector QueryExtent(2000.f, 2000.f, 4000.f);
+    if (NavSys->ProjectPointToNavigation(Seed, Projected, QueryExtent, NavData, nullptr))
+    {
+        return Projected.Location;
+    }
+
+    // 3) 주변 그리드 오프셋으로 재시도
+    static const FVector Offsets[] = {
+        FVector(1000, 0, 0), FVector(-1000, 0, 0), FVector(0, 1000, 0), FVector(0, -1000, 0),
+        FVector(1000, 1000, 0), FVector(-1000, 1000, 0), FVector(1000, -1000, 0), FVector(-1000, -1000, 0)
+    };
+    for (const FVector& Offset : Offsets)
+    {
+        const FVector Test = Seed + Offset;
+        if (NavSys->ProjectPointToNavigation(Test, Projected, QueryExtent, NavData, nullptr))
+        {
+            return Projected.Location;
+        }
+    }
+
+    // 4) 실패 시 0 반환(상위에서 재시도/지연 처리됨)
+    UE_LOG(LogTemp, Warning, TEXT("[MapInfoSubsystem] GetLevelCenterFromNavMesh failed. Seed=%s"), *Seed.ToString());
+    return FVector::ZeroVector;
 }
 
 void UMapInfoSubsystem::Initialize(FSubsystemCollectionBase& Collection)

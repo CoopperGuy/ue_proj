@@ -44,6 +44,7 @@ protected:
 	/// 엔진 기본 함수
 	/// </summary>
 	virtual void BeginPlay() override;
+	virtual void PossessedBy(AController* NewController) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
     virtual void Tick(float DeltaTime) override;
 

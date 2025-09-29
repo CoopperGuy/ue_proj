@@ -79,6 +79,12 @@ struct ARPG_API FGASSkillData : public FTableRowBase
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FGameplayTagContainer BlockAbilitiesWithTag;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FGameplayTag ManaCostTags;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FGameplayTag CoolDownTags;
+
     // 스킬 수치
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     float BaseDamage = 0.0f;

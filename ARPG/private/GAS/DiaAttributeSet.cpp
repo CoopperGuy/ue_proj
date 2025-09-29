@@ -1,5 +1,6 @@
 #include "GAS/DiaAttributeSet.h"
 #include "GameplayEffect.h"
+#include "System/CharacterManager.h"
 #include "GameplayEffectExtension.h"
 
 UDiaAttributeSet::UDiaAttributeSet()
@@ -119,6 +120,50 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 	}
 }
 
+void UDiaAttributeSet::InitializeCharacterAttributes(FName CharacterID, int32 Level)
+{
+	// 게임 인스턴스에서 캐릭터 매니저 가져오기
+	UGameInstance* GI = GetWorld()->GetGameInstance();
+	if (!GI)
+	{
+		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: GameInstance을 찾을 수 없음"));
+		return;
+	}
+
+	UCharacterManager* CharacterManager = GI->GetSubsystem<UCharacterManager>();
+	if (!CharacterManager)
+	{
+		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: CharacterManager를 찾을 수 없음"));
+		return;
+	}
+
+	const FCharacterInfo* CharacterInfo = CharacterManager->GetCharacterInfo(CharacterID);
+	if (!CharacterInfo)
+	{
+		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: 캐릭터 정보를 찾을 수 없음 - ID: %s"), *CharacterID.ToString());
+		return;
+	}
+
+	// 체력/마나 초기화
+	SetMaxHealth(CharacterManager->CalculateMaxHPForLevel(CharacterInfo, Level));
+	SetHealth(GetMaxHealth());
+	SetMaxMana(CharacterManager->CalculateMaxMPForLevel(CharacterInfo, Level));
+	SetMana(GetMaxMana());
+	SetAttackPower(CharacterInfo->BaseAttackPower + (Level - 1) * CharacterInfo->AttackPowerPerLevel);
+	SetDefense(CharacterInfo->BaseDefense + (Level - 1) * CharacterInfo->DefensePerLevel);
+	SetMovementSpeed(600.0f); // 기본 이동 속도 설정
+}
+
+void UDiaAttributeSet::InitializeMonsterAttributes(const FMonsterInfo& MonsterInfo)
+{
+	SetMaxHealth(MonsterInfo.MaxHP);
+	SetHealth(GetMaxHealth());
+	SetMaxMana(MonsterInfo.MaxMP);
+	SetMana(GetMaxMana());
+	SetAttackPower(MonsterInfo.Attack);
+	SetDefense(MonsterInfo.Defense);
+	SetMovementSpeed(600.0f);
+}
 
 void UDiaAttributeSet::AdjustAttributeForMaxChange(FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, float NewMaxValue, const FGameplayAttribute& AffectedAttributeProperty)
 {
