@@ -1,12 +1,21 @@
 #include "GAS/DiaGameplayAbility.h"
 #include "GAS/DiaAttributeSet.h"
+
 #include "AbilitySystemComponent.h"
+
 #include "GameplayEffectTypes.h"
+
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "GameFramework/Character.h"
 #include "Animation/AnimInstance.h"
+
+#include "GAS/Effects/DiaGE_CoolDown_Generic.h"
+#include "GAS/Effects/DiaGE_ManaCost_Generic.h"
+#include "GAS/Effects/DiaGameplayEffect_Damage.h"
+
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
+#include "GameplayTagContainer.h"
 
 UDiaGameplayAbility::UDiaGameplayAbility()
 {
@@ -24,10 +33,44 @@ UDiaGameplayAbility::UDiaGameplayAbility()
 	CurrentAbilityMontage = nullptr;
 	MontageTask = nullptr;
 
+	ManaCostEffectClass = UDiaGE_ManaCost_Generic::StaticClass();
+	CooldownEffectClass = UDiaGE_CoolDown_Generic::StaticClass();
+	DamageEffectClass = UDiaGameplayEffect_Damage::StaticClass();
 }
 
 void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Activate: Info=%p Owner=%s Avatar=%s"),
+		ActorInfo,
+		ActorInfo && ActorInfo->OwnerActor.IsValid() ? *ActorInfo->OwnerActor->GetName() : TEXT("null"),
+		ActorInfo && ActorInfo->AvatarActor.IsValid() ? *ActorInfo->AvatarActor->GetName() : TEXT("null"));
+
+	// 여기서 null이면 Init 타이밍/ASC 중복/포인터 엇갈림
+	check(ActorInfo && ActorInfo->AbilitySystemComponent.IsValid());
+
+
+    // 안전 가드: ActorInfo가 없으면 종료
+    if (!ActorInfo)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ActivateAbility: Missing ActorInfo"));
+        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+        return;
+    }
+
+    auto* ASC = ActorInfo->AbilitySystemComponent.Get();
+    auto* Avatar = ActorInfo->AvatarActor.Get();
+    auto* Owner = ActorInfo->OwnerActor.Get();
+
+	// 필요한 포인터 null 방어
+	if (!ASC || !Avatar || !Owner)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ActivateAbility Failed"));
+
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
+
+
 	if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
@@ -50,8 +93,6 @@ void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 		);
 	}
 
-	// Execute ability logic
-	OnAbilityExecute();
 }
 
 void UDiaGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
@@ -63,10 +104,27 @@ void UDiaGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, co
 		MontageTask = nullptr;
 	}
 
-	// Call blueprint event
-	OnAbilityEnd();
-
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+}
+
+void UDiaGameplayAbility::ApplyDamageToASC(UAbilitySystemComponent* TargetASC, float BaseDamage, float CritMultiplier) const
+{
+    if (!TargetASC || !DamageEffectClass) return;
+
+    UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
+    if (!SourceASC) return;
+
+    FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
+    EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
+        CurrentActorInfo ? Cast<APawn>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
+
+    FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), EffectContext);
+    if (!SpecHandle.IsValid()) return;
+
+    SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.DamageBase")), BaseDamage);
+    SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.CritMultiplier")), CritMultiplier);
+
+    SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
 }
 
 
@@ -135,6 +193,7 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 		LagacyAbilityEffect = SkillData.LegacyCastEffect.LoadSynchronous();
 	}
 }
+
 
 float UDiaGameplayAbility::PlayAbilityMontage(UAnimMontage* MontageToPlay, float PlayRate)
 {
@@ -212,41 +271,42 @@ void UDiaGameplayAbility::OnMontageCancelled()
 
 bool UDiaGameplayAbility::CheckCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags) const
 {
-	if (!ActorInfo || !ActorInfo->AbilitySystemComponent.IsValid())
+	const float manaCost = SkillData.ManaCost; // GASSkillData에서 읽기
+	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
+	const float currentMana = ASC->GetNumericAttribute(UDiaAttributeSet::GetManaAttribute());
+	const bool ok = currentMana >= manaCost;
+	if (!ok && OptionalRelevantTags)
 	{
-		return false;
+		OptionalRelevantTags->AddTag(FGameplayTag::RequestGameplayTag(TEXT("Ability.Cost.Mana.NotEnough")));
 	}
 
-	const UDiaAttributeSet* AttributeSet = ActorInfo->AbilitySystemComponent->GetSet<UDiaAttributeSet>();
-	if (!AttributeSet)
-	{
-		return false;
-	}
-
-	// Check mana cost
-	return AttributeSet->GetMana() >= SkillData.ManaCost;
+	return ok;
 }
 
 void UDiaGameplayAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
 {
-	if (!ActorInfo || !ActorInfo->AbilitySystemComponent.IsValid())
-	{
-		return;
-	}
+	if (!ManaCostEffectClass) return;
+	const float manaCost = SkillData.ManaCost; // GASSkillData
 
 	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
-	const UDiaAttributeSet* AttributeSet = ASC->GetSet<UDiaAttributeSet>();
-	
-	if (!AttributeSet)
+	FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(ManaCostEffectClass, GetAbilityLevel(), ASC->MakeEffectContext());
+	if (auto* Spec = SpecHandle.Data.Get())
 	{
-		return;
+		Spec->SetSetByCallerMagnitude(SkillData.ManaCostTags, -manaCost);
+		ASC->ApplyGameplayEffectSpecToSelf(*Spec);
 	}
+}
 
-	// Apply mana cost directly for now
-	// In a more complete implementation, this would use GameplayEffects
-	float CurrentMana = AttributeSet->GetMana();
-	float NewMana = FMath::Max(0.0f, CurrentMana - SkillData.ManaCost);
-	
-	// This is a direct attribute modification - normally you'd use GameplayEffects
-	const_cast<UDiaAttributeSet*>(AttributeSet)->SetMana(NewMana);
+void UDiaGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
+{
+	if (!CooldownEffectClass) return;
+
+	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
+	FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(CooldownEffectClass, GetAbilityLevel(), ASC->MakeEffectContext());
+	if (auto* Spec = SpecHandle.Data.Get())
+	{
+		// 쿨타임 시간 설정
+		Spec->SetSetByCallerMagnitude(SkillData.CoolDownTags, SkillData.CooldownDuration);
+		ASC->ApplyGameplayEffectSpecToSelf(*Spec);
+	}
 }

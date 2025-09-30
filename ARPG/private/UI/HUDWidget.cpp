@@ -46,19 +46,28 @@ void UHUDWidget::NativeConstruct()
 				AbilitySystem
 				->GetGameplayAttributeValueChangeDelegate(UDiaAttributeSet::GetHealthAttribute())
 				.AddUObject(this, &UHUDWidget::HandleHealthChanged);
+
+			ManaChangedDelegateHandle =
+				AbilitySystem
+				->GetGameplayAttributeValueChangeDelegate(UDiaAttributeSet::GetManaAttribute())
+				.AddUObject(this, &UHUDWidget::HandleManaChanged);
+
+
+			//// 초기값 1회 반영
+			const float Health = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute());
+			const float MaxHealth = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxHealthAttribute());
+
+			const float Mana = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetManaAttribute());
+			const float MaxMana = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxManaAttribute());
+
+			UpdateOrbPercentage(OrbType::OT_HP, Health / MaxHealth);
+			UpdateOrbPercentage(OrbType::OT_MP, Mana / MaxMana);
 		}
 	}
 	if (IsValid(OwningController))
 	{
 		OwningController->GetOnTargetChanged().AddUObject(this, &UHUDWidget::UpdateTagetMonster);
 	}
-
-	//// 초기값 1회 반영
-	//const float Health = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute());
-	//const float MaxHealth = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxHealthAttribute());
-	//UpdateHealthUI(Health, MaxHealth);
-
-
 }
 
 void UHUDWidget::UpdateOrbPercentage(OrbType _Type, float _Percentage)
@@ -96,6 +105,18 @@ void UHUDWidget::HandleHealthChanged(const FOnAttributeChangeData& Data)
 	const float MaxHealth = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxHealthAttribute());
 
 	UpdateOrbPercentage(OrbType::OT_HP, NewHealth / MaxHealth);
+}
+
+void UHUDWidget::HandleManaChanged(const FOnAttributeChangeData& Data)
+{
+	const float NewMana = Data.NewValue;
+
+	ADiaBaseCharacter* OwningActor = Cast<ADiaBaseCharacter>(GetOwningPlayerPawn());
+	UAbilitySystemComponent* AbilitySystem = OwningActor->GetAbilitySystemComponent();
+
+	const float MaxMana = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxManaAttribute());
+
+	UpdateOrbPercentage(OrbType::OT_MP, NewMana / MaxMana);
 }
 
 void UHUDWidget::UpdateTagetMonster(ADiaBaseCharacter* NewTarget)

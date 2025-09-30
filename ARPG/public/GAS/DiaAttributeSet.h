@@ -3,6 +3,10 @@
 #include "CoreMinimal.h"
 #include "AttributeSet.h"
 #include "AbilitySystemComponent.h"
+#include "Types/DiaCharacterTable.h"
+
+#include "Types/DiaMonsterTable.h"
+
 #include "DiaAttributeSet.generated.h"
 
 #define ATTRIBUTE_ACCESSORS(ClassName, PropertyName) \
@@ -21,7 +25,8 @@ public:
 
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
-
+	void InitializeCharacterAttributes(FName CharacterID, int32 Level = 1);
+	void InitializeMonsterAttributes(const FMonsterInfo& MonsterInfo);
 	// Health Attributes
 	UPROPERTY(BlueprintReadOnly, Category = "Health")
 	FGameplayAttributeData Health;

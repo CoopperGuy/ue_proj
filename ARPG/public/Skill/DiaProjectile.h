@@ -26,6 +26,9 @@ class ARPG_API ADiaProjectile : public AActor
 public:	
 	ADiaProjectile();
 
+	// 발사 방향으로 속도를 설정하여 발사
+	void Launch(const FVector& Direction);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -124,9 +127,4 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, Category = "Projectile|GAS")
     TSubclassOf<UGameplayEffect> DamageGameplayEffect;
-
-
-
-    // GAS 지원 여부
-    bool bUseGAS = false;
 };

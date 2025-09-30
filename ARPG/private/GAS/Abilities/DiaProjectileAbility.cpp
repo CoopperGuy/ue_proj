@@ -96,12 +96,15 @@ void UDiaProjectileAbility::SpawnProjectile()
 				SpawnParams
 			);
 
-			if (Projectile)
-			{
-				// Initialize projectile with skill data
-				// This would depend on your ADiaProjectile implementation
-				UE_LOG(LogTemp, Log, TEXT("Spawned projectile %d at direction: %s"), i, *CurrentDirection.ToString());
-			}
+            if (Projectile)
+            {
+                // GAS 초기화: 소스 ASC, 대미지 GE, 기본 대미지 전달
+                const FGameplayAbilityActorInfo& Info = GetActorInfo();
+                UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
+                Projectile->Initialize(SkillData.BaseDamage, Character, SourceASC, DamageEffectClass);
+                Projectile->Launch(CurrentDirection);
+                UE_LOG(LogTemp, Log, TEXT("Spawned projectile %d at direction: %s"), i, *CurrentDirection.ToString());
+            }
 		}
 	}
 	else
@@ -121,12 +124,14 @@ void UDiaProjectileAbility::SpawnProjectile()
 			SpawnParams
 		);
 
-		if (Projectile)
-		{
-			// Initialize projectile with skill data
-			// This would depend on your ADiaProjectile implementation
-			UE_LOG(LogTemp, Log, TEXT("Spawned single projectile at direction: %s"), *LaunchDirection.ToString());
-		}
+        if (Projectile)
+        {
+            const FGameplayAbilityActorInfo& Info = GetActorInfo();
+            UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
+            Projectile->Initialize(SkillData.BaseDamage, Character, SourceASC, DamageEffectClass);
+            Projectile->Launch(LaunchDirection);
+            UE_LOG(LogTemp, Log, TEXT("Spawned single projectile at direction: %s"), *LaunchDirection.ToString());
+        }
 	}
 
 	// End ability after spawning projectiles

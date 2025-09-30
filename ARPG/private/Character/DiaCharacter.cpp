@@ -15,7 +15,7 @@
 
 #include "DiaInstance.h"
 #include "Skill/DiaSkillManager.h"
-
+#include "GAS/DiaAttributeSet.h"
 #include "GameMode/DungeonGameMode.h"
 
 #include "GameFramework/SpringArmComponent.h"
@@ -74,17 +74,15 @@ void ADiaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	// 캐릭터 매니저를 통한 플레이어 초기화
 	UGameInstance* GI = GetGameInstance();
 	if (GI)
 	{
 		UCharacterManager* CharacterManager = GI->GetSubsystem<UCharacterManager>();
 		if (CharacterManager)
 		{
-			// 기본 캐릭터로 초기화 (나중에 게임 시작 시 선택된 캐릭터로 변경 가능)
 			FName DefaultCharacterID = CharacterManager->DefaultCharacterID;
-			CharacterManager->InitializePlayerCharacter(this, DefaultCharacterID, 1);
-			
+            AttributeSet->InitializeCharacterAttributes(DefaultCharacterID, 1);
+
 			UE_LOG(LogTemp, Log, TEXT("DiaCharacter: 캐릭터 초기화 완료 - %s"), *DefaultCharacterID.ToString());
 		}
 		else
@@ -101,6 +99,13 @@ void ADiaCharacter::BeginPlay()
             Subsystem->AddMappingContext(DefaultMappingContext, 0);
         }
     }
+
+}
+
+
+void ADiaCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
 
     SetupInitialSkills();
 }
@@ -131,25 +136,7 @@ void ADiaCharacter::Die()
 
 void ADiaCharacter::UpdateHPGauge(float CurHealth, float MaxHelath)
 {
-    ADungeonGameMode* DungeonGameMode = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());
-
-    // 로그 추가 (디버깅용)
-    if (!DungeonGameMode)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("UpdateHPGauge: DungeonGameMode is null"));
-        return;
-    }
-
-    UHUDWidget* HUD = DungeonGameMode->GetHUDWidget();
-    if (HUD)
-    {
-        float HPPersentage = CurHealth / MaxHelath;
-        HUD->UpdateOrbPercentage(OrbType::OT_HP, HPPersentage);
-    }
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("UpdateHPGauge: HUD Widget is null"));
-    }
+  
 }
 // Called to bind functionality to input
 void ADiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -197,6 +184,7 @@ void ADiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 void ADiaCharacter::GrantInitialGASAbilities()
 {
     Super::GrantInitialGASAbilities();
+
     UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
     if (!ASC)
     {
@@ -210,50 +198,6 @@ void ADiaCharacter::GrantInitialGASAbilities()
         UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
     }
 
-    if (false)
-    {
-        int32 ChosenSkillID = 1001;
-        TSubclassOf<UGameplayAbility> ChosenAbilityClass = UDiaBasicAttackAbility::StaticClass();
-
-        if (GasSkillMgr)
-        {
-            TArray<FGASSkillData> AllSkills = GasSkillMgr->GetAllSkillData();
-            AllSkills.Sort([](const FGASSkillData& A, const FGASSkillData& B){ return A.SkillID < B.SkillID; });
-            for (const FGASSkillData& Data : AllSkills)
-            {
-                if (Data.AbilityClass)
-                {
-                    ChosenSkillID = Data.SkillID;
-                    ChosenAbilityClass = Data.AbilityClass;
-                    break;
-                }
-            }
-        }
-
-        bool bGranted = false;
-        if (GasSkillMgr)
-        {
-            if (const FGASSkillData* FoundData = GasSkillMgr->GetSkillDataPtr(ChosenSkillID))
-            {
-                bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, ChosenSkillID);
-            }
-        }
-        if (!bGranted)
-        {
-            FGameplayAbilitySpec Spec(ChosenAbilityClass, 1, ChosenSkillID, this);
-            ASC->GiveAbility(Spec);
-        }
-        if (SkillIDMapping.IsValidIndex(0))
-        {
-            SkillIDMapping[0] = ChosenSkillID;
-        }
-
-        UE_LOG(LogTemp, Log, TEXT("GAS Ability added - SkillID: %d, Class: %s"), ChosenSkillID, *GetNameSafe(ChosenAbilityClass.Get()));
-        if (GEngine)
-        {
-            GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, TEXT("GAS Skill Ready! Press '1' to test"));
-        }
-    }
 }
 
 void ADiaCharacter::Move(const FInputActionValue& Value)

@@ -6,6 +6,8 @@
 #include "AbilitySystemComponent.h"
 #include "GameplayTagsManager.h"
 
+
+//여기서 gameplayeffect를 통해 성질을 부여해야한다.
 bool UDiaGASHelper::GrantAbilityFromSkillData(UAbilitySystemComponent* ASC, const FGASSkillData& SkillData, int32 SkillID, FGameplayTag AbilityTag)
 {
 	if (!ASC)

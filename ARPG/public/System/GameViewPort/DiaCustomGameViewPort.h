@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Engine/GameViewportClient.h"
+#include "CommonGameViewportClient.h"
 #include "DiaCustomGameViewPort.generated.h"
 
 class UItemDragDropOperation;
@@ -14,7 +14,7 @@ class UDragDropOperation;
  * 
  */
 UCLASS()
-class ARPG_API UDiaCustomGameViewPort : public UGameViewportClient
+class ARPG_API UDiaCustomGameViewPort : public UCommonGameViewportClient
 {
 	GENERATED_BODY()
 	
