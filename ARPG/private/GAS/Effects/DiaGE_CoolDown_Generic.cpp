@@ -3,6 +3,8 @@
 
 #include "GAS/Effects/DiaGE_CoolDown_Generic.h"
 #include "GAS/DiaAttributeSet.h"
+#include "GameplayEffectComponents/AssetTagsGameplayEffectComponent.h"
+
 UDiaGE_CoolDown_Generic::UDiaGE_CoolDown_Generic()
 {
 	// - 지속형(HasDuration): 실제 지속시간은 적용 시점에 Spec에서 주입합니다.
@@ -10,6 +12,11 @@ UDiaGE_CoolDown_Generic::UDiaGE_CoolDown_Generic()
 	// - 스택 정책: 중복 불가, 재적용 시 남은 시간 갱신
 
     DurationPolicy = EGameplayEffectDurationType::HasDuration;
+
+    // SetByCaller 방식으로 Duration 설정 - GASData.CoolDown 태그로 값 주입
+    FSetByCallerFloat SetByCallerDuration;
+    SetByCallerDuration.DataTag = FGameplayTag::RequestGameplayTag(FName("GASData.CoolDown"));
+    DurationMagnitude = FGameplayEffectModifierMagnitude(SetByCallerDuration);
 
     Period = FScalableFloat(0.0f);
 

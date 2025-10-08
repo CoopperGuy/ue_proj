@@ -7,6 +7,7 @@
 #include "DiaGASSkillData.generated.h"
 
 class UGameplayAbility;
+class UDiaGameplayAbility;
 class UGameplayEffect;
 class ADiaProjectile;
 
@@ -58,7 +59,7 @@ struct ARPG_API FGASSkillData : public FTableRowBase
 
     // GAS 관련 설정
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    TSubclassOf<UGameplayAbility> AbilityClass;
+    TSubclassOf<UDiaGameplayAbility> AbilityClass;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TSubclassOf<ADiaProjectile> ProjectileClass;
@@ -103,6 +104,16 @@ struct ARPG_API FGASSkillData : public FTableRowBase
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     float Radius = 0.0f;
+
+    // 다단 히트 설정
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Multi Hit")
+    int32 HitCount = 1; // 타격 횟수 (1 = 단타, 2+ = 다단히트)
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Multi Hit")
+    float HitInterval = 0.0f; // 타격 간격 (초 단위, 0 = 즉시)
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Multi Hit")
+    float DamageMultiplierPerHit = 1.0f; // 각 히트별 데미지 배율 (예: 0.5 = 50%)
 
     // 애니메이션 및 이펙트
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -149,5 +160,8 @@ struct ARPG_API FGASSkillData : public FTableRowBase
         Radius = 0.0f;
         MaxLevel = 1;
         RequiredCharacterLevel = 1;
+        HitCount = 1;
+        HitInterval = 0.0f;
+        DamageMultiplierPerHit = 1.0f;
     }
 };

@@ -286,22 +286,13 @@ void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
     {
         int32 skillID = SkillIDMapping[ActionIndex];
         
-        #if WITH_EDITOR || UE_BUILD_DEVELOPMENT
-            UE_LOG(LogTemp, Log, TEXT("스킬 실행 요청 - 인덱스: %d, 스킬ID: %d"), ActionIndex, skillID);
-        #endif
-        
         // GAS 스킬 먼저 시도 (ID 1000 이상은 GAS 스킬로 간주)
         if (skillID >= 1000)
         {
             UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
             if (ASC && UDiaGASHelper::TryActivateAbilityBySkillID(ASC, skillID))
             {
-                UE_LOG(LogTemp, Log, TEXT("GAS 스킬 실행 성공 - ID: %d"), skillID);
                 return;
-            }
-            else
-            {
-                UE_LOG(LogTemp, Warning, TEXT("GAS 스킬 실행 실패 - ID: %d"), skillID);
             }
         }
         

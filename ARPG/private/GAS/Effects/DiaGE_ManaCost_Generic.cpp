@@ -3,16 +3,21 @@
 
 #include "GAS/Effects/DiaGE_ManaCost_Generic.h"
 #include "GAS/DiaAttributeSet.h"
+#include "GameplayEffectComponents/AssetTagsGameplayEffectComponent.h"
 UDiaGE_ManaCost_Generic::UDiaGE_ManaCost_Generic()
 {
     // Instant effect (한번만 적용)
     DurationPolicy = EGameplayEffectDurationType::Instant;
 
-    // Health 속성에 대미지 적용
-    FGameplayModifierInfo DamageModifier;
-    DamageModifier.ModifierMagnitude = FScalableFloat(-50.0f); // -50 데미지 (기본값)
-    DamageModifier.ModifierOp = EGameplayModOp::Additive;
-    DamageModifier.Attribute = UDiaAttributeSet::GetManaAttribute();
+    // SetByCaller를 사용하여 동적으로 마나 소모량 설정
+    FSetByCallerFloat SetByCallerMagnitude;
+    SetByCallerMagnitude.DataTag = FGameplayTag::RequestGameplayTag(FName("GASData.ManaCost"));
 
-    Modifiers.Add(DamageModifier);
+    // Modifier 설정: Mana 속성에 적용
+    FGameplayModifierInfo ManaCostModifier;
+    ManaCostModifier.ModifierMagnitude = FGameplayEffectModifierMagnitude(SetByCallerMagnitude);
+    ManaCostModifier.ModifierOp = EGameplayModOp::Additive;
+    ManaCostModifier.Attribute = UDiaAttributeSet::GetManaAttribute();
+
+    Modifiers.Add(ManaCostModifier);
 }

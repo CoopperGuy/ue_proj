@@ -6,6 +6,7 @@
 
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
+#include "TimerManager.h"
 
 #include "NiagaraFunctionLibrary.h"
 #include "Kismet/GameplayStatics.h"
@@ -21,6 +22,10 @@ UDiaMeleeAbility::UDiaMeleeAbility()
 	AttackRange = 200.0f;
 	AttackAngle = 60.0f;
 	AttackOffset = FVector(100.0f, 0.0f, 0.0f);
+	
+	CurrentHitCount = 0;
+	TotalHitCount = 1;
+	HitInterval = 0.0f;
 
 	// Set ability tags
 	//FGameplayTagContainer Tags;
@@ -34,13 +39,40 @@ UDiaMeleeAbility::UDiaMeleeAbility()
 
 void UDiaMeleeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
+	if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DiaMeleeAbility: Invalid ActorInfo or AvatarActor"));
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
+
 	HitActors.Empty();
 
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-	PerformHitDetection();
+	// HitCount 체크: 1이면 단일 히트, 2 이상이면 Multi Hit
+	TotalHitCount = FMath::Max(1, SkillData.HitCount);
+	HitInterval = FMath::Max(0.0f, SkillData.HitInterval);
 
-	EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+	if (TotalHitCount == 1)
+	{
+		PerformHitDetection();
+	}
+	else
+	{
+		StartMultiHit();
+	}
+}
+
+void UDiaMeleeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
+{
+	// Multi Hit 타이머 정리
+	ClearMultiHitTimer();
+	
+	// 카운트 초기화
+	CurrentHitCount = 0;
+
+	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
 }
 
 void UDiaMeleeAbility::PerformHitDetection()
@@ -62,7 +94,7 @@ void UDiaMeleeAbility::PerformHitDetection()
 	{
 		return;
 	}
-
+	UE_LOG(LogTemp, Log, TEXT("DiaMeleeAbility: Performing Hit Detection"));
 	FVector CharacterLocation = Character->GetActorLocation();
 	FRotator CharacterRotation = Character->GetActorRotation();
 
@@ -132,23 +164,9 @@ void UDiaMeleeAbility::PerformHitDetection()
 
                 ApplyDamageToTarget(HitActor);
 
-				if (HitEffect)
-				{
-					UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-						World,
-						HitEffect,
-						HitResult.Location
-					);
-				}
+				SpawnHitEffectAtLocation(HitActor->GetActorLocation());
 
-				if (HitSound)
-				{
-					UGameplayStatics::PlaySoundAtLocation(
-						World,
-						HitSound,
-						HitResult.Location
-					);
-				}
+				PlayHitSoundAtLocation(HitActor->GetActorLocation());
 			}
 		}
 	}
@@ -184,13 +202,59 @@ void UDiaMeleeAbility::ApplyDamageToTarget(AActor* Target)
         return;
     }
 
-
-	//피격 판정 후 로그 작성
-	UE_LOG(LogTemp, Log, TEXT("Melee Hit: %s"), *Target->GetName());
-
     // GAS 경로: Execution 기반 대미지 적용
     const UDiaAttributeSet* MyAttr = GetAbilitySystemComponentFromActorInfo()->GetSet<UDiaAttributeSet>();
     const float AttackPower = MyAttr ? MyAttr->GetAttackPower() : 0.f;
     const float BaseDamage = SkillData.BaseDamage + AttackPower;
     ApplyDamageToASC(TargetASC, BaseDamage , 1.0f);
+}
+
+void UDiaMeleeAbility::StartMultiHit()
+{
+	CurrentHitCount = 0;
+
+	UE_LOG(LogTemp, Log, TEXT("DiaMeleeAbility: Starting Multi Hit - TotalHits: %d, Interval: %.2f"), TotalHitCount, HitInterval);
+
+	// 첫 번째 히트 즉시 실행
+	PerformHitDetection();
+}
+
+void UDiaMeleeAbility::ProcessNextHit()
+{
+	CurrentHitCount++;
+
+	// 모든 히트 완료 시 종료
+	if (CurrentHitCount >= TotalHitCount)
+	{
+		UE_LOG(LogTemp, Log, TEXT("DiaMeleeAbility: All hits completed"));
+		return;
+	}
+
+	// 다음 히트 스케줄링
+	UWorld* World = GetWorld();
+	if (World && HitInterval > 0.0f)
+	{
+		World->GetTimerManager().SetTimer(
+			MultiHitTimerHandle,
+			this,
+			&UDiaMeleeAbility::PerformHitDetection,
+			HitInterval,
+			false
+		);
+	}
+	else
+	{
+		// 간격이 0이면 즉시 실행
+		PerformHitDetection();
+	}
+}
+
+void UDiaMeleeAbility::ClearMultiHitTimer()
+{
+	UWorld* World = GetWorld();
+	if (World && MultiHitTimerHandle.IsValid())
+	{
+		World->GetTimerManager().ClearTimer(MultiHitTimerHandle);
+		MultiHitTimerHandle.Invalidate();
+	}
 }

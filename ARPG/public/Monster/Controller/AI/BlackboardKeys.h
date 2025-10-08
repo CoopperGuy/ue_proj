@@ -9,12 +9,14 @@ namespace BlackboardKeys
         static const FName TargetActor = TEXT("TargetActor");
         static const FName PatrolPoint = TEXT("PatrolPoint");
         static const FName LastKnownLocation = TEXT("LastKnownLocation");
+        static const FName SaveTargetLocation = TEXT("SaveTargetLocation");
         static const FName IsInCombat = TEXT("IsInCombat");
         static const FName HomeLocation = TEXT("HomeLocation");
         static const FName CurrentState = TEXT("CurrentState");
         static const FName CanSeePlayer = TEXT("CanSeePlayer");
         static const FName AlertLevel = TEXT("AlertLevel");
         static const FName LOS = TEXT("HasLineOfSight");
+		static const FName ActionRequest = TEXT("ActionRequest");
     }
     
     namespace Player

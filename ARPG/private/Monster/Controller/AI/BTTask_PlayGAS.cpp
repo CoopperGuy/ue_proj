@@ -2,6 +2,8 @@
 
 
 #include "Monster/Controller/AI/BTTask_PlayGAS.h"
+#include "Monster/Controller/AI/BlackboardKeys.h"
+#include "Monster/Controller/AI/EAIActionRequest.h"
 
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -18,6 +20,7 @@
 UBTTask_PlayGAS::UBTTask_PlayGAS()
 {
 	NodeName = TEXT("Player GameplayAbilitySystemSkill");
+	bNotifyTick = true; // 틱 활성화
 }
 
 EBTNodeResult::Type UBTTask_PlayGAS::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
@@ -31,7 +34,12 @@ EBTNodeResult::Type UBTTask_PlayGAS::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 	UAbilitySystemComponent* ASC = DiaMonster->GetAbilitySystemComponent();
 	if (!ASC || !ASC->AbilityActorInfo.IsValid())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[BTTask] ASC not ready (null or no ActorInfo)."));
+		return EBTNodeResult::Failed;
+	}
+
+	int32 SkillID = (OwnerComp.GetBlackboardComponent()->GetValueAsInt(BlackboardKeys::Monster::ActionRequest));
+	if (SkillID == 0)
+	{
 		return EBTNodeResult::Failed;
 	}
 
@@ -43,26 +51,95 @@ EBTNodeResult::Type UBTTask_PlayGAS::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 			return EBTNodeResult::InProgress;
 		}
 #if WITH_EDITOR
-		FGameplayTagContainer Failure;
-		const bool bCan = Spec->Ability
-			? Spec->Ability->CanActivateAbility(Spec->Handle, ASC->AbilityActorInfo.Get(), nullptr, nullptr, &Failure)
-			: false;
-		UE_LOG(LogTemp, Log, TEXT("[BTTask] SkillID=%d CanActivate=%d Failure=%s Active=%d"),
-			SkillID, bCan, *Failure.ToString(), Spec->IsActive());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("[BTTask] Spec not found for SkillID=%d (미부여)."), SkillID);
-		// 필요시 클래스 기반 폴백:
-		// return ASC->TryActivateAbilityByClass(ChosenAbilityClass) ? Succeeded : Failed;
+		const bool bCan = UDiaGASHelper::CanActivateAbilityBySkillID(ASC, SkillID);
+		if (!bCan)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("BTTask_PlayGAS: Cannot activate ability for SkillID %d"), SkillID);
+			return EBTNodeResult::Failed;
+		}
 #endif
+		if (ASC && UDiaGASHelper::TryActivateAbilityBySkillID(ASC, SkillID))
+		{
+			CurrentAbilityHandle = Spec->Handle;
+			
+			AbilityEndedHandle = ASC->AbilityEndedCallbacks.AddUObject(this, &UBTTask_PlayGAS::OnAbilityEnded);
+			
+			return EBTNodeResult::InProgress; 
+		}
 	}
 
-	if (ASC && UDiaGASHelper::TryActivateAbilityBySkillID(ASC, SkillID))
-	{
-		UE_LOG(LogTemp, Log, TEXT("GAS 스킬 실행 성공 - ID: %d"), SkillID);
-		return EBTNodeResult::Succeeded;
-	}
-	UE_LOG(LogTemp, Warning, TEXT("GAS 스킬 실행 실패 - ID: %d"), SkillID);
 	return EBTNodeResult::Failed;
+}
+
+void UBTTask_PlayGAS::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
+{
+	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
+	
+	// 어빌리티가 여전히 활성화되어 있는지 확인
+	ADiaAIController* AIController = Cast<ADiaAIController>(OwnerComp.GetAIOwner());
+	if (!IsValid(AIController))
+	{
+		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+		return;
+	}
+
+	ADiaMonster* DiaMonster = Cast<ADiaMonster>(AIController->GetPawn());
+	if (!IsValid(DiaMonster))
+	{
+		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+		return;
+	}
+
+	UAbilitySystemComponent* ASC = DiaMonster->GetAbilitySystemComponent();
+	if (!ASC)
+	{
+		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+		return;
+	}
+
+	// 현재 어빌리티가 더 이상 활성화되어 있지 않으면 완료
+	FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromHandle(CurrentAbilityHandle);
+	if (!Spec || !Spec->IsActive())
+	{
+		// 어빌리티가 완료됨 - SkillID 초기화하고 태스크 완료
+		OwnerComp.GetBlackboardComponent()->SetValueAsInt(BlackboardKeys::Monster::ActionRequest, 0);
+		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+	}
+}
+
+EBTNodeResult::Type UBTTask_PlayGAS::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+{
+	ADiaAIController* AIController = Cast<ADiaAIController>(OwnerComp.GetAIOwner());
+	if (IsValid(AIController))
+	{
+		ADiaMonster* DiaMonster = Cast<ADiaMonster>(AIController->GetPawn());
+		if (IsValid(DiaMonster))
+		{
+			UAbilitySystemComponent* ASC = DiaMonster->GetAbilitySystemComponent();
+			if (ASC && AbilityEndedHandle.IsValid())
+			{
+				ASC->AbilityEndedCallbacks.Remove(AbilityEndedHandle);
+				AbilityEndedHandle.Reset();
+			}
+		}
+	}
+	
+	OwnerComp.GetBlackboardComponent()->SetValueAsInt(BlackboardKeys::Monster::ActionRequest, 0);
+	
+	return EBTNodeResult::Aborted;
+}
+
+void UBTTask_PlayGAS::OnAbilityEnded(UGameplayAbility* AbilityEndedData)
+{
+	if (AbilityEndedData->GetCurrentAbilitySpecHandle() == CurrentAbilityHandle)
+	{
+		if (AbilityEndedHandle.IsValid())
+		{
+			if (UAbilitySystemComponent* ASC = AbilityEndedData->GetAbilitySystemComponentFromActorInfo())
+			{
+				ASC->AbilityEndedCallbacks.Remove(AbilityEndedHandle);
+			}
+			AbilityEndedHandle.Reset();
+		}	
+	}
 }

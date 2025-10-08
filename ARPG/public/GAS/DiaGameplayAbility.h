@@ -65,6 +65,15 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "GAS|GE")
 	TSubclassOf<UGameplayEffect> DamageEffectClass;
 
+	// 피격 이펙트
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Melee|Effects")
+	UNiagaraSystem* HitEffect;
+
+	// 피격 사운드
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Melee|Effects")
+	USoundBase* HitSound;
+
+
 	// Helper functions
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	float PlayAbilityMontage(UAnimMontage* MontageToPlay, float PlayRate = 1.0f);
@@ -78,14 +87,31 @@ protected:
 	UFUNCTION()
 	void OnMontageCancelled();
 
+	/**
+	 * 히트 이펙트 스폰 (오버라이드 가능)
+	 * @param Location 이펙트 생성 위치
+	 * @param HitIndex 현재 히트 인덱스
+	 */
+	virtual void SpawnHitEffectAtLocation(const FVector& Location);
+
+	/**
+	 * 히트 사운드 재생 (오버라이드 가능)
+	 * @param Location 사운드 재생 위치
+	 * @param HitIndex 현재 히트 인덱스
+	 */
+	virtual void PlayHitSoundAtLocation(const FVector& Location);
+
+
 	// Cost and cooldown checks
 	virtual bool CheckCost(const FGameplayAbilitySpecHandle Handle, 
 		const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 	virtual void ApplyCost(const FGameplayAbilitySpecHandle Handle, 
 		const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const override;
 
+	virtual bool CheckCooldown(const FGameplayAbilitySpecHandle Handle, 
+		const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 	virtual void ApplyCooldown(const FGameplayAbilitySpecHandle Handle, 
-		const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const;
+		const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const override;
 
 	// GAS 대미지 적용 헬퍼: TargetASC에 DamageEffectClass를 통해 대미지 적용
 	UFUNCTION(BlueprintCallable, Category = "GAS|Damage")
@@ -99,4 +125,10 @@ private:
 	// Montage task handle
 	UPROPERTY()
 	class UAbilityTask_PlayMontageAndWait* MontageTask;
+
+	// 다단 히트 타이머
+	FTimerHandle MultiHitTimerHandle;
+	
+	// 현재 히트 카운트 (다단히트 진행 상황 추적)
+	int32 CurrentHitCount;
 };

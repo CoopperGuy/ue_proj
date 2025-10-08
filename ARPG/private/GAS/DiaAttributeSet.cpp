@@ -157,9 +157,9 @@ void UDiaAttributeSet::InitializeCharacterAttributes(FName CharacterID, int32 Le
 void UDiaAttributeSet::InitializeMonsterAttributes(const FMonsterInfo& MonsterInfo)
 {
 	SetMaxHealth(MonsterInfo.MaxHP);
-	SetHealth(GetMaxHealth());
+	SetHealth(MonsterInfo.MaxHP);
 	SetMaxMana(MonsterInfo.MaxMP);
-	SetMana(GetMaxMana());
+	SetMana(MonsterInfo.MaxMP);
 	SetAttackPower(MonsterInfo.Attack);
 	SetDefense(MonsterInfo.Defense);
 	SetMovementSpeed(600.0f);

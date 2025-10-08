@@ -18,6 +18,8 @@ UBTTask_MoveToTarget::UBTTask_MoveToTarget()
 {
 	NodeName = TEXT("Move To Target Actor");
 	BlackboardKey.SelectedKeyName = BlackboardKeys::Monster::TargetActor;
+
+    BlackboardKey.AddObjectFilter(this, GET_MEMBER_NAME_CHECKED(UBTTask_MoveToTarget, BlackboardKey), AActor::StaticClass());
 }
 
 EBTNodeResult::Type UBTTask_MoveToTarget::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)

@@ -3,10 +3,12 @@
 
 #include "GameMode/DungeonGameMode.h"
 #include "Character/DiaCharacter.h"
+#include "NavigationSystem.h"
 
 #include "Item/DiaItem.h"
 
 #include "UI/HUDWidget.h"
+#include "UI/Inventory/MainInventory.h"
 #include "Blueprint/UserWidget.h"
 
 #include "System/MapInfoSubsystem.h"

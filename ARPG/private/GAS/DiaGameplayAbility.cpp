@@ -2,6 +2,7 @@
 #include "GAS/DiaAttributeSet.h"
 
 #include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
 
 #include "GameplayEffectTypes.h"
 
@@ -13,6 +14,8 @@
 #include "GAS/Effects/DiaGE_ManaCost_Generic.h"
 #include "GAS/Effects/DiaGameplayEffect_Damage.h"
 
+#include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
 #include "GameplayTagContainer.h"
@@ -40,36 +43,25 @@ UDiaGameplayAbility::UDiaGameplayAbility()
 
 void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Activate: Info=%p Owner=%s Avatar=%s"),
-		ActorInfo,
-		ActorInfo && ActorInfo->OwnerActor.IsValid() ? *ActorInfo->OwnerActor->GetName() : TEXT("null"),
-		ActorInfo && ActorInfo->AvatarActor.IsValid() ? *ActorInfo->AvatarActor->GetName() : TEXT("null"));
-
-	// 여기서 null이면 Init 타이밍/ASC 중복/포인터 엇갈림
-	check(ActorInfo && ActorInfo->AbilitySystemComponent.IsValid());
-
-
-    // 안전 가드: ActorInfo가 없으면 종료
-    if (!ActorInfo)
-    {
-        UE_LOG(LogTemp, Warning, TEXT("ActivateAbility: Missing ActorInfo"));
-        EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
-        return;
-    }
-
-    auto* ASC = ActorInfo->AbilitySystemComponent.Get();
-    auto* Avatar = ActorInfo->AvatarActor.Get();
-    auto* Owner = ActorInfo->OwnerActor.Get();
-
-	// 필요한 포인터 null 방어
-	if (!ASC || !Avatar || !Owner)
+	// 안전 가드: ActorInfo가 없으면 종료
+	if (!ActorInfo)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ActivateAbility Failed"));
-
+		UE_LOG(LogTemp, Warning, TEXT("ActivateAbility: Missing ActorInfo"));
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
 
+	auto* ASC = ActorInfo->AbilitySystemComponent.Get();
+	auto* Avatar = ActorInfo->AvatarActor.Get();
+	auto* Owner = ActorInfo->OwnerActor.Get();
+
+	// 필요한 포인터 null 방어
+	if (!ASC || !Avatar || !Owner)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ActivateAbility Failed: Invalid ASC/Avatar/Owner"));
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
 
 	if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
 	{
@@ -109,22 +101,22 @@ void UDiaGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, co
 
 void UDiaGameplayAbility::ApplyDamageToASC(UAbilitySystemComponent* TargetASC, float BaseDamage, float CritMultiplier) const
 {
-    if (!TargetASC || !DamageEffectClass) return;
+	if (!TargetASC || !DamageEffectClass) return;
 
-    UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
-    if (!SourceASC) return;
+	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
+	if (!SourceASC) return;
 
-    FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
-    EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
-        CurrentActorInfo ? Cast<APawn>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
+	FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
+	EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
+		CurrentActorInfo ? Cast<APawn>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
 
-    FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), EffectContext);
-    if (!SpecHandle.IsValid()) return;
+	FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), EffectContext);
+	if (!SpecHandle.IsValid()) return;
 
-    SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.DamageBase")), BaseDamage);
-    SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.CritMultiplier")), CritMultiplier);
+	SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.DamageBase")), BaseDamage);
+	SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.CritMultiplier")), CritMultiplier);
 
-    SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+	SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
 }
 
 
@@ -150,6 +142,40 @@ bool UDiaGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Ha
 	}
 
 	return true;
+}
+
+void UDiaGameplayAbility::SpawnHitEffectAtLocation(const FVector& Location)
+{
+	// 히트 이펙트가 설정되어 있으면 재생
+	if (HitEffect)
+	{
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
+				World,
+				HitEffect,
+				Location
+			);
+		}
+	}
+}
+
+void UDiaGameplayAbility::PlayHitSoundAtLocation(const FVector& Location)
+{
+	// 히트 사운드가 설정되어 있으면 재생
+	if (HitSound)
+	{
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			UGameplayStatics::PlaySoundAtLocation(
+				World,
+				HitSound,
+				Location
+			);
+		}
+	}
 }
 
 void UDiaGameplayAbility::InputReleased(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo)
@@ -286,27 +312,79 @@ bool UDiaGameplayAbility::CheckCost(const FGameplayAbilitySpecHandle Handle, con
 void UDiaGameplayAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
 {
 	if (!ManaCostEffectClass) return;
-	const float manaCost = SkillData.ManaCost; // GASSkillData
+	if (!ActorInfo || !ActorInfo->AbilitySystemComponent.IsValid()) return;
 
+	const float manaCost = SkillData.ManaCost;
 	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
+
 	FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(ManaCostEffectClass, GetAbilityLevel(), ASC->MakeEffectContext());
 	if (auto* Spec = SpecHandle.Data.Get())
 	{
+		// 음수로 적용하여 마나 감소 (Additive이므로 -값을 더하면 감소)
 		Spec->SetSetByCallerMagnitude(SkillData.ManaCostTags, -manaCost);
+
+		Spec->DynamicGrantedTags.AddTag(SkillData.ManaCostTags);
+
 		ASC->ApplyGameplayEffectSpecToSelf(*Spec);
+
+		UE_LOG(LogTemp, Log, TEXT("Applied Mana Cost: -%f (Current Mana: %f)"), manaCost, 
+			ASC->GetNumericAttribute(UDiaAttributeSet::GetManaAttribute()));
 	}
 }
+
+bool UDiaGameplayAbility::CheckCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags) const
+{
+	if (!ensure(ActorInfo))
+	{
+		return true;
+	}
+
+	if (UAbilitySystemComponent* AbilitySystemComponent = ActorInfo->AbilitySystemComponent.Get())
+	{
+		FGameplayTagContainer OwnedTags;
+		OwnedTags.AddTag(SkillData.CoolDownTags);
+		
+		if (AbilitySystemComponent->HasAnyMatchingGameplayTags(OwnedTags))
+		{
+			if (OptionalRelevantTags)
+			{
+				const FGameplayTag& FailCooldownTag = UAbilitySystemGlobals::Get().ActivateFailCooldownTag;
+				if (FailCooldownTag.IsValid())
+				{
+					OptionalRelevantTags->AddTag(FailCooldownTag);
+				}
+
+				// Let the caller know which tags were blocking
+				OptionalRelevantTags->AppendMatchingTags(AbilitySystemComponent->GetOwnedGameplayTags(), OwnedTags);
+			}
+
+			return false;
+		}
+	}
+	
+	return true;
+
+}
+
 
 void UDiaGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
 {
 	if (!CooldownEffectClass) return;
 
+	const float cooldownDuration = SkillData.CooldownDuration; 
 	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
+	if (!ASC) return;
+
 	FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(CooldownEffectClass, GetAbilityLevel(), ASC->MakeEffectContext());
 	if (auto* Spec = SpecHandle.Data.Get())
 	{
-		// 쿨타임 시간 설정
-		Spec->SetSetByCallerMagnitude(SkillData.CoolDownTags, SkillData.CooldownDuration);
+		// SetByCaller 방식으로 Duration 설정
+		Spec->SetSetByCallerMagnitude(SkillData.CoolDownTags, cooldownDuration);
+		
+		// 쿨다운 태그 부여
+		Spec->DynamicGrantedTags.AddTag(SkillData.CoolDownTags);
+		
+		// 적용
 		ASC->ApplyGameplayEffectSpecToSelf(*Spec);
 	}
 }
