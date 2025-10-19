@@ -215,16 +215,15 @@ void UDiaMeleeAbility::StartMultiHit()
 
 	UE_LOG(LogTemp, Log, TEXT("DiaMeleeAbility: Starting Multi Hit - TotalHits: %d, Interval: %.2f"), TotalHitCount, HitInterval);
 
-	// 첫 번째 히트 즉시 실행
-	PerformHitDetection();
+	ProcessNextHit();
 }
 
 void UDiaMeleeAbility::ProcessNextHit()
 {
-	CurrentHitCount++;
+	++CurrentHitCount;
 
 	// 모든 히트 완료 시 종료
-	if (CurrentHitCount >= TotalHitCount)
+	if (CurrentHitCount > TotalHitCount)
 	{
 		UE_LOG(LogTemp, Log, TEXT("DiaMeleeAbility: All hits completed"));
 		return;

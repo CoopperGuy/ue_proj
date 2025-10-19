@@ -143,27 +143,41 @@ void ADiaBaseCharacter::GrantInitialGASAbilities()
 				}
 			}
 
-			if (!AbilityClass)
-			{
-				// 폴백: 기본 공격
-				if (SkillID == 1001)
-				{
-					AbilityClass = UDiaBasicAttackAbility::StaticClass();
-				}
-			}
-
 			if (AbilityClass)
 			{
 				bool bGranted = false;
 				if (FoundData)
 				{
-					bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID, AbilityTags.GetGameplayTagArray().Last());
+					// AbilityTags가 비어있으면 SkillData의 첫 번째 태그 사용
+					FGameplayTag TagToUse;
+					if (AbilityTags.Num() > 0)
+					{
+						TagToUse = AbilityTags.GetGameplayTagArray().Last();
+					}
+					else if (FoundData->AbilityTags.Num() > 0)
+					{
+						TagToUse = FoundData->AbilityTags.GetGameplayTagArray()[0];
+					}
+					
+					// 태그 체크 없이 무조건 부여하도록 수정
+					if (TagToUse.IsValid())
+					{
+						bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID, TagToUse);
+					}
+					else
+					{
+						// 태그 없어도 부여할 수 있도록 빈 태그로 시도
+						bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID, FGameplayTag());
+					}
 				}
+				
 				if (!bGranted)
 				{
+					UE_LOG(LogTemp, Warning, TEXT("GrantAbilityFromSkillData failed for SkillID %d, using fallback"), SkillID);
 					FGameplayAbilitySpec Spec(AbilityClass, 1, SkillID, this);
 					ASC->GiveAbility(Spec);
 				}
+				
 				if (SkillIDMapping.IsValidIndex(MappingIndex))
 				{
 					SkillIDMapping[MappingIndex] = SkillID;
@@ -174,11 +188,12 @@ void ADiaBaseCharacter::GrantInitialGASAbilities()
 	}
 
 
-	for (const FGameplayAbilitySpec& S : ASC->GetActivatableAbilities())
-	{
-		UE_LOG(LogTemp, Log, TEXT("[GAS] Granted: Ability=%s, InputID(SkillID)=%d, IsActive=%s"),
-			*GetNameSafe(S.Ability), S.InputID, S.IsActive() ? TEXT("true") : TEXT("false"));
-	}
+	// 임시 주석 - 불필요한 로그
+	//for (const FGameplayAbilitySpec& S : ASC->GetActivatableAbilities())
+	//{
+	//	UE_LOG(LogTemp, Log, TEXT("[GAS] Granted: Ability=%s, InputID(SkillID)=%d, IsActive=%s"),
+	//		*GetNameSafe(S.Ability), S.InputID, S.IsActive() ? TEXT("true") : TEXT("false"));
+	//}
 }
 
 float ADiaBaseCharacter::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)

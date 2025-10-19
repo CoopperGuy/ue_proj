@@ -193,6 +193,10 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 	if (SkillData.AbilityTags.Num() > 0)
 	{
 		AbilityTags.AppendTags(SkillData.AbilityTags);
+		//FGameplayTagContainer NewTags = GetAssetTags();
+		//NewTags.AppendTags(SkillData.AbilityTags);
+		//SetAssetTags(NewTags);
+
 	}
 
 	//if (SkillData.CastAnimation.IsValid())
@@ -202,11 +206,11 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 #if WITH_EDITOR
 		if (AbilityMontage)
 		{
-			UE_LOG(LogTemp, Log, TEXT("Loaded AbilityMontage: %s"), *AbilityMontage->GetName());
+			//UE_LOG(LogTemp, Log, TEXT("Loaded AbilityMontage: %s"), *AbilityMontage->GetName());
 		}
 		//else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("SkillData.CastAnimation is not valid"));
+			//UE_LOG(LogTemp, Warning, TEXT("SkillData.CastAnimation is not valid"));
 		}
 
 #endif
@@ -327,8 +331,8 @@ void UDiaGameplayAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle, con
 
 		ASC->ApplyGameplayEffectSpecToSelf(*Spec);
 
-		UE_LOG(LogTemp, Log, TEXT("Applied Mana Cost: -%f (Current Mana: %f)"), manaCost, 
-			ASC->GetNumericAttribute(UDiaAttributeSet::GetManaAttribute()));
+		//UE_LOG(LogTemp, Log, TEXT("Applied Mana Cost: -%f (Current Mana: %f)"), manaCost, 
+		//	ASC->GetNumericAttribute(UDiaAttributeSet::GetManaAttribute()));
 	}
 }
 
@@ -339,31 +343,52 @@ bool UDiaGameplayAbility::CheckCooldown(const FGameplayAbilitySpecHandle Handle,
 		return true;
 	}
 
-	if (UAbilitySystemComponent* AbilitySystemComponent = ActorInfo->AbilitySystemComponent.Get())
+	UAbilitySystemComponent* AbilitySystemComponent = ActorInfo->AbilitySystemComponent.Get();
+	if (!AbilitySystemComponent)
 	{
-		FGameplayTagContainer OwnedTags;
-		OwnedTags.AddTag(SkillData.CoolDownTags);
-		
-		if (AbilitySystemComponent->HasAnyMatchingGameplayTags(OwnedTags))
+		return true;
+	}
+
+	// Handle로 Spec를 찾아서 SkillID(InputID) 가져오기
+	FGameplayAbilitySpec* Spec = AbilitySystemComponent->FindAbilitySpecFromHandle(Handle);
+	if (!Spec)
+	{
+		return true;
+	}
+
+	// Spec에서 쿨다운 태그 가져오기 (GrantAbilityFromSkillData에서 저장됨)
+	FGameplayTag CooldownTag;
+	if (Spec->SetByCallerTagMagnitudes.Num() > 0)
+	{
+		// SetByCallerTagMagnitudes의 첫 번째 태그가 쿨다운 태그
+		for (const auto& Pair : Spec->SetByCallerTagMagnitudes)
 		{
-			if (OptionalRelevantTags)
+			if (Pair.Key.MatchesTag(FGameplayTag::RequestGameplayTag(FName("GASData.CoolDown"), false)))
 			{
-				const FGameplayTag& FailCooldownTag = UAbilitySystemGlobals::Get().ActivateFailCooldownTag;
-				if (FailCooldownTag.IsValid())
-				{
-					OptionalRelevantTags->AddTag(FailCooldownTag);
-				}
-
-				// Let the caller know which tags were blocking
-				OptionalRelevantTags->AppendMatchingTags(AbilitySystemComponent->GetOwnedGameplayTags(), OwnedTags);
+				CooldownTag = Pair.Key;
+				break;
 			}
-
-			return false;
 		}
 	}
 	
-	return true;
+	if (CooldownTag.IsValid() && AbilitySystemComponent->HasMatchingGameplayTag(CooldownTag))
+	{
+		if (OptionalRelevantTags)
+		{
+			const FGameplayTag& FailCooldownTag = UAbilitySystemGlobals::Get().ActivateFailCooldownTag;
+			if (FailCooldownTag.IsValid())
+			{
+				OptionalRelevantTags->AddTag(FailCooldownTag);
+			}
 
+			// 쿨다운 태그 추가
+			OptionalRelevantTags->AddTag(CooldownTag);
+		}
+
+		return false;
+	}
+	
+	return true;
 }
 
 
@@ -371,20 +396,54 @@ void UDiaGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
 {
 	if (!CooldownEffectClass) return;
 
-	const float cooldownDuration = SkillData.CooldownDuration; 
 	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
 	if (!ASC) return;
+
+	// Handle로 Spec를 찾아서 SkillID(InputID) 가져오기
+	FGameplayAbilitySpec* AbilitySpec = ASC->FindAbilitySpecFromHandle(Handle);
+	if (!AbilitySpec)
+	{
+		return;
+	}
+
+	// Spec에서 쿨다운 태그 가져오기 (GrantAbilityFromSkillData에서 저장됨)
+	FGameplayTag CooldownTag;
+	float cooldownDuration = SkillData.CooldownDuration;
+	
+	if (AbilitySpec->SetByCallerTagMagnitudes.Num() > 0)
+	{
+		// SetByCallerTagMagnitudes에서 쿨다운 태그와 Duration 가져오기
+		for (const auto& Pair : AbilitySpec->SetByCallerTagMagnitudes)
+		{
+			if (Pair.Key.MatchesTag(FGameplayTag::RequestGameplayTag(FName("GASData.CoolDown"), false)))
+			{
+				CooldownTag = Pair.Key;
+				cooldownDuration = Pair.Value; // Spec에 저장된 Duration 사용
+				break;
+			}
+		}
+	}
+	
+	if (!CooldownTag.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("[ApplyCooldown] No cooldown tag found in Spec for SkillID: %d"), AbilitySpec->InputID);
+		return;
+	}
 
 	FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(CooldownEffectClass, GetAbilityLevel(), ASC->MakeEffectContext());
 	if (auto* Spec = SpecHandle.Data.Get())
 	{
-		// SetByCaller 방식으로 Duration 설정
-		Spec->SetSetByCallerMagnitude(SkillData.CoolDownTags, cooldownDuration);
+		// ★ Duration은 GASData.CoolDown 태그로 설정 (DiaGE_CoolDown_Generic에서 하드코딩됨)
+		FGameplayTag DurationTag = FGameplayTag::RequestGameplayTag(FName("GASData.CoolDown"), false);
+		Spec->SetSetByCallerMagnitude(DurationTag, cooldownDuration);
 		
-		// 쿨다운 태그 부여
-		Spec->DynamicGrantedTags.AddTag(SkillData.CoolDownTags);
+		// ★ 쿨다운 태그는 스킬별 태그로 부여 (GASData.CoolDown.2001 등)
+		Spec->DynamicGrantedTags.AddTag(CooldownTag);
 		
 		// 적용
 		ASC->ApplyGameplayEffectSpecToSelf(*Spec);
+		
+		//UE_LOG(LogTemp, Log, TEXT("[ApplyCooldown] Applied cooldown for SkillID: %d, Duration: %.2f, Tag: %s"), 
+		//	AbilitySpec->InputID, cooldownDuration, *CooldownTag.ToString());
 	}
 }

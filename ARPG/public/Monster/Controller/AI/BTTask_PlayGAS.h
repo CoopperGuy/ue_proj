@@ -31,6 +31,9 @@ private:
 	UPROPERTY()
 	FGameplayAbilitySpecHandle CurrentAbilityHandle;
 	
+	// 어빌리티 종료 플래그
+	bool bAbilityEnded = false;
+	
 	// 어빌리티 완료 콜백
 	UFUNCTION()
 	void OnAbilityEnded(UGameplayAbility* AbilityEndedData);

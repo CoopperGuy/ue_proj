@@ -15,6 +15,7 @@
 #include "UI/CharacterStatus/StatusWidget.h"
 
 #include "GameMode/DungeonGameMode.h"
+#include "DiaBaseCharacter.h"
 
 ADiaController::ADiaController()
 {

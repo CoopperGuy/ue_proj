@@ -11,6 +11,8 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Object.h"
 
+#include "AbilitySystemComponent.h"
+#include "GAS/DiaGameplayTags.h"
 
 #include "DiaBaseCharacter.h"
 
@@ -35,6 +37,16 @@ EBTNodeResult::Type UBTTask_MoveToTarget::ExecuteTask(UBehaviorTreeComponent& Ow
 	ADiaBaseCharacter* TargetActor = Cast<ADiaBaseCharacter>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(BlackboardKey.SelectedKeyName));
     if (!IsValid(TargetActor))
         return EBTNodeResult::Failed;
+
+    if (UAbilitySystemComponent* ASC = diaMonster->GetAbilitySystemComponent())
+    {
+        // 이동 불가 상태 체크
+        if (ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Charging))
+        {
+            return EBTNodeResult::Failed; // 또는 Succeeded
+        }
+    }
+
 
     EPathFollowingRequestResult::Type res = aiController->MoveToActor(TargetActor, 150.0f, true, true);
 

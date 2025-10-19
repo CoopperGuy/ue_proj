@@ -21,6 +21,9 @@ UBTTask_PlayGAS::UBTTask_PlayGAS()
 {
 	NodeName = TEXT("Player GameplayAbilitySystemSkill");
 	bNotifyTick = true; // 틱 활성화
+
+	BlackboardKey.AddIntFilter(this, GET_MEMBER_NAME_CHECKED(UBTTask_PlayGAS, BlackboardKey));
+
 }
 
 EBTNodeResult::Type UBTTask_PlayGAS::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
@@ -37,7 +40,7 @@ EBTNodeResult::Type UBTTask_PlayGAS::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 		return EBTNodeResult::Failed;
 	}
 
-	int32 SkillID = (OwnerComp.GetBlackboardComponent()->GetValueAsInt(BlackboardKeys::Monster::ActionRequest));
+	int32 SkillID = (OwnerComp.GetBlackboardComponent()->GetValueAsInt(BlackboardKey.SelectedKeyName));
 	if (SkillID == 0)
 	{
 		return EBTNodeResult::Failed;
@@ -58,14 +61,15 @@ EBTNodeResult::Type UBTTask_PlayGAS::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 			return EBTNodeResult::Failed;
 		}
 #endif
-		if (ASC && UDiaGASHelper::TryActivateAbilityBySkillID(ASC, SkillID))
-		{
-			CurrentAbilityHandle = Spec->Handle;
-			
-			AbilityEndedHandle = ASC->AbilityEndedCallbacks.AddUObject(this, &UBTTask_PlayGAS::OnAbilityEnded);
-			
-			return EBTNodeResult::InProgress; 
-		}
+	if (ASC && UDiaGASHelper::TryActivateAbilityBySkillID(ASC, SkillID))
+	{
+		CurrentAbilityHandle = Spec->Handle;
+		bAbilityEnded = false; // 플래그 초기화
+		
+		AbilityEndedHandle = ASC->AbilityEndedCallbacks.AddUObject(this, &UBTTask_PlayGAS::OnAbilityEnded);
+		
+		return EBTNodeResult::InProgress; 
+	}
 	}
 
 	return EBTNodeResult::Failed;
@@ -97,12 +101,13 @@ void UBTTask_PlayGAS::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMem
 		return;
 	}
 
-	// 현재 어빌리티가 더 이상 활성화되어 있지 않으면 완료
-	FGameplayAbilitySpec* Spec = ASC->FindAbilitySpecFromHandle(CurrentAbilityHandle);
-	if (!Spec || !Spec->IsActive())
+	// 어빌리티 종료 플래그 확인
+	if (bAbilityEnded)
 	{
 		// 어빌리티가 완료됨 - SkillID 초기화하고 태스크 완료
-		OwnerComp.GetBlackboardComponent()->SetValueAsInt(BlackboardKeys::Monster::ActionRequest, 0);
+		int32 CompletedSkillID = OwnerComp.GetBlackboardComponent()->GetValueAsInt(BlackboardKey.SelectedKeyName);
+		UE_LOG(LogTemp, Log, TEXT("BTTask_PlayGAS: Ability completed via callback. Resetting ActionRequest from SkillID %d to 0"), CompletedSkillID);
+		OwnerComp.GetBlackboardComponent()->SetValueAsInt(BlackboardKey.SelectedKeyName, 0);
 		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 	}
 }
@@ -124,15 +129,18 @@ EBTNodeResult::Type UBTTask_PlayGAS::AbortTask(UBehaviorTreeComponent& OwnerComp
 		}
 	}
 	
-	OwnerComp.GetBlackboardComponent()->SetValueAsInt(BlackboardKeys::Monster::ActionRequest, 0);
+	int32 AbortedSkillID = OwnerComp.GetBlackboardComponent()->GetValueAsInt(BlackboardKey.SelectedKeyName);
+	UE_LOG(LogTemp, Log, TEXT("BTTask_PlayGAS: Task aborted. Resetting ActionRequest from SkillID %d to 0"), AbortedSkillID);
+	OwnerComp.GetBlackboardComponent()->SetValueAsInt(BlackboardKey.SelectedKeyName, 0);
 	
 	return EBTNodeResult::Aborted;
 }
 
 void UBTTask_PlayGAS::OnAbilityEnded(UGameplayAbility* AbilityEndedData)
 {
-	if (AbilityEndedData->GetCurrentAbilitySpecHandle() == CurrentAbilityHandle)
+	if (AbilityEndedData && AbilityEndedData->GetCurrentAbilitySpecHandle() == CurrentAbilityHandle)
 	{
+		// 콜백 제거
 		if (AbilityEndedHandle.IsValid())
 		{
 			if (UAbilitySystemComponent* ASC = AbilityEndedData->GetAbilitySystemComponentFromActorInfo())
@@ -140,6 +148,10 @@ void UBTTask_PlayGAS::OnAbilityEnded(UGameplayAbility* AbilityEndedData)
 				ASC->AbilityEndedCallbacks.Remove(AbilityEndedHandle);
 			}
 			AbilityEndedHandle.Reset();
-		}	
+		}
+		
+		UE_LOG(LogTemp, Log, TEXT("BTTask_PlayGAS: Ability ended callback received for handle"));
+		// 태스크 완료는 TickTask에서 처리하도록 플래그 설정
+		bAbilityEnded = true;
 	}
 }

@@ -67,7 +67,7 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 
 		if (!MonsterInfo.MonsterMesh.IsNull())
 		{
-			UE_LOG(LogTemp, Log, TEXT("몬스터 [%s] 메시 로드 시도: %s"), *GetName(), *MonsterInfo.MonsterMesh.ToString());
+			//UE_LOG(LogTemp, Log, TEXT("몬스터 [%s] 메시 로드 시도: %s"), *GetName(), *MonsterInfo.MonsterMesh.ToString());
 			USkeletalMesh* MonsterMeshAsset = MonsterInfo.MonsterMesh.LoadSynchronous();
 			if (MonsterMeshAsset)
 			{
@@ -77,7 +77,7 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 				// 중요: 메시 설정 후 강제 업데이트
 				MeshComp->RecreateRenderState_Concurrent();
 
-				UE_LOG(LogTemp, Log, TEXT("몬스터 [%s] 메시 설정 완료: %s"), *GetName(), *MonsterMeshAsset->GetName());
+				//UE_LOG(LogTemp, Log, TEXT("몬스터 [%s] 메시 설정 완료: %s"), *GetName(), *MonsterMeshAsset->GetName());
 			}
 			else
 			{

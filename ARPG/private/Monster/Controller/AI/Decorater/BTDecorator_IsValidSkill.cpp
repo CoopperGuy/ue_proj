@@ -21,6 +21,19 @@ UBTDecorator_IsValidSkill::UBTDecorator_IsValidSkill()
 
 bool UBTDecorator_IsValidSkill::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const
 {
+	//현재 사용중인 스킬이 있는지 확인
+	int32 SelectedSkillID = (OwnerComp.GetBlackboardComponent()->GetValueAsInt(BlackboardKey.SelectedKeyName));
+	//스킬 아이디 확인
+	//이미 스킬을 사용중이면 false
+	if (SelectedSkillID != 0)
+	{
+		return false;
+	}
+	if (SkillID == 0)
+	{
+		return false;
+	}
+
 	ADiaAIController* AIController = Cast<ADiaAIController>(OwnerComp.GetAIOwner());
 	if (IsValid(AIController))
 	{
@@ -30,19 +43,9 @@ bool UBTDecorator_IsValidSkill::CalculateRawConditionValue(UBehaviorTreeComponen
 			UAbilitySystemComponent* ASC = DiaMonster->GetAbilitySystemComponent();
 			if (ASC && SkillID != 0)
 			{
-				if (FGameplayAbilitySpec* Spec = UDiaGASHelper::GetAbilitySpecBySkillID(ASC, SkillID))
-				{
-					auto Ability = Spec->Ability;
-					if (Ability)
-					{
-						bool bCoolDown = Ability->CheckCooldown(Spec->Handle, ASC->AbilityActorInfo.Get());
-						bool bCost = Ability->CheckCost(Spec->Handle, ASC->AbilityActorInfo.Get());
-						if(Spec->IsActive() == false && bCoolDown && bCost)
-						{
-							return true;
-						}
-					}
-				}
+				// DiaGASHelper의 CanActivateAbilityBySkillID를 사용하여
+				// IsActive, Cooldown, Cost를 모두 체크
+				return UDiaGASHelper::CanActivateAbilityBySkillID(ASC, SkillID);
 			}
 		}
 	}

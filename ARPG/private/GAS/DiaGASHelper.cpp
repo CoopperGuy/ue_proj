@@ -4,7 +4,6 @@
 #include "GAS/Abilities/DiaProjectileAbility.h"
 #include "GAS/Abilities/DiaBasicAttackAbility.h"
 #include "AbilitySystemComponent.h"
-#include "GameplayTagsManager.h"
 
 
 //여기서 gameplayeffect를 통해 성질을 부여해야한다.
@@ -15,10 +14,11 @@ bool UDiaGASHelper::GrantAbilityFromSkillData(UAbilitySystemComponent* ASC, cons
 		return false;
 	}
 
-	//해당 태그를 보유중이지 않다면 return false;
-	if (!SkillData.AbilityTags.HasTag(AbilityTag))
+	// 태그 체크: AbilityTag가 유효하고 SkillData에 해당 태그가 없으면 경고만 출력
+	if (AbilityTag.IsValid() && !SkillData.AbilityTags.HasTag(AbilityTag))
 	{
-		return false;
+		UE_LOG(LogTemp, Warning, TEXT("GrantAbilityFromSkillData: SkillID %d doesn't have required tag %s, granting anyway"), 
+			SkillID, *AbilityTag.ToString());
 	}
 
 	// Get appropriate ability class based on skill type
@@ -32,6 +32,22 @@ bool UDiaGASHelper::GrantAbilityFromSkillData(UAbilitySystemComponent* ASC, cons
 	// Create ability spec with SkillID as InputID
 	FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, SkillID);
 	
+	// ★ SkillID 기반 쿨다운 태그 조회 (INI 파일에 미리 등록되어 있어야 함)
+	FString CooldownTagName = FString::Printf(TEXT("GASData.CoolDown.%d"), SkillID);
+	FGameplayTag CooldownTag = FGameplayTag::RequestGameplayTag(FName(*CooldownTagName), false);
+	
+	if (!CooldownTag.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("GrantAbilityFromSkillData: Cooldown tag not found for SkillID %d. Add 'GASData.CoolDown.%d' to DefaultGameplayTags.ini"), 
+			SkillID, SkillID);
+	}
+	
+	// Spec의 SetByCallerTagMagnitudes에 쿨다운 태그 저장 (나중에 참조용)
+	if (CooldownTag.IsValid())
+	{
+		AbilitySpec.SetByCallerTagMagnitudes.Add(CooldownTag, SkillData.CooldownDuration);
+	}
+	
 	// Grant the ability
 	FGameplayAbilitySpecHandle Handle = ASC->GiveAbility(AbilitySpec);
 	
@@ -44,7 +60,7 @@ bool UDiaGASHelper::GrantAbilityFromSkillData(UAbilitySystemComponent* ASC, cons
 			AbilityInstance->InitializeWithSkillData(SkillData);
 		}
 
-		UE_LOG(LogTemp, Log, TEXT("Granted ability for skill ID %d"), SkillID);
+		//UE_LOG(LogTemp, Log, TEXT("Granted ability for skill ID %d with cooldown tag: %s"), SkillID, *CooldownTagName);
 		return true;
 	}
 
@@ -77,26 +93,26 @@ bool UDiaGASHelper::TryActivateAbilityBySkillID(UAbilitySystemComponent* ASC, in
 		return false;
 	}
 
-	UE_LOG(LogTemp, Verbose, TEXT("TryActivateAbilityBySkillID: SkillID=%d"), SkillID);
+	//UE_LOG(LogTemp, Verbose, TEXT("TryActivateAbilityBySkillID: SkillID=%d"), SkillID);
 
 	// 일반적인 스킬 ID 처리
 	FGameplayAbilitySpec* AbilitySpec = GetAbilitySpecBySkillID(ASC, SkillID);
 	if (AbilitySpec)
 	{
-		UE_LOG(LogTemp, Verbose, TEXT("Found Spec: Ability=%s, InputID=%d, Active=%s"),
-			*GetNameSafe(AbilitySpec->Ability), AbilitySpec->InputID, AbilitySpec->IsActive() ? TEXT("true") : TEXT("false"));
+		//UE_LOG(LogTemp, Verbose, TEXT("Found Spec: Ability=%s, InputID=%d, Active=%s"),
+		//	*GetNameSafe(AbilitySpec->Ability), AbilitySpec->InputID, AbilitySpec->IsActive() ? TEXT("true") : TEXT("false"));
 
 		const FGameplayAbilityActorInfo* ActorInfo = ASC->AbilityActorInfo.Get();
-		UE_LOG(LogTemp, Verbose, TEXT("ActorInfo: Avatar=%s, Owner=%s"),
-			*GetNameSafe(ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr),
-			*GetNameSafe(ActorInfo ? ActorInfo->OwnerActor.Get() : nullptr));
+		//UE_LOG(LogTemp, Verbose, TEXT("ActorInfo: Avatar=%s, Owner=%s"),
+		//	*GetNameSafe(ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr),
+		//	*GetNameSafe(ActorInfo ? ActorInfo->OwnerActor.Get() : nullptr));
 
 		const bool bActivated = ASC->TryActivateAbility(AbilitySpec->Handle);
-		UE_LOG(LogTemp, Log, TEXT("TryActivateAbility result: %s"), bActivated ? TEXT("true") : TEXT("false"));
+		//UE_LOG(LogTemp, Log, TEXT("TryActivateAbility result: %s"), bActivated ? TEXT("true") : TEXT("false"));
 		return bActivated;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("DiaGASHelper::TryActivateAbilityBySkillID: No ability found for SkillID %d"), SkillID);
+	//UE_LOG(LogTemp, Warning, TEXT("DiaGASHelper::TryActivateAbilityBySkillID: No ability found for SkillID %d"), SkillID);
 	return false;
 }
 
@@ -104,16 +120,54 @@ bool UDiaGASHelper::CanActivateAbilityBySkillID(UAbilitySystemComponent* ASC, in
 {
 	if (!ASC)
 	{
+		//UE_LOG(LogTemp, Warning, TEXT("[CanActivateAbility] ASC is null for SkillID: %d"), SkillID);
 		return false;
 	}
 
 	FGameplayAbilitySpec* AbilitySpec = GetAbilitySpecBySkillID(ASC, SkillID);
-	if (AbilitySpec && AbilitySpec->Ability)
+	if (!AbilitySpec || !AbilitySpec->Ability)
 	{
-		return !AbilitySpec->IsActive();
+		//UE_LOG(LogTemp, Warning, TEXT("[CanActivateAbility] No ability spec found for SkillID: %d"), SkillID);
+		return false;
 	}
 
-	return false;
+	const FGameplayAbilityActorInfo* ActorInfo = ASC->AbilityActorInfo.Get();
+	if (!ActorInfo)
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("[CanActivateAbility] ActorInfo is null for SkillID: %d"), SkillID);
+		return false;
+	}
+
+	AActor* OwnerActor = ActorInfo->OwnerActor.Get();
+	FString OwnerName = OwnerActor ? OwnerActor->GetName() : TEXT("Unknown");
+	FString AbilityName = GetNameSafe(AbilitySpec->Ability);
+
+	// 1. 이미 활성화 중이면 false
+	if (AbilitySpec->IsActive())
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - Already Active"), *OwnerName, SkillID, *AbilityName);
+		return false;
+	}
+
+	// 2. Cooldown 체크 - Ability의 CheckCooldown 사용
+	bool bCanUseCooldown = AbilitySpec->Ability->CheckCooldown(AbilitySpec->Handle, ActorInfo);
+	if (!bCanUseCooldown)
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - On Cooldown"), 
+		//	*OwnerName, SkillID, *AbilityName);
+		return false;
+	}
+
+	// 3. Cost 체크 - false를 반환하면 비용을 지불할 수 없음
+	bool bCanPayCost = AbilitySpec->Ability->CheckCost(AbilitySpec->Handle, ActorInfo);
+	if (!bCanPayCost)
+	{
+		//UE_LOG(LogTemp, Warning, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - Cannot Pay Cost"), *OwnerName, SkillID, *AbilityName);
+		return false;
+	}
+
+	//UE_LOG(LogTemp, Log, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - Can Activate"), *OwnerName, SkillID, *AbilityName);
+	return true;
 }
 
 FGameplayAbilitySpec* UDiaGASHelper::GetAbilitySpecBySkillID(UAbilitySystemComponent* ASC, int32 SkillID)
