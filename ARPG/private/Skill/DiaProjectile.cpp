@@ -21,6 +21,7 @@
 #include "GameplayEffect.h"
 
 #include "GAS/Effects/DiaGameplayEffect_Damage.h"
+#include "GAS/DiaGameplayTags.h"
 #include "GameplayEffectTypes.h"
 
 // Sets default values
@@ -230,18 +231,16 @@ void ADiaProjectile::ProcessDamage(ADiaBaseCharacter* Target, const FHitResult& 
         return;
     }
     
-    UDiaCombatComponent* DiaCombatComp = Target->GetComponentByClass<UDiaCombatComponent>();
 
-    if (!DiaCombatComp)
-    {
-        return;
-    }
     // GAS가 설정된 경우: GameplayEffect를 통해 대미지 적용
     if (SourceASC.IsValid() && DamageGameplayEffect)
     {
         UAbilitySystemComponent* TargetASC = Target->GetComponentByClass<UAbilitySystemComponent>();
         if (TargetASC)
         {
+			// 무적 상태 체크
+            if (TargetASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Invincible)) return;
+
             FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
             EffectContext.AddInstigator(GetOwner(), Cast<APawn>(GetOwner()));
 
@@ -259,7 +258,6 @@ void ADiaProjectile::ProcessDamage(ADiaBaseCharacter* Target, const FHitResult& 
         }
     }
 
-    
     // 피격 사운드 재생
     if (HitSound)
     {

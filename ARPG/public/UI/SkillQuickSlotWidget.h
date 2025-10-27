@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "SkillQuickSlotWidget.generated.h"
 
+class USkillQuickSlot;
 /**
  * 
  */
@@ -18,18 +19,20 @@ class ARPG_API USkillQuickSlotWidget : public UUserWidget
 public:
 	void NativeConstruct() override;
 
+	void UpdateSkillSlot(int32 SlotIndex, int32 SkillID);
 protected:
-
+	
 private:
 	UPROPERTY(meta = (BindWidget))
-	UUserWidget* SkillQuickSlot1;
+	USkillQuickSlot* SkillQuickSlot1;
 	UPROPERTY(meta = (BindWidget))
-	UUserWidget* SkillQuickSlot2;
+	USkillQuickSlot* SkillQuickSlot2;
 	UPROPERTY(meta = (BindWidget))
-	UUserWidget* SkillQuickSlot3;
+	USkillQuickSlot* SkillQuickSlot3;
 	UPROPERTY(meta = (BindWidget))
-	UUserWidget* SkillQuickSlot4;
+	USkillQuickSlot* SkillQuickSlot4;
 	UPROPERTY(meta = (BindWidget))
-	UUserWidget* SkillQuickSlot5;
+	USkillQuickSlot* SkillQuickSlot5;
 
+	TArray<USkillQuickSlot*> SkillSlots;
 };

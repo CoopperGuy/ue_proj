@@ -95,6 +95,8 @@ protected:
 	virtual void SetupInitialSkills();
 
 	virtual void GrantInitialGASAbilities();
+
+	virtual bool SetUpSkillID(int32 SkillID);
 protected:
 	//전투 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat)
@@ -132,6 +134,8 @@ protected:
 
 	const int32 MaxSkillMapping = 8;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS|Ability")
+	int32 DodgeSkillID = 1011;
 
 public:
 	UDiaStatComponent* GetStatComponent() const { return StatsComponent; }

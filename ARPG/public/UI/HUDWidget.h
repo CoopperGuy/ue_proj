@@ -35,7 +35,7 @@ class ADiaBaseCharacter;
 class ADiaController;
 class UAbilitySystemComponent;
 class ADiaMonster;
-//class USkillQuickSlotPannelWidget;
+class USkillQuickSlotWidget;
 /**
  * 
  */
@@ -51,6 +51,8 @@ public:
 	void UpdateMonsterPercentage(BarType _Type, float _Percentage);
 
 	void CreateCautionWidget();
+
+	void RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UOrb* HpWidget;
@@ -73,8 +75,8 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	USkillPanelWidget* SkillPanelWidget;
 
-	//UPROPERTY(meta = (BindWidget))
-	//USkillQuickSlotPannelWidget* SkillQuickSlotWidget;
+	UPROPERTY(meta = (BindWidget))
+	USkillQuickSlotWidget* SkillQuickSlotWidget;
 
 	UPROPERTY()
 	UDiaPrimaryLayout* DiaPrimaryLayout;
@@ -90,6 +92,7 @@ protected:
 
 	UFUNCTION()
 	void UpdateTagetMonster(ADiaBaseCharacter* NewTarget);
+
 public:
 	void SetMonsterHPVisibility(ESlateVisibility _Visibility);
 	FORCEINLINE UMainInventory* GetInventoryWidget() const { return InventoryWidget; }

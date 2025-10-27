@@ -205,24 +205,67 @@ float UDiaGASHelper::GetCooldownRemainingBySkillID(UAbilitySystemComponent* ASC,
 	return 0.0f;
 }
 
+float UDiaGASHelper::GetCooldownRatioBySkillID(UAbilitySystemComponent* ASC, int32 SkillID)
+{
+	if (!ASC)
+	{
+		return 0.0f;
+	}
+
+	FString CooldownTagName = FString::Printf(TEXT("GASData.CoolDown.%d"), SkillID);
+	FGameplayTag CooldownTag = FGameplayTag::RequestGameplayTag(FName(*CooldownTagName), false);
+
+	FGameplayTagContainer CooldownTags;
+	CooldownTags.AddTag(CooldownTag);
+
+	FGameplayEffectQuery Query;
+	Query.OwningTagQuery = FGameplayTagQuery::MakeQuery_MatchAnyTags(CooldownTags);
+
+	TArray<TPair<float, float>> RemainTimeInfo = ASC->GetActiveEffectsTimeRemainingAndDuration(Query);
+	if (RemainTimeInfo.Num() > 0)
+	{
+		float Remain = RemainTimeInfo[0].Key;
+		float EndTime = RemainTimeInfo[0].Value;
+
+		return Remain / EndTime;
+	}
+
+	return 0.0f;
+}
+
 TSubclassOf<UDiaGameplayAbility> UDiaGASHelper::GetAbilityClassFromSkillData(const FGASSkillData& SkillData)
 {
+	// SkillData에 AbilityClass가 명시적으로 설정되어 있으면 우선 사용
 	if (SkillData.AbilityClass)
 	{
 		return SkillData.AbilityClass;
 	}
+
+	// SkillType에 따라 기본 Ability 클래스 반환
 	switch (SkillData.SkillType)
 	{
 	case EGASSkillType::MeleeAttack:
 		return UDiaMeleeAbility::StaticClass();
+		
 	case EGASSkillType::Magic:
 		return UDiaProjectileAbility::StaticClass();
+		
 	case EGASSkillType::RangedAttack:
 		return UDiaProjectileAbility::StaticClass();
+		
+	case EGASSkillType::Dodge:
+		// TODO: DiaDodgeAbility 구현 후 StaticClass() 반환
+		return UDiaGameplayAbility::StaticClass();
+		
+	case EGASSkillType::Movement:
+		// Movement 타입은 상황에 따라 다를 수 있으므로 기본 클래스 반환
+		return UDiaGameplayAbility::StaticClass();
+		
 	case EGASSkillType::Passive:
 		// Passive skills would need their own ability class
 		// For now, return base ability class
 		return UDiaGameplayAbility::StaticClass();
+		
 	default:
 		return UDiaGameplayAbility::StaticClass();
 	}

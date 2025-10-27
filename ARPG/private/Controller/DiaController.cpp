@@ -312,6 +312,18 @@ void ADiaController::ToggleSkillPanelVisibility(bool bVisible)
 	SkillPanelWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }
 
+void ADiaController::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
+{
+	UHUDWidget* HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		return;
+	}
+
+	HUDWidget->RegisteSkillOnQuickSlotWidget(SkillID, SlotIndex);
+}
+
 ESlateVisibility ADiaController::GetInventoryVisibility() const
 {
 	const UHUDWidget* const HUDWidget = GetHUDWidget();

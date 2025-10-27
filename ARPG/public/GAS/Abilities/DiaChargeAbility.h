@@ -21,6 +21,7 @@ public:
 private:
 	void UpdateCharge();
 	FVector CalcSweepPosition(const FGameplayAbilityActorInfo* ActorInfo);
+	void ApplyHitToActorsInPath(AActor* TargetActor);
 private:
 	FTimerHandle ChargeTimerHandle;
 

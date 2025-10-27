@@ -46,6 +46,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GAS|Helper")
 	static float GetCooldownRemainingBySkillID(UAbilitySystemComponent* ASC, int32 SkillID);
 
+	static float GetCooldownRatioBySkillID(UAbilitySystemComponent* ASC, int32 SkillID);
+
 private:
 	// Get ability class from skill data
 	static TSubclassOf<UDiaGameplayAbility> GetAbilityClassFromSkillData(const FGASSkillData& SkillData);

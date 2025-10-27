@@ -36,6 +36,8 @@ public:
 	void ToggleChracterStatusVisibility(bool bVisible);
 	void ToggleSkillPanelVisibility(bool bVisible);
 
+	void RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
+
 	ESlateVisibility GetInventoryVisibility() const;
 	ESlateVisibility GetWidgetVisibility(const FName& FoundName) const;
 

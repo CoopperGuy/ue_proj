@@ -1,5 +1,6 @@
 #include "GAS/DiaGameplayAbility.h"
 #include "GAS/DiaAttributeSet.h"
+#include "GAS/DiaGameplayTags.h"
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
@@ -72,7 +73,8 @@ void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 	// Play animation if available
 	if (AbilityMontage)
 	{
-		PlayAbilityMontage(AbilityMontage);
+		float rate = PlayAbilityMontage(AbilityMontage);
+		UE_LOG(LogTemp, Log, TEXT("Playing Ability Montage at rate: %f"), rate);
 	}
 
 	// Play visual effects
@@ -103,9 +105,13 @@ void UDiaGameplayAbility::ApplyDamageToASC(UAbilitySystemComponent* TargetASC, f
 {
 	if (!TargetASC || !DamageEffectClass) return;
 
+	// 무적 상태 체크
+	if (TargetASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Invincible)) return;
+
 	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 	if (!SourceASC) return;
 
+	
 	FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
 	EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
 		CurrentActorInfo ? Cast<APawn>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
@@ -206,11 +212,11 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 #if WITH_EDITOR
 		if (AbilityMontage)
 		{
-			//UE_LOG(LogTemp, Log, TEXT("Loaded AbilityMontage: %s"), *AbilityMontage->GetName());
+			UE_LOG(LogTemp, Log, TEXT("Loaded AbilityMontage: %s"), *AbilityMontage->GetName());
 		}
-		//else
+		else
 		{
-			//UE_LOG(LogTemp, Warning, TEXT("SkillData.CastAnimation is not valid"));
+			UE_LOG(LogTemp, Warning, TEXT("SkillData.CastAnimation is not valid"));
 		}
 
 #endif

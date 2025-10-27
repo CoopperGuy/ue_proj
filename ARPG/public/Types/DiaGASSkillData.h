@@ -23,6 +23,7 @@ enum class EGASSkillType : uint8
     Debuff,             // 디버프
     Heal,               // 치유
     Movement,           // 이동 관련
+    Dodge,              // 회피
     Passive             // 패시브
 };
 

@@ -5,6 +5,9 @@
 #include "GAS/DiaGameplayTags.h"
 #include "GameFramework/Character.h"
 #include "Components/CapsuleComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "AbilitySystemComponent.h"
+#include "GAS/DiaAttributeSet.h"
 
 UDiaChargeAbility::UDiaChargeAbility()
 {
@@ -79,8 +82,7 @@ void UDiaChargeAbility::UpdateCharge()
 					UE_LOG(LogTemp, Log, TEXT("[ChargeAbility] Hit: %s at %s"), 
 						*HitActor->GetName(), *Hit.ImpactPoint.ToString());
 					
-					// TODO: 데미지 적용 또는 GameplayEvent 발생
-					// SendGameplayEventToActor(HitActor, DamageEventTag, EventData);
+					ApplyHitToActorsInPath(HitActor);
 				}
 			}
 		}
@@ -136,4 +138,24 @@ FVector UDiaChargeAbility::CalcSweepPosition(const FGameplayAbilityActorInfo* Ac
 	{
 		return DistLoc;
 	}
+}
+
+void UDiaChargeAbility::ApplyHitToActorsInPath(AActor* TargetActor)
+{
+	const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
+	if (!TargetActor || !ActorInfo.AbilitySystemComponent.IsValid())
+	{
+		return;
+	}
+
+	UAbilitySystemComponent* TargetASC = TargetActor->FindComponentByClass<UAbilitySystemComponent>();
+	if (!TargetASC)
+	{
+		return;
+	}
+
+	const UDiaAttributeSet* MyAttr = GetAbilitySystemComponentFromActorInfo()->GetSet<UDiaAttributeSet>();
+	const float AttackPower = MyAttr ? MyAttr->GetAttackPower() : 0.f;
+	const float BaseDamage = SkillData.BaseDamage + AttackPower;
+	ApplyDamageToASC(TargetASC, BaseDamage, 1.0f);
 }

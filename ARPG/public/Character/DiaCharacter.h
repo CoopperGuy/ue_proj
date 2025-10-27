@@ -39,6 +39,8 @@ public:
     bool GetMouseWorldLocation(FVector& OutLocation) const;
    
     virtual void SetTargetActor(ADiaBaseCharacter* NewTarget);
+
+    virtual bool SetUpSkillID(int32 SkillID);
 protected:
 	/// <summary>
 	/// 엔진 기본 함수
@@ -53,6 +55,7 @@ protected:
     /// </summary>
     void Move(const FInputActionValue& Value);
     void Look(const FInputActionValue& Value);
+	void Dodge(const FInputActionValue& Value);
     void ExecuteSkillByIndex(int32 ActionIndex);
 
     // 공격 입력 처리
@@ -70,6 +73,8 @@ protected:
     // 초기 스킬 설정
     virtual void SetupInitialSkills() override;
 
+	void RegisteCurrentSkillList();
+	void RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
 protected:
     // GAS 초기 스킬 부여 및 매핑
     virtual void GrantInitialGASAbilities();
@@ -82,6 +87,9 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
     UInputAction* LookAction;
     
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+    UInputAction* DodgeAction;
+
     // Input Actions for Skills
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input|Skills")
     TArray<UInputAction*> SkillActions;

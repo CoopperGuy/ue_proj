@@ -8,7 +8,6 @@
 
 class UImage;
 class UTextBlock;
-//사용시 블루프린트 생성 후 해당 블루프린트를 스킬 슬롯에 (skillpanelwidget) 등록하여 사용
 /**
  * 
  */

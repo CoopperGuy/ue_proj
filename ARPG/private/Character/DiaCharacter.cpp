@@ -151,6 +151,8 @@ void ADiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
         // Look
         EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ADiaCharacter::Look);
 
+        // Dodge
+        EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &ADiaCharacter::Dodge);
         // 스킬 바인딩
         for (int32 i = 0; i < SkillActions.Num(); ++i)
         {
@@ -198,6 +200,16 @@ void ADiaCharacter::GrantInitialGASAbilities()
         UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
     }
 
+    //Dodge 스킬 부여
+    bool isSuccsess = SetUpSkillID(DodgeSkillID);
+    if(isSuccsess)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Dodge 스킬 부여 성공"));
+	}
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Dodge 스킬 부여 실패"));
+    }
 }
 
 void ADiaCharacter::Move(const FInputActionValue& Value)
@@ -280,6 +292,15 @@ void ADiaCharacter::Look(const FInputActionValue& Value)
     //UpdateCharacterRotation();
 }
 
+void ADiaCharacter::Dodge(const FInputActionValue& Value)
+{
+    UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+    if (ASC && UDiaGASHelper::TryActivateAbilityBySkillID(ASC, DodgeSkillID))
+    {
+        return;
+    }
+}
+
 void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
 {
     if (SkillIDMapping.IsValidIndex(ActionIndex) && SkillIDMapping[ActionIndex] != -1)
@@ -324,6 +345,16 @@ void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
     }
 }
 
+// GAS 스킬 설정 및 퀵슬롯 위젯 등록
+bool ADiaCharacter::SetUpSkillID(int32 SkillID)
+{
+ 	bool isSuccess = Super::SetUpSkillID(SkillID);
+    
+	RegisteSkillOnQuickSlotWidget(SkillID, SkillIDMapping.IndexOfByKey(SkillID));
+
+    return isSuccess;
+}
+
 void ADiaCharacter::ToggleInventory()
 {
     if (ADiaController* PlayerController = Cast<ADiaController>(Controller))
@@ -356,5 +387,26 @@ void ADiaCharacter::ToggleSkillPanel()
     {
         ESlateVisibility eVisibility = PlayerController->GetWidgetVisibility("SkillPanelWidget");
         PlayerController->ToggleSkillPanelVisibility(eVisibility == ESlateVisibility::Visible ? false : true);
+    }
+}
+
+void ADiaCharacter::RegisteCurrentSkillList()
+{
+    for (int32 i = 0; i < SkillIDMapping.Num(); ++i)
+    {
+        int32 SkillID = SkillIDMapping[i];
+        if (SkillID != -1)
+        {
+            RegisteSkillOnQuickSlotWidget(SkillID, i);
+        }
+	}
+}
+
+// 퀵슬롯 위젯에 스킬 등록
+void ADiaCharacter::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
+{
+    if (ADiaController* PlayerController = Cast<ADiaController>(Controller))
+    {
+        PlayerController->RegisteSkillOnQuickSlotWidget(SkillID, SlotIndex);
     }
 }

@@ -9,7 +9,8 @@
 #include "UI/Inventory/EquipWidget.h"
 #include "UI/System/DiaPrimaryLayout.h"
 #include "UI/Skill/SkillPanelWidget.h"
-//#include "UI/SkillQuickSlotPannelWidget.h"
+#include "UI/SkillQuickSlotWidget.h"
+#include "UI/Skill/SkillQuickSlot.h"
 
 #include "GAS/DiaAttributeSet.h"
 #include "AbilitySystemComponent.h"
@@ -32,7 +33,7 @@ void UHUDWidget::NativeConstruct()
 	CharacterStatus->SetVisibility(ESlateVisibility::Collapsed);
 	EquipmentWidget->SetVisibility(ESlateVisibility::Collapsed);
 	SkillPanelWidget->SetVisibility(ESlateVisibility::Collapsed);
-
+	SkillQuickSlotWidget->SetVisibility(ESlateVisibility::Visible);
 
 	ADiaBaseCharacter* OwningActor = Cast<ADiaBaseCharacter>(GetOwningPlayerPawn());
 	ADiaController* OwningController = Cast<ADiaController>(GetOwningPlayer());
@@ -155,6 +156,14 @@ void UHUDWidget::UpdateTagetMonster(ADiaBaseCharacter* NewTarget)
 	}
 #endif
 
+}
+
+void UHUDWidget::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
+{
+	if (SkillQuickSlotWidget)
+	{
+		SkillQuickSlotWidget->UpdateSkillSlot(SlotIndex, SkillID);
+	}
 }
 
 void UHUDWidget::SetMonsterHPVisibility(ESlateVisibility _Visibility)

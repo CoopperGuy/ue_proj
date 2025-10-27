@@ -132,52 +132,10 @@ void ADiaBaseCharacter::GrantInitialGASAbilities()
 				break;
 			}
 
-			TSubclassOf<UGameplayAbility> AbilityClass = nullptr;
-			const FGASSkillData* FoundData = nullptr;
-			if (GasSkillMgr)
+			//부여에 성공했다면
+			bool isGrants = SetUpSkillID(SkillID);		
+			if(isGrants)
 			{
-				FoundData = GasSkillMgr->GetSkillDataPtr(SkillID);
-				if (FoundData)
-				{
-					AbilityClass = FoundData->AbilityClass ? FoundData->AbilityClass : nullptr;
-				}
-			}
-
-			if (AbilityClass)
-			{
-				bool bGranted = false;
-				if (FoundData)
-				{
-					// AbilityTags가 비어있으면 SkillData의 첫 번째 태그 사용
-					FGameplayTag TagToUse;
-					if (AbilityTags.Num() > 0)
-					{
-						TagToUse = AbilityTags.GetGameplayTagArray().Last();
-					}
-					else if (FoundData->AbilityTags.Num() > 0)
-					{
-						TagToUse = FoundData->AbilityTags.GetGameplayTagArray()[0];
-					}
-					
-					// 태그 체크 없이 무조건 부여하도록 수정
-					if (TagToUse.IsValid())
-					{
-						bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID, TagToUse);
-					}
-					else
-					{
-						// 태그 없어도 부여할 수 있도록 빈 태그로 시도
-						bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID, FGameplayTag());
-					}
-				}
-				
-				if (!bGranted)
-				{
-					UE_LOG(LogTemp, Warning, TEXT("GrantAbilityFromSkillData failed for SkillID %d, using fallback"), SkillID);
-					FGameplayAbilitySpec Spec(AbilityClass, 1, SkillID, this);
-					ASC->GiveAbility(Spec);
-				}
-				
 				if (SkillIDMapping.IsValidIndex(MappingIndex))
 				{
 					SkillIDMapping[MappingIndex] = SkillID;
@@ -194,6 +152,65 @@ void ADiaBaseCharacter::GrantInitialGASAbilities()
 	//	UE_LOG(LogTemp, Log, TEXT("[GAS] Granted: Ability=%s, InputID(SkillID)=%d, IsActive=%s"),
 	//		*GetNameSafe(S.Ability), S.InputID, S.IsActive() ? TEXT("true") : TEXT("false"));
 	//}
+}
+
+bool ADiaBaseCharacter::SetUpSkillID(int32 SkillID)
+{
+	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+	if (!ASC)
+	{
+		return false;
+	}
+
+	UGASSkillManager* GasSkillMgr = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGASSkillManager>() : nullptr;
+	if (!GasSkillMgr)
+	{
+		return false;
+	}
+
+	TSubclassOf<UGameplayAbility> AbilityClass = nullptr;
+	const FGASSkillData* FoundData = nullptr;
+	if (GasSkillMgr)
+	{
+		FoundData = GasSkillMgr->GetSkillDataPtr(SkillID);
+		if (FoundData)
+		{
+			AbilityClass = FoundData->AbilityClass ? FoundData->AbilityClass : nullptr;
+		}
+	}
+
+	if(!AbilityClass)
+	{
+		return false;
+	}
+
+	bool bGranted = false;
+	if (FoundData)
+	{
+		// AbilityTags가 비어있으면 SkillData의 첫 번째 태그 사용
+		FGameplayTag TagToUse;
+		if (AbilityTags.Num() > 0)
+		{
+			TagToUse = AbilityTags.GetGameplayTagArray().Last();
+		}
+		else if (FoundData->AbilityTags.Num() > 0)
+		{
+			TagToUse = FoundData->AbilityTags.GetGameplayTagArray()[0];
+		}
+
+		// 태그 체크 없이 무조건 부여하도록 수정
+		if (TagToUse.IsValid())
+		{
+			bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID, TagToUse);
+		}
+		else
+		{
+			// 태그 없어도 부여할 수 있도록 빈 태그로 시도
+			bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID, FGameplayTag());
+		}
+	}
+
+	return bGranted;
 }
 
 float ADiaBaseCharacter::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
