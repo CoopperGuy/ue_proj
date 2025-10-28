@@ -7,6 +7,7 @@
 #include "SkillQuickSlotWidget.generated.h"
 
 class USkillQuickSlot;
+class UAbilitySystemComponent;
 /**
  * 
  */
@@ -17,9 +18,13 @@ class ARPG_API USkillQuickSlotWidget : public UUserWidget
 	
 	
 public:
-	void NativeConstruct() override;
+	virtual void NativeConstruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	void UpdateSkillSlot(int32 SlotIndex, int32 SkillID);
+
+	void StartCoolDownAnimation(int32 SlotIndex, UAbilitySystemComponent* ASC);
+	void EndCoolDownAnimation(int32 SlotIndex);
 protected:
 	
 private:
@@ -35,4 +40,8 @@ private:
 	USkillQuickSlot* SkillQuickSlot5;
 
 	TArray<USkillQuickSlot*> SkillSlots;
+
+	// 캐싱된 AbilitySystemComponent (성능 최적화)
+	UPROPERTY()
+	TWeakObjectPtr<UAbilitySystemComponent> CachedASC;
 };

@@ -22,6 +22,14 @@ void FDiaGameplayTags::InitializeNativeTags()
 	// ========================================
 	GameplayTags.AddTag(GameplayTags.CoolDown_1001, "GASData.CoolDown.1001", "");
 	GameplayTags.AddTag(GameplayTags.CoolDown_1002, "GASData.CoolDown.1002", "");
+	GameplayTags.AddTag(GameplayTags.CoolDown_1003, "GASData.CoolDown.1003", "");
+	GameplayTags.AddTag(GameplayTags.CoolDown_1004, "GASData.CoolDown.1004", "");
+	GameplayTags.AddTag(GameplayTags.CoolDown_1005, "GASData.CoolDown.1005", "");
+	GameplayTags.AddTag(GameplayTags.CoolDown_1006, "GASData.CoolDown.1006", "");
+	GameplayTags.AddTag(GameplayTags.CoolDown_1007, "GASData.CoolDown.1007", "");
+	GameplayTags.AddTag(GameplayTags.CoolDown_1008, "GASData.CoolDown.1008", "");
+	GameplayTags.AddTag(GameplayTags.CoolDown_1009, "GASData.CoolDown.1009", "");
+	GameplayTags.AddTag(GameplayTags.CoolDown_1010, "GASData.CoolDown.1010", "");
 	GameplayTags.AddTag(GameplayTags.CoolDown_1011, "GASData.CoolDown.1011", "");
 
 	GameplayTags.AddTag(GameplayTags.CoolDown_2001, "GASData.CoolDown.2001", "");

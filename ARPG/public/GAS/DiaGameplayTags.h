@@ -33,6 +33,14 @@ public:
 	// ========================================
 	FGameplayTag CoolDown_1001;
 	FGameplayTag CoolDown_1002;
+	FGameplayTag CoolDown_1003;
+	FGameplayTag CoolDown_1004;
+	FGameplayTag CoolDown_1005;
+	FGameplayTag CoolDown_1006;
+	FGameplayTag CoolDown_1007;
+	FGameplayTag CoolDown_1008;
+	FGameplayTag CoolDown_1009;
+	FGameplayTag CoolDown_1010;
 	FGameplayTag CoolDown_1011;
 	FGameplayTag CoolDown_2001;
 	FGameplayTag CoolDown_2002;

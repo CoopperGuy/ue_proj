@@ -43,6 +43,9 @@ void USkillQuickSlot::NativeConstruct()
             SkillCoolTime->SetBrushFromMaterial(SkillCoolDownMateiral);
         }
     }
+
+	SkillCoolTime->SetVisibility(ESlateVisibility::Collapsed);
+    UpdateCoolDownPercentage(0.f);
 }
 
 void USkillQuickSlot::SetSkillQuickSlot(int32 InSkillID, UTexture2D* InSkillIcon, int32 InSkillLevel)
@@ -64,10 +67,26 @@ void USkillQuickSlot::SetSkillIcon(UTexture2D* InSkillIcon)
 
 void USkillQuickSlot::UpdateCoolTime(UAbilitySystemComponent* ASC)
 {
-	if (!IsValid(ASC)) return;
+    if (!IsValid(ASC))
+    {
+        UpdateCoolDownPercentage(0.f);
+        SkillCoolTime->SetVisibility(ESlateVisibility::Collapsed);
+		return;
+    }
+    
 	if (SkillID <= 0) return;
 
 	float CoolTimeRatio = UDiaGASHelper::GetCooldownRatioBySkillID(ASC, SkillID);
+
+	// 쿨타임이 있을 때만 표시
+	if (CoolTimeRatio > 0.0f)
+	{
+		SkillCoolTime->SetVisibility(ESlateVisibility::Visible);
+	}
+	else
+	{
+		SkillCoolTime->SetVisibility(ESlateVisibility::Collapsed);
+	}
 
 	UpdateCoolDownPercentage(CoolTimeRatio);
 }

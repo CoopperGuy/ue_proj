@@ -64,6 +64,11 @@ void UHUDWidget::NativeConstruct()
 			UpdateOrbPercentage(OrbType::OT_HP, Health / MaxHealth);
 			UpdateOrbPercentage(OrbType::OT_MP, Mana / MaxMana);
 		}
+
+		if (ADiaCharacter* DiaCharacter = Cast<ADiaCharacter>(OwningActor))
+		{
+			DiaCharacter->RegisteCurrentSkillList();
+		}
 	}
 	if (IsValid(OwningController))
 	{

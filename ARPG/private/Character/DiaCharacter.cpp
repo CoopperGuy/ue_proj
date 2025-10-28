@@ -350,7 +350,10 @@ bool ADiaCharacter::SetUpSkillID(int32 SkillID)
 {
  	bool isSuccess = Super::SetUpSkillID(SkillID);
     
-	RegisteSkillOnQuickSlotWidget(SkillID, SkillIDMapping.IndexOfByKey(SkillID));
+    if (isSuccess)
+    {
+        RegisteSkillOnQuickSlotWidget(SkillID, SkillIDMapping.IndexOfByKey(SkillID));
+    }
 
     return isSuccess;
 }
