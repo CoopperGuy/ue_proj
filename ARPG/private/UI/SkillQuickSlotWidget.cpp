@@ -3,7 +3,7 @@
 #include "UI/Skill/SkillQuickSlot.h"
 #include "AbilitySystemComponent.h"
 #include "System/GASSkillManager.h"
-
+#include "Components/ProgressBar.h"
 
 void USkillQuickSlotWidget::NativeConstruct()
 {
@@ -12,6 +12,8 @@ void USkillQuickSlotWidget::NativeConstruct()
 	// 필수 위젯 유효성 확인(필요 시 초기화 로직 추가)
 	// 현재는 BindWidget으로 바인딩만 확인합니다.
 	SkillSlots = { SkillQuickSlot1, SkillQuickSlot2, SkillQuickSlot3, SkillQuickSlot4, SkillQuickSlot5 };
+
+	ExpBar->SetPercent(0.0f);
 }
 
 void USkillQuickSlotWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -98,4 +100,12 @@ void USkillQuickSlotWidget::StartCoolDownAnimation(int32 SlotIndex, UAbilitySyst
 void USkillQuickSlotWidget::EndCoolDownAnimation(int32 SlotIndex)
 {
 	SkillSlots[SlotIndex]->UpdateCoolTime(nullptr);
+}
+
+void USkillQuickSlotWidget::SetExpBarPercent(float Percent)
+{
+	if (ExpBar)
+	{
+		ExpBar->SetPercent(Percent);
+	}
 }

@@ -21,7 +21,6 @@ public:
 	// Override GameplayAbility functions
 	virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr, OUT FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 
-
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void InputReleased(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) override;
 
@@ -117,6 +116,8 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "GAS|Damage")
 	void ApplyDamageToASC(UAbilitySystemComponent* TargetASC, float BaseDamage, float CritMultiplier = 1.0f) const;
 
+	virtual void ApplyGameplayEffectToTarget(UAbilitySystemComponent* TargetASC) const;
+	virtual void ApplyGameplayEffectToSelf() const;
 private:
 	// Current playing montage (renamed to avoid shadowing)
 	UPROPERTY()

@@ -8,6 +8,8 @@
 #include "AbilitySystemComponent.h"
 #include "GAS/DiaGASHelper.h"
 #include "GAS/Abilities/DiaBasicAttackAbility.h"
+#include "GAS/DiaGameplayTags.h"
+
 #include "System/GASSkillManager.h"
 
 #include "Monster/Controller/DiaAIController.h"
@@ -41,6 +43,12 @@ bool UBTDecorator_IsValidSkill::CalculateRawConditionValue(UBehaviorTreeComponen
 		if (IsValid(DiaMonster))
 		{
 			UAbilitySystemComponent* ASC = DiaMonster->GetAbilitySystemComponent();
+			bool bIsStunned = ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Stunned);
+			if (bIsStunned)
+			{
+				return false;
+			}
+
 			if (ASC && SkillID != 0)
 			{
 				// DiaGASHelper의 CanActivateAbilityBySkillID를 사용하여

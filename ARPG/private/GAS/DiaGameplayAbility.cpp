@@ -64,6 +64,13 @@ void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 		return;
 	}
 
+	//스턴 상태면 패스
+	bool bIsStunned = ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Stunned);
+	if (bIsStunned)
+	{
+		return;
+	}
+
 	if (!CommitAbility(Handle, ActorInfo, ActivationInfo))
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
@@ -87,6 +94,7 @@ void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 		);
 	}
 
+	ApplyGameplayEffectToSelf();
 }
 
 void UDiaGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
@@ -123,6 +131,73 @@ void UDiaGameplayAbility::ApplyDamageToASC(UAbilitySystemComponent* TargetASC, f
 	SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.CritMultiplier")), CritMultiplier);
 
 	SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+
+	ApplyGameplayEffectToTarget(TargetASC);
+}
+
+void UDiaGameplayAbility::ApplyGameplayEffectToTarget(UAbilitySystemComponent* TargetASC) const
+{
+	if (!IsValid(TargetASC))
+		return;
+
+	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
+	if (!IsValid(SourceASC))
+		return;
+
+	for (const auto EffectClass : SkillData.EffectsToApplyOnHit)
+	{
+		FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
+		EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
+			CurrentActorInfo ? Cast<APawn>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
+
+		FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(EffectClass, GetAbilityLevel(), EffectContext);
+		if (!SpecHandle.IsValid())
+			continue;
+
+		FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
+		if (Spec)
+		{
+			// 적용 전 상태
+			bool bHadStunBefore = TargetASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Stunned);
+			
+			FActiveGameplayEffectHandle ActiveHandle = SourceASC->ApplyGameplayEffectSpecToTarget(*Spec, TargetASC);
+			
+			// 적용 후 상태
+			if (ActiveHandle.IsValid())
+			{
+				bool bHasStunAfter = TargetASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Stunned);
+			}
+		}
+	}
+}
+
+void UDiaGameplayAbility::ApplyGameplayEffectToSelf() const
+{
+	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
+	if (!IsValid(SourceASC))
+		return;
+	for (const auto EffectClass : SkillData.EffectsToApplyOnSelf)
+	{
+		FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
+		EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
+			CurrentActorInfo ? Cast<APawn>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
+
+		FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(EffectClass, GetAbilityLevel(), EffectContext);
+
+		if (!SpecHandle.IsValid())
+			return;
+
+		FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
+		if (Spec)
+		{
+			FActiveGameplayEffectHandle ActiveHandle = SourceASC->ApplyGameplayEffectSpecToSelf(*Spec);
+
+			if(ActiveHandle.IsValid())
+			{
+				UE_LOG(LogTemp, Log, TEXT("Applied effect to self: %s"), *EffectClass->GetName());
+			}
+		}
+	}
 }
 
 

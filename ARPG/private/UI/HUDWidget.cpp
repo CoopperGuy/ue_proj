@@ -53,6 +53,8 @@ void UHUDWidget::NativeConstruct()
 				->GetGameplayAttributeValueChangeDelegate(UDiaAttributeSet::GetManaAttribute())
 				.AddUObject(this, &UHUDWidget::HandleManaChanged);
 
+			AbilitySystem->GetGameplayAttributeValueChangeDelegate(UDiaAttributeSet::GetExpAttribute())
+				.AddUObject(this, &UHUDWidget::HandlExpChanged);
 
 			//// 초기값 1회 반영
 			const float Health = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute());
@@ -101,6 +103,11 @@ void UHUDWidget::UpdateMonsterPercentage(BarType _Type, float _Percentage)
 	}
 }
 
+void UHUDWidget::UpdateExpPercentage(float _Percentage)
+{
+	SkillQuickSlotWidget->SetExpBarPercent(_Percentage);
+}
+
 void UHUDWidget::HandleHealthChanged(const FOnAttributeChangeData& Data)
 {
 	const float NewHealth = Data.NewValue;
@@ -127,6 +134,17 @@ void UHUDWidget::HandleManaChanged(const FOnAttributeChangeData& Data)
 
 	UE_LOG(LogTemp, Warning, TEXT("Mana Changed: %f / %f"), NewMana, MaxMana);
 	UpdateOrbPercentage(OrbType::OT_MP, (NewMana) / MaxMana);
+}
+
+void UHUDWidget::HandlExpChanged(const FOnAttributeChangeData& Data)
+{
+	const float NewExp = Data.NewValue;
+	ADiaBaseCharacter* OwningActor = Cast<ADiaBaseCharacter>(GetOwningPlayerPawn());
+	UAbilitySystemComponent* AbilitySystem = OwningActor->GetAbilitySystemComponent();
+	const float MaxExp = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxExpAttribute());
+	UE_LOG(LogTemp, Warning, TEXT("Exp Changed: %f / %f"), NewExp, MaxExp);
+
+	UpdateExpPercentage(NewExp / MaxExp);
 }
 
 void UHUDWidget::UpdateTagetMonster(ADiaBaseCharacter* NewTarget)

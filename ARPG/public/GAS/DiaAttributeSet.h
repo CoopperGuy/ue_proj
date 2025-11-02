@@ -45,6 +45,14 @@ public:
 	FGameplayAttributeData MaxMana;
 	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, MaxMana)
 
+	UPROPERTY(BlueprintReadOnly, Category = "Exp")
+	FGameplayAttributeData Exp;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, Exp)
+
+	UPROPERTY(BlueprintReadOnly, Category = "Exp")
+	FGameplayAttributeData MaxExp;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, MaxExp)
+
 	// Combat Attributes
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	FGameplayAttributeData AttackPower;

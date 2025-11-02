@@ -2,6 +2,8 @@
 #include "GameplayEffect.h"
 #include "System/CharacterManager.h"
 #include "GameplayEffectExtension.h"
+#include "AbilitySystemComponent.h"
+#include "DiaBaseCharacter.h"
 
 UDiaAttributeSet::UDiaAttributeSet()
 {
@@ -117,6 +119,20 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 	{
 		// Clamp mana
 		SetMana(FMath::Clamp(GetMana(), 0.0f, GetMaxMana()));
+	}
+	else if(Data.EvaluatedData.Attribute == GetExpAttribute())
+	{
+		SetExp(FMath::Clamp(GetExp(), 0.0f, GetMaxExp()));
+		if (GetExp() >= GetMaxExp())
+		{
+			//레벨업 로직
+			AActor* Owner = GetOwningActor();
+			if (ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(Owner))
+			{
+				Character->OnLevelUpTriggered(); // ⭐ 이벤트 전달
+			}
+
+		}
 	}
 }
 

@@ -6,7 +6,10 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 
 #include "AbilitySystemComponent.h"
+
 #include "GAS/DiaGASHelper.h"
+#include "GAS/DiaGameplayTags.h"
+
 #include "Monster/Controller/DiaAIController.h"
 #include "Monster/DiaMonster.h"
 
@@ -48,6 +51,12 @@ bool UBTDecorator_CheckActionRequest::CalculateRawConditionValue(UBehaviorTreeCo
 
 	UAbilitySystemComponent* ASC = DiaMonster->GetAbilitySystemComponent();
 	if (!ASC)
+	{
+		return false;
+	}
+
+	bool bIsStunned = ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Stunned);
+	if (bIsStunned)
 	{
 		return false;
 	}

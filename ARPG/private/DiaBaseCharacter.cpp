@@ -17,6 +17,7 @@
 #include "AbilitySystemComponent.h"
 #include "System/GASSkillManager.h"
 #include "GAS/DiaAttributeSet.h"
+#include "GAS/DiaGameplayTags.h"
 
 ADiaBaseCharacter::ADiaBaseCharacter()
 {
@@ -37,6 +38,7 @@ ADiaBaseCharacter::ADiaBaseCharacter()
 
 	// AttributeSet 생성
 	AttributeSet = CreateDefaultSubobject<UDiaAttributeSet>(TEXT("AttributeSet"));
+
 
 	Tags.Add(FName(TEXT("Character")));
 }
@@ -105,6 +107,13 @@ void ADiaBaseCharacter::SetupInitialSkills()
 {
 	GrantInitialGASAbilities();
 	// 초기 스킬 등록
+
+
+	AbilitySystemComponent->RegisterGameplayTagEvent(
+		FDiaGameplayTags::Get().State_Stunned,
+		EGameplayTagEventType::NewOrRemoved
+	).AddUObject(this, &ADiaBaseCharacter::OnStunTagChanged);
+
 }
 
 void ADiaBaseCharacter::GrantInitialGASAbilities()
@@ -213,6 +222,22 @@ bool ADiaBaseCharacter::SetUpSkillID(int32 SkillID)
 	return bGranted;
 }
 
+void ADiaBaseCharacter::OnStunTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
+{
+	if (NewCount > 0)
+	{
+		// 스턴 상태 시작
+		UE_LOG(LogTemp, Log, TEXT("Character %s is Stunned."), *GetName());
+		PlayCharacterMontage(StunMontage);
+	}
+	else
+	{
+		// 스턴 상태 종료
+		UE_LOG(LogTemp, Log, TEXT("Character %s is No Longer Stunned."), *GetName());
+		StopCharacterMontage(0.2f);
+	}
+}
+
 float ADiaBaseCharacter::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
@@ -292,8 +317,22 @@ void ADiaBaseCharacter::UpdateHPGauge(float CurHealth, float MaxHelath)
 {
 }
 
+///사망시 관리
+/// 1. 애니메이션 재생
+/// 2. 콜리전 비활성화
+/// 3. 일정 시간 후 액터 제거
+/// 4. 경험치 분배
 void ADiaBaseCharacter::PlayDieAnimation()
 {
+	if (IsValid(CurrentMontage))
+	{
+		StopAnimMontage(CurrentMontage);
+	}
+
+	if (IsValid(DieMontage))
+	{
+		PlayCharacterMontage(DieMontage, 1.0f);
+	}
 	Die();
 }
 
@@ -301,7 +340,7 @@ void ADiaBaseCharacter::Die()
 {
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	//SetLifeSpan(3.0f);
+	SetLifeSpan(3.0f);
 }
 
 void ADiaBaseCharacter::AddExp(float ExpAmount)
@@ -367,6 +406,10 @@ void ADiaBaseCharacter::SetGravity(bool bEnableGravityAndCollision)
 		// Capsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		 Capsule->SetCollisionResponseToAllChannels(ECR_Overlap); // QueryOnly 사용 시 모든 채널 오버랩으로 설정 가능
 	}
+}
+
+void ADiaBaseCharacter::OnLevelUp()
+{
 }
 
 void ADiaBaseCharacter::SetTargetActor(ADiaBaseCharacter* NewTarget)

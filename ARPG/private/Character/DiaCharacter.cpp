@@ -26,6 +26,8 @@
 
 #include "UI/HUDWidget.h"
 
+#include "GAS/DiaGameplayTags.h"
+
 #include "Camera/CameraComponent.h"
 #include "GAS/DiaGASHelper.h"
 #include "GAS/Abilities/DiaBasicAttackAbility.h"
@@ -214,6 +216,14 @@ void ADiaCharacter::GrantInitialGASAbilities()
 
 void ADiaCharacter::Move(const FInputActionValue& Value)
 {
+    //Stun시에 움직임 막음.
+    UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+    bool bIsStunned = ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Stunned);
+    if (bIsStunned)
+    {
+        return;
+    }
+
     const FVector2D MovementVector = Value.Get<FVector2D>();
 
     if (IsValid(Controller))
@@ -303,6 +313,7 @@ void ADiaCharacter::Dodge(const FInputActionValue& Value)
 
 void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
 {
+
     if (SkillIDMapping.IsValidIndex(ActionIndex) && SkillIDMapping[ActionIndex] != -1)
     {
         int32 skillID = SkillIDMapping[ActionIndex];
@@ -310,7 +321,14 @@ void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
         // GAS 스킬 먼저 시도 (ID 1000 이상은 GAS 스킬로 간주)
         if (skillID >= 1000)
         {
+            //Stun시에 스킬 사용 막음.
             UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
+            bool bIsStunned = ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Stunned);
+            if (bIsStunned)
+            {
+                return;
+            }
+
             if (ASC && UDiaGASHelper::TryActivateAbilityBySkillID(ASC, skillID))
             {
                 return;

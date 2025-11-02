@@ -97,6 +97,12 @@ protected:
 	virtual void GrantInitialGASAbilities();
 
 	virtual bool SetUpSkillID(int32 SkillID);
+
+/// <summary>
+/// 상태 이상
+/// </summary>
+	UFUNCTION()
+	virtual void OnStunTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
 protected:
 	//전투 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat)
@@ -136,6 +142,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS|Ability")
 	int32 DodgeSkillID = 1011;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
+	UAnimMontage* StunMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
+	UAnimMontage* DieMontage
 
 public:
 	UDiaStatComponent* GetStatComponent() const { return StatsComponent; }
