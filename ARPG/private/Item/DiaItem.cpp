@@ -9,6 +9,8 @@
 
 #include "Components/WidgetComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Components/PrimitiveComponent.h"
+#include "Components/BoxComponent.h"
 
 #include "Controller/DiaController.h"
 
@@ -23,11 +25,12 @@ ADiaItem::ADiaItem()
 
 	// 새로 만든 Item 프로필 사용
 
-	ItemMeshComp->SetCollisionObjectType(ECollisionChannel::ECC_EngineTraceChannel1);
-	ItemMeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	ItemMeshComp->SetCollisionProfileName(TEXT("Item"));
+	//ItemMeshComp->SetCollisionObjectType(ECollisionChannel::ECC_EngineTraceChannel1);
+	//ItemMeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	//ItemMeshComp->SetCollisionProfileName(TEXT("Item"));
 	
 	ItemMeshComp->SetNotifyRigidBodyCollision(true);
+
 	ItemMeshComp->OnComponentHit.AddDynamic(this, &ADiaItem::OnHit);
 
 	ItemWidgetComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("ItemWidget"));
@@ -38,6 +41,17 @@ ADiaItem::ADiaItem()
 	ItemWidgetComp->SetVisibility(false);
 	ItemWidgetComp->SetTwoSided(true);
 
+
+
+	//지형과는 충돌 판정만, 캐릭터와는 겹침(오버랩) 판정만 하도록 설정
+	CollisionComp = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionComp"));
+	CollisionComp->SetupAttachment(ItemMeshComp);
+	CollisionComp->SetCollisionProfileName(TEXT("Item"));
+
+	//기본 사이즈 설정
+	CollisionComp->SetBoxExtent(FVector(30.f, 30.f, 5.f));
+	//디버깅 용 테두리 보이게하기
+	CollisionComp->bHiddenInGame = false;
 }
 
 void ADiaItem::BeginPlay()

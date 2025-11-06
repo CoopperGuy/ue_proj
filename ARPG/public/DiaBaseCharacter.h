@@ -77,6 +77,9 @@ public:
 	void SetGravity(bool bEnableGravityAndCollision);
 
 	virtual void OnLevelUp();
+
+	void PauseCurrentMontage();
+	void PauseDeathMontage();
 protected:
 	// 기본적인 함수
 	virtual void BeginPlay() override;
@@ -142,7 +145,8 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
 	UAnimMontage* DieMontage;
 
-	
+	bool bIsDead{ false };
 public:
 	UDiaAttributeSet* GetAttributeSet() const { return AttributeSet; }
+	bool GetIsDead() const { return bIsDead; }
 };

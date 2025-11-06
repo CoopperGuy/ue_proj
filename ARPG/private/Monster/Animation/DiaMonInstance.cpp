@@ -19,8 +19,9 @@ void UDiaMonInstance::NativeUpdateAnimation(float DeltaSeconds)
 	Velocity = diaMonster->GetVelocity();
 	Speed = Velocity.Size();
 	bIsMoving = Speed > 3.f;
+	bIsDead = diaMonster->GetIsDead();
 
-	if (bIsMoving)
+	if (bIsMoving && !bIsDead)
 	{
 		FRotator actorRotation = diaMonster->GetActorRotation();
 		FVector forwardVector = UKismetMathLibrary::GetForwardVector(actorRotation);

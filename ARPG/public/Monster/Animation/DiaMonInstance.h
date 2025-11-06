@@ -25,6 +25,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
 	FVector Velocity;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dead")
+	bool bIsDead = false;
+
 	bool bIsMoving = false;
 
 	

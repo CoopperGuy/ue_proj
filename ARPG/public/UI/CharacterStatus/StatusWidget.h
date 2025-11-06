@@ -4,12 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "GameplayEffectTypes.h"
+#include "AttributeSet.h"
+#include "AbilitySystemComponent.h"
 #include "StatusWidget.generated.h"
 
 class UTextBlock;
-class UAbilitySystemComponent;
-
 /**
  * 캐릭터 상태 UI 위젯 - GAS AttributeSet 기반
  */
@@ -22,8 +21,6 @@ public:
 	// 위젯 초기화 및 AttributeSet 바인딩
 	virtual void NativeConstruct() override;
 				
-	// 모든 속성 변경을 처리하는 단일 콜백
-	UFUNCTION()
 	void OnUpdateStats(const FOnAttributeChangeData& Data);
 
 protected:

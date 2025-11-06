@@ -326,7 +326,16 @@ void ADiaMonster::PlayDieAnimation()
 
 void ADiaMonster::Die()
 {
-	Super::Die();
+	//BT 모두 정지
+	ADiaAIController* AIController = Cast<ADiaAIController>(GetController());
+	if(IsValid(AIController))
+	{
+		UBehaviorTreeComponent* BehaviorTreeComp = AIController->FindComponentByClass<UBehaviorTreeComponent>();
+		if (IsValid(BehaviorTreeComp))
+		{
+			BehaviorTreeComp->StopTree();
+		}
+	}
 
 	//드랍되는아이템을 가져오는 방법 고안 필요하다.
 	DropItem();
@@ -340,6 +349,9 @@ void ADiaMonster::Die()
 			HUD->SetMonsterHPVisibility(ESlateVisibility::Collapsed);
 		}
 	}
+
+
+	Super::Die();
 }
 
 // SetGravity 메서드 추가

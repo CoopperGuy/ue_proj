@@ -261,15 +261,18 @@ float ADiaBaseCharacter::PlayCharacterMontage(UAnimMontage* MontageToPlay, float
 		StopCharacterMontage(0.1f);
 	}
 
-	// 새로운 몽타주 재생
-	//float Duration = AnimInstance->Montage_Play(MontageToPlay, PlayRate);
-	AnimInstance->PlaySlotAnimationAsDynamicMontage(MontageToPlay, FName("DefaultSlot"), 0.25f, 0.25f);
+	if (AnimInstance->OnMontageEnded.IsBound())
+	{
+		AnimInstance->OnMontageEnded.RemoveDynamic(this, &ADiaBaseCharacter::OnMontageEnded);
+	}
 
-	CurrentMontage = MontageToPlay;
+	// 새로운 몽타주 재생
+	float Duration = AnimInstance->Montage_Play(MontageToPlay, PlayRate);
 
 	// 몽타주 종료 시 호출될 델리게이트 바인딩
-	//if (Duration > 0.f)
+	if (Duration > 0.f)
 	{
+		CurrentMontage = MontageToPlay;
 		AnimInstance->OnMontageEnded.AddDynamic(this, &ADiaBaseCharacter::OnMontageEnded);
 	}
 
@@ -333,6 +336,8 @@ void ADiaBaseCharacter::Die()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	SetLifeSpan(3.0f);
+
+	bIsDead = true;
 }
 
 void ADiaBaseCharacter::AddExp(float ExpAmount)
@@ -349,7 +354,6 @@ void ADiaBaseCharacter::SetGravity(bool bEnableGravityAndCollision)
 		return;
 	}
 
-	// 캡슐 컴포넌트 가져오기
 	UCapsuleComponent* Capsule = GetCapsuleComponent();
 	if (!Capsule)
 	{
@@ -359,45 +363,22 @@ void ADiaBaseCharacter::SetGravity(bool bEnableGravityAndCollision)
 
 	if (bEnableGravityAndCollision)
 	{
-		// --- 중력 및 기본 충돌 활성화 ---
 		UE_LOG(LogTemp, Log, TEXT("%s: Enabling Gravity and Default Collision/Movement"), *FString(__FUNCTION__));
-
-		// 1. 이동 모드 복원: 기본적으로 'Falling' 상태로 설정하여 중력 및 지면 감지 활성화
 		MoveComp->SetMovementMode(MOVE_Walking);
-		// 만약 특정 기본 모드(예: Walking)를 원하거나 이전 상태를 저장/복원해야 한다면 추가 로직 필요
-
-		// 2. 중력 스케일 복원: 기본값인 1.0 또는 원래 값으로 설정
-		MoveComp->GravityScale = 1.0f; // 필요시 클래스 멤버 변수에 기본값 저장 후 사용
-
-		// 3. 캡슐 콜리전 활성화: 쿼리와 물리 충돌 모두 가능하도록 설정
+		MoveComp->GravityScale = 1.0f; 
 		Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-
-		// 4. 콜리전 프로파일 복원: 가장 확실한 방법은 원래 프로파일 이름으로 복원하는 것
-		// Capsule->SetCollisionProfileName(DefaultCollisionProfileName); // BeginPlay 등에서 DefaultCollisionProfileName 저장 필요
-		// 또는: 수동으로 모든 채널에 대한 반응을 기본값(Block)으로 설정
 		Capsule->SetCollisionResponseToAllChannels(ECR_Block);
 	}
 	else
 	{
-		// --- 중력 및 충돌 영향 비활성화 ("유령 모드" 와 유사) ---
 		UE_LOG(LogTemp, Log, TEXT("%s: Disabling Gravity and Collision Effects"), *FString(__FUNCTION__));
 
-		// 1. 이동 모드 변경: 'Flying' 모드로 설정하여 중력 및 지면 충돌 무시
 		MoveComp->SetMovementMode(MOVE_Flying);
-
-		// 2. 중력 스케일 0 설정: 중력의 영향을 완전히 제거
 		MoveComp->GravityScale = 0.0f;
-
-		// 3. 현재 속도 정지: 부유 상태로 만들기 위해 현재 이동 중지 (선택적)
 		MoveComp->Velocity = FVector::ZeroVector;
-		MoveComp->StopMovementImmediately(); // 즉시 이동 멈춤
-
-		// 4. 캡슐 콜리전 비활성화: 모든 물리적 충돌 및 쿼리를 무시 (벽 통과 가능)
+		MoveComp->StopMovementImmediately(); 
 		Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		// 만약 오버랩 이벤트나 라인 트레이스는 감지해야 한다면 QueryOnly 사용
-		// Capsule->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		 Capsule->SetCollisionResponseToAllChannels(ECR_Overlap); // QueryOnly 사용 시 모든 채널 오버랩으로 설정 가능
-	}
+		 Capsule->SetCollisionResponseToAllChannels(ECR_Overlap); 
 }
 
 void ADiaBaseCharacter::OnLevelUp()
@@ -410,6 +391,26 @@ void ADiaBaseCharacter::OnLevelUp()
 	LevelComponent->LevelUp();
 }
 
+void ADiaBaseCharacter::PauseCurrentMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (IsValid(AnimInstance) && IsValid(CurrentMontage))
+	{
+		AnimInstance->Montage_Pause(CurrentMontage);
+	}
+}
+
+void ADiaBaseCharacter::PauseDeathMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (IsValid(AnimInstance) && IsValid(DieMontage))
+	{
+		AnimInstance->Montage_Pause(DieMontage);
+	}
+}
+
 void ADiaBaseCharacter::SetTargetActor(ADiaBaseCharacter* NewTarget)
 {
 
@@ -420,6 +421,11 @@ void ADiaBaseCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 	if (CurrentMontage == Montage)
 	{
 		CurrentMontage = nullptr;
+
+		if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+		{
+			AnimInstance->OnMontageEnded.RemoveDynamic(this, &ADiaBaseCharacter::OnMontageEnded);
+		}
 	}
 }
 

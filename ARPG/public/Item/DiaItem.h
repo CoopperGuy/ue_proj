@@ -11,6 +11,7 @@ class UStaticMeshComponent;
 class UTexture2D;
 class UWidgetComponent;
 class ADiaController;
+class UBoxComponent;
 UCLASS()
 class ARPG_API ADiaItem : public AActor
 {
@@ -60,6 +61,8 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 	UWidgetComponent* ItemWidgetComp;
 
+	UPROPERTY()
+	UBoxComponent* CollisionComp;
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 	float RollingSpeed = 1000.0f;

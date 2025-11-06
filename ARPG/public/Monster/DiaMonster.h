@@ -52,7 +52,6 @@ public:
      * @param bEnableGravity 중력 활성화 여부
      */
     void SetGravity(bool bEnableGravity);
-    
 protected:
 	/// <summary>
 	/// 엔진 기본 기능 
