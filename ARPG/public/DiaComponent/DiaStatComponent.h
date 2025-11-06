@@ -155,21 +155,21 @@ struct ARPG_API FLevelData
 	}
 };
 
-// 스탯 변경 델리게이트
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChangedDelegate, float, NewHealth, float, MaxHealth);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnManaChangedDelegate, float, NewMana, float, MaxMana);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnExpChangedDelegate, float, NewExp, float, MaxExp);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLevelUpDelegate, int32, NewLevel);
-
-// 기본 스탯 변경 델리게이트 (통합)
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnBaseStatChangedDelegate, EItemStat, StatType, float, NewValue, float, OldValue);
-
-// 전투 스탯 변경 델리게이트
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAttackPowerChangedDelegate, float, NewAttackPower, float, OldAttackPower);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDefenseChangedDelegate, float, NewDefense, float, OldDefense);
-
-// 초기화 완료 델리게이트 (UI 바인딩 타이밍용)
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatComponentInitializedDelegate, UDiaStatComponent*, StatComponent);
+//// 스탯 변경 델리게이트
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChangedDelegate, float, NewHealth, float, MaxHealth);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnManaChangedDelegate, float, NewMana, float, MaxMana);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnExpChangedDelegate, float, NewExp, float, MaxExp);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLevelUpDelegate, int32, NewLevel);
+//
+//// 기본 스탯 변경 델리게이트 (통합)
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnBaseStatChangedDelegate, EItemStat, StatType, float, NewValue, float, OldValue);
+//
+//// 전투 스탯 변경 델리게이트
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAttackPowerChangedDelegate, float, NewAttackPower, float, OldAttackPower);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDefenseChangedDelegate, float, NewDefense, float, OldDefense);
+//
+//// 초기화 완료 델리게이트 (UI 바인딩 타이밍용)
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatComponentInitializedDelegate, UDiaStatComponent*, StatComponent);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ARPG_API UDiaStatComponent : public UActorComponent
@@ -179,153 +179,153 @@ class ARPG_API UDiaStatComponent : public UActorComponent
 public:
 	UDiaStatComponent();
 
-	// 초기화 (몬스터용)
-	void InitializeFromData(const FMonsterInfo& MonsterInfo);
-
-	// 초기화 (플레이어용)
-	void InitializeFromCharacterData(FName CharacterID, int32 Level = 1);
-
-	// 체력 관리
-	void TakeDamage(float DamageAmount);
-	void RestoreHealth(float HealthAmount);
-	void SetMaxHealth(float NewMaxHealth);
-
-	// 마나 관리
-	void ConsumeMana(float ManaAmount);
-	void RestoreMana(float ManaAmount);
-	void SetMaxMana(float NewMaxMana);
-	bool HasEnoughMana(float ManaAmount) const;
-
-	// 레벨 및 경험치 관리
-	void AddExperience(float ExpAmount);
-	void SetLevel(int32 NewLevel);
-	bool CanLevelUp() const;
-
-	// 스탯 검증
-	bool IsDead() const { return CharacterData.Health <= 0.0f; }
-	bool IsAlive() const { return CharacterData.Health > 0.0f; }
-	
-	// 초기화 상태 확인
-	bool IsInitialized() const { return bIsInitialized; }
-
-protected:
-	virtual void BeginPlay() override;
-	
-	// 레벨업 처리 내부 함수
-	void ProcessLevelUpStatBonus();
-	void RecalculateStatsForLevel(int32 Level);
-
-public:
-	//////////////////////////////////////////////////////////////////////////
-	// Getter 함수들
-	//////////////////////////////////////////////////////////////////////////
-	
-	// 기본 스탯 정보
-	const FCharacterData& GetCharacterData() const { return CharacterData; }
-	void SetCharacterData(const FCharacterData& NewData) { CharacterData = NewData; }
-	
-	FORCEINLINE float GetCurrentHealth() const { return CharacterData.Health; }
-	FORCEINLINE float GetMaxHealth() const { return CharacterData.MaxHealth; }
-	FORCEINLINE float GetCurrentMana() const { return CharacterData.Mana; }
-	FORCEINLINE float GetMaxMana() const { return CharacterData.MaxMana; }
-	FORCEINLINE float GetHealthPercentage() const { return CharacterData.Health / CharacterData.MaxHealth; }
-	FORCEINLINE float GetManaPercentage() const { return CharacterData.Mana / CharacterData.MaxMana; } 
-
-	// 레벨 관련 Getter
-	const FLevelData& GetLevelData() const { return LevelData; }
-	FORCEINLINE int32 GetCurrentLevel() const { return LevelData.CurrentLevel; }
-	FORCEINLINE float GetCurrentExp() const { return LevelData.CurrentExp; }
-	FORCEINLINE float GetMaxExp() const { return LevelData.MaxExp; }
-	FORCEINLINE float GetExpPercentage() const { return LevelData.CurrentExp / LevelData.MaxExp; }
-
-	// 전투 스탯 정보
-	const FCombatStats& GetCombatStats() const { return CombatStats; }
-	void SetCombatStats(const FCombatStats& NewStats) { CombatStats = NewStats; }
-	
-	FORCEINLINE float GetAttackPower() const { return CombatStats.AttackPower; }
-	FORCEINLINE float GetAttackSpeed() const { return CombatStats.AttackSpeed; }
-	FORCEINLINE float GetAttackRange() const { return CombatStats.AttackRange; }
-	FORCEINLINE float GetDefense() const { return CombatStats.Defense; }
-
-	// 스탯 변경 (델리게이트 포함)
-	void SetAttackPower(float NewAttackPower);
-	void SetAttackSpeed(float NewAttackSpeed) { CombatStats.AttackSpeed = NewAttackSpeed; }
-	void SetAttackRange(float NewAttackRange) { CombatStats.AttackRange = NewAttackRange; }
-	void SetDefense(float NewDefense);
-
-	// 기본 스탯 변경 함수들 (델리게이트 포함)
-	void SetBaseStat(EItemStat StatType, float NewValue);
-	void SetStrength(float NewValue) { SetBaseStat(EItemStat::EIS_Str, NewValue); }
-	void SetIntelligence(float NewValue) { SetBaseStat(EItemStat::EIS_Int, NewValue); }
-	void SetDexterity(float NewValue) { SetBaseStat(EItemStat::EIS_Dex, NewValue); }
-	void SetConstitution(float NewValue) { SetBaseStat(EItemStat::EIS_Con, NewValue); }
-	//추가 스탯 
-	void SetAdditionalStat(EItemStat StatType, float NewValue) { CharacterData.SetAdditionalStat(StatType, NewValue); }
-
-	// 개별 스탯 Getter (편의 함수)
-	FORCEINLINE float GetStrength() const { return CharacterData.GetStrength(); }
-	FORCEINLINE float GetIntelligence() const { return CharacterData.GetIntelligence(); }
-	FORCEINLINE float GetDexterity() const { return CharacterData.GetDexterity(); }
-	FORCEINLINE float GetConstitution() const { return CharacterData.GetConstitution(); }
-
-protected:
-	// 이벤트 델리게이트
-	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
-	FOnHealthChangedDelegate OnHealthChanged;
-	
-	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
-	FOnManaChangedDelegate OnManaChanged;
-	
-	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
-	FOnExpChangedDelegate OnExpChanged;
-	
-	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
-	FOnLevelUpDelegate OnLevelUp;
-
-	// 기본 스탯 변경 델리게이트
-	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
-	FOnBaseStatChangedDelegate OnBaseStatChanged;
-
-	// 전투 스탯 변경 델리게이트
-	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
-	FOnAttackPowerChangedDelegate OnAttackPowerChanged;
-	
-	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
-	FOnDefenseChangedDelegate OnDefenseChanged;
-
-	// 캐릭터 기본 데이터 (체력, 마나)
-	UPROPERTY(EditAnywhere, Category = "Character")
-	FCharacterData CharacterData;
-
-	// 레벨 및 경험치 데이터
-	UPROPERTY(EditAnywhere, Category = "Character")
-	FLevelData LevelData;
-
-	// 전투 스탯 데이터
-	UPROPERTY(EditAnywhere, Category = "Combat")
-	FCombatStats CombatStats;
-
-	// 현재 캐릭터 ID (플레이어용, 레벨업 시 사용)
-	UPROPERTY()
-	FName CurrentCharacterID;
-
-	// 초기화 상태
-	UPROPERTY()
-	bool bIsInitialized = false;
-
-public:
-	// 초기화 완료 델리게이트
-	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
-	FOnStatComponentInitializedDelegate OnStatComponentInitialized;
-
-public:
-	// 델리게이트 접근자
-	FOnHealthChangedDelegate& GetOnHealthChanged() { return OnHealthChanged; }
-	FOnManaChangedDelegate& GetOnManaChanged() { return OnManaChanged; }
-	FOnExpChangedDelegate& GetOnExpChanged() { return OnExpChanged; }
-	FOnLevelUpDelegate& GetOnLevelUp() { return OnLevelUp; }
-	FOnBaseStatChangedDelegate& GetOnBaseStatChanged() { return OnBaseStatChanged; }
-	FOnAttackPowerChangedDelegate& GetOnAttackPowerChanged() { return OnAttackPowerChanged; }
-	FOnDefenseChangedDelegate& GetOnDefenseChanged() { return OnDefenseChanged; }
-	FOnStatComponentInitializedDelegate& GetOnStatComponentInitialized() { return OnStatComponentInitialized; }
+//	// 초기화 (몬스터용)
+//	void InitializeFromData(const FMonsterInfo& MonsterInfo);
+//
+//	// 초기화 (플레이어용)
+//	void InitializeFromCharacterData(FName CharacterID, int32 Level = 1);
+//
+//	// 체력 관리
+//	void TakeDamage(float DamageAmount);
+//	void RestoreHealth(float HealthAmount);
+//	void SetMaxHealth(float NewMaxHealth);
+//
+//	// 마나 관리
+//	void ConsumeMana(float ManaAmount);
+//	void RestoreMana(float ManaAmount);
+//	void SetMaxMana(float NewMaxMana);
+//	bool HasEnoughMana(float ManaAmount) const;
+//
+//	// 레벨 및 경험치 관리
+//	void AddExperience(float ExpAmount);
+//	void SetLevel(int32 NewLevel);
+//	bool CanLevelUp() const;
+//
+//	// 스탯 검증
+//	bool IsDead() const { return CharacterData.Health <= 0.0f; }
+//	bool IsAlive() const { return CharacterData.Health > 0.0f; }
+//	
+//	// 초기화 상태 확인
+//	bool IsInitialized() const { return bIsInitialized; }
+//
+//protected:
+//	virtual void BeginPlay() override;
+//	
+//	// 레벨업 처리 내부 함수
+//	void ProcessLevelUpStatBonus();
+//	void RecalculateStatsForLevel(int32 Level);
+//
+//public:
+//	//////////////////////////////////////////////////////////////////////////
+//	// Getter 함수들
+//	//////////////////////////////////////////////////////////////////////////
+//	
+//	// 기본 스탯 정보
+//	const FCharacterData& GetCharacterData() const { return CharacterData; }
+//	void SetCharacterData(const FCharacterData& NewData) { CharacterData = NewData; }
+//	
+//	FORCEINLINE float GetCurrentHealth() const { return CharacterData.Health; }
+//	FORCEINLINE float GetMaxHealth() const { return CharacterData.MaxHealth; }
+//	FORCEINLINE float GetCurrentMana() const { return CharacterData.Mana; }
+//	FORCEINLINE float GetMaxMana() const { return CharacterData.MaxMana; }
+//	FORCEINLINE float GetHealthPercentage() const { return CharacterData.Health / CharacterData.MaxHealth; }
+//	FORCEINLINE float GetManaPercentage() const { return CharacterData.Mana / CharacterData.MaxMana; } 
+//
+//	// 레벨 관련 Getter
+//	const FLevelData& GetLevelData() const { return LevelData; }
+//	FORCEINLINE int32 GetCurrentLevel() const { return LevelData.CurrentLevel; }
+//	FORCEINLINE float GetCurrentExp() const { return LevelData.CurrentExp; }
+//	FORCEINLINE float GetMaxExp() const { return LevelData.MaxExp; }
+//	FORCEINLINE float GetExpPercentage() const { return LevelData.CurrentExp / LevelData.MaxExp; }
+//
+//	// 전투 스탯 정보
+//	const FCombatStats& GetCombatStats() const { return CombatStats; }
+//	void SetCombatStats(const FCombatStats& NewStats) { CombatStats = NewStats; }
+//	
+//	FORCEINLINE float GetAttackPower() const { return CombatStats.AttackPower; }
+//	FORCEINLINE float GetAttackSpeed() const { return CombatStats.AttackSpeed; }
+//	FORCEINLINE float GetAttackRange() const { return CombatStats.AttackRange; }
+//	FORCEINLINE float GetDefense() const { return CombatStats.Defense; }
+//
+//	// 스탯 변경 (델리게이트 포함)
+//	void SetAttackPower(float NewAttackPower);
+//	void SetAttackSpeed(float NewAttackSpeed) { CombatStats.AttackSpeed = NewAttackSpeed; }
+//	void SetAttackRange(float NewAttackRange) { CombatStats.AttackRange = NewAttackRange; }
+//	void SetDefense(float NewDefense);
+//
+//	// 기본 스탯 변경 함수들 (델리게이트 포함)
+//	void SetBaseStat(EItemStat StatType, float NewValue);
+//	void SetStrength(float NewValue) { SetBaseStat(EItemStat::EIS_Str, NewValue); }
+//	void SetIntelligence(float NewValue) { SetBaseStat(EItemStat::EIS_Int, NewValue); }
+//	void SetDexterity(float NewValue) { SetBaseStat(EItemStat::EIS_Dex, NewValue); }
+//	void SetConstitution(float NewValue) { SetBaseStat(EItemStat::EIS_Con, NewValue); }
+//	//추가 스탯 
+//	void SetAdditionalStat(EItemStat StatType, float NewValue) { CharacterData.SetAdditionalStat(StatType, NewValue); }
+//
+//	// 개별 스탯 Getter (편의 함수)
+//	FORCEINLINE float GetStrength() const { return CharacterData.GetStrength(); }
+//	FORCEINLINE float GetIntelligence() const { return CharacterData.GetIntelligence(); }
+//	FORCEINLINE float GetDexterity() const { return CharacterData.GetDexterity(); }
+//	FORCEINLINE float GetConstitution() const { return CharacterData.GetConstitution(); }
+//
+//protected:
+//	// 이벤트 델리게이트
+//	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
+//	FOnHealthChangedDelegate OnHealthChanged;
+//	
+//	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
+//	FOnManaChangedDelegate OnManaChanged;
+//	
+//	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
+//	FOnExpChangedDelegate OnExpChanged;
+//	
+//	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
+//	FOnLevelUpDelegate OnLevelUp;
+//
+//	// 기본 스탯 변경 델리게이트
+//	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
+//	FOnBaseStatChangedDelegate OnBaseStatChanged;
+//
+//	// 전투 스탯 변경 델리게이트
+//	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
+//	FOnAttackPowerChangedDelegate OnAttackPowerChanged;
+//	
+//	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
+//	FOnDefenseChangedDelegate OnDefenseChanged;
+//
+//	// 캐릭터 기본 데이터 (체력, 마나)
+//	UPROPERTY(EditAnywhere, Category = "Character")
+//	FCharacterData CharacterData;
+//
+//	// 레벨 및 경험치 데이터
+//	UPROPERTY(EditAnywhere, Category = "Character")
+//	FLevelData LevelData;
+//
+//	// 전투 스탯 데이터
+//	UPROPERTY(EditAnywhere, Category = "Combat")
+//	FCombatStats CombatStats;
+//
+//	// 현재 캐릭터 ID (플레이어용, 레벨업 시 사용)
+//	UPROPERTY()
+//	FName CurrentCharacterID;
+//
+//	// 초기화 상태
+//	UPROPERTY()
+//	bool bIsInitialized = false;
+//
+//public:
+//	// 초기화 완료 델리게이트
+//	UPROPERTY(BlueprintAssignable, Category = "Stat|Events")
+//	FOnStatComponentInitializedDelegate OnStatComponentInitialized;
+//
+//public:
+//	// 델리게이트 접근자
+//	FOnHealthChangedDelegate& GetOnHealthChanged() { return OnHealthChanged; }
+//	FOnManaChangedDelegate& GetOnManaChanged() { return OnManaChanged; }
+//	FOnExpChangedDelegate& GetOnExpChanged() { return OnExpChanged; }
+//	FOnLevelUpDelegate& GetOnLevelUp() { return OnLevelUp; }
+//	FOnBaseStatChangedDelegate& GetOnBaseStatChanged() { return OnBaseStatChanged; }
+//	FOnAttackPowerChangedDelegate& GetOnAttackPowerChanged() { return OnAttackPowerChanged; }
+//	FOnDefenseChangedDelegate& GetOnDefenseChanged() { return OnDefenseChanged; }
+//	FOnStatComponentInitializedDelegate& GetOnStatComponentInitialized() { return OnStatComponentInitialized; }
 }; 

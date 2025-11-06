@@ -8,7 +8,6 @@
 #include "DiaEquipmentComponent.generated.h"
 
 
-class UDiaStatComponent;
 class UEquipWidget;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -32,10 +31,4 @@ private:
 	//장착한 아이템을 매핑하는 컴포넌트
 	UPROPERTY()
 	TMap<EEquipmentSlot, FEquippedItem> EquipmentMap;
-	
-	//StatComponent를 연결하기 위해 가져온다.
-	UPROPERTY()
-	TWeakObjectPtr<UDiaStatComponent> StatComponent;
-public:
-	void SetStatComponent(UDiaStatComponent* InStatComponent);
 };

@@ -39,27 +39,5 @@ void UDiaEquipmentComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEqu
 	{
 		EItemStat StatType = StatPair.Key;
 		float Value = StatPair.Value;
-		if (StatComponent.IsValid())
-		{
-			// StatComponent에 스탯 적용
-			//추가 스탯으로 처리한다.
-			StatComponent->SetAdditionalStat(StatType, Value);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("StatComponent is not valid! Cannot apply stats for slot: %s"), *UEnum::GetValueAsString(Slot));
-		}
-	}
-}
-
-void UDiaEquipmentComponent::SetStatComponent(UDiaStatComponent* InStatComponent)
-{
-	if (InStatComponent)
-	{
-		StatComponent = InStatComponent;
-	}
-	else
-	{
-		StatComponent.Reset();
 	}
 }

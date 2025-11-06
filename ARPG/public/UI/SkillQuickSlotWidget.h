@@ -8,6 +8,7 @@
 
 class USkillQuickSlot;
 class UAbilitySystemComponent;
+class UProgressBar;
 /**
  * 
  */
@@ -25,9 +26,14 @@ public:
 
 	void StartCoolDownAnimation(int32 SlotIndex, UAbilitySystemComponent* ASC);
 	void EndCoolDownAnimation(int32 SlotIndex);
+
+	void SetExpBarPercent(float Percent);
 protected:
 	
 private:
+		UPROPERTY(meta = (BindWidget))
+	UProgressBar* ExpBar;
+
 	UPROPERTY(meta = (BindWidget))
 	USkillQuickSlot* SkillQuickSlot1;
 	UPROPERTY(meta = (BindWidget))
@@ -44,4 +50,5 @@ private:
 	// 캐싱된 AbilitySystemComponent (성능 최적화)
 	UPROPERTY()
 	TWeakObjectPtr<UAbilitySystemComponent> CachedASC;
+
 };

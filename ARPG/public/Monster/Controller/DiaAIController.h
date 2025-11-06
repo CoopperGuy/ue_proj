@@ -10,7 +10,6 @@
 #include "Perception/AISense.h"
 
 #include "Skill/DiaDamageType.h"
-#include "DiaComponent/DiaCombatComponent.h"
 
 #include "DiaAIController.generated.h"
 

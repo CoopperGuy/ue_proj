@@ -2,9 +2,7 @@
 
 
 #include "DiaBaseCharacter.h"
-#include "DiaComponent/DiaCombatComponent.h"
-#include "DiaComponent/DiaStatusEffectComponent.h"
-#include "DiaComponent/DiaStatComponent.h"
+#include "DiaComponent/DiaLevelComponent.h"
 
 #include "AbilitySystemComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -23,22 +21,15 @@ ADiaBaseCharacter::ADiaBaseCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
-	// 전투 컴포넌트 생성 및 초기화
-	CombatComponent = CreateDefaultSubobject<UDiaCombatComponent>(TEXT("CombatComponent"));
 	
-	// 스탯 컴포넌트 생성 및 초기화
-	StatsComponent = CreateDefaultSubobject<UDiaStatComponent>(TEXT("StatsComponent"));
-
-	// 상태 이상 효과 컴포넌트 생성
-	StatusEffectComponent = CreateDefaultSubobject<UDiaStatusEffectComponent>(TEXT("StatusEffectComponent"));
-
 	// GAS 컴포넌트 생성
 	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 
 	// AttributeSet 생성
 	AttributeSet = CreateDefaultSubobject<UDiaAttributeSet>(TEXT("AttributeSet"));
 
+	//LevelComponent 생성
+	LevelComponent = CreateDefaultSubobject<UDiaLevelComponent>(TEXT("LevelComponent"));
 
 	Tags.Add(FName(TEXT("Character")));
 }
@@ -333,11 +324,12 @@ void ADiaBaseCharacter::PlayDieAnimation()
 	{
 		PlayCharacterMontage(DieMontage, 1.0f);
 	}
-	Die();
 }
 
 void ADiaBaseCharacter::Die()
 {
+	PlayDieAnimation();
+
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	SetLifeSpan(3.0f);
@@ -345,7 +337,7 @@ void ADiaBaseCharacter::Die()
 
 void ADiaBaseCharacter::AddExp(float ExpAmount)
 {
-	StatsComponent->AddExperience(ExpAmount);
+	//Attribute Add Exp is Move to gameplayeffect
 }
 
 void ADiaBaseCharacter::SetGravity(bool bEnableGravityAndCollision)
@@ -410,6 +402,12 @@ void ADiaBaseCharacter::SetGravity(bool bEnableGravityAndCollision)
 
 void ADiaBaseCharacter::OnLevelUp()
 {
+	if(!IsValid(LevelComponent))
+	{
+		return;
+	}
+
+	LevelComponent->LevelUp();
 }
 
 void ADiaBaseCharacter::SetTargetActor(ADiaBaseCharacter* NewTarget)

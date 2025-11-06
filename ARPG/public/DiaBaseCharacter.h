@@ -15,11 +15,10 @@
 
 class UDiaCombatComponent;
 class UAnimMontage;
-class UDiaStatComponent;
 class UDiaStatusEffectComponent;
 class UAbilitySystemComponent;
 class UDiaAttributeSet;
-
+class UDiaLevelComponent;
 UCLASS()
 class ARPG_API ADiaBaseCharacter : public ACharacter, public IAbilitySystemInterface
 {
@@ -77,6 +76,7 @@ public:
 
 	void SetGravity(bool bEnableGravityAndCollision);
 
+	virtual void OnLevelUp();
 protected:
 	// 기본적인 함수
 	virtual void BeginPlay() override;
@@ -104,16 +104,9 @@ protected:
 	UFUNCTION()
 	virtual void OnStunTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
 protected:
-	//전투 컴포넌트
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat)
-    UDiaCombatComponent* CombatComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Stat)
-    UDiaStatComponent* StatsComponent;	
-
 	// 상태 이상 효과 관리 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatusEffects")
-	UDiaStatusEffectComponent* StatusEffectComponent;
+	UDiaLevelComponent* LevelComponent;
 
 	// GAS Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
@@ -147,10 +140,9 @@ protected:
 	UAnimMontage* StunMontage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
-	UAnimMontage* DieMontage
+	UAnimMontage* DieMontage;
 
+	
 public:
-	UDiaStatComponent* GetStatComponent() const { return StatsComponent; }
-	UDiaCombatComponent* GetCombatComponent() const { return CombatComponent; }
 	UDiaAttributeSet* GetAttributeSet() const { return AttributeSet; }
 };

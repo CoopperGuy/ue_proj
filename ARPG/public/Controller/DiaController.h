@@ -42,10 +42,10 @@ public:
 	ESlateVisibility GetWidgetVisibility(const FName& FoundName) const;
 
 	// StatComponent 초기화 관련 함수들
-	UFUNCTION()
-	void OnStatComponentInitialized(UDiaStatComponent* StatComponent);
-	
-	void BindUIToStatComponent(UDiaStatComponent* StatComponent);
+	//UFUNCTION()
+	//void OnStatComponentInitialized(UDiaStatComponent* StatComponent);
+	//
+	//void BindUIToStatComponent(UDiaStatComponent* StatComponent);
 
 	void SetTarget(ADiaBaseCharacter* NewTarget);
 protected:

@@ -23,9 +23,6 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 
-#include "DiaComponent/DiaCombatComponent.h"
-#include "DiaComponent/DiaStatComponent.h"
-
 #include "GAS/DiaAttributeSet.h"
 
 #include "UI/HUDWidget.h"

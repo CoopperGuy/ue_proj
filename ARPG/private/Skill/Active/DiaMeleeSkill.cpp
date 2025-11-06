@@ -4,8 +4,6 @@
 #include "Skill/Active/DiaMeleeSkill.h"
 #include "Engine/DamageEvents.h"
 
-#include "DiaComponent/DiaCombatComponent.h"
-
 #include "DiaBaseCharacter.h"
 #include "GameFramework/Character.h"
 #include "NiagaraFunctionLibrary.h"
@@ -139,17 +137,6 @@ void ADiaMeleeSkill::ApplyDamage(AActor* Target)
     {
         return;
     }
-    
-    // 전투 컴포넌트 가져오기
-    UDiaCombatComponent* CombatComp = SkillOwner->GetComponentByClass<UDiaCombatComponent>();
-    if (!IsValid(CombatComp))
-    {
-        return;
-    }
-    
-    // 데미지 적용
-    float FinalDamage = GetDamage();
-    CombatComp->ApplyDamage(Target, GetOwner(), FinalDamage);
     
     // 피격 이펙트 생성
     if (HitEffect)

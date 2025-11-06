@@ -14,7 +14,6 @@
 
 #include "DiaBaseCharacter.h"
 #include "Character/DiaCharacter.h"
-#include "DiaComponent/DiaCombatComponent.h"
 
 #include "Engine/DamageEvents.h"
 #include "AbilitySystemComponent.h"

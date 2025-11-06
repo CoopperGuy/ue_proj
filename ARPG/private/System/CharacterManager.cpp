@@ -2,8 +2,7 @@
 
 #include "System/CharacterManager.h"
 #include "Character/DiaCharacter.h"
-#include "DiaComponent/DiaStatComponent.h"
-#include "DiaComponent/DiaCombatComponent.h"
+
 #include "Engine/DataTable.h"
 #include "Json.h"
 #include "JsonObjectConverter.h"
@@ -127,14 +126,6 @@ void UCharacterManager::InitializePlayerCharacter(ADiaCharacter* Character, FNam
 		return;
 	}
 
-	// 스탯 컴포넌트 초기화
-	UDiaStatComponent* StatComponent = Character->GetStatComponent();
-	if (IsValid(StatComponent))
-	{
-		StatComponent->InitializeFromCharacterData(CharacterID, Level);
-		InitializeCombatStats(StatComponent, CharacterInfo, Level);
-	}
-
 	// 스킬 초기화
 	InitializeSkills(Character, CharacterInfo);
 
@@ -159,63 +150,7 @@ void UCharacterManager::InitializePlayerCharacter(ADiaCharacter* Character, FNam
 		*CharacterID.ToString(), Level);
 }
 
-void UCharacterManager::InitializeCharacterStats(UDiaStatComponent* StatComponent, const FCharacterInfo* CharacterInfo, int32 Level)
-{
-	if (!StatComponent || !CharacterInfo)
-	{
-		return;
-	}
 
-	// 기본 스탯 구조체 설정
-	FCharacterData CharacterData;
-	
-	// 체력/마나 계산
-	CharacterData.MaxHealth = CalculateMaxHPForLevel(CharacterInfo, Level);
-	CharacterData.Health = CharacterData.MaxHealth;
-	CharacterData.MaxMana = CalculateMaxMPForLevel(CharacterInfo, Level);
-	CharacterData.Mana = CharacterData.MaxMana;
-
-	// 스탯 배열 초기화 (헬퍼 함수 사용)
-	CharacterData.InitializeStatArrays();
-	
-	// 캐릭터 데이터 먼저 설정
-	StatComponent->SetCharacterData(CharacterData);
-	
-	// 기본 스탯 설정 (델리게이트 포함 버전 사용)
-	StatComponent->SetStrength(CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseStrength, CharacterInfo->StrengthPerLevel, Level));
-	StatComponent->SetIntelligence(CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseIntelligence, CharacterInfo->IntelligencePerLevel, Level));
-	StatComponent->SetDexterity(CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseDexterity, CharacterInfo->DexterityPerLevel, Level));
-	StatComponent->SetConstitution(CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseConstitution, CharacterInfo->ConstitutionPerLevel, Level));
-
-	// 레벨 정보 설정
-	FLevelData LevelData;
-	LevelData.CurrentLevel = Level;
-	LevelData.CurrentExp = 0.0f;
-	LevelData.MaxExp = CalculateExpRequiredForLevel(CharacterInfo, Level + 1);
-
-	UE_LOG(LogTemp, Log, TEXT("CharacterManager: 스탯 초기화 - HP: %.1f/%.1f, MP: %.1f/%.1f, 레벨: %d"), 
-		CharacterData.Health, CharacterData.MaxHealth, CharacterData.Mana, CharacterData.MaxMana, Level);
-}
-
-void UCharacterManager::InitializeCombatStats(UDiaStatComponent* StatComponent, const FCharacterInfo* CharacterInfo, int32 Level)
-{
-	if (!StatComponent || !CharacterInfo)
-	{
-		return;
-	}
-
-	// 전투 스탯 계산
-	float AttackPower = CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseAttackPower, CharacterInfo->AttackPowerPerLevel, Level);
-	float Defense = CalculateStatForLevel(CharacterInfo, CharacterInfo->BaseDefense, CharacterInfo->DefensePerLevel, Level);
-
-	StatComponent->SetAttackPower(AttackPower);
-	StatComponent->SetDefense(Defense);
-	StatComponent->SetAttackSpeed(CharacterInfo->BaseAttackSpeed);
-	StatComponent->SetAttackRange(CharacterInfo->BaseAttackRange);
-
-	UE_LOG(LogTemp, Log, TEXT("CharacterManager: 전투 스탯 초기화 - 공격력: %.1f, 방어력: %.1f"), 
-		AttackPower, Defense);
-}
 
 void UCharacterManager::InitializeSkills(ADiaCharacter* Character, const FCharacterInfo* CharacterInfo)
 {
@@ -224,22 +159,6 @@ void UCharacterManager::InitializeSkills(ADiaCharacter* Character, const FCharac
 		return;
 	}
 
-	UDiaCombatComponent* CombatComponent = Character->GetCombatComponent();
-	if (!IsValid(CombatComponent))
-	{
-		return;
-	}
-
-	// 초기 스킬 등록
-	for (int32 SkillID : CharacterInfo->InitialSkillIDs)
-	{
-		if (SkillID > 0)
-		{
-			bool bSuccess = CombatComponent->RegisterSkill(SkillID);
-			UE_LOG(LogTemp, Log, TEXT("CharacterManager: 스킬 등록 %s - ID: %d"), 
-				bSuccess ? TEXT("성공") : TEXT("실패"), SkillID);
-		}
-	}
 }
 
 float UCharacterManager::CalculateStatForLevel(const FCharacterInfo* CharacterInfo, float BaseStat, float PerLevelGrowth, int32 Level) const

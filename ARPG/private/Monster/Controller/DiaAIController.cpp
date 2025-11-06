@@ -15,7 +15,6 @@
 #include "BehaviorTree/BTService.h"
 #include "BehaviorTree/BTDecorator.h"
 #include "Monster/DiaMonster.h"
-#include "DiaComponent/DiaCombatComponent.h"
 
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
@@ -128,23 +127,9 @@ void ADiaAIController::UpdateCombatState()
 		return;
 	}
 	
-	// 전투 컴포넌트 가져오기
-	UDiaCombatComponent* CombatComp = ControlledMonster->FindComponentByClass<UDiaCombatComponent>();
-	if (!IsValid(CombatComp))
-	{
-		return;
-	}
-	
-	// 타겟이 없으면 타겟 감지
 	if (!IsValid(CurrentTarget))
 	{
 		DetectTargets();
-	}
-	
-	// 타겟이 있으면 전투 상태로 설정
-	if (IsValid(CurrentTarget))
-	{
-		CombatComp->EnterCombat(CurrentTarget);
 	}
 }
 
@@ -157,28 +142,6 @@ void ADiaAIController::UpdateTarget()
 		return;
 	}
 	
-	// 전투 컴포넌트 가져오기
-	UDiaCombatComponent* CombatComp = ControlledMonster->FindComponentByClass<UDiaCombatComponent>();
-	if (!IsValid(CombatComp))
-	{
-		return;
-	}
-	
-	// 위협도가 가장 높은 타겟으로 변경
-	AActor* HighestThreatTarget = CombatComp->GetHighestThreatActor();
-	if (IsValid(HighestThreatTarget))
-	{
-		SetTarget(HighestThreatTarget);
-	}
-	else if (!IsValid(CurrentTarget))
-	{
-		// 타겟이 없으면 가장 가까운 플레이어 찾기
-		AActor* NearestPlayer = FindNearestPlayer();
-		if (IsValid(NearestPlayer))
-		{
-			SetTarget(NearestPlayer);
-		}
-	}
 }
 
 void ADiaAIController::ExecuteAttack()
@@ -188,30 +151,6 @@ void ADiaAIController::ExecuteAttack()
 	{
 		return;
 	}
-	
-	// 소유한 몬스터 가져오기
-	ADiaMonster* ControlledMonster = GetControlledMonster();
-	if (!IsValid(ControlledMonster))
-	{
-		return;
-	}
-	
-	// 전투 컴포넌트 가져오기
-	UDiaCombatComponent* CombatComp = ControlledMonster->FindComponentByClass<UDiaCombatComponent>();
-	if (!IsValid(CombatComp))
-	{
-		return;
-	}
-	
-	// 공격 가능 거리 확인
-	float DistanceToTarget = GetDistanceToTarget();
-	if (DistanceToTarget > AttackRange)
-	{
-		return;
-	}
-	
-	// 공격 실행
-	CombatComp->ExecuteBasicAttack();
 }
 
 void ADiaAIController::SetTarget(AActor* NewTarget)

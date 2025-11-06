@@ -11,9 +11,6 @@
 class UNiagaraSystem;
 class USoundBase;
 class UAnimMontage;
-class UDiaCombatComponent;
-class UDiaStatComponent;
-
 class UAIPerceptionComponent;
 
 /**

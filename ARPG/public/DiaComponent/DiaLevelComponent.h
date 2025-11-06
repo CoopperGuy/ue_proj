@@ -24,6 +24,8 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-		
-	
+	uint32 GetLevel() const { return Level; }
+	void LevelUp() { ++Level; }
+private:
+	uint32 Level = 1;
 };

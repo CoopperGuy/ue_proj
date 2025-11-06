@@ -61,6 +61,10 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 	UAbilitySystemComponent* Source = Context.GetOriginalInstigatorAbilitySystemComponent();
 	const FGameplayTagContainer& SourceTags = *Data.EffectSpec.CapturedSourceTags.GetAggregatedTags();
 
+	AActor* Owner = GetOwningActor();
+	ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(Owner);
+
+
 	// Compute the delta between old and new, if it is available
 	float DeltaValue = 0;
 	if (Data.EvaluatedData.ModifierOp == EGameplayModOp::Type::Additive)
@@ -92,8 +96,7 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 			// Handle death
 			if (GetHealth() <= 0.0f)
 			{
-				// TODO: Handle character death
-				UE_LOG(LogTemp, Warning, TEXT("Character has died!"));
+				Character->Die();
 			}
 		}
 	}
@@ -114,6 +117,13 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 	{
 		// Clamp health
 		SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
+		if (GetHealth() <= 0.f)
+		{
+			if (IsValid(Character))
+			{
+				Character->Die();
+			}
+		}
 	}
 	else if (Data.EvaluatedData.Attribute == GetManaAttribute())
 	{
@@ -126,12 +136,10 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 		if (GetExp() >= GetMaxExp())
 		{
 			//레벨업 로직
-			AActor* Owner = GetOwningActor();
-			if (ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(Owner))
+			if (IsValid(Character))
 			{
-				Character->OnLevelUpTriggered(); // ⭐ 이벤트 전달
+				Character->OnLevelUp();
 			}
-
 		}
 	}
 }
@@ -142,21 +150,18 @@ void UDiaAttributeSet::InitializeCharacterAttributes(FName CharacterID, int32 Le
 	UGameInstance* GI = GetWorld()->GetGameInstance();
 	if (!GI)
 	{
-		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: GameInstance을 찾을 수 없음"));
 		return;
 	}
 
 	UCharacterManager* CharacterManager = GI->GetSubsystem<UCharacterManager>();
 	if (!CharacterManager)
 	{
-		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: CharacterManager를 찾을 수 없음"));
 		return;
 	}
 
 	const FCharacterInfo* CharacterInfo = CharacterManager->GetCharacterInfo(CharacterID);
 	if (!CharacterInfo)
 	{
-		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: 캐릭터 정보를 찾을 수 없음 - ID: %s"), *CharacterID.ToString());
 		return;
 	}
 

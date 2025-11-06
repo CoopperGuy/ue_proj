@@ -10,9 +10,6 @@
 
 #include "Controller/DiaController.h"
 
-#include "DiaComponent/DiaCombatComponent.h"
-#include "DiaComponent/DiaStatComponent.h"
-
 #include "DiaInstance.h"
 #include "Skill/DiaSkillManager.h"
 #include "GAS/DiaAttributeSet.h"

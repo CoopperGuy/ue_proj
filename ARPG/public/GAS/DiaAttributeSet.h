@@ -53,6 +53,19 @@ public:
 	FGameplayAttributeData MaxExp;
 	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, MaxExp)
 
+	// Base Stats
+	UPROPERTY(BlueprintReadOnly, Category = "BaseStats")
+	FGameplayAttributeData Strength;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, Strength)
+
+	UPROPERTY(BlueprintReadOnly, Category = "BaseStats")
+	FGameplayAttributeData Dexterity;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, Dexterity)
+
+	UPROPERTY(BlueprintReadOnly, Category = "BaseStats")
+	FGameplayAttributeData Intelligence;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, Intelligence)
+
 	// Combat Attributes
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	FGameplayAttributeData AttackPower;

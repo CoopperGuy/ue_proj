@@ -49,6 +49,7 @@ public:
 	
 	void UpdateOrbPercentage(OrbType _Type, float _Percentage);
 	void UpdateMonsterPercentage(BarType _Type, float _Percentage);
+	void UpdateExpPercentage(float _Percentage);
 
 	void CreateCautionWidget();
 
@@ -89,6 +90,7 @@ protected:
 
 	void HandleHealthChanged(const FOnAttributeChangeData& Data);
 	void HandleManaChanged(const FOnAttributeChangeData& Data);
+	void HandlExpChanged(const FOnAttributeChangeData& Data);
 
 	UFUNCTION()
 	void UpdateTagetMonster(ADiaBaseCharacter* NewTarget);

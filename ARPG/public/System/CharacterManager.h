@@ -71,8 +71,6 @@ public:
 
 protected:
 	// 캐릭터 스탯 구성 요소별 초기화
-	void InitializeCharacterStats(class UDiaStatComponent* StatComponent, const FCharacterInfo* CharacterInfo, int32 Level);
-	void InitializeCombatStats(class UDiaStatComponent* StatComponent, const FCharacterInfo* CharacterInfo, int32 Level);
 	void InitializeSkills(class ADiaCharacter* Character, const FCharacterInfo* CharacterInfo);
 
 	// JSON 파일 유틸리티
