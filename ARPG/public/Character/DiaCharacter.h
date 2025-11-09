@@ -28,7 +28,7 @@ public:
 	/// 애니메이션 관련 처리
 	/// </summary>
 	virtual void PlayDieAnimation();
-	virtual void Die();
+	virtual void Die(ADiaBaseCharacter* Causer);
 
 	/// <summary>
 	/// UI관련 함수

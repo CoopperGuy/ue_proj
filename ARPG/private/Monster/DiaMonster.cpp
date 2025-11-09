@@ -24,6 +24,8 @@
 #include "Kismet/GameplayStatics.h"
 
 #include "GAS/DiaAttributeSet.h"
+#include "AbilitySystemComponent.h"
+#include "GAS/DiaGameplayTags.h"
 
 #include "UI/HUDWidget.h"
 
@@ -52,7 +54,6 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 		
 	// 메시 설정 전에 먼저 컴포넌트 활성화
 	USkeletalMeshComponent* MeshComp = GetMesh();
-
 
 
 	if (MeshComp)
@@ -228,48 +229,13 @@ void ADiaMonster::Tick(float DeltaTime)
 void ADiaMonster::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
 
 float ADiaMonster::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	
-	//// CombatStatsComponent를 통해 데미지 처리
-	//// 현재 체력 확인 (필요한 경우)
-	//float CurrentHealth = 0.0f;
-	//float MaxHealth = 0.0f;
-
-	//// 피격 이펙트 재생
-	//if (hitEffect)
-	//{
-	//	UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-	//		GetWorld(),
-	//		hitEffect,
-	//		GetActorLocation(),
-	//		GetActorRotation()
-	//	);
-	//}
-	//
-	//// 피격 사운드 재생
-	//if (hitSound)
-	//{
-	//	UGameplayStatics::PlaySoundAtLocation(this, hitSound, GetActorLocation());
-	//}
-	//
-	//// 히트 리액션 몽타주 재생
-	//if (hitReactionMontage && CurrentHealth > 0.0f)
-	//{
-	//	PlayCharacterMontage(hitReactionMontage);
-	//}
-	//
-	//// 사망 처리
-	//if (CurrentHealth <= 0.0f)
-	//{
-	//	PlayDieAnimation();
-	//}
-	
+	UE_LOG(LogTemp, Log, TEXT("몬스터 [%s]가 %.2f의 피해를 입었습니다."), *GetName(), ActualDamage);
 	return ActualDamage;
 }
 
@@ -294,6 +260,34 @@ void ADiaMonster::DropItem()
 void ADiaMonster::SetMonsterCollisionSetup(const FMonsterInfo& MonsterInfo)
 {
 	//몬스터가 바라보는 방향 및, collision크기 조절 등등
+}
+
+void ADiaMonster::AddToExperience(ADiaBaseCharacter* Causer)
+{
+	//gameplayeffect를 활용하자.
+	if (IsValid(Causer))
+	{
+		if (IsValid(experienceGameplayEffect))
+		{
+			FGameplayEffectContextHandle EffectContext = GetAbilitySystemComponent()->MakeEffectContext();
+			EffectContext.AddSourceObject(this);
+
+			FGameplayEffectSpecHandle SpecHandle = GetAbilitySystemComponent()->MakeOutgoingSpec
+			(experienceGameplayEffect, 1, EffectContext);
+
+			if (SpecHandle.IsValid())
+			{
+				if (IsValid(AbilitySystemComponent))
+				{
+					float ExpAmount = GetAbilitySystemComponent()->GetNumericAttribute(UDiaAttributeSet::GetMaxExpAttribute());
+					SpecHandle.Data->SetSetByCallerMagnitude(FDiaGameplayTags::Get().GASData_Exp, ExpAmount);
+					
+					GetAbilitySystemComponent()->ApplyGameplayEffectSpecToTarget
+					(*SpecHandle.Data.Get(), Causer->GetAbilitySystemComponent());
+				}
+			}
+		}
+	}
 }
 
 void ADiaMonster::UpdateHPGauge(float CurHealth, float MaxHelath)
@@ -324,7 +318,7 @@ void ADiaMonster::PlayDieAnimation()
 	Super::PlayDieAnimation();
 }
 
-void ADiaMonster::Die()
+void ADiaMonster::Die(ADiaBaseCharacter* Causer)
 {
 	//BT 모두 정지
 	ADiaAIController* AIController = Cast<ADiaAIController>(GetController());
@@ -350,8 +344,10 @@ void ADiaMonster::Die()
 		}
 	}
 
+	AddToExperience(Causer);
 
-	Super::Die();
+	Super::Die(Causer);
+
 }
 
 // SetGravity 메서드 추가

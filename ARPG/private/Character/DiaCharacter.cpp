@@ -128,9 +128,9 @@ float ADiaCharacter::TakeDamage(float DamageAmount, const FDamageEvent& DamageEv
     return damage;
 }
 
-void ADiaCharacter::Die()
+void ADiaCharacter::Die(ADiaBaseCharacter* Causer)
 {
-    Super::Die();
+    Super::Die(Causer);
 }
 
 void ADiaCharacter::UpdateHPGauge(float CurHealth, float MaxHelath)

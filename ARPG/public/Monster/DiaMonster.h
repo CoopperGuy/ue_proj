@@ -12,7 +12,7 @@ class UNiagaraSystem;
 class USoundBase;
 class UAnimMontage;
 class UAIPerceptionComponent;
-
+class UGameplayEffect;
 /**
  * 몬스터 캐릭터 클래스
  * 몬스터의 상태, AI 활성화/비활성화, 풀링 시스템과의 상호작용 담당
@@ -30,7 +30,7 @@ public:
     /// </summary>
     virtual void PlayDieAnimation();
 
-    virtual void Die();
+    virtual void Die(ADiaBaseCharacter* Causer);
 
     /// <summary>
 	/// UI 관련 함수 
@@ -72,6 +72,8 @@ protected:
 	virtual void DropItem();
 
     void SetMonsterCollisionSetup(const FMonsterInfo& MonsterInfo);
+    
+	void AddToExperience(ADiaBaseCharacter* Causer);
 public:	
 
 protected:
@@ -87,5 +89,8 @@ protected:
     // 히트 리액션 몽타주
     UPROPERTY(EditDefaultsOnly, Category = "Animation")
     UAnimMontage* hitReactionMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Experience")
+	TSubclassOf<UGameplayEffect> experienceGameplayEffect;
 
 };

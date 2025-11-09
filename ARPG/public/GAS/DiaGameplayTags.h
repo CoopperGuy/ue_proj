@@ -63,6 +63,7 @@ public:
 	// Ability Tags - 어빌리티 관련
 	// ========================================
 	FGameplayTag Ability_Cost_Mana_NotEnough;
+	FGameplayTag GASData_Exp;
 
 	// ========================================
 	// Damage Tags - 데미지 관련

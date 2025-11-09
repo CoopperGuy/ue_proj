@@ -15,6 +15,7 @@
 	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
 	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
 
+
 UCLASS()
 class ARPG_API UDiaAttributeSet : public UAttributeSet
 {

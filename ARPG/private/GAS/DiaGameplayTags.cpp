@@ -53,7 +53,7 @@ void FDiaGameplayTags::InitializeNativeTags()
 	// Ability Tags
 	// ========================================
 	GameplayTags.AddTag(GameplayTags.Ability_Cost_Mana_NotEnough, "Ability.Cost.Mana.NotEnough", "");
-
+	GameplayTags.AddTag(GameplayTags.GASData_Exp, "GASData.Exp", "");
 	// ========================================
 	// Damage Tags
 	// ========================================

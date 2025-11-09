@@ -329,15 +329,16 @@ void ADiaBaseCharacter::PlayDieAnimation()
 	}
 }
 
-void ADiaBaseCharacter::Die()
+void ADiaBaseCharacter::Die(ADiaBaseCharacter* Causer)
 {
 	PlayDieAnimation();
-
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	SetLifeSpan(3.0f);
 
 	bIsDead = true;
+
+	KillerCharacterWeakPtr = Causer;
 }
 
 void ADiaBaseCharacter::AddExp(float ExpAmount)
@@ -376,9 +377,10 @@ void ADiaBaseCharacter::SetGravity(bool bEnableGravityAndCollision)
 		MoveComp->SetMovementMode(MOVE_Flying);
 		MoveComp->GravityScale = 0.0f;
 		MoveComp->Velocity = FVector::ZeroVector;
-		MoveComp->StopMovementImmediately(); 
+		MoveComp->StopMovementImmediately();
 		Capsule->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		 Capsule->SetCollisionResponseToAllChannels(ECR_Overlap); 
+		Capsule->SetCollisionResponseToAllChannels(ECR_Overlap);
+	}
 }
 
 void ADiaBaseCharacter::OnLevelUp()

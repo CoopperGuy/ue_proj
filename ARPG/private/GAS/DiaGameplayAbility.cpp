@@ -158,7 +158,6 @@ void UDiaGameplayAbility::ApplyGameplayEffectToTarget(UAbilitySystemComponent* T
 		if (Spec)
 		{
 			// 적용 전 상태
-			bool bHadStunBefore = TargetASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Stunned);
 			
 			FActiveGameplayEffectHandle ActiveHandle = SourceASC->ApplyGameplayEffectSpecToTarget(*Spec, TargetASC);
 			

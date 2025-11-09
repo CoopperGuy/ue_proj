@@ -70,7 +70,7 @@ public:
 	virtual float TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	//사망 처리
-	virtual void Die();
+	virtual void Die(ADiaBaseCharacter* Causer);
 
 	void AddExp(float ExpAmount);
 
@@ -144,6 +144,8 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
 	UAnimMontage* DieMontage;
+
+	TWeakObjectPtr<ADiaBaseCharacter> KillerCharacterWeakPtr;
 
 	bool bIsDead{ false };
 public:

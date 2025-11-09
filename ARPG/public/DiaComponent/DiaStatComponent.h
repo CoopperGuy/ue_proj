@@ -155,22 +155,6 @@ struct ARPG_API FLevelData
 	}
 };
 
-//// 스탯 변경 델리게이트
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHealthChangedDelegate, float, NewHealth, float, MaxHealth);
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnManaChangedDelegate, float, NewMana, float, MaxMana);
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnExpChangedDelegate, float, NewExp, float, MaxExp);
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLevelUpDelegate, int32, NewLevel);
-//
-//// 기본 스탯 변경 델리게이트 (통합)
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnBaseStatChangedDelegate, EItemStat, StatType, float, NewValue, float, OldValue);
-//
-//// 전투 스탯 변경 델리게이트
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAttackPowerChangedDelegate, float, NewAttackPower, float, OldAttackPower);
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDefenseChangedDelegate, float, NewDefense, float, OldDefense);
-//
-//// 초기화 완료 델리게이트 (UI 바인딩 타이밍용)
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStatComponentInitializedDelegate, UDiaStatComponent*, StatComponent);
-
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class ARPG_API UDiaStatComponent : public UActorComponent
 {

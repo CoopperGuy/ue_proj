@@ -15,6 +15,8 @@ UDiaAttributeSet::UDiaAttributeSet()
 	InitAttackPower(10.0f);
 	InitDefense(5.0f);
 	InitMovementSpeed(600.0f);
+	InitExp(0.0f);
+	InitMaxExp(100.0f);
 }
 
 
@@ -51,6 +53,14 @@ void UDiaAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 	{
 		NewValue = FMath::Max(NewValue, 0.0f);
 	}
+	else if (Attribute == GetExpAttribute())
+	{
+		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxExp());
+	}
+	else if (Attribute == GetMaxExpAttribute())
+	{
+		NewValue = FMath::Max(NewValue, 0.f);
+	}
 }
 
 void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
@@ -64,21 +74,13 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 	AActor* Owner = GetOwningActor();
 	ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(Owner);
 
+	AActor* Causer = Context.GetInstigator();
+	ADiaBaseCharacter* CauserCharacter = Cast<ADiaBaseCharacter>(Causer);
 
-	// Compute the delta between old and new, if it is available
 	float DeltaValue = 0;
 	if (Data.EvaluatedData.ModifierOp == EGameplayModOp::Type::Additive)
 	{
 		DeltaValue = Data.EvaluatedData.Magnitude;
-	}
-
-	// Get the Target actor, which should be our owner
-	AActor* TargetActor = nullptr;
-	AController* TargetController = nullptr;
-	if (Data.Target.AbilityActorInfo.IsValid() && Data.Target.AbilityActorInfo->AvatarActor.IsValid())
-	{
-		TargetActor = Data.Target.AbilityActorInfo->AvatarActor.Get();
-		TargetController = Data.Target.AbilityActorInfo->PlayerController.Get();
 	}
 
 	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute())
@@ -89,15 +91,8 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 
 		if (LocalIncomingDamage > 0)
 		{
-			// Apply damage to health
 			const float NewHealth = GetHealth() - LocalIncomingDamage;
 			SetHealth(FMath::Clamp(NewHealth, 0.0f, GetMaxHealth()));
-
-			// Handle death
-			if (GetHealth() <= 0.0f)
-			{
-				Character->Die();
-			}
 		}
 	}
 	else if (Data.EvaluatedData.Attribute == GetIncomingHealingAttribute())
@@ -121,7 +116,7 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 		{
 			if (IsValid(Character))
 			{
-				Character->Die();
+				Character->Die(CauserCharacter);
 			}
 		}
 	}
@@ -132,14 +127,18 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 	}
 	else if(Data.EvaluatedData.Attribute == GetExpAttribute())
 	{
-		SetExp(FMath::Clamp(GetExp(), 0.0f, GetMaxExp()));
 		if (GetExp() >= GetMaxExp())
 		{
 			//레벨업 로직
 			if (IsValid(Character))
 			{
 				Character->OnLevelUp();
+				SetExp(FMath::Clamp(GetExp() - GetMaxExp(), 0.0f, GetMaxExp()));
 			}
+		}
+		else
+		{
+			SetExp(FMath::Clamp(GetExp(), 0.0f, GetMaxExp()));
 		}
 	}
 }
@@ -184,6 +183,8 @@ void UDiaAttributeSet::InitializeMonsterAttributes(const FMonsterInfo& MonsterIn
 	SetAttackPower(MonsterInfo.Attack);
 	SetDefense(MonsterInfo.Defense);
 	SetMovementSpeed(600.0f);
+	SetExp(0.f);
+	SetMaxExp(MonsterInfo.Exp);
 }
 
 void UDiaAttributeSet::AdjustAttributeForMaxChange(FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, float NewMaxValue, const FGameplayAttribute& AffectedAttributeProperty)
