@@ -7,7 +7,6 @@
 #include "Types/ItemBase.h"
 #include "ItemName.generated.h"
 
-// 수정 후 (올바름)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnItemNameClicked);
 class UTextBlock;
 class URichTextBlock;

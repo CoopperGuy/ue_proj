@@ -72,8 +72,6 @@ public:
 	//사망 처리
 	virtual void Die(ADiaBaseCharacter* Causer);
 
-	void AddExp(float ExpAmount);
-
 	void SetGravity(bool bEnableGravityAndCollision);
 
 	virtual void OnLevelUp();

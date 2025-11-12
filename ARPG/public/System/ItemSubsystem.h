@@ -21,18 +21,14 @@ public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
     
-    UFUNCTION(BlueprintCallable, Category = "Items")
     void LoadItemData();
-    
-    UFUNCTION(BlueprintCallable, Category = "Items")
+	void LoadOptionData();
+
     const FItemBase& GetItemData(const FName& ItemID) const;
     
-    UFUNCTION(BlueprintCallable, Category = "Items")
-    FInventorySlot CreateItemInstance(const FName& ItemID, int32 Level = 1, bool bRandomStats = false);
+    FInventorySlot CreateInventoryInstance(const FName& ItemID, int32 Level = 1, bool bRandomStats = false);
     
 	UItemWidget* CreateItemWidget(const FInventorySlot& Item);
-    //UFUNCTION(BlueprintCallable, Category = "Items")
-    //TArray<FName> GetItemsByFilter(const FItemFilter& Filter);
     
 private:
     UPROPERTY()
@@ -42,8 +38,49 @@ private:
     FString ItemDataTablePath = TEXT("/Game/Datatable/DT_DiaitemTable.DT_DiaitemTable");
     
     UPROPERTY()
+    UDataTable* OptionDataTable;
+    
+    UPROPERTY()
+    FString OptionDataTablePath = TEXT("/Game/Datatable/DT_DiaitemTable.DT_DiaitemTable");
+
+    UPROPERTY()
     mutable TMap<FName, FItemBase> ItemCache;
     
+    UPROPERTY()
+    mutable TMap<FName, TArray<FDiaItemOptionRow>> OptionCache;
+
     void GenerateRandomStats(FInventorySlot& Item, int32 Level);
+	void GenerateItemOptions(FItemInstance& Item, int32 Level);
+
+
+    //Efraimidis–Spirakis 를 통해 가중치 기반 표본 추출을 해봅시다.
+	template<typename T>
+    void PickupRandomValuesByWeight(const TArray<T>& Rows, TFunctionRef<float(const T&)> GetWight, int32 NumToPickupSize, TArray<T>& OutPicked)
+    {
+        if (Rows.Num() == 0 || NumToPickupSize <= 0)
+            return;
+
+		TArray<TPair<int, double>> CumulativeWeights;
+        
+        for (int32 i = 0; i < Rows.Num(); ++i)
+        {
+            double W = FMath::Max(GetWight(Rows[i]), 1e-6);
+            double U = FMath::Clamp(FMath::FRand(), 1e-12, 1.f);
+            double val = FMath::Exp(FMath::Loge(U) / W);
+			CumulativeWeights.Add(TPair<int, double>(i, val));
+        }
+
+        if (CumulativeWeights.Num() <= 0)
+            return;
+
+        CumulativeWeights.Sort([](const TPair<int, double>& A, const TPair<int, double>& B));
+
+		int32 PickupCount = FMath::Min(NumToPickupSize, CumulativeWeights.Num());
+        for (int32 i = 0; i < PickupCount; ++i)
+        {
+            int32 Index = CumulativeWeights[i].Key;
+            OutPicked.Add(Rows[Index]);
+		}
+    }
 };
     

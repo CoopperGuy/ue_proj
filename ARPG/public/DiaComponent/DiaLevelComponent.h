@@ -6,26 +6,27 @@
 #include "Components/ActorComponent.h"
 #include "DiaLevelComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLevelUp, uint32, NewLevel);
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS()
 class ARPG_API UDiaLevelComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 public:	
-	// Sets default values for this component's properties
 	UDiaLevelComponent();
 
 protected:
-	// Called when the game starts
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	uint32 GetLevel() const { return Level; }
-	void LevelUp() { ++Level; }
+	void LevelUp();
+
+	FOnLevelUp OnLevelUpDelegate;
 private:
 	uint32 Level = 1;
+
+public:
+	uint32 GetLevel() const { return Level; }
 };

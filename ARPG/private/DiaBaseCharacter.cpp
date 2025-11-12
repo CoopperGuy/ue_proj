@@ -341,11 +341,6 @@ void ADiaBaseCharacter::Die(ADiaBaseCharacter* Causer)
 	KillerCharacterWeakPtr = Causer;
 }
 
-void ADiaBaseCharacter::AddExp(float ExpAmount)
-{
-	//Attribute Add Exp is Move to gameplayeffect
-}
-
 void ADiaBaseCharacter::SetGravity(bool bEnableGravityAndCollision)
 {
    UCharacterMovementComponent* MoveComp = GetCharacterMovement();

@@ -1,7 +1,11 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
+#include "Types/DiaitemOptionRow.h"
 #include "ItemBase.generated.h"  
+
+static constexpr int32 MAX_PREFIX_OPTIONS = 3;
+static constexpr int32 MAX_SUFFIX_OPTIONS = 3;
 
 struct FEquippedItem;
 
@@ -43,23 +47,6 @@ enum class EItemStat : uint8
 	EIS_MAX
 };
 
-
-UENUM(BlueprintType)
-enum class EEquipmentSlot : uint8
-{
-	EES_None = 0,
-	EES_Head,
-	EES_Chest,
-	EES_Legs,
-	EES_Feet,
-	EES_Hands,
-	EES_Weapon,
-	EES_Shield,
-	EES_Ring1,
-	EES_Ring2,
-	EES_Amulet,
-	EES_Max
-};
 
 // enum class를 정수로 변환하는 유틸리티 함수
 FORCEINLINE constexpr int32 ToInt(EItemStat StatType)
@@ -119,8 +106,12 @@ struct ARPG_API FItemBase : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TMap<EItemStat, float> BaseStats;
 
+	//아이템 옵션이 붙을 수 있는 Tag List 불가능한 옵션도 함께 체크된다.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGameplayTagContainer PossibleItemOptionTags;
 };
 
+///실존하는 아이템 값
 USTRUCT(BlueprintType)
 struct ARPG_API FItemInstance
 {
@@ -141,9 +132,18 @@ struct ARPG_API FItemInstance
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
 	bool bIsLocked = false;
 
+	//아이템 옵션들 정리
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+	TArray<FDiaItemOptionRow> PrefixOptions;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+	TArray<FDiaItemOptionRow> SubfixOptions;
+
 	FItemInstance()
 		: InstanceID(FGuid::NewGuid())
 	{
+		PrefixOptions.Reserve(MAX_PREFIX_OPTIONS);
+		SubfixOptions.Reserve(MAX_SUFFIX_OPTIONS);
 	}
 
 	bool IsValid() const { return !BaseItem.ItemID.IsNone() && Quantity > 0; }
@@ -157,6 +157,9 @@ struct ARPG_API FItemInstance
 	bool IsEquippable() const { return BaseItem.bIsEquippable; }
 	EEquipmentSlot GetEquipmentSlot() const { return BaseItem.EquipmentSlot; }
 	FSoftObjectPath GetIconPath() const { return BaseItem.IconPath; }
+
+	bool CheckPrefixOptionsSize() const { return PrefixOptions.Num() <= MAX_PREFIX_OPTIONS; }
+	bool CheckSuffixOptionsSize() const { return SubfixOptions.Num() <= MAX_SUFFIX_OPTIONS; }
 
 	static FItemInstance FromDataTable(UDataTable* ItemTable, FName ItemID, int32 InQuantity = 1)
 	{
@@ -309,60 +312,14 @@ struct ARPG_API FGrid
 		return Cells[Y * Width + X];
 	}
 	
-	    // 단일 인덱스 접근을 위한 [] 연산자
-    bool& operator[](int32 Index)
-    {
-        return Cells[Index];
-    }
+		// 단일 인덱스 접근을 위한 [] 연산자
+	bool& operator[](int32 Index)
+	{
+		return Cells[Index];
+	}
 
-    const bool& operator[](int32 Index) const
-    {
-        return Cells[Index];
-    }
+	const bool& operator[](int32 Index) const
+	{
+		return Cells[Index];
+	}
 };
-
-
-//// ������ ���λ�/���̻� (��ƺ��� ��Ÿ��)
-//USTRUCT(BlueprintType)
-//struct YOURGAME_API FItemAffix
-//{
-//    GENERATED_BODY()
-//    
-//    // ���λ�/���̻� ID
-//    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-//    FName AffixID;
-//    
-//    // ���λ�(true) �Ǵ� ���̻�(false)
-//    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-//    bool bIsPrefix = true;
-//    
-//    // �ο��ϴ� ȿ�� (����, ��ġ)
-//    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-//    TMap<EItemStat, float> StatModifiers;
-//    
-//    // �ؽ�Ʈ ǥ�ÿ�
-//    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-//    FText DisplayText;
-//};
-//
-//// ������ ���� (��ƺ��� ��Ÿ��)
-//USTRUCT(BlueprintType)
-//struct YOURGAME_API FItemSocket
-//{
-//    GENERATED_BODY()
-//    
-//    // ���� Ÿ�� (���, ���޶��� ��)
-//    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-//    ESocketType SocketType = ESocketType::Empty;
-//    
-//    // ���Ե� ���� ID (������ �������)
-//    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-//    FName GemItemID;
-//    
-//    // �ο��� ȿ��
-//    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-//    TArray<FItemEffect> SocketEffects;
-//};
-
-//수정하면서 생긴 오류 제거용
-typedef FInventorySlot FInventorySlot;
