@@ -58,15 +58,8 @@ void UItemSubsystem::LoadOptionData()
             FDiaItemOptionRow* OptionRow = OptionDataTable->FindRow<FDiaItemOptionRow>(RowName, TEXT(""));
             if (OptionRow)
             {
-                if(!OptionCache.Contains(OptionRow->OptionID))
-                {
-                    TArray<FDiaItemOptionRow> NewOptionArray = { *OptionRow };
-                    OptionCache.Emplace(OptionRow->OptionID, NewOptionArray);
-				}
-                else
-                {
-                    OptionCache[OptionRow->OptionID].Add(*OptionRow);
-                }
+				FName UniqueOptionKey = FName(*FString::Printf(TEXT("%s_Tier%d"), *OptionRow->OptionID.ToString(), OptionRow->TierIndex));
+                OptionCache.Emplace(UniqueOptionKey, *OptionRow);
             }
         }
 	}
@@ -79,7 +72,8 @@ FInventorySlot UItemSubsystem::CreateInventoryInstance(const FName& ItemID, int3
     Item.ItemInstance.BaseItem = ItemData;
     Item.ItemInstance.Quantity = 1;
     Item.ItemInstance.Level = Level;
-    GenerateRandomStats(Item, Level);
+    GenerateRandomStats(Item.ItemInstance, Level);
+	GenerateItemOptions(Item.ItemInstance, Level);
     return Item;
 }
 
@@ -116,7 +110,7 @@ UItemWidget* UItemSubsystem::CreateItemWidget(const FInventorySlot& Item)
     return nullptr;
 }
 
-void UItemSubsystem::GenerateRandomStats(FInventorySlot& Item, int32 Level)
+void UItemSubsystem::GenerateRandomStats(FItemInstance& Item, int32 Level)
 {
     // 기본 스탯에 추가로 보너스 스탯 생성
 }
@@ -135,8 +129,13 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
     for(const auto& OptionRows : OptionCache)
     {
 		bool bCanApplyOption = true;
-        for(const FDiaItemOptionRow& OptionRow : OptionRows.Value)
+        const FDiaItemOptionRow& OptionRow = OptionRows.Value;
         {
+            //추가할 수 없는 상태
+            if (!Item.CheckPrefixOptionsSize() || !Item.CheckPrefixOptionsSize())
+            {
+                return;
+            }
             //가능 태그 검사
             if (Item.BaseItem.PossibleItemOptionTags.HasAny(OptionRow.RequiredTags))
             {
@@ -158,11 +157,6 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
                 bCanApplyOption = false;
             }
 
-            //추가할 수 없는 상태
-            if (!Item.CheckPrefixOptionsSize() || !Item.CheckPrefixOptionsSize())
-            {
-                return;
-            }
 
             if (!bCanApplyOption)
             {
@@ -182,11 +176,6 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
         }
 	}
 
-    //가중치를 이용해 랜덤한 옵션을 선택해서 넣어준다.
-    //우선 모든 가중치를 계산한다.
-
-    
-
     PickupRandomValuesByWeight<FDiaItemOptionRow>(AvailablePrefixOptions,
         [](const FDiaItemOptionRow& Row) { return static_cast<float>(Row.Weight); },
         NumPrefixOptionsToAdd,
@@ -195,6 +184,19 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
         [](const FDiaItemOptionRow& Row) { return static_cast<float>(Row.Weight); },
         NumSuffixOptionsToAdd,
         ResultSubfixOptions);
+
+    //옵션을 넣어준다
+    //내부적으로 makerandomvalue를 호출한다.
+    for (const FDiaItemOptionRow& OptionRow : ResultPrefixOptions)
+    {
+        FDiaActualItemOption ActualOption(OptionRow);
+        Item.PrefixOptions.Add(ActualOption);
+    }
+    for (const FDiaItemOptionRow& OptionRow : ResultSubfixOptions)
+    {
+        FDiaActualItemOption ActualOption(OptionRow);
+        Item.SubfixOptions.Add(ActualOption);
+	}
 
     //로그 남기기
 	UE_LOG(LogTemp, Warning, TEXT("Generated Prefix Options:"));

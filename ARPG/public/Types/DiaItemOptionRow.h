@@ -92,5 +92,77 @@ struct ARPG_API FDiaItemOptionRow : public FTableRowBase
 	// 이 옵션을 금지하는 태그
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTagContainer BlockedTags;
+
+	//실제 효과 태그
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FGameplayTagContainer GrantedTags;
+
+	FName GetUniqueOptionKey() const
+	{
+		return FName(*FString::Printf(TEXT("%s_Tier%d"), *OptionID.ToString(), TierIndex));
+	}
+
+	double MakeRandomValue() const
+	{
+		double Z = 0;
+		for (int32 i = 0; i < 12; ++i)
+		{
+			Z += FMath::FRand();
+		}
+		Z -= 6.0;
+
+		double MidValue = (MinValue + MaxValue) * 0.5f;
+		double HalfRange = (MaxValue - MinValue) * 0.5f;
+
+		//12개 합의 분산은 1/12 이므로 표준편차는 sqrt(1/12) = 0.288675
+		return MidValue + HalfRange * Z * 0.1667f; 
+	}
+};
+
+USTRUCT(BlueprintType)
+struct ARPG_API FDiaActualItemOption
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FName OptionID;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 TierIndex = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	float Value = 0.f;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FText DisplayName;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EItemOptionType OptionType = EItemOptionType::IOT_Prefix;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EItemOptionScalingType ScalingType = EItemOptionScalingType::IOST_Flat;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FGameplayTagContainer GrantedTags;
+
+	FName GetUniqueOptionKey() const
+	{
+		return FName(*FString::Printf(TEXT("%s_Tier%d"), *OptionID.ToString(), TierIndex));
+	}
+
+	FDiaActualItemOption()
+	{
+		
+	}
+	FDiaActualItemOption(const FDiaItemOptionRow& OptionRow)
+		: OptionID(OptionRow.OptionID)
+		, TierIndex(OptionRow.TierIndex)
+		, Value(OptionRow.MakeRandomValue())
+		, DisplayName(OptionRow.DisplayName)
+		, OptionType(OptionRow.OptionType)
+		, ScalingType(OptionRow.ScalingType)
+		, GrantedTags(OptionRow.GrantedTags)
+	{
+	}
 };
 

@@ -10,6 +10,9 @@
 class UImage;
 class UItemWidget;
 class USizeBox;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemEquipped, const FEquippedItem&, Item, EEquipmentSlot, SlotType);
+
 /**
  * 
  */
@@ -26,6 +29,10 @@ public:
 	void ClearItemWidget();
 
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+
+	void HandleItemEquipped(const FEquippedItem& Item);
+public:
+	FOnItemEquipped OnItemEquipped;
 
 protected:
 	UPROPERTY(meta = (BindWidget))

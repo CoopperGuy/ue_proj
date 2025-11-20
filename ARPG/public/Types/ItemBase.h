@@ -31,32 +31,20 @@ enum class EItemType : uint8
 	EIT_MAX
 };
 
-UENUM(BlueprintType)
-enum class EItemStat : uint8
+USTRUCT(BlueprintType)
+struct ARPG_API FDiaItemStatOption
 {
-	EIS_Health,
-	EIS_Mana,
-	EIS_Attack,
-	EIS_Defense,
-	EIS_Speed,
-	EIS_Str,
-	EIS_Int,
-	EIS_Dex,
-	EIS_Con,
-	EIS_Max,
-	EIS_MAX
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGameplayTag StatTag;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Values = 0.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EItemOptionScalingType ScalingType = EItemOptionScalingType::IOST_Flat;
 };
-
-
-// enum class를 정수로 변환하는 유틸리티 함수
-FORCEINLINE constexpr int32 ToInt(EItemStat StatType)
-{
-	return static_cast<int32>(StatType);
-}
-
-// 스탯 배열 크기를 가져오는 상수
-static constexpr int32 STAT_ARRAY_SIZE = ToInt(EItemStat::EIS_MAX);
-
 
 USTRUCT(BlueprintType)
 struct ARPG_API FItemBase : public FTableRowBase
@@ -102,9 +90,9 @@ struct ARPG_API FItemBase : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSoftObjectPtr<UStaticMesh> ItemMesh;
 
-	// 기본 스탯 정보
+	// 기본 스탯에 대한 정보를 tag로 저장한다.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TMap<EItemStat, float> BaseStats;
+	TArray<FDiaItemStatOption> StatOptions;
 
 	//아이템 옵션이 붙을 수 있는 Tag List 불가능한 옵션도 함께 체크된다.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -134,10 +122,13 @@ struct ARPG_API FItemInstance
 
 	//아이템 옵션들 정리
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	TArray<FDiaItemOptionRow> PrefixOptions;
+	TArray<FDiaActualItemOption> PrefixOptions;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	TArray<FDiaItemOptionRow> SubfixOptions;
+	TArray<FDiaActualItemOption> SubfixOptions;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
+	TMap<FGameplayTag, FDiaItemStatOption> ModifiedStats;
 
 	FItemInstance()
 		: InstanceID(FGuid::NewGuid())
@@ -161,6 +152,23 @@ struct ARPG_API FItemInstance
 	bool CheckPrefixOptionsSize() const { return PrefixOptions.Num() <= MAX_PREFIX_OPTIONS; }
 	bool CheckSuffixOptionsSize() const { return SubfixOptions.Num() <= MAX_SUFFIX_OPTIONS; }
 
+	float GetStatValue(const FGameplayTag& Stat) const
+	{
+		for (const FDiaItemStatOption& FoundValue : BaseItem.StatOptions)
+		{
+			return FoundValue.Values;
+		}
+		return 0.0f;
+	}
+
+	float MakeRandomStatValue(const FGameplayTag& Stat) const
+	{
+		float LevelMultiplier = 1.0f + (Level - 1) * 0.1f; // 레벨당 10% 증가
+		float QuantityMultiplier = 1.0f + (Quantity - 1) * 0.05f; // 퀄리티 5% 증가
+
+		return LevelMultiplier * QuantityMultiplier * GetStatValue(Stat);
+	}
+
 	static FItemInstance FromDataTable(UDataTable* ItemTable, FName ItemID, int32 InQuantity = 1)
 	{
 		FItemInstance Result;
@@ -182,6 +190,13 @@ struct ARPG_API FItemInstance
 		FItemInstance Result;
 		Result.BaseItem = _BaseItem;
 		Result.Quantity = InQuantity;
+
+		for(const auto& StatOption : _BaseItem.StatOptions)
+		{
+			FDiaItemStatOption NewStat = StatOption;
+			NewStat.Values = Result.MakeRandomStatValue(StatOption.StatTag);
+			Result.ModifiedStats.Add(StatOption.StatTag, NewStat);
+		}
 		return Result;
 	}
 };

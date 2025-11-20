@@ -1,9 +1,12 @@
 #include "GAS/DiaAttributeSet.h"
 #include "GameplayEffect.h"
 #include "System/CharacterManager.h"
+#include "GAS/DiaGameplayTags.h"
 #include "GameplayEffectExtension.h"
 #include "AbilitySystemComponent.h"
 #include "DiaBaseCharacter.h"
+
+TMap<FGameplayTag, FGameplayAttribute> UDiaAttributeSet::AttributeTagMap;
 
 UDiaAttributeSet::UDiaAttributeSet()
 {
@@ -17,6 +20,8 @@ UDiaAttributeSet::UDiaAttributeSet()
 	InitMovementSpeed(600.0f);
 	InitExp(0.0f);
 	InitMaxExp(100.0f);
+
+	
 }
 
 
@@ -187,6 +192,23 @@ void UDiaAttributeSet::InitializeMonsterAttributes(const FMonsterInfo& MonsterIn
 	SetMaxExp(MonsterInfo.Exp);
 }
 
+bool UDiaAttributeSet::TranslateAttributeTagToAttrivute(const FGameplayTag& AttributeTag, FGameplayAttribute& OutAttribute)
+{
+	if (AttributeTagMap.Num() == 0)
+	{
+		MakeAttributeTagMap();
+	}
+
+	const FGameplayAttribute* Found = AttributeTagMap.Find(AttributeTag);
+	if (Found)
+	{
+		OutAttribute = *Found;
+		return true;
+	}
+
+	return false;
+}
+
 void UDiaAttributeSet::AdjustAttributeForMaxChange(FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, float NewMaxValue, const FGameplayAttribute& AffectedAttributeProperty)
 {
 	UAbilitySystemComponent* AbilityComp = GetOwningAbilitySystemComponent();
@@ -198,4 +220,25 @@ void UDiaAttributeSet::AdjustAttributeForMaxChange(FGameplayAttributeData& Affec
 
 		AbilityComp->ApplyModToAttributeUnsafe(AffectedAttributeProperty, EGameplayModOp::Additive, NewDelta);
 	}
+}
+
+void UDiaAttributeSet::MakeAttributeTagMap()
+{
+	const auto& Tags = FDiaGameplayTags::Get();
+
+	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Health")), GetHealthAttribute());
+	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxHealth")), GetMaxHealthAttribute());
+	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Mana")), GetManaAttribute());
+	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxMana")), GetMaxManaAttribute());
+	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Exp")), GetExpAttribute());
+	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxExp")), GetMaxExpAttribute());
+	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Strength")), GetStrengthAttribute());
+	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Dexterity")), GetDexterityAttribute());
+	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Intelligence")), GetIntelligenceAttribute());
+	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.AttackPower")), GetAttackPowerAttribute());
+	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Defense")), GetDefenseAttribute());
+	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MovementSpeed")), GetMovementSpeedAttribute());
+	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.IncomingDamage")), GetIncomingDamageAttribute());
+	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.IncomingHealing")), GetIncomingHealingAttribute());
+
 }

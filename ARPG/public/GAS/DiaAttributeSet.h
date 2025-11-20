@@ -90,7 +90,10 @@ public:
 	FGameplayAttributeData IncomingHealing;
 	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, IncomingHealing)
 
+	static bool TranslateAttributeTagToAttrivute(const FGameplayTag& AttributeTag, FGameplayAttribute& OutAttribute);
+	static TMap<FGameplayTag, FGameplayAttribute> AttributeTagMap;
 protected:
 	// Helper function to adjust attributes for changes
 	void AdjustAttributeForMaxChange(FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, float NewMaxValue, const FGameplayAttribute& AffectedAttributeProperty);
+	static void MakeAttributeTagMap();
 };

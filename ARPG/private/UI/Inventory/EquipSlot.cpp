@@ -8,8 +8,10 @@
 
 #include "Components/CanvasPanelSlot.h"
 #include "Components/SizeBox.h"
-
 #include "Components/Image.h"
+
+#include "DiaBaseCharacter.h"
+
 #include "Utils/InventoryUtils.h"
 
 void UEquipSlot::NativeConstruct()
@@ -20,6 +22,7 @@ void UEquipSlot::NativeConstruct()
 void UEquipSlot::SetItemWidget(const FInventorySlot& InItemData)
 {
 	SlotItemWidget->SetItemInfo(InItemData);
+	HandleItemEquipped(FEquippedItem::FromInventorySlot(InItemData));
 }
 
 void UEquipSlot::ClearItemWidget()
@@ -46,4 +49,9 @@ bool UEquipSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
 	SetItemWidget(ItemDragOp->ItemData);
 
 	return true;
+}
+
+void UEquipSlot::HandleItemEquipped(const FEquippedItem& Item)
+{
+	OnItemEquipped.Broadcast(Item, SlotType);
 }

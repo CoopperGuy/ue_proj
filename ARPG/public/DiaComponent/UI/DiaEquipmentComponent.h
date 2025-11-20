@@ -26,7 +26,10 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	//아이템이 드래그 되면 호출하여 아이템을 장착한다.
+	UFUNCTION()
 	void EquipItem(const FEquippedItem& Item, EEquipmentSlot Slot);
+	UFUNCTION()
+	void UnEquipItem();
 private:
 	//장착한 아이템을 매핑하는 컴포넌트
 	UPROPERTY()

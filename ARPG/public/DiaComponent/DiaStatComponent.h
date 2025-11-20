@@ -43,57 +43,6 @@ struct ARPG_API FCharacterData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<float> AdditinalStats; 
 
-	// 스탯 접근 함수들 (타입 안전성 제공)
-	FORCEINLINE float GetStat(EItemStat StatType) const
-	{
-		int32 Index = ToInt(StatType);
-		return DefStats.IsValidIndex(Index) ? DefStats[Index] : 0.0f;
-	}
-
-	FORCEINLINE void SetStat(EItemStat StatType, float Value)
-	{
-		int32 Index = ToInt(StatType);
-		if (DefStats.IsValidIndex(Index))
-		{
-			DefStats[Index] = Value;
-		}
-	}
-
-	FORCEINLINE float GetAdditionalStat(EItemStat StatType) const
-	{
-		int32 Index = ToInt(StatType);
-		return AdditinalStats.IsValidIndex(Index) ? AdditinalStats[Index] : 0.0f;
-	}
-
-	FORCEINLINE void SetAdditionalStat(EItemStat StatType, float Value)
-	{
-		int32 Index = ToInt(StatType);
-		if (AdditinalStats.IsValidIndex(Index))
-		{
-			AdditinalStats[Index] = Value;
-		}
-	}
-
-	// 편의를 위한 개별 스탯 접근 함수들
-	FORCEINLINE float GetStrength() const { return GetStat(EItemStat::EIS_Str); }
-	FORCEINLINE float GetIntelligence() const { return GetStat(EItemStat::EIS_Int); }
-	FORCEINLINE float GetDexterity() const { return GetStat(EItemStat::EIS_Dex); }
-	FORCEINLINE float GetConstitution() const { return GetStat(EItemStat::EIS_Con); }
-
-	FORCEINLINE void SetStrength(float Value) { SetStat(EItemStat::EIS_Str, Value); }
-	FORCEINLINE void SetIntelligence(float Value) { SetStat(EItemStat::EIS_Int, Value); }
-	FORCEINLINE void SetDexterity(float Value) { SetStat(EItemStat::EIS_Dex, Value); }
-	FORCEINLINE void SetConstitution(float Value) { SetStat(EItemStat::EIS_Con, Value); }
-
-	void InitializeStatArrays()
-	{
-		for(int32 i = 0; i < STAT_ARRAY_SIZE; ++i)
-		{
-			DefStats.Add(0.0f);
-			AdditinalStats.Add(0.0f);
-		}
-	}
-
 	// 몬스터에게서도 해당 스탯 구조를 사용하기 위해 만든 것
 	FCharacterData& operator=(const FMonsterInfo& Other)
 	{

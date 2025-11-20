@@ -47,9 +47,9 @@ private:
     mutable TMap<FName, FItemBase> ItemCache;
     
     UPROPERTY()
-    mutable TMap<FName, TArray<FDiaItemOptionRow>> OptionCache;
+    mutable TMap<FName, FDiaItemOptionRow> OptionCache;
 
-    void GenerateRandomStats(FInventorySlot& Item, int32 Level);
+    void GenerateRandomStats(FItemInstance& Item, int32 Level);
 	void GenerateItemOptions(FItemInstance& Item, int32 Level);
 
 
@@ -73,7 +73,10 @@ private:
         if (CumulativeWeights.Num() <= 0)
             return;
 
-        CumulativeWeights.Sort([](const TPair<int, double>& A, const TPair<int, double>& B));
+		//큰 값을 우선으로 정렬
+        CumulativeWeights.Sort([](const TPair<int, double>& A, const TPair<int, double>& B) {
+			return A.Value > B.Value;
+            });
 
 		int32 PickupCount = FMath::Min(NumToPickupSize, CumulativeWeights.Num());
         for (int32 i = 0; i < PickupCount; ++i)

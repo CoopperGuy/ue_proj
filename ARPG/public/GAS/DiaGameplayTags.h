@@ -20,6 +20,16 @@ public:
 	static const FDiaGameplayTags& Get() { return GameplayTags; }
 	static void InitializeNativeTags();
 
+private:
+	static void RegisterStateTags();
+	static void RegisterCoolDownTags();
+	static void RegisterSkillTypeTags();
+	static void RegisterAbilityTags();
+	static void RegisterDamageTags();
+	static void RegisterUITags();
+	static void RegisterAttributeSetTags();
+
+public:
 	// ========================================
 	// State Tags - 캐릭터 상태
 	// ========================================
@@ -79,6 +89,24 @@ public:
 	FGameplayTag UI_Layer_Modal;
 
 	// ========================================
+	// AttributeSet Tags - 기본 스탯
+	// ========================================
+	FGameplayTag AttributeSet_Health;			// 체력
+	FGameplayTag AttributeSet_MaxHealth;		// 최대 체력
+	FGameplayTag AttributeSet_Mana;				// 마나
+	FGameplayTag AttributeSet_MaxMana;			// 최대 마나
+	FGameplayTag AttributeSet_Exp;				// 경험치
+	FGameplayTag AttributeSet_MaxExp;			// 최대 경험치
+	FGameplayTag AttributeSet_Strength;			// 힘 - 기본 스탯
+	FGameplayTag AttributeSet_Dexterity;		// 민첩 - 기본 스탯
+	FGameplayTag AttributeSet_Intelligence;		// 지능 - 기본 스탯
+	FGameplayTag AttributeSet_AttackPower;		// 공격력 - 전투 스탯
+	FGameplayTag AttributeSet_Defense;			// 방어력 - 전투 스탯
+	FGameplayTag AttributeSet_MovementSpeed;		// 이동 속도
+	FGameplayTag AttributeSet_IncomingDamage;	// 받는 피해 - 메타 스탯
+	FGameplayTag AttributeSet_IncomingHealing;	// 받는 회복 - 메타 스탯
+
+	// ========================================
 	// Helper Functions - 동적 태그 생성
 	// ========================================
 	
@@ -91,7 +119,7 @@ public:
 	{
 		return FGameplayTag::RequestGameplayTag(FName(*FString::Printf(TEXT("GASData.CoolDown.%d"), SkillID)));
 	}
-
+	static TArray<FGameplayTag> GetAttributeStats();
 protected:
 	// 태그 등록 헬퍼 함수
 	void AddTag(FGameplayTag& OutTag, const ANSICHAR* TagName, const ANSICHAR* TagComment);

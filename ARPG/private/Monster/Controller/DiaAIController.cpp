@@ -29,7 +29,7 @@ ADiaAIController::ADiaAIController()
 
 	SightConfig = CreateDefaultSubobject<UAISenseConfig_Sight>(TEXT("Sight Config"));
 	if (SightConfig)
-	{얌
+	{
 		SightConfig->SightRadius = 1500.0f;
 		SightConfig->LoseSightRadius = 1800.0f;
 		SightConfig->PeripheralVisionAngleDegrees = 360.0f;
