@@ -52,7 +52,7 @@ struct ARPG_API FItemBase : public FTableRowBase
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FName ItemID;
+	FName ItemID = "None";
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText Name;
@@ -217,7 +217,13 @@ struct ARPG_API FInventorySlot
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grid")
 	int32 GridY = 0;
 
-	bool IsEmpty() const { return !ItemInstance.IsValid(); }
+	bool IsEmpty() const { 
+		if(ItemInstance.BaseItem.ItemID.IsNone())
+		{
+			return true;
+		}
+		return !ItemInstance.IsValid(); 
+	}
 	
 	void Clear() 
 	{ 

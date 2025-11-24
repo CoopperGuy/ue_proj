@@ -129,6 +129,8 @@ bool UMainInventory::RemoveItemFromInventory(int32 SlotIndex)
 	if (!IsValid(ItemWidget))
 		return false;
 
+	ItemWidget->ClearItemInfo();
+
 	// ItemWidget을 InventoryCanvas에서 제거
 	InventoryCanvas->RemoveChild(ItemWidget);
 
@@ -244,6 +246,8 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	if (!ItemDragOp)
 		return false;
 	
+	EItemDragDropType DropType = ItemDragOp->DragType;
+
 	// 화면 좌표를 InventoryCanvas 기준의 로컬 좌표로 변환
 	FVector2D ScreenPosition = InDragDropEvent.GetScreenSpacePosition();
 	FVector2D CanvasLocalPosition = GetCanvasLocalPositionFromScreenPosition(InGeometry, ScreenPosition);
@@ -252,11 +256,41 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	int32 NewGridX = FMath::FloorToInt(CanvasLocalPosition.X / szSlot);
 	int32 NewGridY = FMath::FloorToInt(CanvasLocalPosition.Y / szSlot);
 
+	bool retFlag;
+	bool retVal = CheckInventoryDrop(ItemDragOp, NewGridX, NewGridY, ScreenPosition, retFlag);
+	if (retFlag) return retVal;
+	
+	switch (DropType)
+	{
+	case EItemDragDropType::EIDT_Inventory:
+		// 인벤토리 내 이동 처리
+		UE_LOG(LogTemp, Log, TEXT("Item moved within inventory to (%d,% d)"), NewGridX, NewGridY);
+
+		// 아이템 위치 업데이트
+		if (InventoryComponent.IsValid())
+		{
+			InventoryComponent->RequestMoveItem(ItemDragOp->SourceWidget->GetItemInstanceID(), NewGridX, NewGridY, this);
+		}
+
+			break;
+	case EItemDragDropType::EIDT_Equipment:
+		// 장비에서 인벤토리로 이동 처리
+		UE_LOG(LogTemp, Log, TEXT("Item moved from equipment to inventory at (%d, % d)"), NewGridX, NewGridY);
+		//deleagte 고민
+			break;
+	}
+
+	return true;
+}
+
+bool UMainInventory::CheckInventoryDrop(UItemDragDropOperation* ItemDragOp, int32 NewGridX, int32 NewGridY, FVector2D& ScreenPosition, bool& retFlag)
+{
+	retFlag = true;
 	//UE_LOG(LogTemp, Log, TEXT("MainInventory::NativeOnDrop - Screen: (%f, %f), CanvasLocal: (%f, %f), Grid: (%d, %d)"),
 	//	ScreenPosition.X, ScreenPosition.Y, CanvasLocalPosition.X, CanvasLocalPosition.Y, NewGridX, NewGridY);
-	
+
 	// 인벤토리 슬롯 내의 유효한 위치인지 확인
-	if (InventoryComponent.IsValid() && 
+	if (InventoryComponent.IsValid() &&
 		!InventoryComponent->CanPlaceItemAt(ItemDragOp->ItemWidth, ItemDragOp->ItemHeight, NewGridX, NewGridY))
 	{
 		// 유효하지 않은 위치 - 원래 위치로 복원
@@ -265,7 +299,7 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 			ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
 		}
 		//인벤토리 바깥인지 체크해야 한다.
-		
+
 		// 드롭된 위치가 인벤토리와 장착 위젯 모두의 바깥인지 체크
 		if (IsDropOutsideAllWidgets(ScreenPosition))
 		{
@@ -276,16 +310,16 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 		//UE_LOG(LogTemp, Warning, TEXT("Invalid drop position - failed validation"));
 		return false;
 	}
-	
+
 	// 드롭 위치에 기존 아이템이 있는지 확인
 	UItemWidget* ExistingItem = GetItemWidgetAtGridPosition(NewGridX, NewGridY);
 	if (ExistingItem && ExistingItem != ItemDragOp->SourceWidget)
 	{
 		// 다른 아이템 위에 드롭하는 경우 - ItemWidget으로 이벤트 전파
 		UE_LOG(LogTemp, Log, TEXT("Dropping on existing item - letting ItemWidget handle it"));
-		return false; 
+		return false;
 	}
-	
+
 	// 빈 공간에 드롭하는 경우 - 직접 처리
 	// 추가 충돌 검사 (멀티 그리드 아이템의 경우)
 	for (int32 CheckY = NewGridY; CheckY < NewGridY + ItemDragOp->ItemHeight; ++CheckY)
@@ -305,19 +339,7 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 			}
 		}
 	}
-	
-	// 아이템 위치 업데이트
-	if (ItemDragOp->SourceWidget)
-	{
-		// 원본 위젯의 투명도 복원
-		ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
-		
-		// 새로운 위치로 이동
-		UpdateItemPosition(ItemDragOp->SourceWidget, NewGridX, NewGridY);
-		
-		UE_LOG(LogTemp, Log, TEXT("Item moved to new position: (%d, %d)"), NewGridX, NewGridY);
-	}
-	
+	retFlag = false;
 	return true;
 }
 
@@ -383,6 +405,17 @@ void UMainInventory::UpdateItemPosition(UItemWidget* ItemWidget, int32 NewGridX,
 		FVector2D NewPosition = FVector2D(NewGridX * szSlot, NewGridY * szSlot);
 		CanvasSlot->SetPosition(NewPosition);
 	}
+}
+
+bool UMainInventory::AddItem(const FInventorySlot& Item, UItemWidget* ItemWidget, int32 PosY, int32 PosX)
+{
+	int32 OutPosX = PosX;
+	int32 OutPosY = PosY;
+
+	//ui작업
+	bool res = AddItemToInventory(Item, Item.ItemInstance.GetWidth(), Item.ItemInstance.GetHeight(), OutPosX, OutPosY);
+
+	return res;
 }
 
 bool UMainInventory::IsDropOutsideAllWidgets(const FVector2D& ScreenPosition) const

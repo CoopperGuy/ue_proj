@@ -33,9 +33,13 @@ public:
 	void SetWidgetPosition(int32 PositionX, int32 PositionY);
 	
 	void ClearItemInfo();
+	void DestoryItemWidget();
+
+	bool HasItemInfo() const { return !ItemInfo.IsEmpty(); }
 	// Getter 함수들
 	FORCEINLINE const FInventorySlot& GetItemInfo() const { return ItemInfo; }
 	FORCEINLINE UEquipSlot* GetParentSlot() const { return ParentSlot; }
+	FORCEINLINE const FGuid& GetItemInstanceID() const { return ItemInfo.ItemInstance.InstanceID; }
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UImage* ItemIcon;

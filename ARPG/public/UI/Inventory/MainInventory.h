@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "Types/ItemBase.h"
+#include "Interface/ItemContainer.h"
 #include "MainInventory.generated.h"
 
 class UCanvasPanelSlot;
@@ -12,11 +13,12 @@ class UCanvasPanel;
 class UItemWidget;
 class UDiaInventoryComponent;
 class UDiaEquipmentComponent;
+class UItemDragDropOperation;
 /**
  * 
  */
 UCLASS()
-class ARPG_API UMainInventory : public UUserWidget
+class ARPG_API UMainInventory : public UUserWidget, public IItemContainer
 {
 	GENERATED_BODY()
 	
@@ -31,10 +33,7 @@ public:
 	//슬롯이 비어있는지 판단한다
 	//해당 슬롯에 들어잇는 아이템의 row colum을 판단해야한다.
 	bool IsSlotEmpty(int32 SlotIndex) const;
-	
-	// 드래그 관련 함수들
-	void StartDraggingItem(int32 SlotIndex, UUserWidget* DragContainer);
-	void StopDraggingItem(int32 SlotIndex);
+
 	UItemWidget* GetItemWidgetBySlotIndex(FGuid guid) const;
 	
 	// 위치 기반 아이템 검색
@@ -43,6 +42,7 @@ public:
 
 	// 새로운 드래그 프록시 방식
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	bool CheckInventoryDrop(UItemDragDropOperation* ItemDragOp, int32 NewGridX, int32 NewGridY, FVector2D& ScreenPosition, bool& retFlag);
 	virtual bool NativeOnDragOver(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	
 	// 그리드 좌표를 슬롯 인덱스로 변환
@@ -53,10 +53,10 @@ public:
 	// 아이템 위치 업데이트
 	void UpdateItemPosition(UItemWidget* ItemWidget, int32 NewGridX, int32 NewGridY);
 
+	virtual bool AddItem(const FInventorySlot& Item, UItemWidget* ItemWidget, int32 PosY = -1, int32 PosX = -1);
 protected:
 	void CreateInventory();
 	void ConfigInventorySlot(int32 SlotIndex, UCanvasPanelSlot* CanvasSlot);	
-
 protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int32 szSlot= 52;

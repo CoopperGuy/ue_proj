@@ -37,6 +37,7 @@ void UEquipWidget::NativeConstruct()
 	{
 		HelmetSlot->SetSlotType(EEquipmentSlot::EES_Head);
 	}
+
 }
 
 void UEquipWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -81,11 +82,31 @@ FEquippedItem UEquipWidget::UnequipItemFromSlot(EEquipmentSlot SlotType)
 void UEquipWidget::SetInventoryComponent(UDiaInventoryComponent* InComponent)
 {
 	InventoryComponent = InComponent;
+
+	for (int32 i = 0; i < static_cast<int32>(EEquipmentSlot::EES_Max); ++i)
+	{
+		EEquipmentSlot SlotType = static_cast<EEquipmentSlot>(i);
+		UEquipSlot* SlotWidget = GetEquipSlot(SlotType);
+		if (IsValid(SlotWidget))
+		{
+			SlotWidget->SetInventoryComponent(InventoryComponent.Get());
+		}
+	}
 }
 
 void UEquipWidget::SetEquipmentComponent(UDiaEquipmentComponent* InComponent)
 {
 	EquippementComponent = InComponent;
+
+	for (int32 i = 0; i < static_cast<int32>(EEquipmentSlot::EES_Max); ++i)
+	{
+		EEquipmentSlot SlotType = static_cast<EEquipmentSlot>(i);
+		UEquipSlot* SlotWidget = GetEquipSlot(SlotType);
+		if (IsValid(SlotWidget))
+		{
+			SlotWidget->SetEquipmentComponent(EquippementComponent.Get());
+		}
+	}
 }
 
 //EquipSlot이 false일 경우 실행된다.

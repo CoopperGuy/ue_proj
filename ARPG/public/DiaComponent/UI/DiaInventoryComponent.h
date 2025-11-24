@@ -12,6 +12,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemRemoved, const FGuid&, ItemID);
 
 class UMainInventory;
+class UItemWidget;
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ARPG_API UDiaInventoryComponent : public UActorComponent
 {
@@ -31,6 +32,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
     
     bool TryAddItem(const FInventorySlot& ItemData, UMainInventory* InvenWidget);
+	bool RequestMoveItem(const FGuid& InstanceID, int32 DestX, int32 DestY, UMainInventory* InventoryWidget);
 	void FillGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);
 
     bool RemoveItem(const FGuid& InstanceID, UMainInventory* InvenWidget);
@@ -60,4 +62,9 @@ private:
     
     UPROPERTY()
     FGrid InventoryGrid;
+public:
+	FORCEINLINE void AddItem(const FInventorySlot& NewItem)
+	{
+		Items.Add(NewItem);
+	}
 };

@@ -125,14 +125,14 @@ void UHUDWidget::HandleManaChanged(const FOnAttributeChangeData& Data)
 	const float OldMana = Data.OldValue;
 	const float NewMana = Data.NewValue;
 
-	UE_LOG(LogTemp, Warning, TEXT("Mana Changed from %f to %f"), (NewMana), NewMana);
+	//UE_LOG(LogTemp, Warning, TEXT("Mana Changed from %f to %f"), (NewMana), NewMana);
 
 	ADiaBaseCharacter* OwningActor = Cast<ADiaBaseCharacter>(GetOwningPlayerPawn());
 	UAbilitySystemComponent* AbilitySystem = OwningActor->GetAbilitySystemComponent();
 
 	const float MaxMana = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxManaAttribute());
 
-	UE_LOG(LogTemp, Warning, TEXT("Mana Changed: %f / %f"), NewMana, MaxMana);
+	//UE_LOG(LogTemp, Warning, TEXT("Mana Changed: %f / %f"), NewMana, MaxMana);
 	UpdateOrbPercentage(OrbType::OT_MP, (NewMana) / MaxMana);
 }
 
@@ -142,7 +142,7 @@ void UHUDWidget::HandlExpChanged(const FOnAttributeChangeData& Data)
 	ADiaBaseCharacter* OwningActor = Cast<ADiaBaseCharacter>(GetOwningPlayerPawn());
 	UAbilitySystemComponent* AbilitySystem = OwningActor->GetAbilitySystemComponent();
 	const float MaxExp = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxExpAttribute());
-	UE_LOG(LogTemp, Warning, TEXT("Exp Changed: %f / %f"), NewExp, MaxExp);
+	//UE_LOG(LogTemp, Warning, TEXT("Exp Changed: %f / %f"), NewExp, MaxExp);
 
 	UpdateExpPercentage(NewExp / MaxExp);
 }

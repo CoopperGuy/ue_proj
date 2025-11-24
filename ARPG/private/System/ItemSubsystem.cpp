@@ -83,30 +83,16 @@ UItemWidget* UItemSubsystem::CreateItemWidget(const FInventorySlot& Item)
     TSoftClassPtr<UUserWidget> WidgetAssetPtr(ItemWidgetPath);
     UClass* ItemWidgetClass = WidgetAssetPtr.LoadSynchronous();
 
-
-    FSoftObjectPath TooltipWidgetPath(TEXT("/Game/UI/Inventory/WBP_ItemToolTip.WBP_ItemToolTip_C"));
-    TSoftClassPtr<UUserWidget> TooltipWidgetAssetPtr(TooltipWidgetPath);
-    UClass* TooltipWidgetClass = TooltipWidgetAssetPtr.LoadSynchronous();
-
-
     if (ItemWidgetClass)
     {
         UItemWidget* ItemWidget = CreateWidget<UItemWidget>(GetWorld(), ItemWidgetClass);
         if (ItemWidget)
         {
             ItemWidget->SetItemInfo(Item);
-            if(TooltipWidgetClass)
-            {
-                UItemToolTipWidget* ToolTipWidget = CreateWidget<UItemToolTipWidget>(GetWorld(), TooltipWidgetClass);
-                if(ToolTipWidget)
-                {
-                    ItemWidget->SetToolTip(ToolTipWidget);
-					ToolTipWidget->SetToolTipItem(Item);
-                }
-			}
             return ItemWidget;
         }
 	}
+
     return nullptr;
 }
 

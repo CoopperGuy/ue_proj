@@ -5,19 +5,26 @@
 #include "UI/DragDrop/ItemDragDropOperation.h"
 #include "UI/Inventory/MainInventory.h"
 #include "UI/Inventory/EquipSlot.h"
+#include "UI/Item/ItemToolTipWidget.h"
+#include "Utils/InventoryUtils.h"
+
 #include "System/GameViewPort/DiaCustomGameViewPort.h"
-#include "Engine/Engine.h"
+
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/PanelWidget.h"
 #include "Components/SizeBox.h"
+
 #include "Blueprint/WidgetBlueprintLibrary.h"
+
+#include "Engine/Engine.h"
 
 void UItemWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 }
 
+//툴팁 설정을 여기서 하도록 변경
 void UItemWidget::SetItemInfo(const FInventorySlot& ItemData)
 {
 	ItemInfo = ItemData;
@@ -33,6 +40,20 @@ void UItemWidget::SetItemInfo(const FInventorySlot& ItemData)
 				FVector2D IconSize = CalculateIconSize(ItemData);
 				SetIconSize(IconSize);
 			}
+		}
+	}
+
+	FSoftObjectPath TooltipWidgetPath(TEXT("/Game/UI/Inventory/WBP_ItemToolTip.WBP_ItemToolTip_C"));
+	TSoftClassPtr<UUserWidget> TooltipWidgetAssetPtr(TooltipWidgetPath);
+	UClass* TooltipWidgetClass = TooltipWidgetAssetPtr.LoadSynchronous();
+
+	if (TooltipWidgetClass)
+	{
+		UItemToolTipWidget* ItemToolTipWidget = CreateWidget<UItemToolTipWidget>(GetWorld(), TooltipWidgetClass);
+		if (ItemToolTipWidget)
+		{
+			SetToolTip(ItemToolTipWidget);
+			ItemToolTipWidget->SetToolTipItem(ItemData);
 		}
 	}
 }
@@ -82,10 +103,10 @@ void UItemWidget::SetWidgetPosition(int32 PositionX, int32 PositionY)
 
 void UItemWidget::ClearItemInfo()
 {
-	ItemInfo = FInventorySlot();
+	ItemInfo.Clear();
 	if (ItemIcon)
 	{
-		ItemIcon->SetBrushFromTexture(nullptr); // 아이콘 초기화
+		ItemIcon->SetBrushFromTexture(nullptr); 
 	}
 	
 	if (ItemSzBox)
@@ -94,7 +115,17 @@ void UItemWidget::ClearItemInfo()
 		ItemSzBox->SetHeightOverride(0.0f);
 	}
 	
-	SetRenderOpacity(1.0f); // 투명도 복원
+	// 투명도 복원
+	SetRenderOpacity(1.0f); 
+
+	// 툴팁 제거
+	SetToolTip(nullptr); 
+}
+
+void UItemWidget::DestoryItemWidget()
+{
+	RemoveFromParent();
+	SetVisibility(ESlateVisibility::Collapsed);
 }
 
 FReply UItemWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -237,6 +268,7 @@ void UItemWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, U
 	}
 }
 
+//아이템 사이즈 바꾸는거 디버깅용함수
 bool UItemWidget::ValidateIconComponents() const
 {
 	if (!ItemIcon)
