@@ -41,7 +41,7 @@ void UDiaProjectileAbility::SpawnProjectile()
 	const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
 	if (!ProjectileClass || !ActorInfo.AvatarActor.IsValid())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Cannot spawn projectile: missing requirements"));
+		UE_LOG(LogTemp, Warning, TEXT("DiaProjectileAbility::SpawnProjectile - Cannot spawn projectile: missing requirements"));
 		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 
 		return;
@@ -50,7 +50,7 @@ void UDiaProjectileAbility::SpawnProjectile()
 	ACharacter* Character = Cast<ACharacter>(ActorInfo.AvatarActor.Get());
 	if (!Character)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Cannot spawn projectile: not a character"));
+		UE_LOG(LogTemp, Warning, TEXT("DiaProjectileAbility::SpawnProjectile - Cannot spawn projectile: not a character"));
 		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 
 		return;
@@ -63,13 +63,26 @@ void UDiaProjectileAbility::SpawnProjectile()
 		return;
 	}
 
-	// Calculate spawn location
-	FVector CharacterLocation = Character->GetActorLocation();
-	FRotator CharacterRotation = Character->GetActorRotation();
-	FVector SpawnLocation = CharacterLocation + CharacterRotation.RotateVector(ProjectileOffset);
-
-	// Calculate launch direction
+	// Calculate launch direction (수평 방향으로 정규화 + 최소 거리 보정)
 	FVector LaunchDirection = CalculateLaunchDirection();
+	if (LaunchDirection.IsNearlyZero())
+	{
+		// 마우스 위치가 애매하거나 계산에 실패하면 캐릭터 전방으로 발사
+		LaunchDirection = Character->GetActorForwardVector();
+	}
+	LaunchDirection.Z = 0.0f;
+	LaunchDirection.Normalize();
+
+	// Calculate spawn location: 발사 방향으로 일정 거리 앞
+	FVector CharacterLocation = Character->GetActorLocation();
+	const float SpawnDistance = FMath::Max(ProjectileOffset.Size(), MinimumRange);
+	FVector SpawnLocation = CharacterLocation + LaunchDirection * SpawnDistance;
+
+#if UE_EDITOR
+	DrawDebugLine(World, CharacterLocation, SpawnLocation, FColor::Green, false, 1.5f, 0, 2.0f);
+	UE_LOG(LogTemp, Verbose, TEXT("DiaProjectileAbility: Calc Spawn | Char=%s Spawn=%s Dir=%s Dist=%.1f"),
+		*CharacterLocation.ToString(), *SpawnLocation.ToString(), *LaunchDirection.ToString(), SpawnDistance);
+#endif
 
 	if (bFireMultipleProjectiles && ProjectileCount > 1)
 	{
@@ -103,7 +116,7 @@ void UDiaProjectileAbility::SpawnProjectile()
                 UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
                 Projectile->Initialize(SkillData.BaseDamage, Character, SourceASC, DamageEffectClass);
                 Projectile->Launch(CurrentDirection);
-                UE_LOG(LogTemp, Log, TEXT("Spawned projectile %d at direction: %s"), i, *CurrentDirection.ToString());
+				UE_LOG(LogTemp, Log, TEXT("DiaProjectileAbility: Spawned projectile %d | Spawn=%s Dir=%s"), i, *SpawnLocation.ToString(), *CurrentDirection.ToString());
             }
 		}
 	}
@@ -130,7 +143,7 @@ void UDiaProjectileAbility::SpawnProjectile()
             UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
             Projectile->Initialize(SkillData.BaseDamage, Character, SourceASC, DamageEffectClass);
             Projectile->Launch(LaunchDirection);
-            UE_LOG(LogTemp, Log, TEXT("Spawned single projectile at direction: %s"), *LaunchDirection.ToString());
+            UE_LOG(LogTemp, Log, TEXT("DiaProjectileAbility: Spawned single projectile | Spawn=%s Dir=%s"), *SpawnLocation.ToString(), *LaunchDirection.ToString());
         }
 	}
 
@@ -176,15 +189,28 @@ FVector UDiaProjectileAbility::CalculateLaunchDirection() const
 	}
 	else
 	{
-		// Use direction towards mouse cursor
+		// Use direction towards mouse cursor (너무 가까운 경우/불안정한 방향은 보정)
 		FVector MouseWorldLocation = GetMouseWorldLocation();
 		FVector CharacterLocation = Character->GetActorLocation();
-		FVector Direction = (MouseWorldLocation - CharacterLocation).GetSafeNormal();
-		
-		// Keep direction on horizontal plane
-		Direction.Z = 0.0f;
-		Direction.Normalize();
-		
+
+		// 마우스 위치까지의 2D 벡터
+		FVector ToMouse = MouseWorldLocation - CharacterLocation;
+		ToMouse.Z = 0.0f;
+
+		const float Distance = ToMouse.Size();
+		if (Distance < KINDA_SMALL_NUMBER)
+		{
+			// 마우스 위치가 캐릭터와 거의 같으면 전방으로 발사
+			return Character->GetActorForwardVector();
+		}
+
+		// 너무 가까운 지점을 클릭한 경우 최소 사거리만큼 앞으로 보정
+		if (Distance < MinimumRange)
+		{
+			ToMouse = ToMouse.GetSafeNormal() * MinimumRange;
+		}
+
+		FVector Direction = ToMouse.GetSafeNormal();
 		return Direction;
 	}
 }

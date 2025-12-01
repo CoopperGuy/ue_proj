@@ -73,10 +73,21 @@ void UEquipWidget::EquipItemToSlot(EEquipmentSlot SlotType, const FEquippedItem&
 	}
 	}
 
-FEquippedItem UEquipWidget::UnequipItemFromSlot(EEquipmentSlot SlotType)
+void UEquipWidget::UnequipItemFromSlot(EEquipmentSlot SlotType)
 {
-	// TODO: 여기에 return 문을 삽입합니다.
-	return FEquippedItem{};
+	if (SlotType == EEquipmentSlot::EES_None)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Invalid Slot Type: %s"), *UEnum::GetValueAsString(SlotType));
+		return ;
+	}
+	UEquipSlot* TargetSlot = GetEquipSlot(SlotType);
+	if (IsValid(TargetSlot))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Invalid Slot Type: %s"), *UEnum::GetValueAsString(SlotType));
+	}
+	TargetSlot->UnEquipItem();
+
+	return ;
 }
 
 void UEquipWidget::SetInventoryComponent(UDiaInventoryComponent* InComponent)
@@ -107,6 +118,12 @@ void UEquipWidget::SetEquipmentComponent(UDiaEquipmentComponent* InComponent)
 			SlotWidget->SetEquipmentComponent(EquippementComponent.Get());
 		}
 	}
+
+	if (EquippementComponent->IsValidLowLevel())
+	{
+		EquippementComponent->OnItemUnEquipped.AddDynamic(this, &ThisClass::UnequipItemFromSlot);
+	}
+
 }
 
 //EquipSlot이 false일 경우 실행된다.

@@ -164,8 +164,16 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     int32 OtherBodyIndex, bool bFromSweep,
     const FHitResult& HitResult)
 {
+    // 기본 히트 정보 로그
+    UE_LOG(LogTemp, Log, TEXT("DiaProjectile::OnHit - Self=%s, Owner=%s, Other=%s, FromSweep=%d"),
+        *GetNameSafe(this),
+        *GetNameSafe(Owner),
+        *GetNameSafe(OtherActor),
+        bFromSweep ? 1 : 0);
+
     if (!IsValid(OtherActor) || OtherActor == this || OtherActor == Owner)
     {
+        UE_LOG(LogTemp, Verbose, TEXT("DiaProjectile::OnHit - Invalid OtherActor or self/owner. Ignore hit."));
         return;
     }
 
@@ -177,30 +185,41 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
         // 소유자의 모든 태그에 대해 검사
         for (const FName& OwnerTag : Owner->Tags)
         {
-            //character 태그에 대한 체크는 넘긴다.
+            // character 태그에 대한 체크는 넘긴다.
             if (OwnerTag == FName(TEXT("Character")))
             {
                 bIsPlayerCharacter = true;
-				continue;
+                continue;
             }
 
-            //같은 태크가 있으면 피격 x
+            // 같은 태그가 있으면 피격 x
             if (OtherActor->Tags.Contains(OwnerTag))
             {
                 bIsOwnerCharacter = true;
+                UE_LOG(LogTemp, Verbose, TEXT("DiaProjectile::OnHit - Shared tag '%s' between Owner(%s) and Other(%s), skip damage"),
+                    *OwnerTag.ToString(),
+                    *GetNameSafe(Owner),
+                    *GetNameSafe(OtherActor));
                 break;
             }
         }
     }
 
     // 같은 태그를 가진 액터는 데미지를 받지 않음
-    if (bIsOwnerCharacter)    return;
+    if (bIsOwnerCharacter)
+    {
+        UE_LOG(LogTemp, Log, TEXT("DiaProjectile::OnHit - Same-faction target %s detected. No damage applied."),
+            *GetNameSafe(OtherActor));
+        return;
+    }
 
 
-    // 데미지 처리
     ADiaBaseCharacter* DiaOtherActor = Cast<ADiaBaseCharacter>(OtherActor);
     if (IsValid(DiaOtherActor))
     {
+        UE_LOG(LogTemp, Log, TEXT("DiaProjectile::OnHit - Apply damage to %s (Damage=%.1f)"),
+            *GetNameSafe(DiaOtherActor), Damage);
+
         // 데미지 처리
         ProcessDamage(DiaOtherActor, HitResult);
         
@@ -216,6 +235,7 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     }
     
     // 발사체 제거
+    UE_LOG(LogTemp, Verbose, TEXT("DiaProjectile::OnHit - Destroy projectile %s"), *GetNameSafe(this));
     Destroy();
 }
 

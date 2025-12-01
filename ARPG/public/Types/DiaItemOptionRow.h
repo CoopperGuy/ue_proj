@@ -164,5 +164,26 @@ struct ARPG_API FDiaActualItemOption
 		, GrantedTags(OptionRow.GrantedTags)
 	{
 	}
+
+	FText GetOptionDescription() const
+	{
+		FString ValueStr;
+		switch (ScalingType)
+		{
+		case EItemOptionScalingType::IOST_Flat:
+			ValueStr = FString::Printf(TEXT("%.0f"), Value);
+			break;
+		case EItemOptionScalingType::IOST_Percent:
+			ValueStr = FString::Printf(TEXT("%.1f%%"), Value * 100.f);
+			break;
+		case EItemOptionScalingType::IOST_Multiplier:
+			ValueStr = FString::Printf(TEXT("x%.2f"), Value);
+			break;
+		default:
+			ValueStr = FString::Printf(TEXT("%.0f"), Value);
+			break;
+		}
+		return FText::FromString(FString::Printf(TEXT("%s %s"), *DisplayName.ToString(), *ValueStr));
+	}
 };
 

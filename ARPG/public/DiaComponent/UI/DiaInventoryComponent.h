@@ -11,6 +11,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemRemoved, const FGuid&, ItemID);
 
+
 class UMainInventory;
 class UItemWidget;
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -28,15 +29,13 @@ protected:
 	virtual void BeginPlay() override;
 	UFUNCTION()
 	void HandleItemRemoved(const FGuid& ItemID);
-public:	
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-    
+public:	    
     bool TryAddItem(const FInventorySlot& ItemData, UMainInventory* InvenWidget);
 	bool RequestMoveItem(const FGuid& InstanceID, int32 DestX, int32 DestY, UMainInventory* InventoryWidget);
+	bool RemoveItem(const FGuid& InstanceID, UMainInventory* InvenWidget);
+
 	void FillGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);
 
-    bool RemoveItem(const FGuid& InstanceID, UMainInventory* InvenWidget);
-    bool MoveItem(const FGuid& InstanceID, int32 NewPosX, int32 NewPosY);
 
 	// 그리드 크기 가져오기
 	FORCEINLINE int32 GetGridWidth() const { return InventoryGrid.Width; }
@@ -48,11 +47,8 @@ public:
 	bool FindPlaceForItem(int32 ItemWidth, int32 ItemHeight, int32& OutPosX, int32& OutPosY) const;
 
 private:
-	FInventorySlot* FindItemByInstanceID(const FGuid& InstanceID);
 	bool ClearGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);
 private:
-    UPROPERTY()
-    TArray<FInventorySlot> Items;
 
     UPROPERTY(EditDefaultsOnly, Category = "Inventory")
     int32 GridWidth = 10;
@@ -62,9 +58,4 @@ private:
     
     UPROPERTY()
     FGrid InventoryGrid;
-public:
-	FORCEINLINE void AddItem(const FInventorySlot& NewItem)
-	{
-		Items.Add(NewItem);
-	}
 };

@@ -109,7 +109,7 @@ struct ARPG_API FItemInstance
 	FItemBase BaseItem;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	FGuid InstanceID;
+	FGuid InstanceID = FGuid();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
 	int32 Quantity = 1;
@@ -125,7 +125,7 @@ struct ARPG_API FItemInstance
 	TArray<FDiaActualItemOption> PrefixOptions;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
-	TArray<FDiaActualItemOption> SubfixOptions;
+	TArray<FDiaActualItemOption> SuffixOptions;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item")
 	TMap<FGameplayTag, FDiaItemStatOption> ModifiedStats;
@@ -134,7 +134,7 @@ struct ARPG_API FItemInstance
 		: InstanceID(FGuid::NewGuid())
 	{
 		PrefixOptions.Reserve(MAX_PREFIX_OPTIONS);
-		SubfixOptions.Reserve(MAX_SUFFIX_OPTIONS);
+		SuffixOptions.Reserve(MAX_SUFFIX_OPTIONS);
 	}
 
 	bool IsValid() const { return !BaseItem.ItemID.IsNone() && Quantity > 0; }
@@ -150,7 +150,7 @@ struct ARPG_API FItemInstance
 	FSoftObjectPath GetIconPath() const { return BaseItem.IconPath; }
 
 	bool CheckPrefixOptionsSize() const { return PrefixOptions.Num() <= MAX_PREFIX_OPTIONS; }
-	bool CheckSuffixOptionsSize() const { return SubfixOptions.Num() <= MAX_SUFFIX_OPTIONS; }
+	bool CheckSuffixOptionsSize() const { return SuffixOptions.Num() <= MAX_SUFFIX_OPTIONS; }
 
 	float GetStatValue(const FGameplayTag& Stat) const
 	{

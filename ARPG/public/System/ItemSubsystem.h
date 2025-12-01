@@ -26,10 +26,12 @@ public:
 
     const FItemBase& GetItemData(const FName& ItemID) const;
     
-    FInventorySlot CreateInventoryInstance(const FName& ItemID, int32 Level = 1, bool bRandomStats = false);
-    
+    void CreateInventoryInstance(FInventorySlot& OutItem, FName& ItemID, int32 Level = 1, bool bRandomStats = false);
+    void CreateInventoryInstanceByItemBase(FInventorySlot& OutItem, const FItemBase& ItemData, int32 Level = 1, bool bRandomStats = false);
+
 	UItemWidget* CreateItemWidget(const FInventorySlot& Item);
-    
+    UItemWidget* CreateItemWidgetEmpty();
+
 private:
     UPROPERTY()
     UDataTable* ItemDataTable;
@@ -41,7 +43,7 @@ private:
     UDataTable* OptionDataTable;
     
     UPROPERTY()
-    FString OptionDataTablePath = TEXT("/Game/Datatable/DT_DiaitemTable.DT_DiaitemTable");
+    FString OptionDataTablePath = TEXT("/Game/Datatable/DT_ItemOptions.DT_ItemOptions");
 
     UPROPERTY()
     mutable TMap<FName, FItemBase> ItemCache;

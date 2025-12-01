@@ -7,6 +7,7 @@
 #include "Types/ItemBase.h"
 #include "DiaEquipmentComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemUnEquipped, EEquipmentSlot, SlotType);
 
 class UEquipWidget;
 
@@ -21,7 +22,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	void ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot);
+	void ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot, int32 State = 1);
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -29,7 +30,9 @@ public:
 	UFUNCTION()
 	void EquipItem(const FEquippedItem& Item, EEquipmentSlot Slot);
 	UFUNCTION()
-	void UnEquipItem();
+	void UnEquipItem(EEquipmentSlot Slot);
+public:
+	FOnItemUnEquipped OnItemUnEquipped;
 private:
 	//장착한 아이템을 매핑하는 컴포넌트
 	UPROPERTY()

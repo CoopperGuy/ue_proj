@@ -10,6 +10,7 @@ void UItemSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
     Super::Initialize(Collection);
 	LoadItemData();
+    LoadOptionData();
     UE_LOG(LogTemp, Warning, TEXT("ItemSubsystem: LoadComplete! "));
 
 }
@@ -38,7 +39,7 @@ void UItemSubsystem::LoadItemData()
             }
         }
 	}
-#ifdef UE_BUILD_DEBUG
+#ifdef UE_EDITOR
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ItemSubsystem: Failed to load item data table from path: %s"), *ItemDataTablePath);
@@ -63,19 +64,15 @@ void UItemSubsystem::LoadOptionData()
             }
         }
 	}
+#ifdef UE_EDITOR
+    else
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ItemSubsystem: Failed to load item data table from path: %s"), *OptionDataTablePath);
+    }
+#endif
+
 }
 
-FInventorySlot UItemSubsystem::CreateInventoryInstance(const FName& ItemID, int32 Level, bool bRandomStats)
-{
-    const FItemBase& ItemData = GetItemData(ItemID);
-    FInventorySlot Item;
-    Item.ItemInstance.BaseItem = ItemData;
-    Item.ItemInstance.Quantity = 1;
-    Item.ItemInstance.Level = Level;
-    GenerateRandomStats(Item.ItemInstance, Level);
-	GenerateItemOptions(Item.ItemInstance, Level);
-    return Item;
-}
 
 UItemWidget* UItemSubsystem::CreateItemWidget(const FInventorySlot& Item)
 {
@@ -96,6 +93,21 @@ UItemWidget* UItemSubsystem::CreateItemWidget(const FInventorySlot& Item)
     return nullptr;
 }
 
+UItemWidget* UItemSubsystem::CreateItemWidgetEmpty()
+{
+    FSoftObjectPath ItemWidgetPath(TEXT("/Game/UI/Inventory/WBP_ItemWidget.WBP_ItemWidget_C"));
+    TSoftClassPtr<UUserWidget> WidgetAssetPtr(ItemWidgetPath);
+    UClass* ItemWidgetClass = WidgetAssetPtr.LoadSynchronous();
+
+    if (ItemWidgetClass)
+    {
+        UItemWidget* ItemWidget = CreateWidget<UItemWidget>(GetWorld(), ItemWidgetClass);
+        return ItemWidget;
+    }
+
+    return nullptr;
+}
+
 void UItemSubsystem::GenerateRandomStats(FItemInstance& Item, int32 Level)
 {
     // 기본 스탯에 추가로 보너스 스탯 생성
@@ -106,41 +118,66 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
 	int32 NumPrefixOptionsToAdd = 3;
 	int32 NumSuffixOptionsToAdd = 3;
 
+#if UE_EDITOR
+    UE_LOG(LogTemp, Warning, TEXT("GenerateItemOptions: Start | ItemID: %s, Level: %d"),
+        *Item.BaseItem.ItemID.ToString(), Level);
+    UE_LOG(LogTemp, Warning, TEXT("GenerateItemOptions: OptionCache Num: %d"), OptionCache.Num());
+#endif
+
 	TArray<FDiaItemOptionRow> AvailablePrefixOptions;
-    TArray<FDiaItemOptionRow> AvailableSubfixOptions;
+    TArray<FDiaItemOptionRow> AvailableSuffixOptions;
 
     TArray<FDiaItemOptionRow> ResultPrefixOptions;
-    TArray<FDiaItemOptionRow> ResultSubfixOptions;
+    TArray<FDiaItemOptionRow> ResultSuffixOptions;
 
     for(const auto& OptionRows : OptionCache)
     {
 		bool bCanApplyOption = true;
         const FDiaItemOptionRow& OptionRow = OptionRows.Value;
+#if UE_EDITOR
+        UE_LOG(LogTemp, Warning, TEXT("GenerateItemOptions: Check OptionID: %s, Tier: %d, Type: %d"),
+            *OptionRow.OptionID.ToString(), OptionRow.TierIndex, static_cast<int32>(OptionRow.OptionType));
+#endif
         {
             //추가할 수 없는 상태
-            if (!Item.CheckPrefixOptionsSize() || !Item.CheckPrefixOptionsSize())
+            if (!Item.CheckPrefixOptionsSize() || !Item.CheckSuffixOptionsSize())
             {
+#if UE_EDITOR
+                UE_LOG(LogTemp, Warning, TEXT("GenerateItemOptions: Early return - option slot size check failed"));
+#endif
                 return;
             }
             //가능 태그 검사
             if (Item.BaseItem.PossibleItemOptionTags.HasAny(OptionRow.RequiredTags))
             {
                 bCanApplyOption = true;
+#if UE_EDITOR
+                UE_LOG(LogTemp, Warning, TEXT("GenerateItemOptions: Possible by tags for OptionID: %s"),
+                    *OptionRow.OptionID.ToString());
+#endif
             }
             //블록용 태그 검사
             if (Item.BaseItem.PossibleItemOptionTags.HasAny(OptionRow.BlockedTags))
             {
                 bCanApplyOption = false;
+#if UE_EDITOR
+                UE_LOG(LogTemp, Warning, TEXT("GenerateItemOptions: Blocked by tags for OptionID: %s"),
+                    *OptionRow.OptionID.ToString());
+#endif
             }
             //레벨 조건 검사 (아이템)
-            if(Level < OptionRow.RequiredItemLevelMin || Level > OptionRow.RequiredItemLevelMax)
-            {
-                bCanApplyOption = false;
-			}
+   //         if(Level < OptionRow.RequiredItemLevelMin || Level > OptionRow.RequiredItemLevelMax)
+   //         {
+   //             bCanApplyOption = false;
+			//}
             //추가할 수 없는 옵션 슬롯이라면 거름
             if (Item.GetEquipmentSlot() != EEquipmentSlot::EES_None && !OptionRow.SlotTypes.Contains(Item.GetEquipmentSlot()))
             {
                 bCanApplyOption = false;
+#if UE_EDITOR
+                UE_LOG(LogTemp, Warning, TEXT("GenerateItemOptions: Slot mismatch | ItemSlot: %d, OptionID: %s"),
+                    static_cast<int32>(Item.GetEquipmentSlot()), *OptionRow.OptionID.ToString());
+#endif
             }
 
 
@@ -157,8 +194,12 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
             }
             else if (OptionRow.OptionType == EItemOptionType::IOT_Suffix)
             {
-                AvailableSubfixOptions.Add(OptionRow);
+                AvailableSuffixOptions.Add(OptionRow);
 			}
+#if UE_EDITOR
+            UE_LOG(LogTemp, Warning, TEXT("OptionID: %s"), *OptionRow.OptionID.ToString());
+#endif // UE_EDITOR
+
         }
 	}
 
@@ -166,10 +207,10 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
         [](const FDiaItemOptionRow& Row) { return static_cast<float>(Row.Weight); },
         NumPrefixOptionsToAdd,
         ResultPrefixOptions);
-    PickupRandomValuesByWeight<FDiaItemOptionRow>(AvailableSubfixOptions,
+    PickupRandomValuesByWeight<FDiaItemOptionRow>(AvailableSuffixOptions,
         [](const FDiaItemOptionRow& Row) { return static_cast<float>(Row.Weight); },
         NumSuffixOptionsToAdd,
-        ResultSubfixOptions);
+        ResultSuffixOptions);
 
     //옵션을 넣어준다
     //내부적으로 makerandomvalue를 호출한다.
@@ -178,10 +219,10 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
         FDiaActualItemOption ActualOption(OptionRow);
         Item.PrefixOptions.Add(ActualOption);
     }
-    for (const FDiaItemOptionRow& OptionRow : ResultSubfixOptions)
+    for (const FDiaItemOptionRow& OptionRow : ResultSuffixOptions)
     {
         FDiaActualItemOption ActualOption(OptionRow);
-        Item.SubfixOptions.Add(ActualOption);
+        Item.SuffixOptions.Add(ActualOption);
 	}
 
     //로그 남기기
@@ -191,7 +232,7 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
         UE_LOG(LogTemp, Warning, TEXT(" - %s (Tier %d)"), *Option.DisplayName.ToString(), Option.TierIndex);
     }
     UE_LOG(LogTemp, Warning, TEXT("Generated Suffix Options:"));
-    for (const FDiaItemOptionRow& Option : ResultSubfixOptions)
+    for (const FDiaItemOptionRow& Option : ResultSuffixOptions)
     {
         UE_LOG(LogTemp, Warning, TEXT(" - %s (Tier %d)"), *Option.DisplayName.ToString(), Option.TierIndex);
 	}
@@ -212,7 +253,7 @@ const FItemBase& UItemSubsystem::GetItemData(const FName& ItemID) const
                 return *FoundItem;
             }
         }
-#ifdef UE_BUILD_DEBUG
+#ifdef UE_EDITOR
         UE_LOG(LogTemp, Warning, TEXT("ItemSubsystem: Item not found with ID: %s"), *ItemID.ToString());
 #endif
         static const FItemBase DefaultItem;
@@ -220,4 +261,23 @@ const FItemBase& UItemSubsystem::GetItemData(const FName& ItemID) const
     }
 
     return *FoundItem;
+}
+
+void UItemSubsystem::CreateInventoryInstance(FInventorySlot& OutItem, FName& ItemID, int32 Level, bool bRandomStats)
+{
+    const FItemBase& ItemData = GetItemData(ItemID);
+    OutItem = FInventorySlot::FromBase(ItemData, 1);
+    OutItem.ItemInstance.Quantity = 1;
+	OutItem.ItemInstance.Level = Level;
+    GenerateRandomStats(OutItem.ItemInstance, Level);
+    GenerateItemOptions(OutItem.ItemInstance, Level);
+}
+
+void UItemSubsystem::CreateInventoryInstanceByItemBase(FInventorySlot& OutItem, const FItemBase& ItemData, int32 Level, bool bRandomStats)
+{
+	OutItem = FInventorySlot::FromBase(ItemData, 1);
+    OutItem.ItemInstance.Quantity = 1;
+    OutItem.ItemInstance.Level = Level;
+    GenerateRandomStats(OutItem.ItemInstance, Level);
+    GenerateItemOptions(OutItem.ItemInstance, Level);
 }

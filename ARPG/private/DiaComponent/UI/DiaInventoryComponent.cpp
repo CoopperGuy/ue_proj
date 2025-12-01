@@ -12,7 +12,7 @@
 UDiaInventoryComponent::UDiaInventoryComponent()
 	:InventoryGrid(GridWidth, GridHeight)
 {
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
 
@@ -37,13 +37,6 @@ void UDiaInventoryComponent::HandleItemRemoved(const FGuid& ItemID)
 	RemoveItem(ItemID, InvenWidget);
 }
 
-
-void UDiaInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-}
-
 bool UDiaInventoryComponent::TryAddItem(const FInventorySlot& ItemData, UMainInventory* InvenWidget)
 {
 	if (!InvenWidget) return false;
@@ -61,7 +54,6 @@ bool UDiaInventoryComponent::TryAddItem(const FInventorySlot& ItemData, UMainInv
 
 	if (res)
 	{
-		AddItem(ItemData);
 		FillGrid(ItemData.ItemInstance.GetWidth(), ItemData.ItemInstance.GetHeight(), OutPosX, OutPosY);
 	}
 
@@ -70,10 +62,21 @@ bool UDiaInventoryComponent::TryAddItem(const FInventorySlot& ItemData, UMainInv
 
 bool UDiaInventoryComponent::RequestMoveItem(const FGuid& InstanceID, int32 DestX, int32 DestY, UMainInventory* InventoryWidget)
 {
-	MoveItem(InstanceID, DestX, DestY);
-
-	if (UItemWidget* ItemWidget = InventoryWidget->GetItemWidgetBySlotIndex(InstanceID))
+	const FInventorySlot* ItemInfo = InventoryWidget->GetItemDataAtGuid(InstanceID);
+	if (!ItemInfo)
 	{
+#ifdef UE_EDITOR
+		UE_LOG(LogTemp, Warning, TEXT("MoveItem: Item with InstanceID %s not found."), *InstanceID.ToString());
+#endif // UE_EDITOR
+		return false;
+	}
+
+	ClearGrid(ItemInfo->ItemInstance.GetWidth(), ItemInfo->ItemInstance.GetHeight(), ItemInfo->GridX, ItemInfo->GridY);
+	FillGrid(ItemInfo->ItemInstance.GetWidth(), ItemInfo->ItemInstance.GetHeight(), DestX, DestY);
+
+	if (UItemWidget* ItemWidget = InventoryWidget->GetItemWidgetAtGuid(InstanceID))
+	{
+		InventoryWidget->MoveContainItem(InstanceID, DestX, DestY);
 		ItemWidget->SetRenderOpacity(1.0f);
 		InventoryWidget->UpdateItemPosition(ItemWidget, DestX, DestY);
 #ifdef UE_EDITOR
@@ -85,6 +88,24 @@ bool UDiaInventoryComponent::RequestMoveItem(const FGuid& InstanceID, int32 Dest
 	return false;
 }
 
+bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID, UMainInventory* InvenWidget)
+{
+	const FInventorySlot* ItemInfo = InvenWidget->GetItemDataAtGuid(InstanceID);
+	int32 ItemWidth = ItemInfo->ItemInstance.GetWidth();
+	int32 ItemHeight = ItemInfo->ItemInstance.GetHeight();
+	int32 PosX = ItemInfo->GridX;
+	int32 PosY = ItemInfo->GridY;
+
+	if (ClearGrid(ItemWidth, ItemHeight, PosX, PosY))
+	{
+		if (InvenWidget->RemoveContainItem(InstanceID))
+		{
+			UE_LOG(LogTemp, Log, TEXT("Item successfully removed from inventory: %s"), *InstanceID.ToString());
+			return true;
+		}
+	}
+	return false;
+}
 
 void UDiaInventoryComponent::FillGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
 {
@@ -96,58 +117,6 @@ void UDiaInventoryComponent::FillGrid(int32 ItemWidth, int32 ItemHeight, int32 P
 			InventoryGrid[y * GridWidth + x] = true;
 		}
 	}
-}
-
-bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID, UMainInventory* InvenWidget)
-{
-	for (int32 i = 0; i < Items.Num(); i++)
-	{
-		if (Items[i].ItemInstance.InstanceID == InstanceID)
-		{
-			// 그리드에서 공간 비우기
-			int32 ItemWidth = Items[i].ItemInstance.GetWidth();
-			int32 ItemHeight = Items[i].ItemInstance.GetHeight();
-			int32 PosX = Items[i].GridX;
-			int32 PosY = Items[i].GridY;
-			if (ClearGrid(ItemWidth, ItemHeight, PosX, PosY))
-			{
-				//ui에서 제거
-				if (InvenWidget)
-				{
-					if (InvenWidget->RemoveItemFromInventory(i))
-					{
-						//성공적으로 제거됨 로그 작성
-						UE_LOG(LogTemp, Log, TEXT("Item successfully removed from inventory: %s"), *InstanceID.ToString());
-					}
-				}
-
-			}
-			Items.RemoveAt(i);
-			return true;
-		}
-	}
-	return false;
-}
-
-bool UDiaInventoryComponent::MoveItem(const FGuid& InstanceID, int32 NewPosX, int32 NewPosY)
-{
-	FInventorySlot* ItemSlot = FindItemByInstanceID(InstanceID);
-	if (!ItemSlot)
-	{
-#ifdef UE_EDITOR
-		UE_LOG(LogTemp, Warning, TEXT("MoveItem: Item with InstanceID %s not found."), *InstanceID.ToString());
-#endif // UE_EDITOR
-		return false;
-	}
-
-	ClearGrid(ItemSlot->ItemInstance.GetWidth(), ItemSlot->ItemInstance.GetHeight(), ItemSlot->GridX, ItemSlot->GridY);
-	FillGrid(ItemSlot->ItemInstance.GetWidth(), ItemSlot->ItemInstance.GetHeight(), NewPosX, NewPosY);
-
-	ItemSlot->GridX = NewPosX;
-	ItemSlot->GridY = NewPosY;
-
-	// 기존 위치에서 제거 후 새 위치에 배치
-	return false;
 }
 
 bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY) const
@@ -204,18 +173,6 @@ bool UDiaInventoryComponent::FindPlaceForItem(int32 ItemWidth, int32 ItemHeight,
 	return false; // 배치할 수 있는 공간이 없음
 }
 
-FInventorySlot* UDiaInventoryComponent::FindItemByInstanceID(const FGuid& InstanceID)
-{
-	for (FInventorySlot& Item : Items)
-	{
-		if (Item.ItemInstance.InstanceID == InstanceID)
-		{
-			return &Item;
-		}
-	}
-	return nullptr;
-}
-
 bool UDiaInventoryComponent::ClearGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
 {
 	for( int32 y = PosY; y < PosY + ItemHeight; ++y)
@@ -239,4 +196,3 @@ bool UDiaInventoryComponent::ClearGrid(int32 ItemWidth, int32 ItemHeight, int32 
 
 	return true;
 }
-

@@ -86,7 +86,8 @@ bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 It
 	//아이템 위잿 생성
 
 	// ItemSubsystem에서 아이템 위젯을 생성한다.
-	UItemWidget* ItemWidget = FInventoryUtils::CreateItemWidget(this, ItemData);
+	UItemWidget* ItemWidget = FInventoryUtils::CreateItemWidget(this, &ItemData);
+	ItemWidget->SetItemDragDropState(static_cast<int32>(EItemDragDropType::EIDT_Inventory));
 	if (IsValid(ItemWidget))
 	{
 		// ItemWidget을 InventoryCanvas의 자식으로 추가
@@ -142,15 +143,6 @@ bool UMainInventory::RemoveItemFromInventory(int32 SlotIndex)
 	return true;
 }
 
-UItemWidget* UMainInventory::GetItemWidgetBySlotIndex(FGuid guid) const
-{
-	if (UItemWidget* const* FoundWidget = ItemWidgets.Find(guid))
-	{
-		return *FoundWidget;
-	}
-	return nullptr;
-}
-
 UItemWidget* UMainInventory::GetItemWidgetAtGridPosition(int32 GridX, int32 GridY) const
 {
 	// 모든 아이템 위젯을 순회하여 해당 위치에 있는 아이템 찾기
@@ -176,6 +168,24 @@ UItemWidget* UMainInventory::GetItemWidgetAt(int32 SlotIndex) const
 	int32 GridX = SlotIndex % GridWidth;
 	int32 GridY = SlotIndex / GridWidth;
 	return GetItemWidgetAtGridPosition(GridX, GridY);
+}
+
+UItemWidget* UMainInventory::GetItemWidgetAtGuid(const FGuid& ItemInstanceID) const
+{
+	if (UItemWidget* const* FoundWidget = ItemWidgets.Find(ItemInstanceID))
+	{
+		return *FoundWidget;
+	}
+	return nullptr;
+}
+
+const FInventorySlot* UMainInventory::GetItemDataAtGuid(const FGuid& ItemInstanceID) const
+{
+	if (UItemWidget* const* FoundWidget = ItemWidgets.Find(ItemInstanceID))
+	{
+		return &(*FoundWidget)->GetItemInfo();
+	}
+	return nullptr;
 }
 
 void UMainInventory::CreateInventory()
@@ -272,12 +282,22 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 			InventoryComponent->RequestMoveItem(ItemDragOp->SourceWidget->GetItemInstanceID(), NewGridX, NewGridY, this);
 		}
 
-			break;
+		break;
 	case EItemDragDropType::EIDT_Equipment:
 		// 장비에서 인벤토리로 이동 처리
 		UE_LOG(LogTemp, Log, TEXT("Item moved from equipment to inventory at (%d, % d)"), NewGridX, NewGridY);
-		//deleagte 고민
-			break;
+		//step.1 장비 컴포넌트에서 아이템 제거 요청
+		//step.2 인벤토리 컴포넌트에 아이템 추가 요청
+		//문제 -> EquipSlot에서 어떻게 지울 것인가??? 상식적으로만 EquipppmentComponent에서 지우는게 맞는데 관리하지 않고 있음.
+		if(InventoryComponent.IsValid() && EquippementComponent.IsValid())
+		{
+			EEquipmentSlot EquipSlot = ItemDragOp->ItemData.ItemInstance.BaseItem.EquipmentSlot;
+			EquippementComponent->UnEquipItem(EquipSlot);
+			InventoryComponent->TryAddItem(ItemDragOp->ItemData, this);
+		}
+			
+	
+		break;
 	}
 
 	return true;
@@ -416,6 +436,37 @@ bool UMainInventory::AddItem(const FInventorySlot& Item, UItemWidget* ItemWidget
 	bool res = AddItemToInventory(Item, Item.ItemInstance.GetWidth(), Item.ItemInstance.GetHeight(), OutPosX, OutPosY);
 
 	return res;
+}
+
+bool UMainInventory::RemoveContainItem(const FGuid& ItemInstanceID)
+{
+	UItemWidget* ItemWidget = GetItemWidgetAtGuid(ItemInstanceID);
+	if (!IsValid(ItemWidget))
+		return false;
+
+	ItemWidget->ClearItemInfo();
+
+	// ItemWidget을 InventoryCanvas에서 제거
+	InventoryCanvas->RemoveChild(ItemWidget);
+
+	ItemWidget->RemoveFromParent();
+	ItemWidgets.Remove(Cast<UItemWidget>(ItemWidget)->GetItemInfo().ItemInstance.InstanceID);
+	ItemWidget->Destruct();
+	ItemWidget = nullptr;
+
+	return true;
+
+}
+
+bool UMainInventory::MoveContainItem(const FGuid& ItemInstanceID, int32 NewPosX, int32 NewPosY)
+{
+	UItemWidget* ItemWidget = GetItemWidgetAtGuid(ItemInstanceID);
+	if (!IsValid(ItemWidget))
+	{
+		return false;
+	}
+	ItemWidget->MoveGridPosition(NewPosX, NewPosY);
+	return true;
 }
 
 bool UMainInventory::IsDropOutsideAllWidgets(const FVector2D& ScreenPosition) const

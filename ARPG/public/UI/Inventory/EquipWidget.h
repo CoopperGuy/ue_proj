@@ -24,7 +24,8 @@ public:
 	void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	void EquipItemToSlot(EEquipmentSlot SlotType, const FEquippedItem& Item);
-	FEquippedItem UnequipItemFromSlot(EEquipmentSlot SlotType);
+	UFUNCTION()
+	void UnequipItemFromSlot(EEquipmentSlot SlotType);
 	
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 

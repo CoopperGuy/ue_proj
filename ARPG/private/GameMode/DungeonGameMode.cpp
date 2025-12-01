@@ -79,8 +79,11 @@ void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& 
 	if (IsValid(SpawnActor))
 	{
 		// 아이템 스폰
+		FVector SpawnLocation = SpawnActor->GetActorLocation();
+		SpawnLocation.Z += 100.f;
+
 		ADiaItem* SpawnedItem = GetWorld()->SpawnActor<ADiaItem>(ADiaItem::StaticClass(), 
-			SpawnActor->GetActorLocation(), FRotator::ZeroRotator);
+			SpawnLocation, FRotator::ZeroRotator);
 		if (SpawnedItem)
 		{
 			SpawnedItem->SetItemProperty(ItemData);

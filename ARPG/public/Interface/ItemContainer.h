@@ -24,4 +24,5 @@ class ARPG_API IItemContainer
 
 public:
 	virtual bool AddItem(const FInventorySlot& ItemInstance, UItemWidget* ItemWidget, int32 PosY = -1, int32 PosX = -1) = 0;
+	virtual bool RemoveContainItem(const FGuid& ItemInstanceID) = 0;
 };

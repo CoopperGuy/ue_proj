@@ -15,7 +15,17 @@ void UItemToolTipWidget::SetToolTipItem(const FInventorySlot& InItem)
 	}
 	if (ItemDesc)
 	{
-		ItemDesc->SetText(ToolTipItem.ItemInstance.GetDescription());
+		FText DescriptionText;
+		for (const auto& option : ToolTipItem.ItemInstance.PrefixOptions)
+		{
+			DescriptionText.FromString(DescriptionText.ToString() + option.GetOptionDescription().ToString() + TEXT("\n"));
+		}
+		for (const auto& option : ToolTipItem.ItemInstance.SuffixOptions)
+		{
+			DescriptionText.FromString(DescriptionText.ToString() + option.GetOptionDescription().ToString() + TEXT("\n"));
+		}
+
+		ItemDesc->SetText(DescriptionText);
 	}
 	if (ItemIcon)
 	{

@@ -34,6 +34,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")
 	FVector ProjectileOffset = FVector(50.0f, 0.0f, 0.0f);
 
+	// 너무 가까운 지점을 클릭했을 때 보정에 사용할 최소 사거리
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")
+	float MinimumRange = 100.0f;
+
 	// 소유자 방향으로 발사할지 여부 (false면 마우스 커서 방향)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")
 	bool bUseOwnerRotation = false;

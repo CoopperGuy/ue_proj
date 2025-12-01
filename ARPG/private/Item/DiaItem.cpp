@@ -12,6 +12,8 @@
 #include "Components/PrimitiveComponent.h"
 #include "Components/BoxComponent.h"
 
+#include "System/ItemSubsystem.h"
+
 #include "Controller/DiaController.h"
 
 // Sets default values
@@ -68,7 +70,10 @@ void ADiaItem::Tick(float DeltaTime)
 
 void ADiaItem::SetItemProperty(const FItemBase& _ItemData)
 {
-	InventoryItem = FInventorySlot::FromBase(_ItemData);
+
+	//CreateInventoryInstanceByItemBase 를 통해 아이템 생성
+	UItemSubsystem* ItemSubsystem = GetGameInstance()->GetSubsystem<UItemSubsystem>();
+	ItemSubsystem->CreateInventoryInstanceByItemBase(InventoryItem, _ItemData);
 
 	//아이템 스태틱 매시 로딩
 	//현재 아이템 스태틱 매시 첫 로딩 이후 아이템 메시가 보이지 않는 현상 존재
@@ -121,15 +126,15 @@ void ADiaItem::RollingItem()
 	ItemMeshComp->SetEnableGravity(true);
 
 	FVector Impulse = FVector(
-		FMath::FRandRange(-100.f, 100.f), 
-		FMath::FRandRange(-100.f, 100.f), 
+		FMath::FRandRange(0.f, 100.f), 
+		FMath::FRandRange(0.f, 100.f), 
 		RollingSpeed);
 	ItemMeshComp->AddImpulse(Impulse, NAME_None, true);
 
 	FVector Angular = FVector(
-		FMath::FRandRange(200.f, 400.f), 
-		FMath::FRandRange(200.f, 400.f), 
-		FMath::FRandRange(200.f, 400.f));
+		FMath::FRandRange(20.f, 40.f),
+		FMath::FRandRange(20.f, 40.f),
+		FMath::FRandRange(20.f, 40.f));
 
 	ItemMeshComp->SetPhysicsAngularVelocityInDegrees(Angular, true);
 

@@ -15,13 +15,13 @@ struct FItemDropInfo : public FTableRowBase
     FName ItemID;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    float DropRate; // 0.0 ~ 1.0
+	    float DropRate = 0.0f; // 0.0 ~ 1.0
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    int32 MinQuantity;
+	    int32 MinQuantity = 0;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    int32 MaxQuantity;
+	    int32 MaxQuantity = 0;
 };
 
 USTRUCT(BlueprintType)

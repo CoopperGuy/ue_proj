@@ -101,6 +101,18 @@ void UItemWidget::SetWidgetPosition(int32 PositionX, int32 PositionY)
 	}
 }
 
+bool UItemWidget::MoveGridPosition(int32 DeltaX, int32 DeltaY)
+{
+	if (ItemInfo.IsEmpty())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("MoveGridPosition failed: ItemInfo is empty"));
+		return false;
+	}
+	ItemInfo.GridX = DeltaX;
+	ItemInfo.GridY = DeltaY;
+	return true;
+}
+
 void UItemWidget::ClearItemInfo()
 {
 	ItemInfo.Clear();
@@ -151,9 +163,11 @@ void UItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPoint
 	DragOperation->SourceWidget = this;
 	DragOperation->ItemWidth = ItemInfo.ItemInstance.GetWidth();
 	DragOperation->ItemHeight = ItemInfo.ItemInstance.GetHeight();
-	
+	DragOperation->DragType = static_cast<EItemDragDropType>(ItemDragDropState);
 	// 드래그 시각적 위젯 생성 (원본의 복사본)
-	UItemWidget* DragVisual = CreateWidget<UItemWidget>(GetWorld(), GetClass());
+	UItemWidget* DragVisual = FInventoryUtils::CreateItemWidget(GetWorld(), &ItemInfo);
+	DragVisual->SetItemDragDropState(ItemDragDropState);
+
 	if (IsValid(DragVisual))
 	{
 		DragVisual->SetItemInfo(ItemInfo);

@@ -103,7 +103,7 @@ void FInventoryUtils::GetOccupiedCellIndices(int32 GridWidth, int32 ItemWidth, i
     }
 }
 
-UItemWidget* FInventoryUtils::CreateItemWidget(const UObject* WorldContext, const FInventorySlot& ItemData)
+UItemWidget* FInventoryUtils::CreateItemWidget(const UObject* WorldContext, const FInventorySlot* ItemData)
 {
     if (!IsValid(WorldContext))
     {
@@ -132,17 +132,27 @@ UItemWidget* FInventoryUtils::CreateItemWidget(const UObject* WorldContext, cons
         return nullptr;
     }
 
+    UItemWidget* ItemWidget = nullptr;
     // ItemSubsystem에서 아이템 위젯을 생성한다.
-    UItemWidget* ItemWidget = ItemSubsystem->CreateItemWidget(ItemData);
+    if (ItemData == nullptr)
+    {
+        ItemWidget = ItemSubsystem->CreateItemWidgetEmpty();
+    }
+    else
+    {
+        ItemWidget = ItemSubsystem->CreateItemWidget(*ItemData);
+    }
+
+
     if (!IsValid(ItemWidget))
     {
-        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - Failed to create ItemWidget for item: %s"), 
-               *ItemData.ItemInstance.BaseItem.ItemID.ToString());
+        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - Failed to create ItemWidget for item: %s"),
+            *ItemData->ItemInstance.BaseItem.ItemID.ToString());
         return nullptr;
     }
 
     UE_LOG(LogTemp, Log, TEXT("FInventoryUtils::CreateItemWidget - Successfully created ItemWidget for item: %s"), 
-           *ItemData.ItemInstance.BaseItem.ItemID.ToString());
+           *ItemData->ItemInstance.BaseItem.ItemID.ToString());
 
     return ItemWidget;
 } 

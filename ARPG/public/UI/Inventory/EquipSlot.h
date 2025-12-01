@@ -31,13 +31,14 @@ public:
 	void SetItemWidget(const FInventorySlot& InItemData);
 	void ClearItemWidget();
 
-	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
-	virtual void NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 
 	void HandleItemEquipped(const FEquippedItem& Item);
 
 	virtual bool AddItem(const FInventorySlot& ItemInstance, UItemWidget* ItemWidget, int32 PosY = -1, int32 PosX = -1) override;
+	bool RemoveContainItem(const FGuid& ItemInstanceID);
+
+	void UnEquipItem();
 public:
 	FOnItemEquipped OnItemEquipped;
 

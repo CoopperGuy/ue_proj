@@ -54,6 +54,4 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	EItemDragDropType DragType = EItemDragDropType::EIDT_None;
 
-	UPROPERTY(BlueprintReadOnly)
-	TScriptInterface<IItemContainer> SourceContainer = nullptr;
 }; 

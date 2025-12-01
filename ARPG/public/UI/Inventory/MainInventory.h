@@ -33,12 +33,12 @@ public:
 	//슬롯이 비어있는지 판단한다
 	//해당 슬롯에 들어잇는 아이템의 row colum을 판단해야한다.
 	bool IsSlotEmpty(int32 SlotIndex) const;
-
-	UItemWidget* GetItemWidgetBySlotIndex(FGuid guid) const;
 	
 	// 위치 기반 아이템 검색
 	UItemWidget* GetItemWidgetAtGridPosition(int32 GridX, int32 GridY) const;
 	UItemWidget* GetItemWidgetAt(int32 SlotIndex) const;
+	UItemWidget* GetItemWidgetAtGuid(const FGuid& ItemInstanceID) const;
+	const FInventorySlot* GetItemDataAtGuid(const FGuid& ItemInstanceID) const;
 
 	// 새로운 드래그 프록시 방식
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
@@ -54,6 +54,8 @@ public:
 	void UpdateItemPosition(UItemWidget* ItemWidget, int32 NewGridX, int32 NewGridY);
 
 	virtual bool AddItem(const FInventorySlot& Item, UItemWidget* ItemWidget, int32 PosY = -1, int32 PosX = -1);
+	virtual bool RemoveContainItem(const FGuid& ItemInstanceID) override;
+	bool MoveContainItem(const FGuid& ItemInstanceID, int32 NewPosX, int32 NewPosY);
 protected:
 	void CreateInventory();
 	void ConfigInventorySlot(int32 SlotIndex, UCanvasPanelSlot* CanvasSlot);	
@@ -75,13 +77,13 @@ protected:
 
 	int32 GridWidth = 0; // 그리드 너비
 	int32 GridHeight = 0; // 그리드 높이
+
 public:
 	FORCEINLINE int32 GetInventorySize() const { return InventorySlots.Num(); }
 	FORCEINLINE UCanvasPanel* GetInventoryPanel() const { return InventoryCanvas; }	
 	void GetAllItemWidgets(TArray<UUserWidget*>& OutItemWidgets) const;
 	void SetInventoryComponent(UDiaInventoryComponent* InComponent);
 	void SetEquipmentComponent(UDiaEquipmentComponent* InComponent);
-
 private:
 	// 드롭된 위치가 인벤토리와 장착 위젯 모두의 바깥인지 체크
 	bool IsDropOutsideAllWidgets(const FVector2D& ScreenPosition) const;

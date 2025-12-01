@@ -43,17 +43,21 @@ void UDiaEquipmentComponent::EquipItem(const FEquippedItem& Item, EEquipmentSlot
 	ApplyEquipmentStats(Item, Slot);
 }
 
-void UDiaEquipmentComponent::UnEquipItem()
+void UDiaEquipmentComponent::UnEquipItem(EEquipmentSlot Slot)
 {
+	//아이템 제거
+	if (FEquippedItem* EquippedItem = EquipmentMap.Find(Slot))
+	{
+		//스텟에서 제거
+		ApplyEquipmentStats(*EquippedItem, Slot, -1);
+		EquipmentMap.Remove(Slot);
+		OnItemUnEquipped.Broadcast(Slot);
+		UE_LOG(LogTemp, Log, TEXT("UnEquipItem: Slot %s에서 아이템 제거됨."), *UEnum::GetValueAsString(Slot));
+	}
 }
 
-void UDiaEquipmentComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot)
+void UDiaEquipmentComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot, int32 State)
 {
-	UE_LOG(LogTemp, Log, TEXT("=== ApplyEquipmentStats 시작 ==="));
-	UE_LOG(LogTemp, Log, TEXT("Slot: %s, ItemID: %s"), 
-		*UEnum::GetValueAsString(Slot),
-		Item.ItemInstance.IsValid() ? *Item.ItemInstance.BaseItem.ItemID.ToString() : TEXT("Invalid"));
-
 	//gameplayeffect를 이용해 스탯 적용
 	ADiaController* Controller = Cast<ADiaController>(GetOwner());
 	if (!IsValid(Controller))
@@ -61,7 +65,6 @@ void UDiaEquipmentComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEqu
 		UE_LOG(LogTemp, Warning, TEXT("ApplyEquipmentStats: Controller가 유효하지 않습니다."));
 		return;
 	}
-	UE_LOG(LogTemp, Verbose, TEXT("Controller 유효성 확인 완료"));
 
 	ADiaBaseCharacter* OwnerCharacter = Controller->GetPawn<ADiaBaseCharacter>();
 	if (!IsValid(OwnerCharacter))
@@ -69,7 +72,6 @@ void UDiaEquipmentComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEqu
 		UE_LOG(LogTemp, Warning, TEXT("ApplyEquipmentStats: OwnerCharacter가 유효하지 않습니다."));
 		return;
 	}
-	UE_LOG(LogTemp, Verbose, TEXT("OwnerCharacter 유효성 확인 완료: %s"), *OwnerCharacter->GetName());
 
 	UAbilitySystemComponent* ASC = OwnerCharacter->GetAbilitySystemComponent();
 	if (!IsValid(ASC))
@@ -77,7 +79,6 @@ void UDiaEquipmentComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEqu
 		UE_LOG(LogTemp, Warning, TEXT("ApplyEquipmentStats: AbilitySystemComponent가 유효하지 않습니다."));
 		return;
 	}
-	UE_LOG(LogTemp, Verbose, TEXT("ASC 유효성 확인 완료"));
 
 	FGameplayEffectSpecHandle SpecHandle
 		= ASC->MakeOutgoingSpec(UDiaGE_StatApply::StaticClass(), 1.0f, ASC->MakeEffectContext());
@@ -86,14 +87,11 @@ void UDiaEquipmentComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEqu
 		UE_LOG(LogTemp, Error, TEXT("ApplyEquipmentStats: SpecHandle 생성 실패"));
 		return;
 	}
-	UE_LOG(LogTemp, Log, TEXT("SpecHandle 생성 성공"));
 
 	FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
 	check(Spec)
 
-	//미리 정의된 Stats을 적용.
 	int32 StatCount = Item.ItemInstance.ModifiedStats.Num();
-	UE_LOG(LogTemp, Log, TEXT("적용할 스탯 개수: %d"), StatCount);
 
 	if (StatCount == 0)
 	{
@@ -109,11 +107,8 @@ void UDiaEquipmentComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEqu
 	{
 		if (const auto StatInfo = Item.ItemInstance.ModifiedStats.Find(StatTag))
 		{
-			Spec->SetSetByCallerMagnitude(StatTag, StatInfo->Values);  // 값 설정
+			Spec->SetSetByCallerMagnitude(StatTag, StatInfo->Values * State);  // 값 설정
 			AppliedCount++;
-
-			UE_LOG(LogTemp, Log, TEXT("스탯 적용 중 - Tag: %s, Value: %.2f"),
-				*StatTag.ToString(), StatInfo->Values);
 		}
 		else
 		{
@@ -122,6 +117,4 @@ void UDiaEquipmentComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEqu
 	}
 
 	FActiveGameplayEffectHandle EffectHandle = ASC->ApplyGameplayEffectSpecToSelf(*Spec);
-
-	UE_LOG(LogTemp, Log, TEXT("=== ApplyEquipmentStats 완료 - 총 %d/%d 개 스탯 적용됨 ==="), AppliedCount, StatCount);
 }

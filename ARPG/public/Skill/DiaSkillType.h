@@ -24,22 +24,22 @@ struct ARPG_API FSkillData
     FText SkillDescription;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    UTexture2D* SkillIcon;
+	UTexture2D* SkillIcon = nullptr;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float Cooldown;
+	float Cooldown = 0.0f;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float ManaCost;
+	float ManaCost = 0.0f;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    float Damage;
+	float Damage = 0.0f;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    ESkillType SkillType;
+	ESkillType SkillType = ESkillType::Melee;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-    TSubclassOf<ADiaSkillBase> SkillClass;
+	TSubclassOf<ADiaSkillBase> SkillClass = nullptr;
 };
 
 //FSkillData를 기반으로 이용해 실질적 스킬 테이블 구성
