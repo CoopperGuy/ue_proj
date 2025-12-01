@@ -56,7 +56,7 @@ protected:
 
 private:
 	// 발사 방향 계산
-	FVector CalculateLaunchDirection() const;
+	FVector CalculateLaunchDirection(ACharacter* Character) const;
 
 	// 마우스 커서 월드 위치 계산
 	FVector GetMouseWorldLocation() const;

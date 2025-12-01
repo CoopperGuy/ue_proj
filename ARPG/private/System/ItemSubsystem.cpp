@@ -134,50 +134,42 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
     {
 		bool bCanApplyOption = true;
         const FDiaItemOptionRow& OptionRow = OptionRows.Value;
-#if UE_EDITOR
-        UE_LOG(LogTemp, Warning, TEXT("GenerateItemOptions: Check OptionID: %s, Tier: %d, Type: %d"),
-            *OptionRow.OptionID.ToString(), OptionRow.TierIndex, static_cast<int32>(OptionRow.OptionType));
-#endif
         {
             //추가할 수 없는 상태
             if (!Item.CheckPrefixOptionsSize() || !Item.CheckSuffixOptionsSize())
             {
-#if UE_EDITOR
-                UE_LOG(LogTemp, Warning, TEXT("GenerateItemOptions: Early return - option slot size check failed"));
-#endif
                 return;
             }
+
             //가능 태그 검사
-            if (Item.BaseItem.PossibleItemOptionTags.HasAny(OptionRow.RequiredTags))
+            for (const auto& RequireTag : OptionRow.RequiredTags)
             {
-                bCanApplyOption = true;
-#if UE_EDITOR
-                UE_LOG(LogTemp, Warning, TEXT("GenerateItemOptions: Possible by tags for OptionID: %s"),
-                    *OptionRow.OptionID.ToString());
-#endif
+                if (!Item.BaseItem.PossibleItemOptionTags.HasTag(RequireTag))
+                {
+                    bCanApplyOption = true;
+                }
             }
-            //블록용 태그 검사
-            if (Item.BaseItem.PossibleItemOptionTags.HasAny(OptionRow.BlockedTags))
+
+
+            //불가능 태그 검사 (이거 있으면 생성 안해줌)
+            for (const auto& BlockTag : OptionRow.BlockedTags)
             {
-                bCanApplyOption = false;
-#if UE_EDITOR
-                UE_LOG(LogTemp, Warning, TEXT("GenerateItemOptions: Blocked by tags for OptionID: %s"),
-                    *OptionRow.OptionID.ToString());
-#endif
+                if (Item.BaseItem.PossibleItemOptionTags.HasTag(BlockTag))
+                {
+                    bCanApplyOption = false;
+                }
             }
-            //레벨 조건 검사 (아이템)
-   //         if(Level < OptionRow.RequiredItemLevelMin || Level > OptionRow.RequiredItemLevelMax)
-   //         {
-   //             bCanApplyOption = false;
-			//}
+
+			//레벨 조건 검사(아이템) HACK. 디버그 용으로 최소 레벨을 0으로 둠
+			if (Level < /*OptionRow.RequiredItemLevelMin*/ 0 || Level > OptionRow.RequiredItemLevelMax)
+			{
+				bCanApplyOption = false;
+			}
+
             //추가할 수 없는 옵션 슬롯이라면 거름
             if (Item.GetEquipmentSlot() != EEquipmentSlot::EES_None && !OptionRow.SlotTypes.Contains(Item.GetEquipmentSlot()))
             {
                 bCanApplyOption = false;
-#if UE_EDITOR
-                UE_LOG(LogTemp, Warning, TEXT("GenerateItemOptions: Slot mismatch | ItemSlot: %d, OptionID: %s"),
-                    static_cast<int32>(Item.GetEquipmentSlot()), *OptionRow.OptionID.ToString());
-#endif
             }
 
 

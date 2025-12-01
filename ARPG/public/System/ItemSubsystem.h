@@ -55,7 +55,7 @@ private:
 	void GenerateItemOptions(FItemInstance& Item, int32 Level);
 
 
-    //Efraimidis–Spirakis 를 통해 가중치 기반 표본 추출을 해봅시다.
+    //가중치 기반 표본 추출을 해봅시다.
 	template<typename T>
     void PickupRandomValuesByWeight(const TArray<T>& Rows, TFunctionRef<float(const T&)> GetWight, int32 NumToPickupSize, TArray<T>& OutPicked)
     {

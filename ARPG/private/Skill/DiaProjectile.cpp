@@ -43,9 +43,13 @@ ADiaProjectile::ADiaProjectile()
     ProjectileMovement->UpdatedComponent = CollisionComp;
     ProjectileMovement->InitialSpeed = ProjectileSpeed;
     ProjectileMovement->MaxSpeed = ProjectileSpeed;
+	// bInitialVelocityInLocalSpace 이게 , 월드 좌표계 기준으로 회전하는거라서 false 로 해야 발사체가 원래 방향을 유지함
+    // true 면 로컬임.
+	ProjectileMovement->bInitialVelocityInLocalSpace = false;
     ProjectileMovement->bRotationFollowsVelocity = true;
     ProjectileMovement->bShouldBounce = false;
     ProjectileMovement->ProjectileGravityScale = 0.0f;
+
 
     // 프로젝타일 메시 컴포넌트 생성 및 설정
     ProjectileMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ProjectileMesh"));
@@ -79,9 +83,10 @@ ADiaProjectile::ADiaProjectile()
 }
 void ADiaProjectile::Launch(const FVector& Direction)
 {
-    if (!ProjectileMovement) return;
+    if (!IsValid(ProjectileMovement)) return;
     const FVector LaunchVelocity = Direction.GetSafeNormal() * ProjectileSpeed;
     ProjectileMovement->Velocity = LaunchVelocity;
+    ProjectileMovement->Activate(true);
 }
 
 
@@ -164,13 +169,6 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     int32 OtherBodyIndex, bool bFromSweep,
     const FHitResult& HitResult)
 {
-    // 기본 히트 정보 로그
-    UE_LOG(LogTemp, Log, TEXT("DiaProjectile::OnHit - Self=%s, Owner=%s, Other=%s, FromSweep=%d"),
-        *GetNameSafe(this),
-        *GetNameSafe(Owner),
-        *GetNameSafe(OtherActor),
-        bFromSweep ? 1 : 0);
-
     if (!IsValid(OtherActor) || OtherActor == this || OtherActor == Owner)
     {
         UE_LOG(LogTemp, Verbose, TEXT("DiaProjectile::OnHit - Invalid OtherActor or self/owner. Ignore hit."));
@@ -196,10 +194,6 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
             if (OtherActor->Tags.Contains(OwnerTag))
             {
                 bIsOwnerCharacter = true;
-                UE_LOG(LogTemp, Verbose, TEXT("DiaProjectile::OnHit - Shared tag '%s' between Owner(%s) and Other(%s), skip damage"),
-                    *OwnerTag.ToString(),
-                    *GetNameSafe(Owner),
-                    *GetNameSafe(OtherActor));
                 break;
             }
         }
@@ -208,8 +202,6 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     // 같은 태그를 가진 액터는 데미지를 받지 않음
     if (bIsOwnerCharacter)
     {
-        UE_LOG(LogTemp, Log, TEXT("DiaProjectile::OnHit - Same-faction target %s detected. No damage applied."),
-            *GetNameSafe(OtherActor));
         return;
     }
 
@@ -217,8 +209,6 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     ADiaBaseCharacter* DiaOtherActor = Cast<ADiaBaseCharacter>(OtherActor);
     if (IsValid(DiaOtherActor))
     {
-        UE_LOG(LogTemp, Log, TEXT("DiaProjectile::OnHit - Apply damage to %s (Damage=%.1f)"),
-            *GetNameSafe(DiaOtherActor), Damage);
 
         // 데미지 처리
         ProcessDamage(DiaOtherActor, HitResult);
@@ -235,7 +225,6 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     }
     
     // 발사체 제거
-    UE_LOG(LogTemp, Verbose, TEXT("DiaProjectile::OnHit - Destroy projectile %s"), *GetNameSafe(this));
     Destroy();
 }
 

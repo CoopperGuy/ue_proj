@@ -64,7 +64,7 @@ void UDiaProjectileAbility::SpawnProjectile()
 	}
 
 	// Calculate launch direction (수평 방향으로 정규화 + 최소 거리 보정)
-	FVector LaunchDirection = CalculateLaunchDirection();
+	FVector LaunchDirection = CalculateLaunchDirection(Character);
 	if (LaunchDirection.IsNearlyZero())
 	{
 		// 마우스 위치가 애매하거나 계산에 실패하면 캐릭터 전방으로 발사
@@ -80,7 +80,7 @@ void UDiaProjectileAbility::SpawnProjectile()
 
 #if UE_EDITOR
 	DrawDebugLine(World, CharacterLocation, SpawnLocation, FColor::Green, false, 1.5f, 0, 2.0f);
-	UE_LOG(LogTemp, Verbose, TEXT("DiaProjectileAbility: Calc Spawn | Char=%s Spawn=%s Dir=%s Dist=%.1f"),
+	UE_LOG(LogTemp, Warning, TEXT("DiaProjectileAbility: Calc Spawn | Char=%s Spawn=%s Dir=%s Dist=%.1f"),
 		*CharacterLocation.ToString(), *SpawnLocation.ToString(), *LaunchDirection.ToString(), SpawnDistance);
 #endif
 
@@ -102,6 +102,8 @@ void UDiaProjectileAbility::SpawnProjectile()
 			SpawnParams.Instigator = Character;
 			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
+			//여기도 SpawnActorDeferred로 바꿔야한다.
+			//스폰한걸 array에 담아두고, 나중에 초기화 함수 및 finishspawning을 호출한다.
 			ADiaProjectile* Projectile = World->SpawnActor<ADiaProjectile>(
 				ProjectileClass,
 				SpawnLocation,
@@ -124,27 +126,43 @@ void UDiaProjectileAbility::SpawnProjectile()
 	{
 		// Fire single projectile
 		FRotator SpawnRotation = LaunchDirection.Rotation();
+		FTransform SpawnTransform(SpawnRotation, SpawnLocation);
+		//FActorSpawnParameters SpawnParams;
+		//SpawnParams.Owner = Character;
+		//SpawnParams.Instigator = Character;
+		//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = Character;
-		SpawnParams.Instigator = Character;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-		ADiaProjectile* Projectile = World->SpawnActor<ADiaProjectile>(
+		ADiaProjectile* Projectile = World->SpawnActorDeferred<ADiaProjectile>(
 			ProjectileClass,
-			SpawnLocation,
-			SpawnRotation,
-			SpawnParams
+			SpawnTransform,
+			Character,
+			Character,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn
 		);
 
-        if (Projectile)
+		//꽉 붙어서 스킬을 사용하면, 해당 if문을 통과하지 못하고 걸림, 
+		/// 1. projectile가 스폰됨 (파라미터 때문에)
+		/// 2. 그러나 projectile 내부에서 초기화가 안됨 (초기화 함수가 호출이 안됨)
+		/// 3. 그러나 onhit 이벤트가 발생함 (충돌이 발생했기 때문에)
+		/// 스폰 후, 바로 충돌 처리를 해서 world에서 지움
+		/// 그후, nullptr이 튀어나온다
+		/// ->이를 해결하기 위해 World->SpawnActorDeferred를 이용하자.
+        if (IsValid(Projectile))
         {
             const FGameplayAbilityActorInfo& Info = GetActorInfo();
             UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
             Projectile->Initialize(SkillData.BaseDamage, Character, SourceASC, DamageEffectClass);
             Projectile->Launch(LaunchDirection);
+			//여기는 Owner의 Transform을 넣는 듯하다.
+			Projectile->FinishSpawning(SpawnTransform);
             UE_LOG(LogTemp, Log, TEXT("DiaProjectileAbility: Spawned single projectile | Spawn=%s Dir=%s"), *SpawnLocation.ToString(), *LaunchDirection.ToString());
         }
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("DiaProjectileAbility: Failed to spawn single projectile address : %s"), *GetNameSafe(Projectile));
+		}
+
+		DrawDebugLine(World, CharacterLocation, CharacterLocation + LaunchDirection * 500.0f, FColor::Red, false, 1.5f, 0, 2.0f); // 캐릭터→LaunchDirection
 	}
 
 	// End ability after spawning projectiles
@@ -168,7 +186,7 @@ void UDiaProjectileAbility::InitializeWithSkillData(const FGASSkillData& InSkill
     }
 }
 
-FVector UDiaProjectileAbility::CalculateLaunchDirection() const
+FVector UDiaProjectileAbility::CalculateLaunchDirection(ACharacter* Character) const
 {
 	const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
 	if (!ActorInfo.AvatarActor.IsValid())
@@ -176,7 +194,6 @@ FVector UDiaProjectileAbility::CalculateLaunchDirection() const
 		return FVector::ForwardVector;
 	}
 
-	ACharacter* Character = Cast<ACharacter>(ActorInfo.AvatarActor.Get());
 	if (!Character)
 	{
 		return FVector::ForwardVector;
@@ -189,25 +206,24 @@ FVector UDiaProjectileAbility::CalculateLaunchDirection() const
 	}
 	else
 	{
-		// Use direction towards mouse cursor (너무 가까운 경우/불안정한 방향은 보정)
 		FVector MouseWorldLocation = GetMouseWorldLocation();
 		FVector CharacterLocation = Character->GetActorLocation();
 
+		//위치 로그
+		UE_LOG(LogTemp, Warning, TEXT("DiaProjectileAbility: Calc Launch Pos | Char=%s Mouse=%s"),
+			*CharacterLocation.ToString(), *MouseWorldLocation.ToString());
+		
 		// 마우스 위치까지의 2D 벡터
 		FVector ToMouse = MouseWorldLocation - CharacterLocation;
 		ToMouse.Z = 0.0f;
+
+		DrawDebugLine(GetWorld(), CharacterLocation, MouseWorldLocation, FColor::Blue, false, 1.5f, 0, 2.0f);          // 캐릭터→마우스
 
 		const float Distance = ToMouse.Size();
 		if (Distance < KINDA_SMALL_NUMBER)
 		{
 			// 마우스 위치가 캐릭터와 거의 같으면 전방으로 발사
 			return Character->GetActorForwardVector();
-		}
-
-		// 너무 가까운 지점을 클릭한 경우 최소 사거리만큼 앞으로 보정
-		if (Distance < MinimumRange)
-		{
-			ToMouse = ToMouse.GetSafeNormal() * MinimumRange;
 		}
 
 		FVector Direction = ToMouse.GetSafeNormal();
