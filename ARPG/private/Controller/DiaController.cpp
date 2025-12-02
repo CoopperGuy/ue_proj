@@ -5,6 +5,7 @@
 
 #include "DiaComponent/UI/DiaInventoryComponent.h"
 #include "DiaComponent/UI/DiaEquipmentComponent.h"
+#include "DiaComponent/DiaOptionManagerComponent.h"
 
 #include "DiaComponent/DiaStatComponent.h"
 #include "UI/HUDWidget.h"
@@ -23,6 +24,7 @@ ADiaController::ADiaController()
 	bShowMouseCursor = true;
 	DiaInventoryComponent = CreateDefaultSubobject<UDiaInventoryComponent>(TEXT("InventoryComponent"));
 	DiaEquipmentComponent = CreateDefaultSubobject<UDiaEquipmentComponent>(TEXT("EquipmentComponent"));
+	DiaOptionManagerComponent = CreateDefaultSubobject<UDiaOptionManagerComponent>(TEXT("OptionManagerComponent"));
 }
 
 void ADiaController::BeginPlay()
@@ -98,6 +100,7 @@ void ADiaController::BeginPlay()
 			SlotWidget->OnItemEquipped.AddDynamic(DiaEquipmentComponent, &UDiaEquipmentComponent::EquipItem);
 		}
 	}
+	//
 }
 
 void ADiaController::SetupInputComponent()

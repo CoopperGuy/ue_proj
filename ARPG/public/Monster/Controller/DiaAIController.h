@@ -19,6 +19,7 @@ class UBlackboardData;
 class ADiaMonster;
 class UAISenseConfig_Sight;
 class UAIPerceptionComponent;
+class UDiaOptionManagerComponent;
 /**
  * 
  */
@@ -73,6 +74,9 @@ protected:
 
 
 protected:
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UDiaOptionManagerComponent* DiaOptionManagerComponent;
+
     UPROPERTY(EditDefaultsOnly, Category = "AI")
     UBehaviorTree* behaviorTree;
 

@@ -19,6 +19,8 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 
+#include "DiaComponent/DiaOptionManagerComponent.h"
+
 #include "NavigationSystem.h"
 #include "Navigation/PathFollowingComponent.h"
 

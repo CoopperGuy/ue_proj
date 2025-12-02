@@ -12,6 +12,7 @@
 class ADiaMonster;
 class UDiaInventoryComponent;
 class UDiaEquipmentComponent;
+class UDiaOptionManagerComponent;
 class UHUDWidget;
 class UDiaStatComponent;
 class ADiaBaseCharacter;
@@ -58,6 +59,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UDiaEquipmentComponent* DiaEquipmentComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UDiaOptionManagerComponent* DiaOptionManagerComponent;
 
 	UPROPERTY()
 	mutable TWeakObjectPtr<UHUDWidget> CachedHUDWidget = nullptr;

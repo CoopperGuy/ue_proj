@@ -56,6 +56,7 @@ void UDiaEquipmentComponent::UnEquipItem(EEquipmentSlot Slot)
 	}
 }
 
+//이걸 DiaOptionManagerComponent로 옮길까?
 void UDiaEquipmentComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot, int32 State)
 {
 	//gameplayeffect를 이용해 스탯 적용
