@@ -65,9 +65,4 @@ private:
 	UPROPERTY()
 	TArray<AActor*> HitActors;
 
-	// Multi Hit 관련 변수
-	FTimerHandle MultiHitTimerHandle;
-	int32 CurrentHitCount;
-	int32 TotalHitCount;
-	float HitInterval;
 };

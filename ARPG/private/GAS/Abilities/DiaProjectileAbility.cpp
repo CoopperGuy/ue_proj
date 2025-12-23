@@ -5,6 +5,7 @@
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Skill/DiaProjectile.h"
+#include "GAS/DiaGASHelper.h"
 
 UDiaProjectileAbility::UDiaProjectileAbility()
 {
@@ -80,8 +81,6 @@ void UDiaProjectileAbility::SpawnProjectile()
 
 #if UE_EDITOR
 	DrawDebugLine(World, CharacterLocation, SpawnLocation, FColor::Green, false, 1.5f, 0, 2.0f);
-	UE_LOG(LogTemp, Warning, TEXT("DiaProjectileAbility: Calc Spawn | Char=%s Spawn=%s Dir=%s Dist=%.1f"),
-		*CharacterLocation.ToString(), *SpawnLocation.ToString(), *LaunchDirection.ToString(), SpawnDistance);
 #endif
 
 	if (bFireMultipleProjectiles && ProjectileCount > 1)
@@ -118,7 +117,6 @@ void UDiaProjectileAbility::SpawnProjectile()
                 UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
                 Projectile->Initialize(SkillData.BaseDamage, Character, SourceASC, DamageEffectClass);
                 Projectile->Launch(CurrentDirection);
-				UE_LOG(LogTemp, Log, TEXT("DiaProjectileAbility: Spawned projectile %d | Spawn=%s Dir=%s"), i, *SpawnLocation.ToString(), *CurrentDirection.ToString());
             }
 		}
 	}
@@ -155,12 +153,7 @@ void UDiaProjectileAbility::SpawnProjectile()
             Projectile->Launch(LaunchDirection);
 			//여기는 Owner의 Transform을 넣는 듯하다.
 			Projectile->FinishSpawning(SpawnTransform);
-            UE_LOG(LogTemp, Log, TEXT("DiaProjectileAbility: Spawned single projectile | Spawn=%s Dir=%s"), *SpawnLocation.ToString(), *LaunchDirection.ToString());
         }
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("DiaProjectileAbility: Failed to spawn single projectile address : %s"), *GetNameSafe(Projectile));
-		}
 
 		DrawDebugLine(World, CharacterLocation, CharacterLocation + LaunchDirection * 500.0f, FColor::Red, false, 1.5f, 0, 2.0f); // 캐릭터→LaunchDirection
 	}
@@ -206,12 +199,8 @@ FVector UDiaProjectileAbility::CalculateLaunchDirection(ACharacter* Character) c
 	}
 	else
 	{
-		FVector MouseWorldLocation = GetMouseWorldLocation();
+		FVector MouseWorldLocation = UDiaGASHelper::GetMouseWorldLocation(ActorInfo);
 		FVector CharacterLocation = Character->GetActorLocation();
-
-		//위치 로그
-		UE_LOG(LogTemp, Warning, TEXT("DiaProjectileAbility: Calc Launch Pos | Char=%s Mouse=%s"),
-			*CharacterLocation.ToString(), *MouseWorldLocation.ToString());
 		
 		// 마우스 위치까지의 2D 벡터
 		FVector ToMouse = MouseWorldLocation - CharacterLocation;
@@ -230,54 +219,54 @@ FVector UDiaProjectileAbility::CalculateLaunchDirection(ACharacter* Character) c
 		return Direction;
 	}
 }
-
-FVector UDiaProjectileAbility::GetMouseWorldLocation() const
-{
-	const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
-	if (!ActorInfo.PlayerController.IsValid())
-	{
-		return FVector::ZeroVector;
-	}
-
-	APlayerController* PC = ActorInfo.PlayerController.Get();
-	
-	FVector MouseWorldLocation, MouseWorldDirection;
-	bool bDeprojectSuccess = PC->DeprojectMousePositionToWorld(MouseWorldLocation, MouseWorldDirection);
-	
-	if (!bDeprojectSuccess)
-	{
-		return FVector::ZeroVector;
-	}
-
-	// Trace from mouse position to ground
-	FHitResult HitResult;
-	FVector TraceStart = MouseWorldLocation;
-	FVector TraceEnd = MouseWorldLocation + MouseWorldDirection * 10000.0f; // Trace far distance
-
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(ActorInfo.AvatarActor.Get());
-
-	bool bHit = GetWorld()->LineTraceSingleByChannel(
-		HitResult,
-		TraceStart,
-		TraceEnd,
-		ECC_WorldStatic,
-		QueryParams
-	);
-
-	if (bHit)
-	{
-		return HitResult.Location;
-	}
-
-	// If no hit, project to character's Z level
-	ACharacter* Character = Cast<ACharacter>(ActorInfo.AvatarActor.Get());
-	if (Character)
-	{
-		float CharacterZ = Character->GetActorLocation().Z;
-		float T = (CharacterZ - MouseWorldLocation.Z) / MouseWorldDirection.Z;
-		return MouseWorldLocation + MouseWorldDirection * T;
-	}
-
-	return FVector::ZeroVector;
-}
+//
+//FVector UDiaProjectileAbility::GetMouseWorldLocation() const
+//{
+//	const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
+//	if (!ActorInfo.PlayerController.IsValid())
+//	{
+//		return FVector::ZeroVector;
+//	}
+//
+//	APlayerController* PC = ActorInfo.PlayerController.Get();
+//	
+//	FVector MouseWorldLocation, MouseWorldDirection;
+//	bool bDeprojectSuccess = PC->DeprojectMousePositionToWorld(MouseWorldLocation, MouseWorldDirection);
+//	
+//	if (!bDeprojectSuccess)
+//	{
+//		return FVector::ZeroVector;
+//	}
+//
+//	// Trace from mouse position to ground
+//	FHitResult HitResult;
+//	FVector TraceStart = MouseWorldLocation;
+//	FVector TraceEnd = MouseWorldLocation + MouseWorldDirection * 10000.0f; // Trace far distance
+//
+//	FCollisionQueryParams QueryParams;
+//	QueryParams.AddIgnoredActor(ActorInfo.AvatarActor.Get());
+//
+//	bool bHit = GetWorld()->LineTraceSingleByChannel(
+//		HitResult,
+//		TraceStart,
+//		TraceEnd,
+//		ECC_WorldStatic,
+//		QueryParams
+//	);
+//
+//	if (bHit)
+//	{
+//		return HitResult.Location;
+//	}
+//
+//	// If no hit, project to character's Z level
+//	ACharacter* Character = Cast<ACharacter>(ActorInfo.AvatarActor.Get());
+//	if (Character)
+//	{
+//		float CharacterZ = Character->GetActorLocation().Z;
+//		float T = (CharacterZ - MouseWorldLocation.Z) / MouseWorldDirection.Z;
+//		return MouseWorldLocation + MouseWorldDirection * T;
+//	}
+//
+//	return FVector::ZeroVector;
+//}

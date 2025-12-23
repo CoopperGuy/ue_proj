@@ -4,8 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "GameplayEffect.h"
 #include "GameplayTagContainer.h"
 #include "Types/DiaItemOptionRow.h"
+#include "Types/ItemBase.h"
 #include "DiaOptionManagerComponent.generated.h"
 
 
@@ -22,24 +24,28 @@ protected:
 
 public:	
 	//const reference로 변수를 받고, 이걸 그대로 저장해도 되나?
-	void AddOption(const FDiaItemOptionRow& NewOption);
-	void RemoveOption(const FDiaItemOptionRow& OptionRow);
+	void AddOption(const FDiaActualItemOption& NewOption);
+	void RemoveOption(const FDiaActualItemOption& OptionRow);
 	void RemoveOption(const FName& OptionID);
 
 	//받은 gameplay tag를 이용해 필요한 옵션을 꺼내오는 기능
-	FDiaItemOptionRow* GetOptionByID(const FName& OptionID);
-	FDiaItemOptionRow* GetOptionByOptionRow(const FDiaItemOptionRow& OptionRow);
+	FDiaActualItemOption* GetOptionByID(const FName& OptionID);
+	FDiaActualItemOption* GetOptionByOptionRow(const FDiaActualItemOption& OptionRow);
 
 	//모든 옵션을 반환
-	const TMap<FName, FDiaItemOptionRow>& GetAllOptions() const { return ActiveOptions; }
+	const TMap<FName, FDiaActualItemOption>& GetAllOptions() const { return ActiveOptions; }
 
-
+	void ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot, int32 State = 1);
+	void ApplyEquipmentSlotOption(const FEquippedItem& Item);
+	void MakeGameplayEffectOptions(UAbilitySystemComponent* ASC, const TArray<FDiaActualItemOption>& ItemOptions);
+	void ApplyitemOptionsToSpec(const TArray<FDiaActualItemOption>& Options, FGameplayEffectSpec* Spec);
+	void ApplyEquipmentAllOptions();
 private:
 	//옵션을 통합적으로 포괄한 형태의 struct가 필요할 수 있을듯.
 	//우선은, 옵션 데이터 테이블의 row struct를 그대로 사용
 	//현재의 데이터들은 전부 깊은 복사가 되기 때문에 사용. 만약 포인터 같은것들이 들어가면 문제가 발생할지도
 	//Key OptionID, Value OptionRow
 	UPROPERTY()
-	TMap<FName, FDiaItemOptionRow> ActiveOptions;
+	TMap<FName, FDiaActualItemOption> ActiveOptions;
 	
 };

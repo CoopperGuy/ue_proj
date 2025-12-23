@@ -16,6 +16,7 @@ void FDiaGameplayTags::InitializeNativeTags()
 	RegisterDamageTags();
 	RegisterUITags();
 	RegisterAttributeSetTags();
+	RegisterItemOptionTags();
 }
 
 void FDiaGameplayTags::RegisterStateTags()
@@ -111,36 +112,70 @@ void FDiaGameplayTags::RegisterAttributeSetTags()
 	GameplayTags.AddTag(GameplayTags.AttributeSet_AttackPower, "AttributeSet.AttackPower", "공격력 - 전투 스탯");
 	GameplayTags.AddTag(GameplayTags.AttributeSet_Defense, "AttributeSet.Defense", "방어력 - 전투 스탯");
 	GameplayTags.AddTag(GameplayTags.AttributeSet_MovementSpeed, "AttributeSet.MovementSpeed", "이동 속도");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_IncomingDamage, "AttributeSet.IncomingDamage", "받는 피해 - 메타 스탯");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_IncomingHealing, "AttributeSet.IncomingHealing", "받는 회복 - 메타 스탯");
-
 }
 
-TArray<FGameplayTag> FDiaGameplayTags::GetAttributeStats()
+void FDiaGameplayTags::RegisterItemOptionTags()
 {
-	TArray<FGameplayTag> stats;
+	// ========================================
+	// Item Option Tags - 아이템 옵션
+	// ========================================
+	
+	GameplayTags.AddTag(GameplayTags.ItemOptionLifeSteal, "Item.Option.MultiplyAdditive.LifeSteal", "생명력 흡수");
+	GameplayTags.AddTag(GameplayTags.ItemOptionCooldownReduction, "Item.Option.MultiplyAdditive.CooldownReduction", "쿨다운 감소");
+	GameplayTags.AddTag(GameplayTags.ItemOptionGoldFind, "Item.Option.MultiplyAdditive.GoldFind", "골드 획득량 증가");
+	GameplayTags.AddTag(GameplayTags.ItemOptionStatDamage, "Item.Option.Additive.Health", "공격력 증가");
+	GameplayTags.AddTag(GameplayTags.ItemOptionstatHealth, "Item.Option.MultiplyAdditive.Speed", "체력 증가");
+	GameplayTags.AddTag(GameplayTags.ItemOptionStatSpeed, "Item.Option.Additive.CriticalChance", "이동 속도 증가");
+	GameplayTags.AddTag(GameplayTags.ItemOptionStatCriticalChance, "Item.Option.MultiplyAdditive.DamageIncreaseOption", "치명타 확률 증가");
+}
 
-	stats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Health")));
-	stats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxHealth")));
-	stats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Mana")));
-	stats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxMana")));
-	stats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Exp")));
-	stats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxExp")));
-	stats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Strength")));
-	stats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Dexterity")));
-	stats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Intelligence")));
-	stats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.AttackPower")));
-	stats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Defense")));
-	stats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MovementSpeed")));
-	stats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.IncomingDamage")));
-	stats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.IncomingHealing")));
+const TArray<FGameplayTag>& FDiaGameplayTags::GetAttributeStats()
+{
+	static TArray<FGameplayTag> CacheStats;
+
+	if(CacheStats.Num() > 0)
+	{
+		return CacheStats;
+	}
+
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Health")));
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxHealth")));
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Mana")));
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxMana")));
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Exp")));
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxExp")));
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Strength")));
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Dexterity")));
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Intelligence")));
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.AttackPower")));
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Defense")));
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MovementSpeed")));
 
 
-	return stats;
+	return CacheStats;
+}
+
+const TArray<FGameplayTag>& FDiaGameplayTags::GetItemOptionList()
+{
+	static TArray<FGameplayTag> CacheOption;
+
+	if(CacheOption.Num() > 0)
+	{
+		return CacheOption;
+	}
+
+	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.LifeSteal")));
+	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.CooldownReduction")));
+	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.GoldFind")));
+	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.Additive.Health")));
+	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.Speed")));
+	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.Additive.CriticalChance")));
+	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.DamageIncreaseOption")));
+
+	return CacheOption;
 }
 
 void FDiaGameplayTags::AddTag(FGameplayTag& OutTag, const ANSICHAR* TagName, const ANSICHAR* TagComment)
 {
 	OutTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName(TagName), FString(TEXT("(Native) ")) + FString(TagComment));
 }
-

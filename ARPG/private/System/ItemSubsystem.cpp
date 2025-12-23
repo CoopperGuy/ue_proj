@@ -57,7 +57,7 @@ void UItemSubsystem::LoadOptionData()
         for (const FName& RowName : RowNames)
         {
             FDiaItemOptionRow* OptionRow = OptionDataTable->FindRow<FDiaItemOptionRow>(RowName, TEXT(""));
-            if (OptionRow)
+            if (OptionRow && OptionRow->GrantedTag.IsValid())
             {
 				FName UniqueOptionKey = FName(*FString::Printf(TEXT("%s_Tier%d"), *OptionRow->OptionID.ToString(), OptionRow->TierIndex));
                 OptionCache.Emplace(UniqueOptionKey, *OptionRow);
@@ -146,7 +146,7 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
             {
                 if (!Item.BaseItem.PossibleItemOptionTags.HasTag(RequireTag))
                 {
-                    bCanApplyOption = true;
+                    bCanApplyOption = false;
                 }
             }
 
@@ -218,16 +218,32 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
 	}
 
     //로그 남기기
-	UE_LOG(LogTemp, Warning, TEXT("Generated Prefix Options:"));
-    for (const FDiaItemOptionRow& Option : ResultPrefixOptions)
-    {
-        UE_LOG(LogTemp, Warning, TEXT(" - %s (Tier %d)"), *Option.DisplayName.ToString(), Option.TierIndex);
-    }
-    UE_LOG(LogTemp, Warning, TEXT("Generated Suffix Options:"));
-    for (const FDiaItemOptionRow& Option : ResultSuffixOptions)
-    {
-        UE_LOG(LogTemp, Warning, TEXT(" - %s (Tier %d)"), *Option.DisplayName.ToString(), Option.TierIndex);
-	}
+	//UE_LOG(LogTemp, Warning, TEXT("Generated Prefix Options:"));
+ //   for (const FDiaItemOptionRow& Option : ResultPrefixOptions)
+ //   {
+ //       UE_LOG(LogTemp, Warning, TEXT(" - %s (Tier %d)"), *Option.DisplayName.ToString(), Option.TierIndex);
+ //       if (Option.OptionType != EItemOptionType::IOT_Prefix)
+ //       {
+ //           UE_LOG(LogTemp, Warning, TEXT("Error: Generated option is not Prefix type! OptionID: %s"), *Option.OptionID.ToString());
+	//	}
+ //       if (Option.GrantedTag.IsValid() == false)
+ //       {
+ //           UE_LOG(LogTemp, Warning, TEXT("Error: Generated option has invalid GrantedTag! OptionID: %s"), *Option.OptionID.ToString());
+ //       }
+ //   }
+ //   UE_LOG(LogTemp, Warning, TEXT("Generated Suffix Options:"));
+ //   for (const FDiaItemOptionRow& Option : ResultSuffixOptions)
+ //   {
+ //       UE_LOG(LogTemp, Warning, TEXT(" - %s (Tier %d)"), *Option.DisplayName.ToString(), Option.TierIndex);
+ //       if (Option.OptionType != EItemOptionType::IOT_Prefix)
+ //       {
+ //           UE_LOG(LogTemp, Warning, TEXT("Error: Generated option is not Suffix type! OptionID: %s"), *Option.OptionID.ToString());
+ //       }
+ //       if (Option.GrantedTag.IsValid() == false)
+ //       {
+ //           UE_LOG(LogTemp, Warning, TEXT("Error: Generated option has invalid GrantedTag! OptionID: %s"), *Option.OptionID.ToString());
+ //       }
+	//}
 }
 
 const FItemBase& UItemSubsystem::GetItemData(const FName& ItemID) const

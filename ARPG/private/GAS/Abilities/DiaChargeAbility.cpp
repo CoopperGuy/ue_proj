@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "AbilitySystemComponent.h"
 #include "GAS/DiaAttributeSet.h"
+#include <AbilitySystemBlueprintLibrary.h>
 
 UDiaChargeAbility::UDiaChargeAbility()
 {
@@ -148,7 +149,7 @@ void UDiaChargeAbility::ApplyHitToActorsInPath(AActor* TargetActor)
 		return;
 	}
 
-	UAbilitySystemComponent* TargetASC = TargetActor->FindComponentByClass<UAbilitySystemComponent>();
+	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(TargetActor);
 	if (!TargetASC)
 	{
 		return;

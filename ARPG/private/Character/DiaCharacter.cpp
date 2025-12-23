@@ -238,10 +238,6 @@ void ADiaCharacter::Move(const FInputActionValue& Value)
     }
 }
 
-bool ADiaCharacter::GetMouseWorldLocation(FVector& OutLocation) const
-{
-    return false;
-}
 
 void ADiaCharacter::SetTargetActor(ADiaBaseCharacter* NewTarget)
 {

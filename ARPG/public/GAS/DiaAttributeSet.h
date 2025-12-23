@@ -22,7 +22,7 @@ class ARPG_API UDiaAttributeSet : public UAttributeSet
 	GENERATED_BODY()
 
 public:
-	UDiaAttributeSet();
+	UDiaAttributeSet();	
 
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
@@ -71,29 +71,27 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	FGameplayAttributeData AttackPower;
 	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, AttackPower)
-
+	
 	UPROPERTY(BlueprintReadOnly, Category = "Combat")
 	FGameplayAttributeData Defense;
 	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, Defense)
 
+	//Item Options
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	FGameplayAttributeData DamageIncreaseOption;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, DamageIncreaseOption)
+
+	
 	// Movement Attributes
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	FGameplayAttributeData MovementSpeed;
 	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, MovementSpeed)
-
-	// Meta Attributes (for damage calculation, not replicated)
-	UPROPERTY(BlueprintReadOnly, Category = "Meta")
-	FGameplayAttributeData IncomingDamage;
-	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, IncomingDamage)
-
-	UPROPERTY(BlueprintReadOnly, Category = "Meta")
-	FGameplayAttributeData IncomingHealing;
-	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, IncomingHealing)
-
-	static bool TranslateAttributeTagToAttrivute(const FGameplayTag& AttributeTag, FGameplayAttribute& OutAttribute);
+	
+	static bool TranslateAttributeTagToAttribute(const FGameplayTag& AttributeTag, FGameplayAttribute& OutAttribute);
 	static TMap<FGameplayTag, FGameplayAttribute> AttributeTagMap;
 protected:
 	// Helper function to adjust attributes for changes
 	void AdjustAttributeForMaxChange(FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, float NewMaxValue, const FGameplayAttribute& AffectedAttributeProperty);
+	void AdjustAttributeForValChange(FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, float NewValue, const FGameplayAttribute& AffectedAttributeProperty);
 	static void MakeAttributeTagMap();
 };

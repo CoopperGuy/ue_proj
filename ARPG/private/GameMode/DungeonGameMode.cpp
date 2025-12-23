@@ -82,12 +82,16 @@ void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& 
 		FVector SpawnLocation = SpawnActor->GetActorLocation();
 		SpawnLocation.Z += 100.f;
 
-		ADiaItem* SpawnedItem = GetWorld()->SpawnActor<ADiaItem>(ADiaItem::StaticClass(), 
-			SpawnLocation, FRotator::ZeroRotator);
+		ADiaItem* SpawnedItem = GetWorld()->SpawnActorDeferred<ADiaItem>(ADiaItem::StaticClass(), 
+			 SpawnActor->GetTransform(), SpawnActor);
+		
+		UE_LOG(LogTemp, Warning, TEXT("Spawned Item at Location: %s"), *SpawnLocation.ToString());
+
 		if (SpawnedItem)
 		{
 			SpawnedItem->SetItemProperty(ItemData);
 			SpawnedItem->DropItem(ItemData);
+			SpawnedItem->FinishSpawning(SpawnActor->GetTransform());
 		}
 	}
 }

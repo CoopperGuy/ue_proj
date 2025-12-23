@@ -81,7 +81,6 @@ void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 	if (AbilityMontage)
 	{
 		float rate = PlayAbilityMontage(AbilityMontage);
-		UE_LOG(LogTemp, Log, TEXT("Playing Ability Montage at rate: %f"), rate);
 	}
 
 	// Play visual effects

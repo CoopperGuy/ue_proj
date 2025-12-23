@@ -29,75 +29,76 @@ ADiaController::ADiaController()
 
 void ADiaController::BeginPlay()
 {
-       Super::BeginPlay();
-       UHUDWidget* HUDWidget = GetHUDWidget();
-       if (!IsValid(HUDWidget))
-       {
-               return;
-       }
-       UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
-       UEquipWidget* EquipmentWidget = Cast<UEquipWidget>(HUDWidget->FindWidgetByName("EquipmentWidget"));
+	Super::BeginPlay();
+	UHUDWidget* HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget))
+	{
+		return;
+	}
+	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
+	UEquipWidget* EquipmentWidget = Cast<UEquipWidget>(HUDWidget->FindWidgetByName("EquipmentWidget"));
 
-       const bool bHasInventoryWidget = IsValid(InventoryWidget);
-       if (!bHasInventoryWidget)
-       {
-               UE_LOG(LogTemp, Warning, TEXT("InventoryWidget is missing from HUDWidget; inventory setup skipped."));
-       }
+	const bool bHasInventoryWidget = IsValid(InventoryWidget);
+	if (!bHasInventoryWidget)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("InventoryWidget is missing from HUDWidget; inventory setup skipped."));
+	}
 
-       const bool bHasEquipmentWidget = IsValid(EquipmentWidget);
-       if (!bHasEquipmentWidget)
-       {
-               UE_LOG(LogTemp, Warning, TEXT("EquipmentWidget is missing from HUDWidget; equipment setup skipped."));
-       }
+	const bool bHasEquipmentWidget = IsValid(EquipmentWidget);
+	if (!bHasEquipmentWidget)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("EquipmentWidget is missing from HUDWidget; equipment setup skipped."));
+	}
 
-       if (!bHasInventoryWidget && !bHasEquipmentWidget)
-       {
-               return;
-       }
+	if (!bHasInventoryWidget && !bHasEquipmentWidget)
+	{
+		return;
+	}
 
-       if (IsValid(DiaInventoryComponent))
-       {
-               DiaInventoryComponent->RegisterComponent();
-               if (bHasInventoryWidget)
-               {
-                       InventoryWidget->SetInventoryComponent(DiaInventoryComponent);
-                       InventoryWidget->InitializeInventory();
-               }
+	if (IsValid(DiaInventoryComponent))
+	{
+		DiaInventoryComponent->RegisterComponent();
+		if (bHasInventoryWidget)
+		{
+			InventoryWidget->SetInventoryComponent(DiaInventoryComponent);
+			InventoryWidget->InitializeInventory();
+		}
 
-               if (bHasEquipmentWidget)
-               {
-                       EquipmentWidget->SetInventoryComponent(DiaInventoryComponent);
-               }
-       }
-       else
-       {
-               UE_LOG(LogTemp, Warning, TEXT("DiaInventoryComponent is null"));
-       }
+		if (bHasEquipmentWidget)
+		{
+			EquipmentWidget->SetInventoryComponent(DiaInventoryComponent);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DiaInventoryComponent is null"));
+	}
 
-       if (IsValid(DiaEquipmentComponent))
-       {
-               DiaEquipmentComponent->RegisterComponent();
-               if (bHasInventoryWidget)
-               {
-                       InventoryWidget->SetEquipmentComponent(DiaEquipmentComponent);
-               }
+	if (IsValid(DiaEquipmentComponent))
+	{
+		DiaEquipmentComponent->RegisterComponent();
+		if (bHasInventoryWidget)
+		{
+			InventoryWidget->SetEquipmentComponent(DiaEquipmentComponent);
+		}
 
-               if (bHasEquipmentWidget)
-               {
-                       EquipmentWidget->SetEquipmentComponent(DiaEquipmentComponent);
-               }
-       }
-       else
-       {
-               UE_LOG(LogTemp, Warning, TEXT("DiaEquipmentComponent is null"));
-       }
+		if (bHasEquipmentWidget)
+		{
+			EquipmentWidget->SetDiaController(this);
+			EquipmentWidget->SetEquipmentComponent(DiaEquipmentComponent);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DiaEquipmentComponent is null"));
+	}
 
 	for (int32 i = 0; i < static_cast<int32>(EEquipmentSlot::EES_Max); ++i)
 	{
 		UEquipSlot* SlotWidget = EquipmentWidget->GetEquipSlot(static_cast<EEquipmentSlot>(i));
 		if (SlotWidget)
 		{
-			SlotWidget->OnItemEquipped.AddDynamic(DiaEquipmentComponent, &UDiaEquipmentComponent::EquipItem);
+			SlotWidget->OnItemEquipped.AddDynamic(this, &ThisClass::OnEquipItemProgress);
 		}
 	}
 	//
@@ -111,7 +112,54 @@ void ADiaController::SetupInputComponent()
 void ADiaController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	if (!IsValid(InPawn)) return;	
+	if (!IsValid(InPawn)) return;
+}
+
+void ADiaController::OnEquipItemProgress(const FEquippedItem& Item, EEquipmentSlot SlotType)
+{
+	if (!IsValid(DiaEquipmentComponent) || !IsValid(DiaOptionManagerComponent))
+	{
+		return;
+	}
+
+	DiaEquipmentComponent->EquipItem(Item, SlotType);
+	DiaOptionManagerComponent->ApplyEquipmentStats(Item, SlotType, 1);
+
+	for (const auto& option : Item.ItemInstance.PrefixOptions)
+	{
+		DiaOptionManagerComponent->AddOption(option);
+	}
+	for (const auto& option : Item.ItemInstance.SuffixOptions)
+	{
+		DiaOptionManagerComponent->AddOption(option);
+	}
+
+	DiaOptionManagerComponent->ApplyEquipmentSlotOption(Item);
+}
+
+void ADiaController::OnUnequipItemProgress(EEquipmentSlot SlotType)
+{
+	if (!IsValid(DiaEquipmentComponent) || !IsValid(DiaOptionManagerComponent))
+	{
+		return;
+	}
+	const FEquippedItem* Item = DiaEquipmentComponent->GetEquippedItem(SlotType);
+	if (Item == nullptr)
+	{
+		return;
+	}
+
+	DiaOptionManagerComponent->ApplyEquipmentStats(*Item, SlotType, -1);
+	
+	for (const auto& option : Item->ItemInstance.PrefixOptions)
+	{
+		DiaOptionManagerComponent->RemoveOption(option);
+	}
+	for (const auto& option : Item->ItemInstance.SuffixOptions)
+	{
+		DiaOptionManagerComponent->RemoveOption(option);
+	}
+	//DiaOptionManagerComponent->ApplyEquipmentSlotOption(*Item);
 }
 
 void ADiaController::SetTarget(ADiaBaseCharacter* NewTarget)
@@ -305,7 +353,7 @@ ESlateVisibility ADiaController::GetInventoryVisibility() const
 		UE_LOG(LogTemp, Warning, TEXT("InventoryWidget is null"));
 		return ESlateVisibility::Collapsed;
 	}
-	
+
 	return InventoryWidget->GetVisibility();
 }
 

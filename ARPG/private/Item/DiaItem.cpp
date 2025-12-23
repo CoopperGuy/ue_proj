@@ -126,8 +126,8 @@ void ADiaItem::RollingItem()
 	ItemMeshComp->SetEnableGravity(true);
 
 	FVector Impulse = FVector(
-		FMath::FRandRange(0.f, 100.f), 
-		FMath::FRandRange(0.f, 100.f), 
+		FMath::FRandRange(50.f, 100.f), 
+		FMath::FRandRange(5.f, 100.f), 
 		RollingSpeed);
 	ItemMeshComp->AddImpulse(Impulse, NAME_None, true);
 
@@ -169,16 +169,37 @@ void ADiaItem::LoadItemNameAsync()
 
 void ADiaItem::BindItemName(TSoftClassPtr<UUserWidget>& WidgetAssetPtr)
 {
-	ItemWidgetComp->SetWidgetClass(WidgetAssetPtr.Get());
+	UClass* WidgetClass = WidgetAssetPtr.Get();
+	if (!WidgetClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("BindItemName: WidgetClass is NULL! 경로 확인 필요"));
+		return;
+	}
+
+	ItemWidgetComp->SetWidgetClass(WidgetClass);
+	ItemWidgetComp->InitWidget();
 	ItemWidgetComp->SetVisibility(false);
 
-	UItemName* NameWidget = Cast<UItemName>(ItemWidgetComp->GetUserWidgetObject());
+	UUserWidget* UserWidget = ItemWidgetComp->GetUserWidgetObject();
+	if (!UserWidget)
+	{
+		UE_LOG(LogTemp, Error, TEXT("BindItemName: GetUserWidgetObject() returned NULL!"));
+		return;
+	}
+
+	UItemName* NameWidget = Cast<UItemName>(UserWidget);
 	if (IsValid(NameWidget))
 	{
 		NameWidget->SetVisibility(ESlateVisibility::Collapsed);
 		NameWidget->OnItemNameClicked.AddDynamic(this, &ADiaItem::OnItemNameClicked);
+
+		// 대기 중인 이름 설정이 있으면 적용
+		if (bPendingNameSet)
+		{
+			SetItemName(PendingItemName);
+			bPendingNameSet = false;
+		}
 	}
-	UE_LOG(LogTemp, Warning, TEXT("아이템 위젯 클래스 비동기 로드 성공"));
 }
 
 void ADiaItem::SetItemName(const FText& NewName)
@@ -188,8 +209,14 @@ void ADiaItem::SetItemName(const FText& NewName)
 	{
 		NameWidget->SetItemName(InventoryItem.ItemInstance.BaseItem.Name);
 		NameWidget->SetVisibility(ESlateVisibility::Visible);
-
 		ItemWidgetComp->SetVisibility(true);
+		bPendingNameSet = false;
+	}
+	else
+	{
+		// 위젯이 아직 준비되지 않음 - 나중에 적용하도록 저장
+		bPendingNameSet = true;
+		PendingItemName = NewName;
 	}
 }
 

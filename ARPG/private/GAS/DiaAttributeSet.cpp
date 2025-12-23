@@ -20,8 +20,6 @@ UDiaAttributeSet::UDiaAttributeSet()
 	InitMovementSpeed(600.0f);
 	InitExp(0.0f);
 	InitMaxExp(100.0f);
-
-	
 }
 
 
@@ -29,42 +27,21 @@ void UDiaAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 {
 	Super::PreAttributeChange(Attribute, NewValue);
 
-	// Clamp attributes to valid ranges
+	// 음수 방지 (모든 스탯 공통)
+	NewValue = FMath::Max(NewValue, 0.0f);
+
+	// 상한선이 있는 Attribute만 Clamp
 	if (Attribute == GetHealthAttribute())
 	{
-		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxHealth());
-	}
-	else if (Attribute == GetMaxHealthAttribute())
-	{
-		NewValue = FMath::Max(NewValue, 1.0f);
+		NewValue = FMath::Min(NewValue, GetMaxHealth());
 	}
 	else if (Attribute == GetManaAttribute())
 	{
-		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxMana());
-	}
-	else if (Attribute == GetMaxManaAttribute())
-	{
-		NewValue = FMath::Max(NewValue, 0.0f);
-	}
-	else if (Attribute == GetAttackPowerAttribute())
-	{
-		NewValue = FMath::Max(NewValue, 0.0f);
-	}
-	else if (Attribute == GetDefenseAttribute())
-	{
-		NewValue = FMath::Max(NewValue, 0.0f);
-	}
-	else if (Attribute == GetMovementSpeedAttribute())
-	{
-		NewValue = FMath::Max(NewValue, 0.0f);
+		NewValue = FMath::Min(NewValue, GetMaxMana());
 	}
 	else if (Attribute == GetExpAttribute())
 	{
-		NewValue = FMath::Clamp(NewValue, 0.0f, GetMaxExp());
-	}
-	else if (Attribute == GetMaxExpAttribute())
-	{
-		NewValue = FMath::Max(NewValue, 0.f);
+		NewValue = FMath::Min(NewValue, GetMaxExp());
 	}
 }
 
@@ -88,32 +65,7 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 		DeltaValue = Data.EvaluatedData.Magnitude;
 	}
 
-	if (Data.EvaluatedData.Attribute == GetIncomingDamageAttribute())
-	{
-		// Handle incoming damage
-		const float LocalIncomingDamage = GetIncomingDamage();
-		SetIncomingDamage(0.0f);
-
-		if (LocalIncomingDamage > 0)
-		{
-			const float NewHealth = GetHealth() - LocalIncomingDamage;
-			SetHealth(FMath::Clamp(NewHealth, 0.0f, GetMaxHealth()));
-		}
-	}
-	else if (Data.EvaluatedData.Attribute == GetIncomingHealingAttribute())
-	{
-		// Handle incoming healing
-		const float LocalIncomingHealing = GetIncomingHealing();
-		SetIncomingHealing(0.0f);
-
-		if (LocalIncomingHealing > 0)
-		{
-			// Apply healing to health
-			const float NewHealth = GetHealth() + LocalIncomingHealing;
-			SetHealth(FMath::Clamp(NewHealth, 0.0f, GetMaxHealth()));
-		}
-	}
-	else if (Data.EvaluatedData.Attribute == GetHealthAttribute())
+	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
 		// Clamp health
 		SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
@@ -192,14 +144,37 @@ void UDiaAttributeSet::InitializeMonsterAttributes(const FMonsterInfo& MonsterIn
 	SetMaxExp(MonsterInfo.Exp);
 }
 
-bool UDiaAttributeSet::TranslateAttributeTagToAttrivute(const FGameplayTag& AttributeTag, FGameplayAttribute& OutAttribute)
+bool UDiaAttributeSet::TranslateAttributeTagToAttribute(const FGameplayTag& AttributeTag, FGameplayAttribute& OutAttribute)
 {
 	if (AttributeTagMap.Num() == 0)
 	{
 		MakeAttributeTagMap();
 	}
 
-	const FGameplayAttribute* Found = AttributeTagMap.Find(AttributeTag);
+	FGameplayTag AttributeGameplayTag;
+	FString Parse = AttributeTag.ToString();
+	TArray<FString> Parts;
+	Parse.ParseIntoArray(Parts, TEXT("."));
+	
+	if (Parts.Num() == 0)
+	{
+		return false;
+	}
+	
+	//Size를 판별해서 Attributeset.TagName으로 변환한다. (쉽게 서칭하기)
+	//일반적인 세팅은 Item.Option.Flat.(Name)이다.
+	if (Parts.Num() > 3)
+	{
+		FString OptionAttribute = Parts[3];
+		FString TagName =  FString::Printf(TEXT("AttributeSet.%s"), *OptionAttribute);
+		AttributeGameplayTag = FGameplayTag::RequestGameplayTag(FName(*TagName));
+	}
+	else
+	{
+		AttributeGameplayTag = AttributeTag;
+	}
+		
+	const FGameplayAttribute* Found = AttributeTagMap.Find(AttributeGameplayTag);
 	if (Found)
 	{
 		OutAttribute = *Found;
@@ -209,7 +184,9 @@ bool UDiaAttributeSet::TranslateAttributeTagToAttrivute(const FGameplayTag& Attr
 	return false;
 }
 
-void UDiaAttributeSet::AdjustAttributeForMaxChange(FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, float NewMaxValue, const FGameplayAttribute& AffectedAttributeProperty)
+void UDiaAttributeSet::AdjustAttributeForMaxChange(FGameplayAttributeData& AffectedAttribute, 
+	const FGameplayAttributeData& MaxAttribute, 
+	float NewMaxValue, const FGameplayAttribute& AffectedAttributeProperty)
 {
 	UAbilitySystemComponent* AbilityComp = GetOwningAbilitySystemComponent();
 	const float CurrentMaxValue = MaxAttribute.GetCurrentValue();
@@ -222,23 +199,35 @@ void UDiaAttributeSet::AdjustAttributeForMaxChange(FGameplayAttributeData& Affec
 	}
 }
 
+void UDiaAttributeSet::AdjustAttributeForValChange(FGameplayAttributeData& AffectedAttribute, const FGameplayAttributeData& MaxAttribute, 
+	float NewValue, const FGameplayAttribute& AffectedAttributeProperty)
+{
+	UAbilitySystemComponent* AbilityComp = GetOwningAbilitySystemComponent();
+	const float CurrentMaxValue = MaxAttribute.GetCurrentValue();
+	if (AbilityComp)
+	{
+		const float CurrentValue = AffectedAttribute.GetCurrentValue();
+		float NewDelta = FMath::Clamp(NewValue, 0.f, CurrentMaxValue) - CurrentValue;
+		AbilityComp->ApplyModToAttributeUnsafe(AffectedAttributeProperty, EGameplayModOp::Additive, NewDelta);
+	}
+}
+
 void UDiaAttributeSet::MakeAttributeTagMap()
 {
-	const auto& Tags = FDiaGameplayTags::Get();
-
-	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Health")), GetHealthAttribute());
-	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxHealth")), GetMaxHealthAttribute());
-	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Mana")), GetManaAttribute());
-	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxMana")), GetMaxManaAttribute());
-	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Exp")), GetExpAttribute());
-	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxExp")), GetMaxExpAttribute());
-	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Strength")), GetStrengthAttribute());
-	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Dexterity")), GetDexterityAttribute());
-	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Intelligence")), GetIntelligenceAttribute());
-	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.AttackPower")), GetAttackPowerAttribute());
-	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Defense")), GetDefenseAttribute());
-	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MovementSpeed")), GetMovementSpeedAttribute());
-	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.IncomingDamage")), GetIncomingDamageAttribute());
-	AttributeTagMap.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.IncomingHealing")), GetIncomingHealingAttribute());
-
+	if (AttributeTagMap.Num() > 0)
+	{
+		return;
+	}
+	
+	for (TFieldIterator<FStructProperty> It(UDiaAttributeSet::StaticClass()); It; ++It)
+	{
+		FStructProperty* Property = *It;
+		if (Property && Property->Struct == FGameplayAttributeData::StaticStruct())
+		{
+			FString TagName =  FString::Printf(TEXT("AttributeSet.%s"), *Property->GetName());
+			FGameplayTag AttributeTag = FGameplayTag::RequestGameplayTag(FName(*TagName));
+			FGameplayAttribute Attribute(Property);
+			AttributeTagMap.Add(AttributeTag, Attribute);
+		}
+	}
 }

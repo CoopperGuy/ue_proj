@@ -66,4 +66,8 @@ private:
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 	float RollingSpeed = 1000.0f;
+
+	// 위젯 준비 전에 이름 설정 요청이 들어온 경우 저장
+	bool bPendingNameSet = false;
+	FText PendingItemName;
 };

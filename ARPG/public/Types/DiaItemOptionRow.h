@@ -95,7 +95,7 @@ struct ARPG_API FDiaItemOptionRow : public FTableRowBase
 
 	//실제 효과 태그
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FGameplayTagContainer GrantedTags;
+	FGameplayTag GrantedTag;
 
 	FName GetUniqueOptionKey() const
 	{
@@ -143,7 +143,7 @@ struct ARPG_API FDiaActualItemOption
 	EItemOptionScalingType ScalingType = EItemOptionScalingType::IOST_Flat;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	FGameplayTagContainer GrantedTags;
+	FGameplayTag GrantedTag;
 
 	FName GetUniqueOptionKey() const
 	{
@@ -161,7 +161,7 @@ struct ARPG_API FDiaActualItemOption
 		, DisplayName(OptionRow.DisplayName)
 		, OptionType(OptionRow.OptionType)
 		, ScalingType(OptionRow.ScalingType)
-		, GrantedTags(OptionRow.GrantedTags)
+		, GrantedTag(OptionRow.GrantedTag)
 	{
 	}
 

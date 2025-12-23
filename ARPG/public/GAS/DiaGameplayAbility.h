@@ -118,7 +118,7 @@ protected:
 
 	virtual void ApplyGameplayEffectToTarget(UAbilitySystemComponent* TargetASC) const;
 	virtual void ApplyGameplayEffectToSelf() const;
-private:
+protected:
 	// Current playing montage (renamed to avoid shadowing)
 	UPROPERTY()
 	UAnimMontage* CurrentAbilityMontage;
@@ -127,9 +127,15 @@ private:
 	UPROPERTY()
 	class UAbilityTask_PlayMontageAndWait* MontageTask;
 
-	// 다단 히트 타이머
+	// Multi Hit 관련 변수
 	FTimerHandle MultiHitTimerHandle;
 	
-	// 현재 히트 카운트 (다단히트 진행 상황 추적)
 	int32 CurrentHitCount;
+
+	int32 TotalHitCount;
+
+	float HitInterval;
+	//히트 계산 식
+	//-> CurrentHitcount * HitInterval = 총 사용 시간.
+
 };

@@ -10,6 +10,7 @@ class UGameplayAbility;
 class UDiaGameplayAbility;
 class UGameplayEffect;
 class ADiaProjectile;
+class ADiaSkillObject;
 
 // GAS 스킬 타입
 UENUM(BlueprintType)
@@ -63,7 +64,7 @@ struct ARPG_API FGASSkillData : public FTableRowBase
     TSubclassOf<UDiaGameplayAbility> AbilityClass;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    TSubclassOf<ADiaProjectile> ProjectileClass;
+    TSubclassOf<ADiaSkillObject> SkillObjectClass;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     EGASSkillType SkillType = EGASSkillType::MeleeAttack;

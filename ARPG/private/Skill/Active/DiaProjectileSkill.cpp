@@ -65,16 +65,7 @@ void ADiaProjectileSkill::SpawnProjectile()
 		ADiaCharacter* DiaChar = Cast<ADiaCharacter>(SkillOwner);
 		if (IsValid(DiaChar))
 		{
-			FVector TargetLocation;
-			if (DiaChar->GetMouseWorldLocation(TargetLocation))
-			{
-				FVector Direction = (TargetLocation - Location).GetSafeNormal();
-				Rotation = Direction.Rotation();
-			}
-			else
-			{
-				Rotation = SkillOwner->GetActorRotation();
-			}
+			Rotation = SkillOwner->GetActorRotation();
 		}
 		else
 		{
@@ -102,7 +93,6 @@ void ADiaProjectileSkill::SpawnProjectile()
 			{
 				UGameplayStatics::FinishSpawningActor(NewActor, FTransform(Rotation, Location));
 				//Projectile->Initialize(GetDamage(), SkillOwner);
-				UE_LOG(LogTemp, Log, TEXT("Projectile spawned and initialized via GameplayStatics"));
 			}
 			else
 			{

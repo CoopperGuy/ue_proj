@@ -21,8 +21,6 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
-	void ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot, int32 State = 1);
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -31,6 +29,8 @@ public:
 	void EquipItem(const FEquippedItem& Item, EEquipmentSlot Slot);
 	UFUNCTION()
 	void UnEquipItem(EEquipmentSlot Slot);
+
+	const FEquippedItem* GetEquippedItem(EEquipmentSlot Slot) const;
 public:
 	FOnItemUnEquipped OnItemUnEquipped;
 private:

@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 
 #include "AbilitySystemInterface.h"
+#include "Interface/Damageable.h"
 
 #include "DiaComponent/DiaStatusEffectComponent.h"
 
@@ -20,7 +21,7 @@ class UAbilitySystemComponent;
 class UDiaAttributeSet;
 class UDiaLevelComponent;
 UCLASS()
-class ARPG_API ADiaBaseCharacter : public ACharacter, public IAbilitySystemInterface
+class ARPG_API ADiaBaseCharacter : public ACharacter, public IAbilitySystemInterface, public IDamageable
 {
 	GENERATED_BODY()
 

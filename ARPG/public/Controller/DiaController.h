@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
 #include "Types/ItemBase.h"
+#include "Types/DiaItemOptionRow.h"
 #include "DiaController.generated.h"
 
 
@@ -49,10 +50,16 @@ public:
 	//void BindUIToStatComponent(UDiaStatComponent* StatComponent);
 
 	void SetTarget(ADiaBaseCharacter* NewTarget);
+
+	UFUNCTION()
+	void OnEquipItemProgress(const FEquippedItem& Item, EEquipmentSlot SlotType);
+	UFUNCTION()
+	void OnUnequipItemProgress(EEquipmentSlot SlotType);
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 	void OnPossess(APawn* InPawn) override;
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UDiaInventoryComponent* DiaInventoryComponent;

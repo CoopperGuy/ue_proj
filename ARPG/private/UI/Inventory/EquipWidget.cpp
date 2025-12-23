@@ -6,6 +6,8 @@
 #include "UI/Item/ItemWidget.h"
 #include "Utils/InventoryUtils.h"
 
+#include "Controller/DiaController.h"
+
 #include "Components/Image.h"
 
 #include "DiaComponent/UI/DiaInventoryComponent.h"
@@ -107,7 +109,7 @@ void UEquipWidget::SetInventoryComponent(UDiaInventoryComponent* InComponent)
 
 void UEquipWidget::SetEquipmentComponent(UDiaEquipmentComponent* InComponent)
 {
-	EquippementComponent = InComponent;
+	EquipementComponent = InComponent;
 
 	for (int32 i = 0; i < static_cast<int32>(EEquipmentSlot::EES_Max); ++i)
 	{
@@ -115,15 +117,21 @@ void UEquipWidget::SetEquipmentComponent(UDiaEquipmentComponent* InComponent)
 		UEquipSlot* SlotWidget = GetEquipSlot(SlotType);
 		if (IsValid(SlotWidget))
 		{
-			SlotWidget->SetEquipmentComponent(EquippementComponent.Get());
+			SlotWidget->SetEquipmentComponent(EquipementComponent.Get());
 		}
 	}
 
-	if (EquippementComponent->IsValidLowLevel())
+	if (EquipementComponent->IsValidLowLevel())
 	{
-		EquippementComponent->OnItemUnEquipped.AddDynamic(this, &ThisClass::UnequipItemFromSlot);
+		EquipementComponent->OnItemUnEquipped.AddDynamic(DiaControllerRef.Get(), &ADiaController::OnUnequipItemProgress);
+		EquipementComponent->OnItemUnEquipped.AddDynamic(this, &ThisClass::UnequipItemFromSlot);
 	}
 
+}
+
+void UEquipWidget::SetDiaController(ADiaController* InController)
+{
+	DiaControllerRef = InController;
 }
 
 //EquipSlot이 false일 경우 실행된다.

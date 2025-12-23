@@ -106,7 +106,6 @@ void UBTTask_PlayGAS::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMem
 	{
 		// 어빌리티가 완료됨 - SkillID 초기화하고 태스크 완료
 		int32 CompletedSkillID = OwnerComp.GetBlackboardComponent()->GetValueAsInt(BlackboardKey.SelectedKeyName);
-		UE_LOG(LogTemp, Log, TEXT("BTTask_PlayGAS: Ability completed via callback. Resetting ActionRequest from SkillID %d to 0"), CompletedSkillID);
 		OwnerComp.GetBlackboardComponent()->SetValueAsInt(BlackboardKey.SelectedKeyName, 0);
 		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 	}
@@ -150,7 +149,6 @@ void UBTTask_PlayGAS::OnAbilityEnded(UGameplayAbility* AbilityEndedData)
 			AbilityEndedHandle.Reset();
 		}
 		
-		UE_LOG(LogTemp, Log, TEXT("BTTask_PlayGAS: Ability ended callback received for handle"));
 		// 태스크 완료는 TickTask에서 처리하도록 플래그 설정
 		bAbilityEnded = true;
 	}

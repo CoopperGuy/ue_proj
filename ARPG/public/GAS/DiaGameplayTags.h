@@ -28,7 +28,7 @@ private:
 	static void RegisterDamageTags();
 	static void RegisterUITags();
 	static void RegisterAttributeSetTags();
-
+	static void RegisterItemOptionTags();
 public:
 	// ========================================
 	// State Tags - 캐릭터 상태
@@ -105,11 +105,15 @@ public:
 	FGameplayTag AttributeSet_MovementSpeed;		// 이동 속도
 	FGameplayTag AttributeSet_IncomingDamage;	// 받는 피해 - 메타 스탯
 	FGameplayTag AttributeSet_IncomingHealing;	// 받는 회복 - 메타 스탯
-
-	// ========================================
-	// Helper Functions - 동적 태그 생성
-	// ========================================
 	
+	FGameplayTag ItemOptionLifeSteal;			// 생명력 흡수
+	FGameplayTag ItemOptionCooldownReduction;	// 쿨다운 감소
+	FGameplayTag ItemOptionGoldFind;			// 골드 획득량 증가
+	FGameplayTag ItemOptionStatDamage;			// 공격력 증가
+	FGameplayTag ItemOptionstatHealth;			// 체력 증가
+	FGameplayTag ItemOptionStatSpeed;			// 이동 속도 증가
+	FGameplayTag ItemOptionStatCriticalChance;  // 치명타 확률 증가
+
 	/**
 	 * 스킬 ID로 쿨다운 태그 가져오기
 	 * @param SkillID 스킬 ID (예: 2003)
@@ -119,11 +123,10 @@ public:
 	{
 		return FGameplayTag::RequestGameplayTag(FName(*FString::Printf(TEXT("GASData.CoolDown.%d"), SkillID)));
 	}
-	static TArray<FGameplayTag> GetAttributeStats();
+	static const TArray<FGameplayTag>& GetAttributeStats();
+	static const TArray<FGameplayTag>& GetItemOptionList();
 protected:
-	// 태그 등록 헬퍼 함수
 	void AddTag(FGameplayTag& OutTag, const ANSICHAR* TagName, const ANSICHAR* TagComment);
-
 private:
 	static FDiaGameplayTags GameplayTags;
 };

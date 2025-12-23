@@ -15,6 +15,7 @@
 #include "DiaBaseCharacter.h"
 
 #include "Components/AudioComponent.h"
+#include <AbilitySystemBlueprintLibrary.h>
 
 UDiaMeleeAbility::UDiaMeleeAbility()
 {
@@ -94,7 +95,7 @@ void UDiaMeleeAbility::PerformHitDetection()
 	{
 		return;
 	}
-	UE_LOG(LogTemp, Log, TEXT("DiaMeleeAbility: Performing Hit Detection"));
+
 	FVector CharacterLocation = Character->GetActorLocation();
 	FRotator CharacterRotation = Character->GetActorRotation();
 
@@ -160,9 +161,10 @@ void UDiaMeleeAbility::PerformHitDetection()
 
 			if (AngleToTarget <= HalfAngleRad)
 			{
+				UE_LOG(LogTemp, Log, TEXT("DiaMeleeAbility: Hit Actor: %s"), *HitActor->GetName());
 				HitActors.Add(HitActor);
 
-                ApplyDamageToTarget(HitActor);
+				ApplyDamageToTarget(HitActor);
 
 				SpawnHitEffectAtLocation(HitActor->GetActorLocation());
 
@@ -179,34 +181,44 @@ void UDiaMeleeAbility::OnMeleeHitFrame()
 
 void UDiaMeleeAbility::ApplyDamageToTarget(AActor* Target)
 {
-    const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
-    if (!Target || !ActorInfo.AbilitySystemComponent.IsValid())
-    {
-        return;
-    }
+	const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
+	if (!Target || !ActorInfo.AbilitySystemComponent.IsValid())
+	{
+		return;
+	}
 
-    UAbilitySystemComponent* TargetASC = Target->FindComponentByClass<UAbilitySystemComponent>();
-    if (!TargetASC)
-    {
-        // ASC가 없으면 기존 방식으로 최소한의 대미지 처리
-        const float DamageAmount = SkillData.BaseDamage;
-        UGameplayStatics::ApplyPointDamage(
-            Target,
-            DamageAmount,
-            ActorInfo.AvatarActor->GetActorLocation(),
-            FHitResult(),
-            ActorInfo.PlayerController.Get(),
-            ActorInfo.AvatarActor.Get(),
-            UDamageType::StaticClass()
-        );
-        return;
-    }
+	UE_LOG(LogTemp, Warning, TEXT("Target Class: %s"), *Target->GetClass()->GetName());
+    
+    // ADiaBaseCharacter인지 확인
+    ADiaBaseCharacter* DiaChar = Cast<ADiaBaseCharacter>(Target);
+    UE_LOG(LogTemp, Warning, TEXT("Cast to ADiaBaseCharacter: %s"), DiaChar ? TEXT("Success") : TEXT("Failed"));
 
-    // GAS 경로: Execution 기반 대미지 적용
-    const UDiaAttributeSet* MyAttr = GetAbilitySystemComponentFromActorInfo()->GetSet<UDiaAttributeSet>();
-    const float AttackPower = MyAttr ? MyAttr->GetAttackPower() : 0.f;
-    const float BaseDamage = SkillData.BaseDamage + AttackPower;
-    ApplyDamageToASC(TargetASC, BaseDamage , 1.0f);
+	
+	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Target);
+	//TargetASC 확인
+	if (!TargetASC)
+	{
+		// ASC가 없으면 기존 방식으로 최소한의 대미지 처리
+		const float DamageAmount = SkillData.BaseDamage;
+		UGameplayStatics::ApplyPointDamage(
+			Target,
+			DamageAmount,
+			ActorInfo.AvatarActor->GetActorLocation(),
+			FHitResult(),
+			ActorInfo.PlayerController.Get(),
+			ActorInfo.AvatarActor.Get(),
+			UDamageType::StaticClass()
+		);
+		return;
+	}
+
+	// GAS 경로: Execution 기반 대미지 적용
+	const UDiaAttributeSet* MyAttr = GetAbilitySystemComponentFromActorInfo()->GetSet<UDiaAttributeSet>();
+	const float AttackPower = MyAttr ? MyAttr->GetAttackPower() : 0.f;
+	const float BaseDamage = SkillData.BaseDamage + AttackPower;
+
+	UE_LOG(LogTemp, Log, TEXT("DiaMeleeAbility: Applying Damage - BaseDamage: %.2f"), BaseDamage);
+	ApplyDamageToASC(TargetASC, BaseDamage , 1.0f);
 }
 
 void UDiaMeleeAbility::StartMultiHit()

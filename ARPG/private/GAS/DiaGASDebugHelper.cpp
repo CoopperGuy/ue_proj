@@ -3,6 +3,7 @@
 #include "GameFramework/Actor.h"
 #include "GAS/DiaAttributeSet.h"
 #include "Engine/Engine.h"
+#include <AbilitySystemBlueprintLibrary.h>
 
 void UDiaGASDebugHelper::CheckASCOnCharacter(AActor* Character)
 {
@@ -12,7 +13,7 @@ void UDiaGASDebugHelper::CheckASCOnCharacter(AActor* Character)
 		return;
 	}
 
-	if (UAbilitySystemComponent* ASC = Character->FindComponentByClass<UAbilitySystemComponent>())
+	if (UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Character))
 	{
 		UE_LOG(LogTemp, Log, TEXT("ASC found on %s"), *Character->GetName());
 	}
@@ -30,7 +31,7 @@ void UDiaGASDebugHelper::PrintAttributeValues(AActor* Character)
 		return;
 	}
 
-	if (UAbilitySystemComponent* ASC = Character->FindComponentByClass<UAbilitySystemComponent>())
+	if (UAbilitySystemComponent* ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Character))
 	{
 		if (const UDiaAttributeSet* Attr = Cast<UDiaAttributeSet>(ASC->GetAttributeSet(UDiaAttributeSet::StaticClass())))
 		{
@@ -45,7 +46,7 @@ void UDiaGASDebugHelper::PrintAttributeValues(AActor* Character)
 
 void UDiaGASDebugHelper::ForceInitializeASC(AActor* Character)
 {
-	if (UAbilitySystemComponent* ASC = Character ? Character->FindComponentByClass<UAbilitySystemComponent>() : nullptr)
+	if (UAbilitySystemComponent* ASC = Character ? ASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Character) : nullptr)
 	{
 		ASC->InitAbilityActorInfo(Character, Character);
 		UE_LOG(LogTemp, Log, TEXT("ASC initialized for %s"), *Character->GetName());

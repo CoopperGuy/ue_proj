@@ -3,7 +3,9 @@
 #include "GAS/Abilities/DiaMeleeAbility.h"
 #include "GAS/Abilities/DiaProjectileAbility.h"
 #include "GAS/Abilities/DiaBasicAttackAbility.h"
+#include "GAS/Abilities/DiaGroundAbility.h"
 #include "AbilitySystemComponent.h"
+#include "DiaBaseCharacter.h"
 
 
 //여기서 gameplayeffect를 통해 성질을 부여해야한다.
@@ -231,6 +233,55 @@ float UDiaGASHelper::GetCooldownRatioBySkillID(UAbilitySystemComponent* ASC, int
 	}
 
 	return 0.0f;
+}
+
+FVector UDiaGASHelper::GetMouseWorldLocation(const FGameplayAbilityActorInfo& ActorInfo)
+{
+	if (!ActorInfo.PlayerController.IsValid())
+	{
+		return FVector::ZeroVector;
+	}
+
+	APlayerController* PC = ActorInfo.PlayerController.Get();
+
+	FVector MouseWorldLocation, MouseWorldDirection;
+	bool bDeprojectSuccess = PC->DeprojectMousePositionToWorld(MouseWorldLocation, MouseWorldDirection);
+	if (!bDeprojectSuccess)
+	{
+		return FVector::ZeroVector;
+	}
+
+	// Trace from mouse position to ground
+	FHitResult HitResult;
+	FVector TraceStart = MouseWorldLocation;
+	FVector TraceEnd = MouseWorldLocation + MouseWorldDirection * 10000.0f; // Trace far distance
+
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(ActorInfo.AvatarActor.Get());
+
+	bool bHit = PC->GetWorld()->LineTraceSingleByChannel(
+		HitResult,
+		TraceStart,
+		TraceEnd,
+		ECC_WorldStatic,
+		QueryParams
+	);
+
+	if (bHit)
+	{
+		return HitResult.Location;
+	}
+
+	// If no hit, project to character's Z level
+	ACharacter* Character = Cast<ACharacter>(ActorInfo.AvatarActor.Get());
+	if (Character)
+	{
+		float CharacterZ = Character->GetActorLocation().Z;
+		float T = (CharacterZ - MouseWorldLocation.Z) / MouseWorldDirection.Z;
+		return MouseWorldLocation + MouseWorldDirection * T;
+	}
+
+	return FVector::ZeroVector;
 }
 
 TSubclassOf<UDiaGameplayAbility> UDiaGASHelper::GetAbilityClassFromSkillData(const FGASSkillData& SkillData)

@@ -8,6 +8,7 @@
 #include "EquipWidget.generated.h"
 
 class UEquipSlot;
+class ADiaController;
 class UDiaInventoryComponent;
 class UDiaEquipmentComponent;
 
@@ -18,7 +19,7 @@ UCLASS()
 class ARPG_API UEquipWidget : public UUserWidget
 {
 	GENERATED_BODY()
-	
+
 public:
 	void NativeConstruct() override;
 	void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
@@ -26,7 +27,7 @@ public:
 	void EquipItemToSlot(EEquipmentSlot SlotType, const FEquippedItem& Item);
 	UFUNCTION()
 	void UnequipItemFromSlot(EEquipmentSlot SlotType);
-	
+
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 
 protected:
@@ -46,8 +47,8 @@ protected:
 	UEquipSlot* HelmetSlot;
 
 	TWeakObjectPtr<UDiaInventoryComponent> InventoryComponent;
-	TWeakObjectPtr<UDiaEquipmentComponent> EquippementComponent;
-
+	TWeakObjectPtr<UDiaEquipmentComponent> EquipementComponent;
+	TWeakObjectPtr<ADiaController> DiaControllerRef;
 public:
 	UEquipSlot* GetEquipSlot(EEquipmentSlot SlotType) const
 	{
@@ -63,4 +64,5 @@ public:
 	}
 	void SetInventoryComponent(UDiaInventoryComponent* InComponent);
 	void SetEquipmentComponent(UDiaEquipmentComponent* InComponent);
+	void SetDiaController(ADiaController* InController);
 };

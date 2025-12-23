@@ -9,6 +9,9 @@
 #include "StatusWidget.generated.h"
 
 class UTextBlock;
+class UStatusSet;
+class UListView;
+class UStatusItemObject;
 /**
  * 캐릭터 상태 UI 위젯 - GAS AttributeSet 기반
  */
@@ -28,32 +31,19 @@ protected:
 	UPROPERTY()
 	UAbilitySystemComponent* CachedASC = nullptr;
 
-public:
-	// UI 요소들 - Blueprint 위젯 바인딩
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* UserNameText;
-	
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* HPText;
-	
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* MPText;
-	
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* StrText;
-	
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* DexText;
-	
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* IntText;
-	
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* AtkText;
-	
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* DefText;
-	
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* ExpText;
+	UListView* StatusList;
+
+	//UPROPERTY(EditAnywhere, Category = "UI")
+	//TSubclassOf<UStatusSet> StatusSetClass;
+
+	UPROPERTY()
+	TMap<FString, UStatusItemObject*> StatusSetMap;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Tag")
+	TSet<FGameplayTag> HasMaxStatusTags;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Tag")
+	TSet<FGameplayTag> IsVisibleStatusTags;
+	//나중에는 표현할 Tag만 모아서 할 수도있겠다.
 };

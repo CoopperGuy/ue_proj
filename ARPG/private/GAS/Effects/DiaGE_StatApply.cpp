@@ -33,7 +33,7 @@ UDiaGE_StatApply::UDiaGE_StatApply()
 		SetByCallerMagnitude.DataTag = AttributeTag;
         
         FGameplayAttribute DummyAttribute;
-        if (UDiaAttributeSet::TranslateAttributeTagToAttrivute(AttributeTag, DummyAttribute))
+        if (UDiaAttributeSet::TranslateAttributeTagToAttribute(AttributeTag, DummyAttribute))
         {
             FGameplayModifierInfo Modifier;
             Modifier.ModifierMagnitude = FGameplayEffectModifierMagnitude(SetByCallerMagnitude);

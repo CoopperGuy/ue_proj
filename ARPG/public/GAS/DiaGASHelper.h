@@ -48,6 +48,7 @@ public:
 
 	static float GetCooldownRatioBySkillID(UAbilitySystemComponent* ASC, int32 SkillID);
 
+	static FVector GetMouseWorldLocation(const FGameplayAbilityActorInfo& ActorInfo);
 private:
 	// Get ability class from skill data
 	static TSubclassOf<UDiaGameplayAbility> GetAbilityClassFromSkillData(const FGASSkillData& SkillData);

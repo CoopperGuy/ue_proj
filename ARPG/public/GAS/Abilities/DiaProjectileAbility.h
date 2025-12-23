@@ -28,7 +28,7 @@ protected:
 
 	// 발사체 클래스
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")
-	TSubclassOf<ADiaProjectile> ProjectileClass;
+	TSubclassOf<ADiaSkillObject> ProjectileClass;
 
 	// 발사체 오프셋
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")
@@ -59,5 +59,5 @@ private:
 	FVector CalculateLaunchDirection(ACharacter* Character) const;
 
 	// 마우스 커서 월드 위치 계산
-	FVector GetMouseWorldLocation() const;
+	//FVector GetMouseWorldLocation() const;
 };

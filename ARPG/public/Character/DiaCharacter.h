@@ -34,9 +34,6 @@ public:
 	/// UI관련 함수
 	/// </summary>
 	virtual void UpdateHPGauge(float CurHealth, float MaxHelath);
-
-	// 움직임 관련 함수 
-	bool GetMouseWorldLocation(FVector& OutLocation) const;
    
 	virtual void SetTargetActor(ADiaBaseCharacter* NewTarget);
 
