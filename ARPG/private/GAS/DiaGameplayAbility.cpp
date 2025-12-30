@@ -149,6 +149,7 @@ void UDiaGameplayAbility::ApplyGameplayEffectToTarget(UAbilitySystemComponent* T
 		EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
 			CurrentActorInfo ? Cast<APawn>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
 
+		UE_LOG(LogTemp, Log, TEXT("Applying Effect: %s"), *EffectClass->GetName());
 		FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(EffectClass, GetAbilityLevel(), EffectContext);
 		if (!SpecHandle.IsValid())
 			continue;
@@ -195,6 +196,22 @@ void UDiaGameplayAbility::ApplyGameplayEffectToSelf() const
 				UE_LOG(LogTemp, Log, TEXT("Applied effect to self: %s"), *EffectClass->GetName());
 			}
 		}
+	}
+}
+
+void UDiaGameplayAbility::MakeEffectSpecContextToTarget(TArray<FGameplayEffectSpecHandle>& OutContext) const
+{
+	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
+	if (!IsValid(SourceASC))
+		return;
+	for (const auto EffectClass : SkillData.EffectsToApplyOnSelf)
+	{
+		FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
+		EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
+			CurrentActorInfo ? Cast<APawn>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
+
+		FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(EffectClass, GetAbilityLevel(), EffectContext);
+		OutContext.Add(SpecHandle);
 	}
 }
 

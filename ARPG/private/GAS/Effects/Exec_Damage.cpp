@@ -61,18 +61,14 @@ void UExec_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionPa
 	const float finalDamage = FMath::RoundToFloat(raw * CritMul);
 	if (finalDamage <= 0.f) return; // 가드
 
-	UE_LOG(LogTemp, Warning, TEXT("Damage Exec: Base=%f, Atk=%f, Def=%f, Option=%f, CritMul=%f => Damage=%f"),
-		DamageBase, AttackPower, Defense, WeaponDamageOption, CritMul, finalDamage);
+	//UE_LOG(LogTemp, Warning, TEXT("Damage Exec: Base=%f, Atk=%f, Def=%f, Option=%f, CritMul=%f => Damage=%f"),
+	//	DamageBase, AttackPower, Defense, WeaponDamageOption, CritMul, finalDamage);
 	UAbilitySystemComponent* SourceASC = ExecutionParams.GetSourceAbilitySystemComponent();
 	if (IsValid(SourceASC))
 	{
 		FGameplayEffectQuery Query;
 		Query.EffectDefinition = UDiaGE_OptionGeneric::StaticClass();
 		TArray<FActiveGameplayEffectHandle> Handles = SourceASC->GetActiveEffects(Query);
-
-		FGameplayTagContainer SearchTags;
-		SearchTags.AddTag(FDiaGameplayTags::Get().ItemOptionLifeSteal);  // Effect에 붙인 태그
-		TArray<FActiveGameplayEffectHandle> TestHandles = SourceASC->GetActiveEffectsWithAllTags(SearchTags);
 
 		for(FActiveGameplayEffectHandle& Handle : Handles)
 		{

@@ -45,7 +45,7 @@ public:
         const FHitResult& HitResult);
 
     // 발사체가 타겟에 적중했을 때 실행될 함수
-    virtual void OnProjectileHit(ADiaBaseCharacter* HitActor, const FHitResult& HitResult);
+    virtual void OnSkillHit(IAbilitySystemInterface* HitActor, const FHitResult& HitResult);
     
     // 실제 데미지를 처리하는 함수
     virtual void ProcessDamage(IAbilitySystemInterface* Target, const FHitResult& HitResult);

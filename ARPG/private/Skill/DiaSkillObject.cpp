@@ -24,6 +24,10 @@
 
 #include "GAS/DiaGameplayTags.h"
 
+#include "Interface/Damageable.h"
+
+#include <AbilitySystemBlueprintLibrary.h>
+
 #include "Kismet/GameplayStatics.h"
 #include "Skill/DiaDamageType.h"
 
@@ -44,11 +48,11 @@ ADiaSkillObject::ADiaSkillObject()
     RootComponent = CollisionComp;
 
     // 프로젝타일 메시 컴포넌트 생성 및 설정
-    SkilleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ProjectileMesh"));
+    SkilleMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SkillObjectMesh"));
     SkilleMesh->SetupAttachment(RootComponent);
     SkilleMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
     SkilleMesh->SetRelativeScale3D(FVector(0.5f, 0.5f, 0.5f));
-
+    SkilleMesh->SetVisibility(true);
     // 기본 수명 설정
     LifeSpan = 5.0f;
     InitialLifeSpan = LifeSpan;
@@ -59,26 +63,137 @@ ADiaSkillObject::ADiaSkillObject()
     LagacySkillAbilityEffectComp->bAutoDestroy = false;
     LagacySkillAbilityEffectComp->SetRelativeLocation(FVector::ZeroVector);
 
-    SkillAbilityEffectComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("SkillAbilityEffectComp"));
+    SkillAbilityEffectComp = CreateDefaultSubobject<UNiagaraComponent>(TEXT("SkillEffectComp"));
     SkillAbilityEffectComp->SetupAttachment(RootComponent);
     SkillAbilityEffectComp->bAutoActivate = false;
-    SkillAbilityEffectComp->SetAutoDestroy(0);
+	SkillAbilityEffectComp->SetAutoDestroy(false);
     SkillAbilityEffectComp->SetRelativeLocation(FVector::ZeroVector);
+}
+
+void ADiaSkillObject::Initialize(float InDamage, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<UGameplayEffect> InDamageEffect)
+{
+    Damage = InDamage;
+    SetOwner(InOwner);
+
+    // 발사체 소유자와의 충돌 방지
+    if (IsValid(Owner))
+    {
+        CollisionComp->IgnoreActorWhenMoving(Owner, true);
+    }
+
+    SourceASC = InSourceASC;
+    DamageGameplayEffect = InDamageEffect;
+}
+
+void ADiaSkillObject::Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<UGameplayEffect> InDamageEffect)
+{
+	Damage = SkillData.BaseDamage;
+	IntervalBetweenHits = SkillData.HitInterval;
+	MaxHitCount = SkillData.HitCount;
+    
+    SetOwner(InOwner);
+    // 발사체 소유자와의 충돌 방지
+    if (IsValid(Owner))
+    {
+        CollisionComp->IgnoreActorWhenMoving(Owner, true);
+    }
+    SourceASC = InSourceASC;
+	DamageGameplayEffect = InDamageEffect;
+}
+
+void ADiaSkillObject::InitTargetEffectHandle(const TArray<FGameplayEffectSpecHandle>& InTargetEffectHandles)
+{
+	TargetEffectHandles = InTargetEffectHandles;
 }
 
 void ADiaSkillObject::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+    // 생성자에서 만든 컴포넌트에 나이아가라 시스템 설정
+    if (IsValid(SkillAbilityEffectComp) && SkillEffect)
+    {
+        SkillAbilityEffectComp->SetAsset(SkillEffect);
+        SkillAbilityEffectComp->SetVariableFloat(FName("EffectScale"), 1.0f);
+        SkillAbilityEffectComp->Activate(true);
+		UE_LOG(LogTemp, Warning, TEXT("DiaSkillObject::BeginPlay - SkillEffect activated."));
+    }
+    else
+    {
+        bool isSkillEffectValid = IsValid(SkillEffect);
+		FString NameString = isSkillEffectValid ? SkillEffect->GetName() : TEXT("None");
+		UE_LOG(LogTemp, Warning, TEXT("DiaSkillObject::BeginPlay - SkillEffect or SkillAbilityEffectComp is not valid. effect : %s"), *NameString);
+    }
 }
 
 void ADiaSkillObject::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
-void ADiaSkillObject::OnProjectileHit(ADiaBaseCharacter* HitActor, const FHitResult& HitResult)
+void ADiaSkillObject::OnHit(UPrimitiveComponent* OverlappedComponent,
+    AActor* OtherActor, UPrimitiveComponent* OtherComp,
+    int32 OtherBodyIndex, bool bFromSweep,
+    const FHitResult& HitResult)
+{
+    ADiaBaseCharacter* OwnerActor = Cast<ADiaBaseCharacter>(Owner);
+    if (!IsValid(OtherActor) || OtherActor == this || OtherActor == OwnerActor)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("DiaProjectile::OnHit - Invalid OtherActor or self/owner. Ignore hit."));
+        return;
+    }
+
+    // 소유자와 타겟의 태그를 비교
+    bool bIsOwnerCharacter = true;
+    if (IsValid(OwnerActor))
+    {
+        // 소유자의 모든 태그에 대해 검사
+        for (const FName& OwnerTag : OwnerActor->Tags)
+        {
+            if (!OtherActor->ActorHasTag(OwnerTag))
+            {
+                bIsOwnerCharacter = false;
+                continue;
+            }
+        }
+    }
+
+    // 같은 태그를 가진 액터는 데미지를 받지 않음
+    if (bIsOwnerCharacter)
+    {
+        return;
+    }
+
+    ApplyGameplayHit(OtherActor, HitResult, OwnerActor);
+}
+
+void ADiaSkillObject::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitResult, ADiaBaseCharacter* OwnerActor)
+{
+    IAbilitySystemInterface* DiaOtherActor = Cast<IAbilitySystemInterface>(OtherActor);
+    if (DiaOtherActor)
+    {
+        // 데미지 처리
+        ProcessDamage(DiaOtherActor, HitResult);
+
+        // 피격 이펙트 생성
+        SpawnHitEffect(HitResult.ImpactPoint, HitResult.ImpactNormal);
+
+        // 피격 이벤트 호출
+        OnSkillHit(DiaOtherActor, HitResult);
+
+        //피격시 효과 타겟에게 적용.
+        ProcessTargetEffects(DiaOtherActor);
+        //타격에 성공하면 받으면 일단 타겟으로 올린다.
+        //HACK
+        OwnerActor->SetTargetActor(Cast<ADiaBaseCharacter>(OtherActor));
+    }
+}
+
+void ADiaSkillObject::OnHitDetect()
+{
+}
+
+void ADiaSkillObject::OnSkillHit(IAbilitySystemInterface* HitActor, const FHitResult& HitResult)
 {
 }
 
@@ -90,6 +205,7 @@ void ADiaSkillObject::ProcessDamage(IAbilitySystemInterface* ASCInterface, const
     }
 
 
+    //투사체가 맞는 시점에서 상대의 상태를 체크해야 하므로 나중에 생성하도록 설정.
     // GAS가 설정된 경우: GameplayEffect를 통해 대미지 적용
     if (SourceASC.IsValid() && DamageGameplayEffect)
     {
@@ -115,7 +231,7 @@ void ADiaSkillObject::ProcessDamage(IAbilitySystemInterface* ASCInterface, const
             }
         }
     }
-
+    
     // 피격 사운드 재생
     if (HitSound)
     {
@@ -138,6 +254,27 @@ void ADiaSkillObject::SpawnHitEffect(const FVector& ImpactPoint, const FVector& 
         if (NiagaraComp)
         {
             NiagaraComp->SetVariableFloat(FName("EffectScale"), 1.0f);
+        }
+    }
+}
+
+void ADiaSkillObject::ProcessTargetEffects(IAbilitySystemInterface* Target)
+{
+    if (!SourceASC.IsValid())
+        return;
+    if(!TargetEffectHandles.Num())
+		return;
+    if(!Target)
+		return;
+    UAbilitySystemComponent* TargetASC = Target->GetAbilitySystemComponent();
+    if (!IsValid(TargetASC))
+        return;
+    for(const FGameplayEffectSpecHandle& SpecHandle : TargetEffectHandles)
+    {
+        FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
+        if (Spec)
+        {
+            FActiveGameplayEffectHandle ActiveHandle = SourceASC->ApplyGameplayEffectSpecToTarget(*Spec, TargetASC);
         }
     }
 }

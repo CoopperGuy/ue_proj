@@ -21,6 +21,7 @@ public:
 
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 
+	void OnSpawned(AActor* SpawnedProjectile);
 protected:
 	// 발사체 생성 함수
 	UFUNCTION(BlueprintCallable, Category = "Projectile")

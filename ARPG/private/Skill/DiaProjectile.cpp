@@ -29,6 +29,9 @@ ADiaProjectile::ADiaProjectile()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+    //충돌 타입 설정.
+    CollisionComp->SetCollisionProfileName("Projectile");
+
     // 프로젝타일 무브먼트 컴포넌트 생성 및 설정
     ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
     ProjectileMovement->UpdatedComponent = CollisionComp;
@@ -109,17 +112,7 @@ void ADiaProjectile::Tick(float DeltaTime)
 
 void ADiaProjectile::Initialize(float InDamage, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<UGameplayEffect> InDamageEffect)
 {
-    Damage = InDamage;
-    SetOwner(InOwner);
-
-    // 발사체 소유자와의 충돌 방지
-    if (IsValid(Owner))
-    {
-        CollisionComp->IgnoreActorWhenMoving(Owner, true);
-    }
-
-	SourceASC = InSourceASC;
-    DamageGameplayEffect = InDamageEffect;
+    Super::Initialize(InDamage, InOwner, InSourceASC, InDamageEffect);
 }
 
 void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
@@ -168,7 +161,7 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
         SpawnHitEffect(HitResult.ImpactPoint, HitResult.ImpactNormal);
         
         // 피격 이벤트 호출
-        OnProjectileHit(DiaOtherActor, HitResult);
+        OnSkillHit(DiaOtherActor, HitResult);
 
         //타격에 성공하면 받으면 일단 타겟으로 올린다.
         //HACK
@@ -179,9 +172,9 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     Destroy();
 }
 
-void ADiaProjectile::OnProjectileHit(ADiaBaseCharacter* HitActor, const FHitResult& HitResult)
+void ADiaProjectile::OnSkillHit(IAbilitySystemInterface* HitActor, const FHitResult& HitResult)
 {
-	Super::OnProjectileHit(HitActor, HitResult);
+	Super::OnSkillHit(HitActor, HitResult);
 }
 
 void ADiaProjectile::ProcessDamage(IAbilitySystemInterface* ASCInterface, const FHitResult& HitResult)

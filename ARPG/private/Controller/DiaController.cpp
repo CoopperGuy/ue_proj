@@ -172,11 +172,11 @@ void ADiaController::SetTarget(ADiaBaseCharacter* NewTarget)
 #if defined(WITH_EDITOR) || UE_BUILD_DEVELOPMENT
 	if (TargetMonster)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Target Changed: %s"), *TargetMonster->GetName());
+		//UE_LOG(LogTemp, Log, TEXT("Target Changed: %s"), *TargetMonster->GetName());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Log, TEXT("Target Cleared"));
+		//UE_LOG(LogTemp, Log, TEXT("Target Cleared"));
 	}
 #endif
 }

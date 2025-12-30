@@ -118,6 +118,7 @@ protected:
 
 	virtual void ApplyGameplayEffectToTarget(UAbilitySystemComponent* TargetASC) const;
 	virtual void ApplyGameplayEffectToSelf() const;
+	void MakeEffectSpecContextToTarget(TArray<FGameplayEffectSpecHandle>& OutContext) const;
 protected:
 	// Current playing montage (renamed to avoid shadowing)
 	UPROPERTY()
@@ -127,7 +128,10 @@ protected:
 	UPROPERTY()
 	class UAbilityTask_PlayMontageAndWait* MontageTask;
 
-	// Multi Hit 관련 변수
+	UPROPERTY()
+	class UAbilityTask_SpawnActor* SpawnActorTask;
+
+	// Multi Hit 관련 변수 (근접 공격, 원거리는 Skill자체에 넣어준다.)
 	FTimerHandle MultiHitTimerHandle;
 	
 	int32 CurrentHitCount;

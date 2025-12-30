@@ -4,7 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Engine/EngineTypes.h" // for FHitResult
+#include "Engine/EngineTypes.h" 
+#include "Types/DiaGASSkillData.h"  
 #include "DiaSkillObject.generated.h"
 
 class UAbilitySystemComponent;
@@ -34,22 +35,26 @@ public:
 
 	// Called every frame
 	void Initialize(float InDamage, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
-	
+    void Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
+	void InitTargetEffectHandle(const TArray<FGameplayEffectSpecHandle>& InTargetEffectHandles);
     UFUNCTION()
     void OnHit(UPrimitiveComponent* OverlappedComponent, 
         AActor* OtherActor, UPrimitiveComponent* OtherComp, 
         int32 OtherBodyIndex, bool bFromSweep, 
         const FHitResult& HitResult);
 
-    // 발사체가 타겟에 적중했을 때 실행될 함수
-    virtual void OnProjectileHit(ADiaBaseCharacter* HitActor, const FHitResult& HitResult);
+    void ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitResult, ADiaBaseCharacter* OnwerActor);
+
+	UFUNCTION()
+	void OnHitDetect();
+
+    virtual void OnSkillHit(IAbilitySystemInterface* HitActor, const FHitResult& HitResult);
     
-    // 실제 데미지를 처리하는 함수
     virtual void ProcessDamage(IAbilitySystemInterface* Target, const FHitResult& HitResult);
     
-    // 피격 이펙트 생성
     void SpawnHitEffect(const FVector& ImpactPoint, const FVector& ImpactNormal);
 
+	void ProcessTargetEffects(IAbilitySystemInterface* Target);
 protected:    
     // 발사체 메시 컴포넌트
     UPROPERTY(VisibleAnywhere)
@@ -74,13 +79,12 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
 	UNiagaraSystem* SkillEffect;
 
-    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
+    UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = "Effects")
 	UNiagaraComponent* SkillAbilityEffectComp;
 
     // 피격 사운드
     UPROPERTY(EditDefaultsOnly, Category = "Skill|Effects")
     USoundBase* HitSound;
-    
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill")
     TSubclassOf<UDiaDamageType> DamageType{nullptr};
 
@@ -90,12 +94,19 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effects")
 	UParticleSystem* LegacySkillEffect;
 
-
     // GAS 관련 변수
     UPROPERTY()
     TWeakObjectPtr<UAbilitySystemComponent> SourceASC;
 
     UPROPERTY(EditDefaultsOnly, Category = "Skill|GAS")
     TSubclassOf<UGameplayEffect> DamageGameplayEffect;
-	
+
+    UPROPERTY()
+	TArray<FGameplayEffectSpecHandle> TargetEffectHandles;
+
+    UPROPERTY()
+	FTimerHandle LifeSpanTimerHandle;
+	int32 HitCount = 0;
+	int32 MaxHitCount = 1;
+	double IntervalBetweenHits = 0.;
 };

@@ -195,22 +195,6 @@ void UDiaMeleeAbility::ApplyDamageToTarget(AActor* Target)
 
 	
 	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Target);
-	//TargetASC 확인
-	if (!TargetASC)
-	{
-		// ASC가 없으면 기존 방식으로 최소한의 대미지 처리
-		const float DamageAmount = SkillData.BaseDamage;
-		UGameplayStatics::ApplyPointDamage(
-			Target,
-			DamageAmount,
-			ActorInfo.AvatarActor->GetActorLocation(),
-			FHitResult(),
-			ActorInfo.PlayerController.Get(),
-			ActorInfo.AvatarActor.Get(),
-			UDamageType::StaticClass()
-		);
-		return;
-	}
 
 	// GAS 경로: Execution 기반 대미지 적용
 	const UDiaAttributeSet* MyAttr = GetAbilitySystemComponentFromActorInfo()->GetSet<UDiaAttributeSet>();

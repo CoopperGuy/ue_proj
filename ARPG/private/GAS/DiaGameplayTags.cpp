@@ -27,7 +27,7 @@ void FDiaGameplayTags::RegisterStateTags()
 	GameplayTags.AddTag(GameplayTags.State_Charging, "GASData.State.Charging", "돌진 준비 중 - 이동 불가");
 	GameplayTags.AddTag(GameplayTags.State_Stunned, "GASData.State.Stunned", "스턴 상태");
 	GameplayTags.AddTag(GameplayTags.State_Invincible, "GASData.State.Invincible", "무적 상태");
-
+	GameplayTags.AddTag(GameplayTags.State_Slowed, "GASData.State.Slowed", "느려짐 상태");
 }
 
 void FDiaGameplayTags::RegisterCoolDownTags()

@@ -37,7 +37,7 @@ public:
 	FGameplayTag State_Charging;		// 돌진 준비 중 - 이동 불가
 	FGameplayTag State_Stunned;			// 스턴 상태 (향후 확장용)
 	FGameplayTag State_Invincible;		// 무적 상태 (향후 확장용)
-
+	FGameplayTag State_Slowed;			// 느려짐 상태 (향후 확장용)
 	// ========================================
 	// Cooldown Tags - 쿨다운
 	// ========================================

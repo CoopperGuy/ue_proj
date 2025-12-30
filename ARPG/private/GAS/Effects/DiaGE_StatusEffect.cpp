@@ -12,8 +12,8 @@ UDiaGE_StatusEffect::UDiaGE_StatusEffect()
     DurationMagnitude = FScalableFloat(DefaultDuration);
 
     bAllowStacking = true;
-    MaxStackCount = 1;
-    StackLimitCount = 1;
+    MaxStackCount = 5;
+    StackLimitCount = 5;
     StackingType = EGameplayEffectStackingType::AggregateByTarget; // 필요 시 Source로 변경
     StackDurationRefreshPolicy = EGameplayEffectStackingDurationPolicy::RefreshOnSuccessfulApplication;
     StackPeriodResetPolicy = EGameplayEffectStackingPeriodPolicy::ResetOnSuccessfulApplication;

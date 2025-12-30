@@ -105,6 +105,10 @@ void ADiaBaseCharacter::SetupInitialSkills()
 		EGameplayTagEventType::NewOrRemoved
 	).AddUObject(this, &ADiaBaseCharacter::OnStunTagChanged);
 
+	AbilitySystemComponent->RegisterGameplayTagEvent(
+		FDiaGameplayTags::Get().State_Slowed,
+		EGameplayTagEventType::AnyCountChange
+	).AddUObject(this, &ADiaBaseCharacter::OnSlowTagChanged);
 }
 
 void ADiaBaseCharacter::GrantInitialGASAbilities()
@@ -202,11 +206,13 @@ bool ADiaBaseCharacter::SetUpSkillID(int32 SkillID)
 		if (TagToUse.IsValid())
 		{
 			bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID, TagToUse);
+			UE_LOG(LogTemp, Log, TEXT("Granted Ability %s with Tag %s for SkillID %d"), *AbilityClass->GetName(), *TagToUse.ToString(), SkillID);
 		}
 		else
 		{
 			// 태그 없어도 부여할 수 있도록 빈 태그로 시도
 			bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID, FGameplayTag());
+			UE_LOG(LogTemp, Log, TEXT("Granted Ability %s with No Tag for SkillID %d"), *AbilityClass->GetName(), SkillID);
 		}
 	}
 
@@ -226,6 +232,34 @@ void ADiaBaseCharacter::OnStunTagChanged(const FGameplayTag CallbackTag, int32 N
 		// 스턴 상태 종료
 		UE_LOG(LogTemp, Log, TEXT("Character %s is No Longer Stunned."), *GetName());
 		StopCharacterMontage(0.2f);
+	}
+}
+
+void ADiaBaseCharacter::OnSlowTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
+{
+	// 느려짐 상태 변화 처리
+	UE_LOG(LogTemp, Log, TEXT("Character %s Slow Tag Changed. New Count: %d"), *GetName(), NewCount);
+	if (NewCount > 0)
+	{
+		FGameplayTagContainer SearchTags;
+		SearchTags.AddTag(FDiaGameplayTags::Get().State_Slowed);  // Effect에 붙인 태그
+		TArray<FActiveGameplayEffectHandle> Handles = AbilitySystemComponent->GetActiveEffectsWithAllTags(SearchTags);
+		float SlowMagnitude = 0.f;
+		for(const FActiveGameplayEffectHandle& Handle : Handles)
+		{
+			const FActiveGameplayEffect* ActiveGE = AbilitySystemComponent->GetActiveGameplayEffect(Handle);
+			if (ActiveGE)
+			{
+				// 느려짐 효과의 크기 가져오기
+				float Magnitude = ActiveGE->Spec.GetSetByCallerMagnitude(FDiaGameplayTags::Get().State_Slowed);
+				SlowMagnitude += Magnitude;
+			}
+		}
+		GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed * SlowMagnitude; 
+	}
+	else
+	{
+		GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed; 
 	}
 }
 

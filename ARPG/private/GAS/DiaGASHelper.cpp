@@ -284,6 +284,11 @@ FVector UDiaGASHelper::GetMouseWorldLocation(const FGameplayAbilityActorInfo& Ac
 	return FVector::ZeroVector;
 }
 
+void UDiaGASHelper::ApplyDamageToASC(UAbilitySystemComponent* TargetASC, float DamageAmount, const FGameplayTagContainer& DamageTags, AActor* InstigatorActor)
+{
+
+}
+
 TSubclassOf<UDiaGameplayAbility> UDiaGASHelper::GetAbilityClassFromSkillData(const FGASSkillData& SkillData)
 {
 	// SkillData에 AbilityClass가 명시적으로 설정되어 있으면 우선 사용

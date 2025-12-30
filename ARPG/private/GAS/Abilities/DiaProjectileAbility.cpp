@@ -5,6 +5,7 @@
 #include "DrawDebugHelpers.h"
 #include "Kismet/GameplayStatics.h"
 #include "Skill/DiaProjectile.h"
+#include "Abilities/Tasks/AbilityTask_SpawnActor.h"
 #include "GAS/DiaGASHelper.h"
 
 UDiaProjectileAbility::UDiaProjectileAbility()
@@ -35,6 +36,47 @@ void UDiaProjectileAbility::ActivateAbility(const FGameplayAbilitySpecHandle Han
 
 	// Spawn projectile(s) immediately after ability activation
 	SpawnProjectile();
+}
+
+void UDiaProjectileAbility::OnSpawned(AActor* SpawnedProjectile)
+{
+	ADiaProjectile* Projectile = Cast<ADiaProjectile>(SpawnedProjectile);
+	if (Projectile)
+	{
+		const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
+		ACharacter* Character = Cast<ACharacter>(ActorInfo.AvatarActor.Get());
+		if (Character)
+		{
+			// Calculate launch direction
+			FVector LaunchDirection = CalculateLaunchDirection(Character);
+			if (LaunchDirection.IsNearlyZero())
+			{
+				LaunchDirection = Character->GetActorForwardVector();
+			}
+			LaunchDirection.Z = 0.0f;
+			LaunchDirection.Normalize();
+
+			FVector CharacterLocation = Character->GetActorLocation();
+			const float SpawnDistance = FMath::Max(ProjectileOffset.Size(), MinimumRange);
+			FVector SpawnLocation = CharacterLocation + LaunchDirection * SpawnDistance;
+
+			// GAS 초기화: 소스 ASC, 대미지 GE, 기본 대미지 전달
+			const FGameplayAbilityActorInfo& Info = GetActorInfo();
+			UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
+
+			//상대방에게 전달할 이펙트 생성
+			TArray<FGameplayEffectSpecHandle> TargetEffectSpecs; 
+			MakeEffectSpecContextToTarget(TargetEffectSpecs);
+			Projectile->Initialize(SkillData.BaseDamage, Character, SourceASC, DamageEffectClass);
+			Projectile->InitTargetEffectHandle(TargetEffectSpecs);
+			Projectile->SetActorLocationAndRotation(SpawnLocation, LaunchDirection.Rotation());
+			Projectile->Launch(LaunchDirection);
+
+			SpawnActorTask->FinishSpawningActor(this, FGameplayAbilityTargetDataHandle(), Projectile);
+		}
+	}
+
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
 void UDiaProjectileAbility::SpawnProjectile()
@@ -83,91 +125,27 @@ void UDiaProjectileAbility::SpawnProjectile()
 	DrawDebugLine(World, CharacterLocation, SpawnLocation, FColor::Green, false, 1.5f, 0, 2.0f);
 #endif
 
-	if (bFireMultipleProjectiles && ProjectileCount > 1)
 	{
-		// Fire multiple projectiles with spread
-		float HalfSpread = SpreadAngle * 0.5f;
-		float AngleStep = SpreadAngle / (ProjectileCount - 1);
+		//SpawnTask라는걸 알내서 그걸 활용
+		SpawnActorTask = UAbilityTask_SpawnActor::SpawnActor
+		(this, FGameplayAbilityTargetDataHandle(), ADiaProjectile::StaticClass());
 
-		for (int32 i = 0; i < ProjectileCount; ++i)
+		if (SpawnActorTask)
 		{
-			float CurrentAngle = -HalfSpread + (AngleStep * i);
-			FVector CurrentDirection = LaunchDirection.RotateAngleAxis(CurrentAngle, FVector::UpVector);
-			FRotator SpawnRotation = CurrentDirection.Rotation();
-
-			// Spawn projectile
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.Owner = Character;
-			SpawnParams.Instigator = Character;
-			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-			//여기도 SpawnActorDeferred로 바꿔야한다.
-			//스폰한걸 array에 담아두고, 나중에 초기화 함수 및 finishspawning을 호출한다.
-			ADiaProjectile* Projectile = World->SpawnActor<ADiaProjectile>(
-				ProjectileClass,
-				SpawnLocation,
-				SpawnRotation,
-				SpawnParams
-			);
-
-            if (Projectile)
-            {
-                // GAS 초기화: 소스 ASC, 대미지 GE, 기본 대미지 전달
-                const FGameplayAbilityActorInfo& Info = GetActorInfo();
-                UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
-                Projectile->Initialize(SkillData.BaseDamage, Character, SourceASC, DamageEffectClass);
-                Projectile->Launch(CurrentDirection);
-            }
+			SpawnActorTask->Success.AddDynamic(this, &UDiaProjectileAbility::OnSpawned);
+			SpawnActorTask->ReadyForActivation();
 		}
-	}
-	else
-	{
-		// Fire single projectile
-		FRotator SpawnRotation = LaunchDirection.Rotation();
-		FTransform SpawnTransform(SpawnRotation, SpawnLocation);
-		//FActorSpawnParameters SpawnParams;
-		//SpawnParams.Owner = Character;
-		//SpawnParams.Instigator = Character;
-		//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-		ADiaProjectile* Projectile = World->SpawnActorDeferred<ADiaProjectile>(
-			ProjectileClass,
-			SpawnTransform,
-			Character,
-			Character,
-			ESpawnActorCollisionHandlingMethod::AlwaysSpawn
-		);
-
-		//꽉 붙어서 스킬을 사용하면, 해당 if문을 통과하지 못하고 걸림, 
-		/// 1. projectile가 스폰됨 (파라미터 때문에)
-		/// 2. 그러나 projectile 내부에서 초기화가 안됨 (초기화 함수가 호출이 안됨)
-		/// 3. 그러나 onhit 이벤트가 발생함 (충돌이 발생했기 때문에)
-		/// 스폰 후, 바로 충돌 처리를 해서 world에서 지움
-		/// 그후, nullptr이 튀어나온다
-		/// ->이를 해결하기 위해 World->SpawnActorDeferred를 이용하자.
-        if (IsValid(Projectile))
-        {
-            const FGameplayAbilityActorInfo& Info = GetActorInfo();
-            UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
-            Projectile->Initialize(SkillData.BaseDamage, Character, SourceASC, DamageEffectClass);
-            Projectile->Launch(LaunchDirection);
-			//여기는 Owner의 Transform을 넣는 듯하다.
-			Projectile->FinishSpawning(SpawnTransform);
-        }
 
 		DrawDebugLine(World, CharacterLocation, CharacterLocation + LaunchDirection * 500.0f, FColor::Red, false, 1.5f, 0, 2.0f); // 캐릭터→LaunchDirection
 	}
-
-	// End ability after spawning projectiles
-	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
 void UDiaProjectileAbility::InitializeWithSkillData(const FGASSkillData& InSkillData)
 {
     Super::InitializeWithSkillData(InSkillData);
-    if (InSkillData.ProjectileClass)
+    if (InSkillData.SkillObjectClass)
     {
-        ProjectileClass = InSkillData.ProjectileClass;
+        ProjectileClass = InSkillData.SkillObjectClass;
     }
     // Multi-shot 같은 값은 데이터 구조에 따라 매핑 (예시로 Count/Spread를 Range/Radius로 매핑)
     if (InSkillData.SkillType == EGASSkillType::RangedAttack || InSkillData.SkillType == EGASSkillType::Magic)

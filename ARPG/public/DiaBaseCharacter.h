@@ -105,6 +105,9 @@ protected:
 /// </summary>
 	UFUNCTION()
 	virtual void OnStunTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
+
+	UFUNCTION()
+	virtual void OnSlowTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
 protected:
 	// 상태 이상 효과 관리 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatusEffects")
@@ -147,6 +150,8 @@ protected:
 	TWeakObjectPtr<ADiaBaseCharacter> KillerCharacterWeakPtr;
 
 	bool bIsDead{ false };
+
+	float DefaultMovementSpeed{ 600.f };
 public:
 	UDiaAttributeSet* GetAttributeSet() const { return AttributeSet; }
 	bool GetIsDead() const { return bIsDead; }

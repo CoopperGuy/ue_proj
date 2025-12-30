@@ -17,7 +17,7 @@ class ARPG_API UDiaGroundAbility : public UDiaGameplayAbility
 public:
 	virtual void InitializeWithSkillData(const FGASSkillData& InSkillData) override;
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
-
+	void OnSpawned(AActor* SpawnedSkillGround);
 protected:
 		// 발사체 생성 함수
 	UFUNCTION(BlueprintCallable, Category = "Ground")
