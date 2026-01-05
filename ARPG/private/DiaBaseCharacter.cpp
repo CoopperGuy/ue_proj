@@ -3,6 +3,8 @@
 
 #include "DiaBaseCharacter.h"
 #include "DiaComponent/DiaLevelComponent.h"
+#include "DiaComponent/DiaSkillManagerComponent.h"
+#include "DiaComponent/Skill/SkillObject.h"
 
 #include "AbilitySystemComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -16,6 +18,7 @@
 #include "System/GASSkillManager.h"
 #include "GAS/DiaAttributeSet.h"
 #include "GAS/DiaGameplayTags.h"
+
 
 ADiaBaseCharacter::ADiaBaseCharacter()
 {
@@ -31,6 +34,9 @@ ADiaBaseCharacter::ADiaBaseCharacter()
 	//LevelComponent 생성
 	LevelComponent = CreateDefaultSubobject<UDiaLevelComponent>(TEXT("LevelComponent"));
 
+	//SkillManagerComponent 생성
+	SkillManagerComponent = CreateDefaultSubobject<UDiaSkillManagerComponent>(TEXT("SkillManagerComponent"));
+
 	Tags.Add(FName(TEXT("Character")));
 }
 
@@ -39,6 +45,15 @@ void ADiaBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	AbilitySystemComponent->RegisterGameplayTagEvent(
+		FDiaGameplayTags::Get().State_Stunned,
+		EGameplayTagEventType::NewOrRemoved
+	).AddUObject(this, &ADiaBaseCharacter::OnStunTagChanged);
+
+	AbilitySystemComponent->RegisterGameplayTagEvent(
+		FDiaGameplayTags::Get().State_Slowed,
+		EGameplayTagEventType::AnyCountChange
+	).AddUObject(this, &ADiaBaseCharacter::OnSlowTagChanged);
 }
 
 void ADiaBaseCharacter::PossessedBy(AController* NewController)
@@ -98,17 +113,6 @@ void ADiaBaseCharacter::SetupInitialSkills()
 {
 	GrantInitialGASAbilities();
 	// 초기 스킬 등록
-
-
-	AbilitySystemComponent->RegisterGameplayTagEvent(
-		FDiaGameplayTags::Get().State_Stunned,
-		EGameplayTagEventType::NewOrRemoved
-	).AddUObject(this, &ADiaBaseCharacter::OnStunTagChanged);
-
-	AbilitySystemComponent->RegisterGameplayTagEvent(
-		FDiaGameplayTags::Get().State_Slowed,
-		EGameplayTagEventType::AnyCountChange
-	).AddUObject(this, &ADiaBaseCharacter::OnSlowTagChanged);
 }
 
 void ADiaBaseCharacter::GrantInitialGASAbilities()
@@ -126,28 +130,25 @@ void ADiaBaseCharacter::GrantInitialGASAbilities()
 		UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
 	}
 
-	int32 MappingIndex = 0;
-	if (InitialSkills.Num() > 0)
+	const TArray<USkillObject*>& SkillIDMapping = SkillManagerComponent->GetSkillIDMapping();
+	UE_LOG(LogTemp, Log, TEXT("GrantInitialGASAbilities: Granting initial skills num : %d"), SkillIDMapping.Num());
+	for (const USkillObject* SkillObject : SkillIDMapping)
 	{
-		for (int32 SkillID : InitialSkills)
+		if (IsValid(SkillObject))
 		{
-			if (MappingIndex >= MaxSkillMapping)
+			int32 SkillID = SkillObject->GetSkillID();
+			UE_LOG(LogTemp, Log, TEXT("GrantInitialGASAbilities: Trying to grant SkillID %d"), SkillID);
+			if (SkillID > 0)
 			{
-				break;
-			}
-
-			//부여에 성공했다면
-			bool isGrants = SetUpSkillID(SkillID);		
-			if(isGrants)
-			{
-				if (SkillIDMapping.IsValidIndex(MappingIndex))
+				bool bGranted = SetUpSkillID(SkillID);
+				if (!bGranted)
 				{
-					SkillIDMapping[MappingIndex] = SkillID;
+					UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: Failed to grant SkillID %d"), SkillID);
 				}
-				MappingIndex++;
 			}
 		}
 	}
+		
 
 
 	// 임시 주석 - 불필요한 로그
@@ -238,7 +239,6 @@ void ADiaBaseCharacter::OnStunTagChanged(const FGameplayTag CallbackTag, int32 N
 void ADiaBaseCharacter::OnSlowTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
 {
 	// 느려짐 상태 변화 처리
-	UE_LOG(LogTemp, Log, TEXT("Character %s Slow Tag Changed. New Count: %d"), *GetName(), NewCount);
 	if (NewCount > 0)
 	{
 		FGameplayTagContainer SearchTags;
@@ -251,11 +251,11 @@ void ADiaBaseCharacter::OnSlowTagChanged(const FGameplayTag CallbackTag, int32 N
 			if (ActiveGE)
 			{
 				// 느려짐 효과의 크기 가져오기
-				float Magnitude = ActiveGE->Spec.GetSetByCallerMagnitude(FDiaGameplayTags::Get().State_Slowed);
+				float Magnitude = ActiveGE->Spec.GetModifierMagnitude(0, true);
 				SlowMagnitude += Magnitude;
 			}
 		}
-		GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed * SlowMagnitude; 
+		GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed * SlowMagnitude;
 	}
 	else
 	{

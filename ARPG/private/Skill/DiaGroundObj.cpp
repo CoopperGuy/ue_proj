@@ -11,17 +11,27 @@
 ADiaGroundObj::ADiaGroundObj()
 {
 	CollisionComp->SetSphereRadius(Radius);
+
+	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 }
 
 void ADiaGroundObj::BeginPlay()
 {
 	Super::BeginPlay();
 
-    GetWorld()->GetTimerManager().SetTimer(LifeSpanTimerHandle,
-        this,
-        &ThisClass::OnHitDetect,
-        IntervalBetweenHits,
-        true);
+
+}
+
+void ADiaGroundObj::Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<UGameplayEffect> InDamageEffect)
+{
+	Super::Initialize(SkillData, InOwner, InSourceASC, InDamageEffect);
+	
+	GetWorld()->GetTimerManager().SetTimer(LifeSpanTimerHandle,
+		this,
+		&ThisClass::OnHitDetect,
+		IntervalBetweenHits,
+		true);
+
 }
 
 void ADiaGroundObj::OnHitDetect()

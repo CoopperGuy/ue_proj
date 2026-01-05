@@ -20,6 +20,7 @@ class UDiaStatusEffectComponent;
 class UAbilitySystemComponent;
 class UDiaAttributeSet;
 class UDiaLevelComponent;
+class UDiaSkillManagerComponent;
 UCLASS()
 class ARPG_API ADiaBaseCharacter : public ACharacter, public IAbilitySystemInterface, public IDamageable
 {
@@ -120,9 +121,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")
 	UDiaAttributeSet* AttributeSet;
 
-	//초기 보유 스킬
-	UPROPERTY(EditAnywhere, Category = "Skills")
-    TArray<int32> InitialSkills;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UDiaSkillManagerComponent* SkillManagerComponent;
 
 	// 현재 재생중인 몽타주
 	UPROPERTY()
@@ -130,13 +130,6 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS|Ability")
     FGameplayTagContainer AbilityTags;
-
-	//스킬 관련 변수
-    // 스킬 ID 매핑 (키 인덱스 -> 스킬 ID)
-    UPROPERTY(EditDefaultsOnly, Category = "Skills")
-    TArray<int32> SkillIDMapping;
-
-	const int32 MaxSkillMapping = 8;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "GAS|Ability")
 	int32 DodgeSkillID = 1011;
@@ -155,4 +148,5 @@ protected:
 public:
 	UDiaAttributeSet* GetAttributeSet() const { return AttributeSet; }
 	bool GetIsDead() const { return bIsDead; }
+	UDiaSkillManagerComponent* GetSkillManagerComponent() const { return SkillManagerComponent; }
 };

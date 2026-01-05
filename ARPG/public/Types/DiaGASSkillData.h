@@ -10,7 +10,7 @@ class UGameplayAbility;
 class UDiaGameplayAbility;
 class UGameplayEffect;
 class ADiaProjectile;
-class ADiaSkillObject;
+class ADiaSkillActor;
 
 // GAS 스킬 타입
 UENUM(BlueprintType)
@@ -64,7 +64,7 @@ struct ARPG_API FGASSkillData : public FTableRowBase
     TSubclassOf<UDiaGameplayAbility> AbilityClass;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    TSubclassOf<ADiaSkillObject> SkillObjectClass;
+    TSubclassOf<ADiaSkillActor> SkillObjectClass;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     EGASSkillType SkillType = EGASSkillType::MeleeAttack;
@@ -166,4 +166,49 @@ struct ARPG_API FGASSkillData : public FTableRowBase
         HitInterval = 0.0f;
         DamageMultiplierPerHit = 1.0f;
     }
+};
+
+UENUM(BlueprintType)
+enum class EJobType : uint8
+{
+    Warrior,
+    JobType_MAX
+};
+
+
+USTRUCT(BlueprintType)
+struct ARPG_API FJobSkillSet : public FTableRowBase
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EJobType JobType;;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<int32> SkillIDs;
+};
+
+USTRUCT(BlueprintType)
+struct ARPG_API FSkillVariantData : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 VariantID;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FText VariantName;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FText Description;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ModifierValue;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGameplayTag VariantTag;
+
+    FSkillVariantData()
+    {
+        VariantID = 0;
+        VariantName = FText::FromString(TEXT("Unknown Variant"));
+        Description = FText::FromString(TEXT("No Description"));
+        ModifierValue = 1.0f;
+        VariantTag = FGameplayTag();
+	}
 };

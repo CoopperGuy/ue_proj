@@ -14,6 +14,7 @@
 #include "Skill/DiaSkillManager.h"
 #include "GAS/DiaAttributeSet.h"
 #include "GameMode/DungeonGameMode.h"
+#include "DiaComponent/DiaSkillManagerComponent.h"
 
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -59,11 +60,13 @@ ADiaCharacter::ADiaCharacter()
     GetCharacterMovement()->bOrientRotationToMovement = false;
     GetCharacterMovement()->bUseControllerDesiredRotation = true;
 
+    //HACK 임시로 최대 개수 지정
+
+	constexpr int32 MaxSkillMapping = 8;
+
     SkillActions.Reserve(MaxSkillMapping);
-    SkillIDMapping.Reserve(MaxSkillMapping);
 
     SkillActions.Init(nullptr, MaxSkillMapping);
-    SkillIDMapping.Init(-1, MaxSkillMapping);
 
     Tags.Add(FName(TEXT("Player")));
 }
@@ -111,6 +114,9 @@ void ADiaCharacter::PossessedBy(AController* NewController)
 
 void ADiaCharacter::SetupInitialSkills()
 {
+    //HACK 우선은 Warrior로 박아놓는다.
+    SkillManagerComponent->LoadJobSKillDataFromTable(EJobType::Warrior);
+
     Super::SetupInitialSkills();
 }
 
@@ -307,10 +313,8 @@ void ADiaCharacter::Dodge(const FInputActionValue& Value)
 void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
 {
 
-    if (SkillIDMapping.IsValidIndex(ActionIndex) && SkillIDMapping[ActionIndex] != -1)
-    {
-        int32 skillID = SkillIDMapping[ActionIndex];
-        
+    if (int32 skillID = SkillManagerComponent->GetMappedSkillID(ActionIndex))
+    {        
         // GAS 스킬 먼저 시도 (ID 1000 이상은 GAS 스킬로 간주)
         if (skillID >= 1000)
         {
@@ -328,25 +332,6 @@ void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
             }
         }
         
-        //// 기존 스킬 시스템으로 폴백
-        //if (IsValid(CombatComponent))
-        //{
-        //    #if WITH_EDITOR || UE_BUILD_DEVELOPMENT
-        //        // 스킬 실행 로그
-        //        const FSkillData* skillData = GetWorld()->GetGameInstance<UDiaInstance>()->GetSkillManager()->GetSkillData(skillID);
-        //        if (skillData)
-        //        {
-        //            UE_LOG(LogTemp, Log, TEXT("기존 스킬 시스템 실행 - 인덱스: %d, 스킬ID: %d, 스킬이름: %s"), 
-        //                ActionIndex, skillID, *skillData->SkillName.ToString());
-        //        }
-        //    #endif
-        //    
-        //    CombatComponent->ExecuteSkill(skillID);
-        //}
-        //else
-        //{
-        //    UE_LOG(LogTemp, Warning, TEXT("CombatComponent가 유효하지 않습니다."));
-        //}
     }
     else
     {
@@ -360,10 +345,9 @@ void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
 bool ADiaCharacter::SetUpSkillID(int32 SkillID)
 {
  	bool isSuccess = Super::SetUpSkillID(SkillID);
-    
     if (isSuccess)
     {
-        RegisteSkillOnQuickSlotWidget(SkillID, SkillIDMapping.IndexOfByKey(SkillID));
+        RegisteSkillOnQuickSlotWidget(SkillID, SkillManagerComponent->GetIndexOfSkillID(SkillID));
     }
 
     return isSuccess;
@@ -406,10 +390,10 @@ void ADiaCharacter::ToggleSkillPanel()
 
 void ADiaCharacter::RegisteCurrentSkillList()
 {
+	const TArray<USkillObject*>& SkillIDMapping = SkillManagerComponent->GetSkillIDMapping();
     for (int32 i = 0; i < SkillIDMapping.Num(); ++i)
     {
-        int32 SkillID = SkillIDMapping[i];
-        if (SkillID != -1)
+        if (int32 SkillID = SkillManagerComponent->GetMappedSkillID(i))
         {
             RegisteSkillOnQuickSlotWidget(SkillID, i);
         }

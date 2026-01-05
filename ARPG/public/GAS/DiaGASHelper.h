@@ -31,9 +31,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GAS|Helper")
 	static bool RevokeAbilityBySkillID(UAbilitySystemComponent* ASC, int32 SkillID);
 
-	// Try activate ability by skill ID
-	UFUNCTION(BlueprintCallable, Category = "GAS|Helper")
-	static bool TryActivateAbilityBySkillID(UAbilitySystemComponent* ASC, int32 SkillID);
 
 	// Check if ability can be activated by skill ID
 	UFUNCTION(BlueprintCallable, Category = "GAS|Helper")

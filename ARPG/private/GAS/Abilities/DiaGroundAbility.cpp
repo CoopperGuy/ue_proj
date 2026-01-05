@@ -53,12 +53,30 @@ void UDiaGroundAbility::SpawnSkillGround()
 	FTransform SpawnTransform(SpawnRotation, SpawnLocation);
 
 
+    FGameplayAbilityTargetDataHandle TargetDataHandle;
+
+    FGameplayAbilityTargetData_LocationInfo LocationData;
+    LocationData.SourceLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
+    LocationData.SourceLocation.LiteralTransform = FTransform(SpawnLocation);
+    LocationData.TargetLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
+    LocationData.TargetLocation.LiteralTransform = FTransform(SpawnLocation); 
+    TargetDataHandle.Add(new FGameplayAbilityTargetData_LocationInfo(LocationData));
+
     SpawnActorTask = UAbilityTask_SpawnActor::SpawnActor
-    (this, FGameplayAbilityTargetDataHandle(), ADiaGroundObj::StaticClass());
+    (this, TargetDataHandle, SkillGroundClass);
 
     if (SpawnActorTask)
     {
         SpawnActorTask->Success.AddDynamic(this, &UDiaGroundAbility::OnSpawned);
+
+        AActor* SpawnedActor = nullptr;
+        SpawnActorTask->BeginSpawningActor(this, TargetDataHandle, SkillGroundClass, SpawnedActor);
+        if (SpawnedActor)
+        {
+            SpawnActorTask->FinishSpawningActor(this, TargetDataHandle, SpawnedActor);
+        }
+
+        // ReadyForActivation은 Begin/Finish 이후에 호출해야 합니다
         SpawnActorTask->ReadyForActivation();
     }
 
@@ -95,14 +113,13 @@ void UDiaGroundAbility::OnSpawned(AActor* SpawnedSkillGround)
         ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(ActorInfo.AvatarActor.Get());
         if (Character)
         {
-            FVector SpawnLocation = UDiaGASHelper::GetMouseWorldLocation(ActorInfo);
-            FRotator SpawnRotation = bUseOwnerRotation ? Character->GetActorRotation() : FRotator::ZeroRotator;
-            // GAS 초기화: 소스 ASC, 대미지 GE, 기본 대미지 전달
+            TArray<FGameplayEffectSpecHandle> TargetEffectSpecs;
+            MakeEffectSpecContextToTarget(TargetEffectSpecs);
+            SkillGround->InitTargetEffectHandle(TargetEffectSpecs);
+
             const FGameplayAbilityActorInfo& Info = GetActorInfo();
             UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
             SkillGround->Initialize(SkillData, Character, SourceASC, DamageEffectClass);
-            SkillGround->SetActorLocationAndRotation(SpawnLocation, SpawnRotation);
-            SpawnActorTask->FinishSpawningActor(this, FGameplayAbilityTargetDataHandle(), SkillGround);
         }
     }
 

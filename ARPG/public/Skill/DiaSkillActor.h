@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "Engine/EngineTypes.h" 
 #include "Types/DiaGASSkillData.h"  
-#include "DiaSkillObject.generated.h"
+#include "DiaSkillActor.generated.h"
 
 class UAbilitySystemComponent;
 class UGameplayEffect;
@@ -23,7 +23,7 @@ class UParticleSystem;
 class UParticleSystemComponent;
 
 UCLASS()
-class ARPG_API ADiaSkillObject : public AActor
+class ARPG_API ADiaSkillActor : public AActor
 {
 	GENERATED_BODY()
 	
@@ -31,11 +31,11 @@ protected:
 	virtual void BeginPlay() override;
     virtual void Tick(float DeltaTime) override;
 public:	
-    ADiaSkillObject();
+    ADiaSkillActor();
 
 	// Called every frame
-	void Initialize(float InDamage, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
-    void Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
+	virtual void Initialize(float InDamage, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
+    virtual void Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
 	void InitTargetEffectHandle(const TArray<FGameplayEffectSpecHandle>& InTargetEffectHandles);
     UFUNCTION()
     void OnHit(UPrimitiveComponent* OverlappedComponent, 
@@ -110,3 +110,4 @@ protected:
 	int32 MaxHitCount = 1;
 	double IntervalBetweenHits = 0.;
 };
+

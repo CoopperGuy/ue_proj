@@ -46,7 +46,7 @@ EBTNodeResult::Type UBTTask_RotateAndActiveSkill::ExecuteTask(UBehaviorTreeCompo
 			{
 				return EBTNodeResult::InProgress;
 			}
-			if (ASC && UDiaGASHelper::TryActivateAbilityBySkillID(ASC, SkillID))
+			if (DiaMonster && DiaMonster->GetSkillManagerComponent() && DiaMonster->GetSkillManagerComponent()->TryActivateAbilityBySkillID(SkillID))
 			{
 				return EBTNodeResult::Succeeded;
 			}

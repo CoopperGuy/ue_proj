@@ -21,7 +21,10 @@ public:
 
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 
+	UFUNCTION()
 	void OnSpawned(AActor* SpawnedProjectile);
+	UFUNCTION()
+	void OnDidNotSpawn(AActor* SpawnedProjectile);
 protected:
 	// 발사체 생성 함수
 	UFUNCTION(BlueprintCallable, Category = "Projectile")
@@ -29,7 +32,7 @@ protected:
 
 	// 발사체 클래스
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")
-	TSubclassOf<ADiaSkillObject> ProjectileClass;
+	TSubclassOf<ADiaSkillActor> ProjectileClass;
 
 	// 발사체 오프셋
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")

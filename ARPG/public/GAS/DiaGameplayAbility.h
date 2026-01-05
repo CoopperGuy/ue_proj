@@ -10,6 +10,8 @@ class UNiagaraSystem;
 class UParticleSystemComponent;
 class UNiagaraComponent;
 class UAbilitySystemComponent;
+class UDiaSkillVariant;
+class USkillObject;
 UCLASS(Abstract, Blueprintable)
 class ARPG_API UDiaGameplayAbility : public UGameplayAbility
 {
@@ -39,6 +41,7 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Skill")
 	const FGASSkillData& GetSkillData() const { return SkillData; }
 
+	void SetSkillObject(const USkillObject* InSkillObject);
 protected:
 	// Skill data from GAS system
 	UPROPERTY(BlueprintReadOnly, Category = "Skill")
@@ -142,4 +145,7 @@ protected:
 	//히트 계산 식
 	//-> CurrentHitcount * HitInterval = 총 사용 시간.
 
+
+	UPROPERTY()
+	USkillObject* SkillObject;
 };

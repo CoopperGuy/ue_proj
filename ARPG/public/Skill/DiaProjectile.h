@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "Skill/DiaSkillType.h"
 #include "GameplayEffectTypes.h"
-#include "Skill/DiaSkillObject.h"
+#include "Skill/DiaSkillActor.h"
 #include "DiaProjectile.generated.h"
 
 class USphereComponent;
@@ -21,7 +21,7 @@ class UNiagaraComponent;
 class UParticleSystemComponent;
 class IAbilitySystemInterface;
 UCLASS()
-class ARPG_API ADiaProjectile : public ADiaSkillObject
+class ARPG_API ADiaProjectile : public ADiaSkillActor
 {
 	GENERATED_BODY()
 	

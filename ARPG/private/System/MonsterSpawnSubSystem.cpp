@@ -6,6 +6,7 @@
 #include "Engine/World.h"
 #include "Engine/DataTable.h"
 #include "TimerManager.h"
+#include "Monster/DiaMonster.h"
 #include "System/MonsterManager.h"
 
 void UMonsterSpawnSubSystem::Initialize(FSubsystemCollectionBase& Collection)

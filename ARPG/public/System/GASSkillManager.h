@@ -31,21 +31,26 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GAS Skills")
 	TArray<FGASSkillData> GetSkillsByType(EGASSkillType SkillType) const;
 
-
+	const FSkillVariantData* GetSkllVariantDataPtr(int32 VariantID) const;
 protected:
 	// DataTable에서 스킬 데이터 로드
 	void LoadSkillDataFromTable();
-
-	// 기본 스킬 데이터 생성 (폴백용)
-	void CreateDefaultSkillData();
-
+	void LoadSkillVariantDataFromTable();
 public:
 	// DataTable 설정
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 	TSoftObjectPtr<UDataTable> SkillDataTable;
 
+	// DataTable 설정
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+	TSoftObjectPtr<UDataTable> SkillVariationTable;
+
+	
 protected:
 	// 스킬 데이터 저장소
 	UPROPERTY()
 	TMap<int32, FGASSkillData> SkillDataMap;
+
+	UPROPERTY()
+	TMap<int32, FSkillVariantData> SkillVariantDataMap;
 };

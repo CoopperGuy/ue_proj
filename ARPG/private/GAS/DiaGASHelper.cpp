@@ -87,36 +87,6 @@ bool UDiaGASHelper::RevokeAbilityBySkillID(UAbilitySystemComponent* ASC, int32 S
 	return false;
 }
 
-bool UDiaGASHelper::TryActivateAbilityBySkillID(UAbilitySystemComponent* ASC, int32 SkillID)
-{
-	if (!ASC)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaGASHelper::TryActivateAbilityBySkillID: Invalid ASC"));
-		return false;
-	}
-
-	//UE_LOG(LogTemp, Verbose, TEXT("TryActivateAbilityBySkillID: SkillID=%d"), SkillID);
-
-	// 일반적인 스킬 ID 처리
-	FGameplayAbilitySpec* AbilitySpec = GetAbilitySpecBySkillID(ASC, SkillID);
-	if (AbilitySpec)
-	{
-		//UE_LOG(LogTemp, Verbose, TEXT("Found Spec: Ability=%s, InputID=%d, Active=%s"),
-		//	*GetNameSafe(AbilitySpec->Ability), AbilitySpec->InputID, AbilitySpec->IsActive() ? TEXT("true") : TEXT("false"));
-
-		const FGameplayAbilityActorInfo* ActorInfo = ASC->AbilityActorInfo.Get();
-		//UE_LOG(LogTemp, Verbose, TEXT("ActorInfo: Avatar=%s, Owner=%s"),
-		//	*GetNameSafe(ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr),
-		//	*GetNameSafe(ActorInfo ? ActorInfo->OwnerActor.Get() : nullptr));
-
-		const bool bActivated = ASC->TryActivateAbility(AbilitySpec->Handle);
-		//UE_LOG(LogTemp, Log, TEXT("TryActivateAbility result: %s"), bActivated ? TEXT("true") : TEXT("false"));
-		return bActivated;
-	}
-
-	//UE_LOG(LogTemp, Warning, TEXT("DiaGASHelper::TryActivateAbilityBySkillID: No ability found for SkillID %d"), SkillID);
-	return false;
-}
 
 bool UDiaGASHelper::CanActivateAbilityBySkillID(UAbilitySystemComponent* ASC, int32 SkillID)
 {

@@ -26,6 +26,7 @@
 #include "GAS/DiaAttributeSet.h"
 #include "AbilitySystemComponent.h"
 #include "GAS/DiaGameplayTags.h"
+#include "DiaComponent/DiaSkillManagerComponent.h"
 
 #include "UI/HUDWidget.h"
 
@@ -137,7 +138,7 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 	GetCharacterMovement()->Velocity = FVector::ZeroVector;
 
 	//스킬 초기화
-	InitialSkills = MonsterInfo.MonsterSkills;
+	SkillManagerComponent->SetSkillIDMapping(MonsterInfo.MonsterSkills);
 	AbilityTags = MonsterInfo.MonsterTags;
 
 	GrantInitialGASAbilities();

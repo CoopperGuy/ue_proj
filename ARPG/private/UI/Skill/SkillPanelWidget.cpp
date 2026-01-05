@@ -27,17 +27,6 @@ void USkillPanelWidget::InitializeSkillPanel()
 	if (!IsValid(DiaInstance))
 		return;
 
-	UDiaSkillManager* SkillManager = DiaInstance->GetSkillManager();
-	if (!IsValid(SkillManager))
-		return;
-
-	//기본 스킬 데이터 가져오기
-	//여기서 스킬 레벨 가져오는게 좀 더 좋긴한데 일단은 현상태
-	for (const auto& SkillPair : SkillManager->GetSkillDataMap())
-	{
-		const FSkillData& SkillData = SkillPair.Value;
-		AddSkillToPanel(SkillData, SkillPair.Key, true);
-	}
 
 }
 

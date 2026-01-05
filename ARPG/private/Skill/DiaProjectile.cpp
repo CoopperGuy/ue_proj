@@ -52,7 +52,7 @@ ADiaProjectile::ADiaProjectile()
     //Damage = 10.0f;
 	//DamageType = UDiaDamageType::StaticClass();
 
-
+    SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 }
 void ADiaProjectile::Launch(const FVector& Direction)
 {
@@ -150,24 +150,7 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     }
 
 
-    ADiaBaseCharacter* DiaOtherActor = Cast<ADiaBaseCharacter>(OtherActor);
-    if (IsValid(DiaOtherActor))
-    {
-
-        // 데미지 처리
-        ProcessDamage(DiaOtherActor, HitResult);
-        
-        // 피격 이펙트 생성
-        SpawnHitEffect(HitResult.ImpactPoint, HitResult.ImpactNormal);
-        
-        // 피격 이벤트 호출
-        OnSkillHit(DiaOtherActor, HitResult);
-
-        //타격에 성공하면 받으면 일단 타겟으로 올린다.
-        //HACK
-        OnwerActor->SetTargetActor(DiaOtherActor);
-    }
-    
+    ApplyGameplayHit(OtherActor, HitResult, OnwerActor);
     // 발사체 제거
     Destroy();
 }

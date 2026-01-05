@@ -61,7 +61,7 @@ EBTNodeResult::Type UBTTask_PlayGAS::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 			return EBTNodeResult::Failed;
 		}
 #endif
-	if (ASC && UDiaGASHelper::TryActivateAbilityBySkillID(ASC, SkillID))
+	if (DiaMonster && DiaMonster->GetSkillManagerComponent() && DiaMonster->GetSkillManagerComponent()->TryActivateAbilityBySkillID(SkillID))
 	{
 		CurrentAbilityHandle = Spec->Handle;
 		bAbilityEnded = false; // 플래그 초기화

@@ -2,6 +2,9 @@
 #include "GAS/DiaAttributeSet.h"
 #include "GAS/DiaGameplayTags.h"
 
+#include "DiaComponent/Skill/DiaSkillVariant.h"
+#include "DiaComponent/Skill/SkillObject.h"
+
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemGlobals.h"
 
@@ -204,7 +207,7 @@ void UDiaGameplayAbility::MakeEffectSpecContextToTarget(TArray<FGameplayEffectSp
 	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 	if (!IsValid(SourceASC))
 		return;
-	for (const auto EffectClass : SkillData.EffectsToApplyOnSelf)
+	for (const auto EffectClass : SkillData.EffectsToApplyOnHit)
 	{
 		FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
 		EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
@@ -320,6 +323,10 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 	}
 }
 
+void UDiaGameplayAbility::SetSkillObject(const USkillObject* InSkillObject)
+{
+	SkillObject = InSkillObject;
+}
 
 float UDiaGameplayAbility::PlayAbilityMontage(UAnimMontage* MontageToPlay, float PlayRate)
 {

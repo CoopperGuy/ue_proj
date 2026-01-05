@@ -41,8 +41,10 @@ void UDiaProjectileAbility::ActivateAbility(const FGameplayAbilitySpecHandle Han
 void UDiaProjectileAbility::OnSpawned(AActor* SpawnedProjectile)
 {
 	ADiaProjectile* Projectile = Cast<ADiaProjectile>(SpawnedProjectile);
+	UE_LOG(LogTemp, Log, TEXT("DiaProjectileAbility::OnSpawned - Projectile spawned"));
 	if (Projectile)
 	{
+		UE_LOG(LogTemp, Log, TEXT("DiaProjectileAbility::OnSpawned - Projectile spawned successfully"));
 		const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
 		ACharacter* Character = Cast<ACharacter>(ActorInfo.AvatarActor.Get());
 		if (Character)
@@ -56,26 +58,26 @@ void UDiaProjectileAbility::OnSpawned(AActor* SpawnedProjectile)
 			LaunchDirection.Z = 0.0f;
 			LaunchDirection.Normalize();
 
-			FVector CharacterLocation = Character->GetActorLocation();
-			const float SpawnDistance = FMath::Max(ProjectileOffset.Size(), MinimumRange);
-			FVector SpawnLocation = CharacterLocation + LaunchDirection * SpawnDistance;
 
-			// GAS 초기화: 소스 ASC, 대미지 GE, 기본 대미지 전달
 			const FGameplayAbilityActorInfo& Info = GetActorInfo();
 			UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
 
 			//상대방에게 전달할 이펙트 생성
 			TArray<FGameplayEffectSpecHandle> TargetEffectSpecs; 
 			MakeEffectSpecContextToTarget(TargetEffectSpecs);
-			Projectile->Initialize(SkillData.BaseDamage, Character, SourceASC, DamageEffectClass);
 			Projectile->InitTargetEffectHandle(TargetEffectSpecs);
-			Projectile->SetActorLocationAndRotation(SpawnLocation, LaunchDirection.Rotation());
+			Projectile->Initialize(SkillData.BaseDamage, Character, SourceASC, DamageEffectClass);
 			Projectile->Launch(LaunchDirection);
 
-			SpawnActorTask->FinishSpawningActor(this, FGameplayAbilityTargetDataHandle(), Projectile);
 		}
 	}
 
+	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+}
+
+void UDiaProjectileAbility::OnDidNotSpawn(AActor* SpawnedProjectile)
+{
+	UE_LOG(LogTemp, Warning, TEXT("DiaProjectileAbility::OnDidNotSpawn - Projectile failed to spawn"));
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
@@ -125,14 +127,36 @@ void UDiaProjectileAbility::SpawnProjectile()
 	DrawDebugLine(World, CharacterLocation, SpawnLocation, FColor::Green, false, 1.5f, 0, 2.0f);
 #endif
 
+	if(IsValid(ProjectileClass))
 	{
+		FGameplayAbilityTargetDataHandle TargetDataHandle;
+
+		FGameplayAbilityTargetData_LocationInfo* LocationData = new FGameplayAbilityTargetData_LocationInfo();
+		LocationData->SourceLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
+		LocationData->SourceLocation.LiteralTransform = FTransform(LaunchDirection.Rotation(), SpawnLocation);
+		LocationData->TargetLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
+		LocationData->TargetLocation.LiteralTransform = FTransform(LaunchDirection.Rotation(), SpawnLocation + LaunchDirection * 100.0f); // 약간 앞쪽
+		TargetDataHandle.Add(LocationData);
 		//SpawnTask라는걸 알내서 그걸 활용
-		SpawnActorTask = UAbilityTask_SpawnActor::SpawnActor
-		(this, FGameplayAbilityTargetDataHandle(), ADiaProjectile::StaticClass());
+		SpawnActorTask = UAbilityTask_SpawnActor::SpawnActor(this, TargetDataHandle, ProjectileClass);
 
 		if (SpawnActorTask)
 		{
 			SpawnActorTask->Success.AddDynamic(this, &UDiaProjectileAbility::OnSpawned);
+			SpawnActorTask->DidNotSpawn.AddDynamic(this, &UDiaProjectileAbility::OnDidNotSpawn);
+
+			// C++에서는 BeginSpawningActor를 호출해야 실제로 스폰이 시작됩니다.
+			AActor* SpawnedActor = nullptr;
+			if (!SpawnActorTask->BeginSpawningActor(this, TargetDataHandle, ProjectileClass, SpawnedActor))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("DiaProjectileAbility::SpawnProjectile - BeginSpawningActor failed"));
+			}
+			if (SpawnedActor)
+			{
+				SpawnActorTask->FinishSpawningActor(this, TargetDataHandle, SpawnedActor);
+			}
+
+			// ReadyForActivation은 Begin/Finish 이후에 호출해야 합니다
 			SpawnActorTask->ReadyForActivation();
 		}
 

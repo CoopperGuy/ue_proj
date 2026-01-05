@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Skill/DiaSkillObject.h"
+#include "Skill/DiaSkillActor.h"
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
@@ -33,7 +33,7 @@
 
 
 // Sets default values
-ADiaSkillObject::ADiaSkillObject()
+ADiaSkillActor::ADiaSkillActor()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -43,7 +43,7 @@ ADiaSkillObject::ADiaSkillObject()
     CollisionComp->SetCollisionObjectType(ECollisionChannel::ECC_EngineTraceChannel2);
     CollisionComp->SetCollisionProfileName("Projectile");
     CollisionComp->SetGenerateOverlapEvents(true);  // Overlap 이벤트 활성화
-    CollisionComp->OnComponentBeginOverlap.AddDynamic(this, &ADiaSkillObject::OnHit);
+    CollisionComp->OnComponentBeginOverlap.AddDynamic(this, &ADiaSkillActor::OnHit);
 
     RootComponent = CollisionComp;
 
@@ -70,7 +70,7 @@ ADiaSkillObject::ADiaSkillObject()
     SkillAbilityEffectComp->SetRelativeLocation(FVector::ZeroVector);
 }
 
-void ADiaSkillObject::Initialize(float InDamage, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<UGameplayEffect> InDamageEffect)
+void ADiaSkillActor::Initialize(float InDamage, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<UGameplayEffect> InDamageEffect)
 {
     Damage = InDamage;
     SetOwner(InOwner);
@@ -85,7 +85,7 @@ void ADiaSkillObject::Initialize(float InDamage, AActor* InOwner, UAbilitySystem
     DamageGameplayEffect = InDamageEffect;
 }
 
-void ADiaSkillObject::Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<UGameplayEffect> InDamageEffect)
+void ADiaSkillActor::Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<UGameplayEffect> InDamageEffect)
 {
 	Damage = SkillData.BaseDamage;
 	IntervalBetweenHits = SkillData.HitInterval;
@@ -101,12 +101,12 @@ void ADiaSkillObject::Initialize(const FGASSkillData& SkillData, AActor* InOwner
 	DamageGameplayEffect = InDamageEffect;
 }
 
-void ADiaSkillObject::InitTargetEffectHandle(const TArray<FGameplayEffectSpecHandle>& InTargetEffectHandles)
+void ADiaSkillActor::InitTargetEffectHandle(const TArray<FGameplayEffectSpecHandle>& InTargetEffectHandles)
 {
 	TargetEffectHandles = InTargetEffectHandles;
 }
 
-void ADiaSkillObject::BeginPlay()
+void ADiaSkillActor::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -116,22 +116,22 @@ void ADiaSkillObject::BeginPlay()
         SkillAbilityEffectComp->SetAsset(SkillEffect);
         SkillAbilityEffectComp->SetVariableFloat(FName("EffectScale"), 1.0f);
         SkillAbilityEffectComp->Activate(true);
-		UE_LOG(LogTemp, Warning, TEXT("DiaSkillObject::BeginPlay - SkillEffect activated."));
+		UE_LOG(LogTemp, Warning, TEXT("DiaSkillActor::BeginPlay - SkillEffect activated."));
     }
     else
     {
         bool isSkillEffectValid = IsValid(SkillEffect);
 		FString NameString = isSkillEffectValid ? SkillEffect->GetName() : TEXT("None");
-		UE_LOG(LogTemp, Warning, TEXT("DiaSkillObject::BeginPlay - SkillEffect or SkillAbilityEffectComp is not valid. effect : %s"), *NameString);
+		UE_LOG(LogTemp, Warning, TEXT("DiaSkillActor::BeginPlay - SkillEffect or SkillAbilityEffectComp is not valid. effect : %s"), *NameString);
     }
 }
 
-void ADiaSkillObject::Tick(float DeltaTime)
+void ADiaSkillActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
 
-void ADiaSkillObject::OnHit(UPrimitiveComponent* OverlappedComponent,
+void ADiaSkillActor::OnHit(UPrimitiveComponent* OverlappedComponent,
     AActor* OtherActor, UPrimitiveComponent* OtherComp,
     int32 OtherBodyIndex, bool bFromSweep,
     const FHitResult& HitResult)
@@ -167,7 +167,7 @@ void ADiaSkillObject::OnHit(UPrimitiveComponent* OverlappedComponent,
     ApplyGameplayHit(OtherActor, HitResult, OwnerActor);
 }
 
-void ADiaSkillObject::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitResult, ADiaBaseCharacter* OwnerActor)
+void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitResult, ADiaBaseCharacter* OwnerActor)
 {
     IAbilitySystemInterface* DiaOtherActor = Cast<IAbilitySystemInterface>(OtherActor);
     if (DiaOtherActor)
@@ -189,15 +189,15 @@ void ADiaSkillObject::ApplyGameplayHit(AActor* OtherActor, const FHitResult& Hit
     }
 }
 
-void ADiaSkillObject::OnHitDetect()
+void ADiaSkillActor::OnHitDetect()
 {
 }
 
-void ADiaSkillObject::OnSkillHit(IAbilitySystemInterface* HitActor, const FHitResult& HitResult)
+void ADiaSkillActor::OnSkillHit(IAbilitySystemInterface* HitActor, const FHitResult& HitResult)
 {
 }
 
-void ADiaSkillObject::ProcessDamage(IAbilitySystemInterface* ASCInterface, const FHitResult& HitResult)
+void ADiaSkillActor::ProcessDamage(IAbilitySystemInterface* ASCInterface, const FHitResult& HitResult)
 {
     if (!(ASCInterface) || !IsValid(Owner))
     {
@@ -239,7 +239,7 @@ void ADiaSkillObject::ProcessDamage(IAbilitySystemInterface* ASCInterface, const
     }
 }
 
-void ADiaSkillObject::SpawnHitEffect(const FVector& ImpactPoint, const FVector& ImpactNormal)
+void ADiaSkillActor::SpawnHitEffect(const FVector& ImpactPoint, const FVector& ImpactNormal)
 {
     // 피격 이펙트 생성
     if (HitEffect)
@@ -258,7 +258,7 @@ void ADiaSkillObject::SpawnHitEffect(const FVector& ImpactPoint, const FVector& 
     }
 }
 
-void ADiaSkillObject::ProcessTargetEffects(IAbilitySystemInterface* Target)
+void ADiaSkillActor::ProcessTargetEffects(IAbilitySystemInterface* Target)
 {
     if (!SourceASC.IsValid())
         return;
@@ -269,12 +269,16 @@ void ADiaSkillObject::ProcessTargetEffects(IAbilitySystemInterface* Target)
     UAbilitySystemComponent* TargetASC = Target->GetAbilitySystemComponent();
     if (!IsValid(TargetASC))
         return;
+
     for(const FGameplayEffectSpecHandle& SpecHandle : TargetEffectHandles)
     {
         FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
         if (Spec)
         {
             FActiveGameplayEffectHandle ActiveHandle = SourceASC->ApplyGameplayEffectSpecToTarget(*Spec, TargetASC);
+            FGameplayTagContainer gmte;
+            Spec->GetAllGrantedTags(gmte);
         }
     }
 }
+
