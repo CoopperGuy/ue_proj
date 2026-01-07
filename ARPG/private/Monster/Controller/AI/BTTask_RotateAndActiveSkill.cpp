@@ -9,6 +9,7 @@
 #include "GAS/DiaGASHelper.h"
 #include "GAS/Abilities/DiaBasicAttackAbility.h"
 #include "System/GASSkillManager.h"
+#include "DiaComponent/DiaSkillManagerComponent.h"
 
 #include "Monster/Controller/DiaAIController.h"
 #include "Monster/DiaMonster.h"

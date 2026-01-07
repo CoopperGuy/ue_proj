@@ -24,19 +24,3 @@ void UDiaSkillVariant::InitializeVariant(int32 _VariantID)
 	}
 }
 
-void UDiaSkillVariant::SkillVariantFunction()
-{
-
-}
-
-void UDiaSkillVariant::SkillSpawnFunction()
-{
-}
-
-void UDiaSkillVariant::SkillHitFunction()
-{
-}
-
-void UDiaSkillVariant::SkillEndFunction()
-{
-}

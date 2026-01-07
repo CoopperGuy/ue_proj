@@ -18,8 +18,6 @@ class ARPG_API USkillObject : public UObject
 	GENERATED_BODY()
 public:
 	void InitializeSkillObject(int32 _SkillID);
-	
-	void 
 
 	void SetSkillLevel(int32 _SkillLevel) { SkillLevel = _SkillLevel; }
 	void AddSkillLevel(int32 _AddLevel) { SkillLevel += _AddLevel; }

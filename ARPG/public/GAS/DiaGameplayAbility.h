@@ -147,5 +147,5 @@ protected:
 
 
 	UPROPERTY()
-	USkillObject* SkillObject;
+	const USkillObject* SkillObject;
 };

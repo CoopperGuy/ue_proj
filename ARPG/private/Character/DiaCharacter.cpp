@@ -303,8 +303,7 @@ void ADiaCharacter::Look(const FInputActionValue& Value)
 
 void ADiaCharacter::Dodge(const FInputActionValue& Value)
 {
-    UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
-    if (ASC && UDiaGASHelper::TryActivateAbilityBySkillID(ASC, DodgeSkillID))
+    if (SkillManagerComponent && SkillManagerComponent->TryActivateAbilityBySkillID(DodgeSkillID))
     {
         return;
     }
@@ -326,7 +325,7 @@ void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
                 return;
             }
 
-            if (ASC && UDiaGASHelper::TryActivateAbilityBySkillID(ASC, skillID))
+            if (SkillManagerComponent && SkillManagerComponent->TryActivateAbilityBySkillID(skillID))
             {
                 return;
             }
