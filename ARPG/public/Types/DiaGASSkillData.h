@@ -148,6 +148,8 @@ struct ARPG_API FGASSkillData : public FTableRowBase
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<TSubclassOf<UGameplayEffect>> EffectsToApplyOnSelf;
 
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<int32> VariantIDs;
 
     FGASSkillData()
     {
@@ -165,6 +167,11 @@ struct ARPG_API FGASSkillData : public FTableRowBase
         HitCount = 1;
         HitInterval = 0.0f;
         DamageMultiplierPerHit = 1.0f;
+
+        VariantIDs.Reserve(3);
+        EffectsToApplyOnHit.Reserve(6);
+        EffectsToApplyOnSelf.Reserve(6);
+        PrerequisiteSkills.Reserve(3);
     }
 };
 

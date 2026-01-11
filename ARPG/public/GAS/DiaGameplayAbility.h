@@ -42,6 +42,7 @@ public:
 	const FGASSkillData& GetSkillData() const { return SkillData; }
 
 	void SetSkillObject(const USkillObject* InSkillObject);
+	const USkillObject* GetSkillObject() const { return SkillObject; }
 protected:
 	// Skill data from GAS system
 	UPROPERTY(BlueprintReadOnly, Category = "Skill")

@@ -19,8 +19,8 @@ void UDiaSkillVariant::InitializeVariant(int32 _VariantID)
 	const FSkillVariantData* Data = GasSkillMgr->GetSkllVariantDataPtr(_VariantID);
 	if (Data)
 	{
-		SkillTag = Data->VariantTag;
-		ModifierValue = Data->ModifierValue;
+		VariantSpec.ModifierValue = Data->ModifierValue;
+		VariantSpec.SkillTag = Data->VariantTag;
 	}
 }
 

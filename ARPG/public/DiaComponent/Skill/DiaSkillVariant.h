@@ -24,57 +24,27 @@ struct ARPG_API FDiaSkillVariantSpec
 {
 	GENERATED_BODY()
 
-	FDiaSkillVariantSpec();
+	FDiaSkillVariantSpec()
+	{ }
 
 	float ModifierValue;
 	FGameplayTag SkillTag;
 };
 
+
 USTRUCT(BlueprintType)
-struct ARPG_API FDiaSkillVariantRuntimeState
+struct ARPG_API FDiaSkillVariantContext
 {
 	GENERATED_BODY()
 	
-	FDiaSkillVariantRuntimeState();
-	FDiaSkillVariantRuntimeState(const FDiaSkillVariantSpec& spec);
+	FDiaSkillVariantContext() {}
+	FDiaSkillVariantContext(const FDiaSkillVariantSpec& spec) {}
 
-	float MultipleSpawnCount;
-	float PierceCount;
-	float ChainCount;
-};
-
-
-USTRUCT(BlueprintType)
-struct ARPG_API FDiaSkillVariantSpawnContext
-{
-	GENERATED_BODY()
-	
-	FDiaSkillVariantSpawnContext();
-	FDiaSkillVariantSpawnContext(const FDiaSkillVariantSpec& spec);
-};
-
-USTRUCT(BlueprintType)
-struct ARPG_API FDiaSkillVariantHitContext
-{
-	GENERATED_BODY()
-	
-	FDiaSkillVariantHitContext();
-	FDiaSkillVariantHitContext(const FDiaSkillVariantSpec& spec);
-
-	UPROPERTY()
-	FDiaSkillVariantRuntimeState* RuntimeState;
-};
-
-USTRUCT(BlueprintType)
-struct ARPG_API FDiaSkillVariantEndContext
-{
-	GENERATED_BODY()
-	
-	FDiaSkillVariantEndContext();
-	FDiaSkillVariantEndContext(const FDiaSkillVariantSpec& spec);
+	FHitResult HitResult;
+	TSubclassOf<AActor> SkillActorClass;
+	FGameplayAbilityTargetDataHandle TargetData;
 
 };
-
 
 /**
  * 
@@ -89,15 +59,9 @@ public:
 
 	void InitializeVariant(int32 _VariantID);
 
-	void ModifyBySpec(const FDiaSkillVariantSpec& Spec);
-	void OnSpawn(const FDiaSkillVariantSpawnContext& SpawnContext);
-	void OnHit(const FDiaSkillVariantHitContext& HitContext);
-	void OnEnd(const FDiaSkillVariantEndContext& EndContext);
+	void ApplyVariantEffect(const FDiaSkillVariantContext& context);
+	void SetVariantSpec(const FDiaSkillVariantSpec& spec) { VariantSpec = spec; }
+	FDiaSkillVariantSpec GetVariantSpec() const { return VariantSpec; }
 protected:
-	FGameplayTag SkillTag;
-	float ModifierValue;
-
-public:
-	FORCEINLINE const FGameplayTag& GetSkillTags() const { return SkillTag; }
-	FORCEINLINE float GetModifierValue() const { return ModifierValue; }
+	FDiaSkillVariantSpec VariantSpec;
 };

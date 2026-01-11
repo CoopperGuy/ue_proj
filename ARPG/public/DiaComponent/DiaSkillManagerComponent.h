@@ -5,10 +5,13 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "Types/DiaGASSkillData.h"
+#include "DiaComponent/Skill/DiaSkillVariant.h"
 #include "DiaSkillManagerComponent.generated.h"
 
 
 class USkillObject;
+class UDiaSkillVariant;
+class UDiaGameplayAbility;
 UCLASS()
 class ARPG_API UDiaSkillManagerComponent : public UActorComponent
 {
@@ -36,6 +39,9 @@ public:
 
 	// Get ability spec by skill ID (C++ only - not exposed to Blueprint)
 	FGameplayAbilitySpec* GetAbilitySpecBySkillID(int32 SkillID) const;
+
+	void SpawnSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability);
+
 protected:
 	FJobSkillSet CurrentJobSkillSet;
 
@@ -43,6 +49,9 @@ protected:
     // 스킬 ID 매핑 (키 인덱스 -> 스킬 ID)
 	UPROPERTY(EditDefaultsOnly, Category = "Skills")
 	TArray<USkillObject*> SkillIDMapping;
+
+	UPROPERTY()
+	TMap<int32, UDiaSkillVariant*> SkillVariants;
 
 	const int32 MaxSkillMapping = 8;
 

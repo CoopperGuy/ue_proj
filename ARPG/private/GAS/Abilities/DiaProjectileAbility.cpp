@@ -6,6 +6,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Skill/DiaProjectile.h"
 #include "Abilities/Tasks/AbilityTask_SpawnActor.h"
+#include "DiaComponent/Skill/DiaSkillVariant.h"
 #include "GAS/DiaGASHelper.h"
 
 UDiaProjectileAbility::UDiaProjectileAbility()
@@ -108,6 +109,7 @@ void UDiaProjectileAbility::SpawnProjectile()
 		return;
 	}
 
+
 	// Calculate launch direction (수평 방향으로 정규화 + 최소 거리 보정)
 	FVector LaunchDirection = CalculateLaunchDirection(Character);
 	if (LaunchDirection.IsNearlyZero())
@@ -127,6 +129,7 @@ void UDiaProjectileAbility::SpawnProjectile()
 	DrawDebugLine(World, CharacterLocation, SpawnLocation, FColor::Green, false, 1.5f, 0, 2.0f);
 #endif
 
+
 	if(IsValid(ProjectileClass))
 	{
 		FGameplayAbilityTargetDataHandle TargetDataHandle;
@@ -137,8 +140,14 @@ void UDiaProjectileAbility::SpawnProjectile()
 		LocationData->TargetLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
 		LocationData->TargetLocation.LiteralTransform = FTransform(LaunchDirection.Rotation(), SpawnLocation + LaunchDirection * 100.0f); // 약간 앞쪽
 		TargetDataHandle.Add(LocationData);
+
+		FDiaSkillVariantContext VariantContext;
+		VariantContext.SkillActorClass = ProjectileClass;
+		VariantContext.TargetData = TargetDataHandle;
+
 		//SpawnTask라는걸 알내서 그걸 활용
 		SpawnActorTask = UAbilityTask_SpawnActor::SpawnActor(this, TargetDataHandle, ProjectileClass);
+
 
 		if (SpawnActorTask)
 		{

@@ -6,10 +6,12 @@
 
 #include "GAS/DiaGameplayAbility.h"
 
+#include "System/GASSkillManager.h"
 #include "System/JobSkillSetSubSystem.h"
 #include "DiaBaseCharacter.h"
 
 #include "AbilitySystemComponent.h"
+#include "Abilities/GameplayAbilityTypes.h"
 
 #include "Engine/World.h"
 
@@ -43,6 +45,12 @@ void UDiaSkillManagerComponent::LoadJobSKillDataFromTable(EJobType JobType)
 		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::LoadJobSKillDataFromTable: UJobSkillSetSubSystem가 유효하지 않습니다."));
 		return;
 	}
+	UGASSkillManager* GASSkillManager = Instance->GetSubsystem<UGASSkillManager>();
+	if (IsValid(GASSkillManager) == false)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::LoadJobSKillDataFromTable: JobSkillSubSystem가 유효하지 않습니다."));
+		return;
+	}
 
 	CurrentJobSkillSet = JobSkillSubSystem->GetJobSkillSet(JobType);
 
@@ -51,7 +59,22 @@ void UDiaSkillManagerComponent::LoadJobSKillDataFromTable(EJobType JobType)
 		UE_LOG(LogTemp, Log, TEXT("DiaSkillManagerComponent: 로드된 스킬 ID - %d"), SkillID);
 		USkillObject* NewSkillObject = NewObject<USkillObject>(this);
 		NewSkillObject->SetSkillID(SkillID);
+
+		const FGASSkillData* GASData = GASSkillManager->GetSkillDataPtr(SkillID);
+		NewSkillObject->SetSkillVariantIDs(GASData->VariantIDs);
+
 		SkillIDMapping.Add(NewSkillObject);
+
+		//게임에서 사용할 variant 객체들 미리 생성
+		for(const int32 VariantID : GASData->VariantIDs)
+		{
+			if (SkillVariants.Find(VariantID) == nullptr)
+			{
+				UDiaSkillVariant* NewDiaSkillVariant = NewObject<UDiaSkillVariant>(this);
+				NewDiaSkillVariant->InitializeVariant(VariantID);
+				SkillVariants.Add(VariantID, NewDiaSkillVariant);
+			}
+		}
 	}
 }
 
@@ -128,6 +151,94 @@ FGameplayAbilitySpec* UDiaSkillManagerComponent::GetAbilitySpecBySkillID(int32 S
 	}
 
 	return nullptr;
+}
+
+void UDiaSkillManagerComponent::SpawnSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability)
+{
+	if (!IsValid(Ability))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: Ability가 유효하지 않습니다."));
+		return;
+	}
+
+	if (!context.SkillActorClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: SkillActorClass가 유효하지 않습니다."));
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: World가 유효하지 않습니다."));
+		return;
+	}
+
+	const USkillObject* SkillObj = Ability->GetSkillObject();
+	if (!IsValid(SkillObj))
+	{
+		return;
+	}
+	
+	TArray<int32> SkillVariants = SkillObj->GetSkillVariantIDs();
+
+	if (SkillVariants.Num() > 0)
+	{
+
+	}
+
+	//SpawnTask에서 가져온 코드
+	FTransform SpawnTransform;
+	if (const FGameplayAbilityTargetData* LocationData = context.TargetData.Get(0))		//Hardcode to use data 0. It's OK if data isn't useful/valid.
+	{
+		//Set location. Rotation is unaffected.
+		if (LocationData->HasHitResult())
+		{
+			SpawnTransform.SetLocation(LocationData->GetHitResult()->Location);
+		}
+		else if (LocationData->HasEndPoint())
+		{
+			SpawnTransform = LocationData->GetEndPointTransform();
+		}
+	}
+
+
+	// Owner와 Instigator 가져오기
+	const FGameplayAbilityActorInfo& ActorInfo = Ability->GetActorInfo();
+	AActor* OwnerActor = ActorInfo.OwnerActor.Get();
+	AActor* InstigatorActor = ActorInfo.AvatarActor.Get();
+
+	// SpawnActorDeferred 사용
+	AActor* SpawnedActor = World->SpawnActorDeferred<AActor>(
+		context.SkillActorClass,
+		SpawnTransform,
+		OwnerActor,
+		InstigatorActor ? Cast<APawn>(InstigatorActor) : nullptr,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+	);
+
+	if (SpawnedActor)
+	{
+		// Variant 효과 적용
+		if (const USkillObject* SkillObj = Ability->GetSkillObject())
+		{
+			const TArray<int32>& VariantIDs = SkillObj->GetSkillVariantIDs();
+			for (const int32& VariantID : VariantIDs)
+			{
+				if (UDiaSkillVariant* FoundVariant = SkillVariants.FindRef(VariantID))
+				{
+					FoundVariant->ApplyVariantEffect(context);
+				}
+			}
+		}
+
+		// FinishSpawningActor 호출
+		SpawnedActor->FinishSpawning(SpawnTransform);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: 액터 스폰에 실패했습니다."));
+	}
 }
 
 bool UDiaSkillManagerComponent::TryActivateAbilityBySkillID(int32 SkillID)
