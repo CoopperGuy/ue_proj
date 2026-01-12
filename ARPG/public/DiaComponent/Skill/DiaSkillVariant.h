@@ -41,7 +41,7 @@ struct ARPG_API FDiaSkillVariantContext
 	FDiaSkillVariantContext(const FDiaSkillVariantSpec& spec) {}
 
 	FHitResult HitResult;
-	TSubclassOf<AActor> SkillActorClass;
+	TSubclassOf<class ADiaSkillActor> SkillActorClass;
 	FGameplayAbilityTargetDataHandle TargetData;
 
 };
@@ -61,7 +61,7 @@ public:
 
 	void ApplyVariantEffect(const FDiaSkillVariantContext& context);
 	void SetVariantSpec(const FDiaSkillVariantSpec& spec) { VariantSpec = spec; }
-	FDiaSkillVariantSpec GetVariantSpec() const { return VariantSpec; }
+	const FDiaSkillVariantSpec GetVariantSpec() const { return VariantSpec; }
 protected:
 	FDiaSkillVariantSpec VariantSpec;
 };

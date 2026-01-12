@@ -4,5 +4,6 @@
 #include "DiaComponent/Skill/DiaSkillVariantExecutor.h"
 
 
-
-
+void UDiaSkillVariantExecutor::ExecuteEffect(const TArray<class UDiaSkillVariant*>& Variants, const FDiaSkillVariantContext& Context, const UDiaGameplayAbility* Ability)
+{
+}

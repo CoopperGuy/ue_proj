@@ -119,7 +119,7 @@ void UDiaGroundAbility::OnSpawned(AActor* SpawnedSkillGround)
 
             const FGameplayAbilityActorInfo& Info = GetActorInfo();
             UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
-            SkillGround->Initialize(SkillData, Character, SourceASC, DamageEffectClass);
+            SkillGround->Initialize(SkillData, Character, SourceASC, nullptr);
         }
     }
 

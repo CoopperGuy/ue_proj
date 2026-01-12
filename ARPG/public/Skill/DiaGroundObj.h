@@ -17,7 +17,7 @@ class ARPG_API ADiaGroundObj : public ADiaSkillActor
 public:
 	ADiaGroundObj();
 	virtual void BeginPlay() override;
-	virtual void Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr) override;
+	virtual void Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<ADiaSkillActor> InDamageEffect = nullptr) override;
 
 protected:
 	void OnHitDetect();

@@ -62,7 +62,6 @@ void ADiaProjectile::Launch(const FVector& Direction)
     ProjectileMovement->Activate(true);
 }
 
-
 // Called when the game starts or when spawned
 void ADiaProjectile::BeginPlay()
 {
@@ -127,6 +126,16 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
         return;
     }
 
+    // 다른 프로젝타일이나 스킬 액터와의 충돌 무시 (같은 스킬에서 스폰된 다른 발사체)
+    if (ADiaSkillActor* OtherSkillActor = Cast<ADiaSkillActor>(OtherActor))
+    {
+        // 같은 소유자를 가진 다른 스킬 액터는 무시
+        if (OtherSkillActor->GetOwner() == Owner)
+        {
+            return;
+        }
+    }
+
     // 소유자와 타겟의 태그를 비교
 	bool bIsOwnerCharacter = true;
     if (IsValid(OnwerActor))
@@ -137,7 +146,6 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
             if (!OtherActor->ActorHasTag(OwnerTag))
             {
                 bIsOwnerCharacter = false;
-                continue;
             }
         }
     }

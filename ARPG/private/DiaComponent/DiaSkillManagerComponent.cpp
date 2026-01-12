@@ -3,6 +3,11 @@
 
 #include "DiaComponent/DiaSkillManagerComponent.h"
 #include "DiaComponent/Skill/SkillObject.h"
+#include "DiaComponent/Skill/DiaSkillVariant.h"
+#include "DiaComponent/Skill/Executor/DiaSkillVariantSpawnExecutor.h"
+
+#include "Types/DiaGASSkillData.h"
+#include "Skill/DiaSkillActor.h"
 
 #include "GAS/DiaGameplayAbility.h"
 
@@ -56,7 +61,6 @@ void UDiaSkillManagerComponent::LoadJobSKillDataFromTable(EJobType JobType)
 
 	for(const int32 SkillID : CurrentJobSkillSet.SkillIDs)
 	{
-		UE_LOG(LogTemp, Log, TEXT("DiaSkillManagerComponent: 로드된 스킬 ID - %d"), SkillID);
 		USkillObject* NewSkillObject = NewObject<USkillObject>(this);
 		NewSkillObject->SetSkillID(SkillID);
 
@@ -177,68 +181,35 @@ void UDiaSkillManagerComponent::SpawnSkillActorUseVariants(const FDiaSkillVarian
 	const USkillObject* SkillObj = Ability->GetSkillObject();
 	if (!IsValid(SkillObj))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: SkillObject가 유효하지 않습니다."));
 		return;
 	}
 	
-	TArray<int32> SkillVariants = SkillObj->GetSkillVariantIDs();
+	UDiaSkillVariantSpawnExecutor* SpawnExecutor = NewObject<UDiaSkillVariantSpawnExecutor>(this);
 
-	if (SkillVariants.Num() > 0)
+	if (!IsValid(SpawnExecutor))
 	{
-
+		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: SpawnExecutor가 유효하지 않습니다."));
+		return;
 	}
-
-	//SpawnTask에서 가져온 코드
-	FTransform SpawnTransform;
-	if (const FGameplayAbilityTargetData* LocationData = context.TargetData.Get(0))		//Hardcode to use data 0. It's OK if data isn't useful/valid.
+	TArray<int32> VariantIDs = SkillObj->GetSkillVariantIDs();
+	TArray<UDiaSkillVariant*> VariantsToApply;
+	constexpr int32 EstimatedNumVariants = 6;
+	VariantsToApply.Reserve(EstimatedNumVariants);
+	if (VariantIDs.Num() > 0)
 	{
-		//Set location. Rotation is unaffected.
-		if (LocationData->HasHitResult())
+		for(const int32& VariantID : VariantIDs)
 		{
-			SpawnTransform.SetLocation(LocationData->GetHitResult()->Location);
-		}
-		else if (LocationData->HasEndPoint())
-		{
-			SpawnTransform = LocationData->GetEndPointTransform();
-		}
-	}
-
-
-	// Owner와 Instigator 가져오기
-	const FGameplayAbilityActorInfo& ActorInfo = Ability->GetActorInfo();
-	AActor* OwnerActor = ActorInfo.OwnerActor.Get();
-	AActor* InstigatorActor = ActorInfo.AvatarActor.Get();
-
-	// SpawnActorDeferred 사용
-	AActor* SpawnedActor = World->SpawnActorDeferred<AActor>(
-		context.SkillActorClass,
-		SpawnTransform,
-		OwnerActor,
-		InstigatorActor ? Cast<APawn>(InstigatorActor) : nullptr,
-		ESpawnActorCollisionHandlingMethod::AlwaysSpawn
-	);
-
-	if (SpawnedActor)
-	{
-		// Variant 효과 적용
-		if (const USkillObject* SkillObj = Ability->GetSkillObject())
-		{
-			const TArray<int32>& VariantIDs = SkillObj->GetSkillVariantIDs();
-			for (const int32& VariantID : VariantIDs)
+			if (UDiaSkillVariant* FoundVariant = SkillVariants.FindRef(VariantID))
 			{
-				if (UDiaSkillVariant* FoundVariant = SkillVariants.FindRef(VariantID))
-				{
-					FoundVariant->ApplyVariantEffect(context);
-				}
+				VariantsToApply.Add(FoundVariant);
 			}
 		}
+	}
 
-		// FinishSpawningActor 호출
-		SpawnedActor->FinishSpawning(SpawnTransform);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: 액터 스폰에 실패했습니다."));
-	}
+	//이거 나중에 array에 하나로 넣어서 한번에 실행하면 좋을거같은데? context를 모아두는거임.
+	SpawnExecutor->ExecuteEffect(VariantsToApply, context, Ability);
+
 }
 
 bool UDiaSkillManagerComponent::TryActivateAbilityBySkillID(int32 SkillID)
@@ -261,18 +232,29 @@ bool UDiaSkillManagerComponent::TryActivateAbilityBySkillID(int32 SkillID)
 	FGameplayAbilitySpec* AbilitySpec = GetAbilitySpecBySkillID(SkillID);
 	if (AbilitySpec)
 	{
-		const FGameplayAbilityActorInfo* ActorInfo = ASC->AbilityActorInfo.Get();
-		const bool bActivated = ASC->TryActivateAbility(AbilitySpec->Handle);
-		if (bActivated)
+		// ★ 중요: TryActivateAbility 호출 전에 SkillObject를 설정해야 함
+		// ActivateAbility 내부에서 SpawnSkillActorUseVariants가 호출되기 때문
+		// ★ GAS는 InstancedPerActor이므로 GetPrimaryInstance()를 사용해야 함
+		if(const USkillObject* SkillObj = GetSkillObjectBySkillID(SkillID))
 		{
-			if(const USkillObject* SkillObj = GetSkillObjectBySkillID(SkillID))
+			// Ability 인스턴스 가져오기 (InstancedPerActor이므로)
+			UDiaGameplayAbility* AbilityInstance = Cast<UDiaGameplayAbility>(AbilitySpec->GetPrimaryInstance());
+			if (AbilityInstance)
 			{
-				if (UDiaGameplayAbility* const Ability = Cast<UDiaGameplayAbility>(AbilitySpec->Ability))
-				{
-					Ability->SetSkillObject(SkillObj);
-				}
+				AbilityInstance->SetSkillObject(SkillObj);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::TryActivateAbilityBySkillID: AbilityInstance를 가져올 수 없습니다. SkillID: %d"), SkillID);
 			}
 		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::TryActivateAbilityBySkillID: SkillObject를 찾을 수 없습니다. SkillID: %d"), SkillID);
+		}
+
+		const FGameplayAbilityActorInfo* ActorInfo = ASC->AbilityActorInfo.Get();
+		const bool bActivated = ASC->TryActivateAbility(AbilitySpec->Handle);
 
 		return bActivated;
 	}

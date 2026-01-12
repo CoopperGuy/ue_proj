@@ -17,6 +17,8 @@ void FDiaGameplayTags::InitializeNativeTags()
 	RegisterUITags();
 	RegisterAttributeSetTags();
 	RegisterItemOptionTags();
+
+	GameplayTags.AddTag(GameplayTags.GASData_MultipleShot, "GASData.Variant.MultipleSkill", "멀티플 샷 ");
 }
 
 void FDiaGameplayTags::RegisterStateTags()
@@ -177,5 +179,5 @@ const TArray<FGameplayTag>& FDiaGameplayTags::GetItemOptionList()
 
 void FDiaGameplayTags::AddTag(FGameplayTag& OutTag, const ANSICHAR* TagName, const ANSICHAR* TagComment)
 {
-	OutTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName(TagName), FString(TEXT("(Native) ")) + FString(TagComment));
+	OutTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName(TagName), FString(ANSI_TO_TCHAR(TagComment)));
 }

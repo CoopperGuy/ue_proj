@@ -38,7 +38,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void Initialize(float InDamage, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
-	
+
     virtual void OnHit(UPrimitiveComponent* OverlappedComponent, 
         AActor* OtherActor, UPrimitiveComponent* OtherComp, 
         int32 OtherBodyIndex, bool bFromSweep, 

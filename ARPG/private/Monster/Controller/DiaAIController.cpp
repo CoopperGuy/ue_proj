@@ -177,11 +177,19 @@ void ADiaAIController::SetTarget(AActor* NewTarget)
 	//{
 	//	CombatComp->SetCurrentTarget(NewTarget);
 	//}
-
+	
 	if (GetBlackboardComponent())
 	{
-		GetBlackboardComponent()->SetValueAsObject(BlackboardKeys::Monster::TargetActor, NewTarget);
-		GetBlackboardComponent()->SetValueAsVector(BlackboardKeys::Monster::LastKnownLocation, NewTarget->GetActorLocation());
+		if (IsValid(NewTarget))
+		{
+			GetBlackboardComponent()->SetValueAsObject(BlackboardKeys::Monster::TargetActor, NewTarget);
+			GetBlackboardComponent()->SetValueAsVector(BlackboardKeys::Monster::LastKnownLocation, NewTarget->GetActorLocation());	
+		}
+		else
+		{
+			GetBlackboardComponent()->SetValueAsObject(BlackboardKeys::Monster::TargetActor, nullptr);
+			GetBlackboardComponent()->SetValueAsVector(BlackboardKeys::Monster::LastKnownLocation, FVector::ZeroVector);
+		}
 	}
 }
 

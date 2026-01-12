@@ -3,21 +3,23 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "DiaComponent/Skill/DiaSkillVariant.h"
-#include "DiaSkillVariantExecutor.generated.h"
+#include "DiaComponent/Skill/DiaSkillVariantExecutor.h"
+#include "DiaSkillVariantSpawnExecutor.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class ARPG_API UDiaSkillVariantExecutor : public UObject
+class ARPG_API UDiaSkillVariantSpawnExecutor : public UDiaSkillVariantExecutor
 {
 	GENERATED_BODY()
+	
 public:
 	virtual void ExecuteEffect(
 		const TArray<class UDiaSkillVariant*>& Variants,
 		const FDiaSkillVariantContext& Context,
 		const class UDiaGameplayAbility* Ability
 	);
+	
+	
 };

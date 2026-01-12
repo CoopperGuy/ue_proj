@@ -43,6 +43,8 @@ public:
 
 	void SetSkillObject(const USkillObject* InSkillObject);
 	const USkillObject* GetSkillObject() const { return SkillObject; }
+
+	void MakeEffectSpecContextToTarget(TArray<FGameplayEffectSpecHandle>& OutContext) const;
 protected:
 	// Skill data from GAS system
 	UPROPERTY(BlueprintReadOnly, Category = "Skill")
@@ -122,7 +124,6 @@ protected:
 
 	virtual void ApplyGameplayEffectToTarget(UAbilitySystemComponent* TargetASC) const;
 	virtual void ApplyGameplayEffectToSelf() const;
-	void MakeEffectSpecContextToTarget(TArray<FGameplayEffectSpecHandle>& OutContext) const;
 protected:
 	// Current playing montage (renamed to avoid shadowing)
 	UPROPERTY()

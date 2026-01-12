@@ -325,6 +325,7 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 
 void UDiaGameplayAbility::SetSkillObject(const USkillObject* InSkillObject)
 {
+	UE_LOG(LogTemp, Log, TEXT("Setting SkillObject: %s"), InSkillObject ? *InSkillObject->GetName() : TEXT("None"));
 	SkillObject = InSkillObject;
 }
 

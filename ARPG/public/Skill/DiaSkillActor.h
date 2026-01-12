@@ -35,10 +35,10 @@ public:
 
 	// Called every frame
 	virtual void Initialize(float InDamage, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
-    virtual void Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
+    virtual void Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<ADiaSkillActor> InDamageEffect = nullptr);
 	void InitTargetEffectHandle(const TArray<FGameplayEffectSpecHandle>& InTargetEffectHandles);
     UFUNCTION()
-    void OnHit(UPrimitiveComponent* OverlappedComponent, 
+    virtual void OnHit(UPrimitiveComponent* OverlappedComponent, 
         AActor* OtherActor, UPrimitiveComponent* OtherComp, 
         int32 OtherBodyIndex, bool bFromSweep, 
         const FHitResult& HitResult);
@@ -55,6 +55,9 @@ public:
     void SpawnHitEffect(const FVector& ImpactPoint, const FVector& ImpactNormal);
 
 	void ProcessTargetEffects(IAbilitySystemInterface* Target);
+
+    virtual void Launch(const FVector& Direction);
+
 protected:    
     // 발사체 메시 컴포넌트
     UPROPERTY(VisibleAnywhere)

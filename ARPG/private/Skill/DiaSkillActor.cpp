@@ -85,12 +85,11 @@ void ADiaSkillActor::Initialize(float InDamage, AActor* InOwner, UAbilitySystemC
     DamageGameplayEffect = InDamageEffect;
 }
 
-void ADiaSkillActor::Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<UGameplayEffect> InDamageEffect)
+void ADiaSkillActor::Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<ADiaSkillActor> InDamageEffect)
 {
 	Damage = SkillData.BaseDamage;
 	IntervalBetweenHits = SkillData.HitInterval;
 	MaxHitCount = SkillData.HitCount;
-    
     SetOwner(InOwner);
     // 발사체 소유자와의 충돌 방지
     if (IsValid(Owner))
@@ -139,8 +138,24 @@ void ADiaSkillActor::OnHit(UPrimitiveComponent* OverlappedComponent,
     ADiaBaseCharacter* OwnerActor = Cast<ADiaBaseCharacter>(Owner);
     if (!IsValid(OtherActor) || OtherActor == this || OtherActor == OwnerActor)
     {
-        UE_LOG(LogTemp, Warning, TEXT("DiaProjectile::OnHit - Invalid OtherActor or self/owner. Ignore hit."));
+		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::OnHit - Invalid OtherActor or self/owner. Ignore hit."));
         return;
+    }
+
+    // Owner가 nullptr인 경우 무시
+    if (!IsValid(OwnerActor))
+    {
+        return;
+    }
+
+    // 다른 프로젝타일이나 스킬 액터와의 충돌 무시 (같은 스킬에서 스폰된 다른 발사체)
+    if (ADiaSkillActor* OtherSkillActor = Cast<ADiaSkillActor>(OtherActor))
+    {
+        // 같은 소유자를 가진 다른 스킬 액터는 무시
+        if (OtherSkillActor->GetOwner() == Owner)
+        {
+            return;
+        }
     }
 
     // 소유자와 타겟의 태그를 비교
@@ -153,7 +168,6 @@ void ADiaSkillActor::OnHit(UPrimitiveComponent* OverlappedComponent,
             if (!OtherActor->ActorHasTag(OwnerTag))
             {
                 bIsOwnerCharacter = false;
-                continue;
             }
         }
     }
@@ -282,3 +296,7 @@ void ADiaSkillActor::ProcessTargetEffects(IAbilitySystemInterface* Target)
     }
 }
 
+void ADiaSkillActor::Launch(const FVector& Direction)
+{
+
+}

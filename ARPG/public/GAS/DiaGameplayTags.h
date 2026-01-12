@@ -74,6 +74,8 @@ public:
 	// ========================================
 	FGameplayTag Ability_Cost_Mana_NotEnough;
 	FGameplayTag GASData_Exp;
+	FGameplayTag GASData_MultipleShot;
+
 
 	// ========================================
 	// Damage Tags - 데미지 관련
@@ -126,7 +128,7 @@ public:
 	static const TArray<FGameplayTag>& GetAttributeStats();
 	static const TArray<FGameplayTag>& GetItemOptionList();
 protected:
-	void AddTag(FGameplayTag& OutTag, const ANSICHAR* TagName, const ANSICHAR* TagComment);
+	void AddTag(FGameplayTag& OutTag, const ANSICHAR* TagName, const ANSICHAR* TagComment); 
 private:
 	static FDiaGameplayTags GameplayTags;
 };
