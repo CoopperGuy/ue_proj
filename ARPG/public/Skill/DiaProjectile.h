@@ -42,7 +42,7 @@ public:
     virtual void OnHit(UPrimitiveComponent* OverlappedComponent, 
         AActor* OtherActor, UPrimitiveComponent* OtherComp, 
         int32 OtherBodyIndex, bool bFromSweep, 
-        const FHitResult& HitResult);
+        const FHitResult& HitResult) override;
 
     // 발사체가 타겟에 적중했을 때 실행될 함수
     virtual void OnSkillHit(IAbilitySystemInterface* HitActor, const FHitResult& HitResult);

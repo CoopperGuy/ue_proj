@@ -120,43 +120,23 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     const FHitResult& HitResult)
 {
     ADiaBaseCharacter* OnwerActor = Cast<ADiaBaseCharacter>(Owner);
-    if (!IsValid(OtherActor) || OtherActor == this || OtherActor == OnwerActor)
+    if (Owner)
     {
-        UE_LOG(LogTemp, Warning, TEXT("DiaProjectile::OnHit - Invalid OtherActor or self/owner. Ignore hit."));
+		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::OnHit - Owner : %s"), *Owner->GetName());
+    }
+    if (OnwerActor)
+    {
+		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::OnHit - OnwerActor : %s"), *OnwerActor->GetName());
+    }
+    else
+    {
+		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::OnHit - OnwerActor is null."));
+    }
+    if (!IsValidTarget(OtherActor))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::OnHit - Invalid OtherActor or self/owner. Ignore hit."));
         return;
     }
-
-    // 다른 프로젝타일이나 스킬 액터와의 충돌 무시 (같은 스킬에서 스폰된 다른 발사체)
-    if (ADiaSkillActor* OtherSkillActor = Cast<ADiaSkillActor>(OtherActor))
-    {
-        // 같은 소유자를 가진 다른 스킬 액터는 무시
-        if (OtherSkillActor->GetOwner() == Owner)
-        {
-            return;
-        }
-    }
-
-    // 소유자와 타겟의 태그를 비교
-	bool bIsOwnerCharacter = true;
-    if (IsValid(OnwerActor))
-    {
-        // 소유자의 모든 태그에 대해 검사
-        for (const FName& OwnerTag : OnwerActor->Tags)
-        {
-            if (!OtherActor->ActorHasTag(OwnerTag))
-            {
-                bIsOwnerCharacter = false;
-            }
-        }
-    }
-
-    // 같은 태그를 가진 액터는 데미지를 받지 않음
-    if (bIsOwnerCharacter)
-    {
-		UE_LOG(LogTemp, Warning, TEXT("DiaProjectile::OnHit - OtherActor shares tag with Owner. Ignore hit."));
-        return;
-    }
-
 
     ApplyGameplayHit(OtherActor, HitResult, OnwerActor);
     // 발사체 제거

@@ -14,6 +14,8 @@
 #include "Skill/DiaSkillActor.h"
 #include "GAS/DiaGameplayAbility.h"
 
+#include "DiaBaseCharacter.h"
+
 void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVariant*>& Variants, const FDiaSkillVariantContext& Context, const UDiaGameplayAbility* Ability)
 {
 	constexpr float AdditionalAngle = 10.f;
@@ -61,24 +63,23 @@ void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVa
 	Direction = AdditionalRotator.RotateVector(Direction);
 	SpawnTransform = FTransform(Direction.Rotation(), Origin);
 
+	const FGameplayAbilityActorInfo& ActorInfo = Ability->GetActorInfo();
+	AActor* Character = (ActorInfo.AvatarActor.Get());
+	APawn* Pawn = Cast<APawn>(Character);
+
 	for (int32 i = 0; i < SkillSpawnCount; i++)
-	{
-		// Owner와 Instigator 가져오기
-		const FGameplayAbilityActorInfo& ActorInfo = Ability->GetActorInfo();
-		AActor* OwnerActor = ActorInfo.OwnerActor.Get();
-		AActor* InstigatorActor = ActorInfo.AvatarActor.Get();
-		
+	{		
 		if (!Context.SkillActorClass)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("DiaSkillVariantSpawnExecutor::ExecuteEffect: SkillActorClass가 nullptr입니다."));
 			continue;
 		}
 		
-		AActor* SpawnedActorRaw = GetWorld()->SpawnActorDeferred<AActor>(
+		ADiaSkillActor* SpawnedActorRaw = GetWorld()->SpawnActorDeferred<ADiaSkillActor>(
 			Context.SkillActorClass,
 			SpawnTransform,
-			OwnerActor,
-			InstigatorActor ? Cast<APawn>(InstigatorActor) : nullptr,
+			Character,
+			Pawn,
 			ESpawnActorCollisionHandlingMethod::AlwaysSpawn
 		);
 
@@ -98,12 +99,11 @@ void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVa
 			TArray<FGameplayEffectSpecHandle> TargetEffectSpecs;
 			Ability->MakeEffectSpecContextToTarget(TargetEffectSpecs);
 			SpawnedActor->InitTargetEffectHandle(TargetEffectSpecs);
-			SpawnedActor->Initialize(SkillData, OwnerActor, SourceASC, Context.SkillActorClass);
+			SpawnedActor->Initialize(SkillData, Character, SourceASC, Context.SkillActorClass);
 			SpawnedActor->Launch(SpawnTransform.GetRotation().GetForwardVector());
+			SpawnedActor->SetOwner(Character);
 
 			SpawnedActor->FinishSpawning(SpawnTransform);
-			
-			SpawnedActor->SetOwner(OwnerActor);
 		}
 		else
 		{

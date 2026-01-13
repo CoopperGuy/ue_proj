@@ -37,6 +37,7 @@ public:
 	virtual void Initialize(float InDamage, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
     virtual void Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<ADiaSkillActor> InDamageEffect = nullptr);
 	void InitTargetEffectHandle(const TArray<FGameplayEffectSpecHandle>& InTargetEffectHandles);
+
     UFUNCTION()
     virtual void OnHit(UPrimitiveComponent* OverlappedComponent, 
         AActor* OtherActor, UPrimitiveComponent* OtherComp, 
@@ -57,7 +58,8 @@ public:
 	void ProcessTargetEffects(IAbilitySystemInterface* Target);
 
     virtual void Launch(const FVector& Direction);
-
+protected:
+    bool IsValidTarget(AActor* OtherActor);
 protected:    
     // 발사체 메시 컴포넌트
     UPROPERTY(VisibleAnywhere)

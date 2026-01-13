@@ -136,21 +136,16 @@ void ADiaSkillActor::OnHit(UPrimitiveComponent* OverlappedComponent,
     const FHitResult& HitResult)
 {
     ADiaBaseCharacter* OwnerActor = Cast<ADiaBaseCharacter>(Owner);
-    if (!IsValid(OtherActor) || OtherActor == this || OtherActor == OwnerActor)
+    if (!IsValidTarget(OtherActor))
     {
 		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::OnHit - Invalid OtherActor or self/owner. Ignore hit."));
-        return;
-    }
-
-    // Owner가 nullptr인 경우 무시
-    if (!IsValid(OwnerActor))
-    {
         return;
     }
 
     // 다른 프로젝타일이나 스킬 액터와의 충돌 무시 (같은 스킬에서 스폰된 다른 발사체)
     if (ADiaSkillActor* OtherSkillActor = Cast<ADiaSkillActor>(OtherActor))
     {
+		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::OnHit - Collided with another SkillActor. Ignore hit."));
         // 같은 소유자를 가진 다른 스킬 액터는 무시
         if (OtherSkillActor->GetOwner() == Owner)
         {
@@ -158,31 +153,15 @@ void ADiaSkillActor::OnHit(UPrimitiveComponent* OverlappedComponent,
         }
     }
 
-    // 소유자와 타겟의 태그를 비교
-    bool bIsOwnerCharacter = true;
-    if (IsValid(OwnerActor))
-    {
-        // 소유자의 모든 태그에 대해 검사
-        for (const FName& OwnerTag : OwnerActor->Tags)
-        {
-            if (!OtherActor->ActorHasTag(OwnerTag))
-            {
-                bIsOwnerCharacter = false;
-            }
-        }
-    }
-
-    // 같은 태그를 가진 액터는 데미지를 받지 않음
-    if (bIsOwnerCharacter)
-    {
-        return;
-    }
-
     ApplyGameplayHit(OtherActor, HitResult, OwnerActor);
 }
 
 void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitResult, ADiaBaseCharacter* OwnerActor)
 {
+    if (OtherActor)
+    {
+		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::ApplyGameplayHit - OtherActor Name %s"), *OtherActor->GetName());
+    }
     IAbilitySystemInterface* DiaOtherActor = Cast<IAbilitySystemInterface>(OtherActor);
     if (DiaOtherActor)
     {
@@ -199,7 +178,18 @@ void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitR
         ProcessTargetEffects(DiaOtherActor);
         //타격에 성공하면 받으면 일단 타겟으로 올린다.
         //HACK
-        OwnerActor->SetTargetActor(Cast<ADiaBaseCharacter>(OtherActor));
+        if (IsValid(OwnerActor))
+        {
+            OwnerActor->SetTargetActor(Cast<ADiaBaseCharacter>(OtherActor));
+        }
+        else
+        {
+			UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::ApplyGameplayHit - OwnerActor is not valid."));
+        }
+    }
+    else
+    {
+		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::ApplyGameplayHit - OtherActor does not implement IAbilitySystemInterface."));
     }
 }
 
@@ -244,6 +234,13 @@ void ADiaSkillActor::ProcessDamage(IAbilitySystemInterface* ASCInterface, const 
                 SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
             }
         }
+    }
+    else
+    {
+		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::ProcessDamage - SourceASC is not valid or DamageGameplayEffect is not set."));
+        UE_LOG(LogTemp, Warning, TEXT("SourceASC valid: %s, DamageGameplayEffect valid: %s"),
+            SourceASC.IsValid() ? TEXT("true") : TEXT("false"),
+			DamageGameplayEffect ? TEXT("true") : TEXT("false"));
     }
     
     // 피격 사운드 재생
@@ -299,4 +296,31 @@ void ADiaSkillActor::ProcessTargetEffects(IAbilitySystemInterface* Target)
 void ADiaSkillActor::Launch(const FVector& Direction)
 {
 
+}
+
+bool ADiaSkillActor::IsValidTarget(AActor* OtherActor)
+{
+    ADiaBaseCharacter* OwnerActor = Cast<ADiaBaseCharacter>(Owner);
+    if (!IsValid(OtherActor) || OtherActor == this || OtherActor == OwnerActor)
+    {
+		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::IsValidTarget - OtherActor is invalid or is self/owner."));
+        return false;
+    }
+
+    // 태그 검사 로직 이동
+    if (IsValid(OwnerActor))
+    {
+        for (const FName& OwnerTag : OwnerActor->Tags)
+        {
+            if (OtherActor->ActorHasTag(OwnerTag))
+            {
+                return false;
+            }
+        }
+    }
+    else
+    {
+		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::IsValidTarget - OwnerActor is not valid."));
+    }
+    return true;
 }
