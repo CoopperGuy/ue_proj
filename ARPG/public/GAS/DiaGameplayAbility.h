@@ -44,6 +44,8 @@ public:
 	void SetSkillObject(const USkillObject* InSkillObject);
 	const USkillObject* GetSkillObject() const { return SkillObject; }
 
+	const TSubclassOf<UGameplayEffect> GetDamageEffectClass() const { return DamageEffectClass; }
+
 	void MakeEffectSpecContextToTarget(TArray<FGameplayEffectSpecHandle>& OutContext) const;
 protected:
 	// Skill data from GAS system

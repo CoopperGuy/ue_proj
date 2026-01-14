@@ -19,7 +19,8 @@
 void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVariant*>& Variants, const FDiaSkillVariantContext& Context, const UDiaGameplayAbility* Ability)
 {
 	constexpr float AdditionalAngle = 10.f;
-	int32 SkillSpawnCount = 1;
+	constexpr float defaultDist = 10.f;
+	int32 SkillSpawnCount = 0;
 
 	for(const UDiaSkillVariant* Variant : Variants)
 	{
@@ -34,48 +35,54 @@ void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVa
 			}
 		}
 	}
+	
 
-	FVector Origin = FVector::ZeroVector;
+	const FGameplayAbilityActorInfo& ActorInfo = Ability->GetActorInfo();
+	AActor* Character = (ActorInfo.AvatarActor.Get());
+	APawn* Pawn = Cast<APawn>(Character);
+	
+	// 캐릭터 위치를 스폰 기준점으로 사용
+	FVector CharacterLocation = Character ? Character->GetActorLocation() : FVector::ZeroVector;
+	FVector CharacterForward = Character ? Character->GetActorForwardVector() : FVector::ForwardVector;
+	
+	FVector TargetLocation = FVector::ZeroVector;
 	FVector Direction = FVector::ForwardVector;
 
-	//SpawnTask에서 가져온 코드
+	// 타겟 위치와 방향 가져오기
 	FTransform SpawnTransform;
-	if (const FGameplayAbilityTargetData* LocationData = Context.TargetData.Get(0))		//Hardcode to use data 0. It's OK if data isn't useful/valid.
+	if (const FGameplayAbilityTargetData* LocationData = Context.TargetData.Get(0))
 	{
-		//Set location. Rotation is unaffected.
 		if (LocationData->HasHitResult())
 		{
-			SpawnTransform.SetLocation(LocationData->GetHitResult()->Location);
-			Origin = LocationData->GetHitResult()->Location;
-			Direction = SpawnTransform.GetRotation().GetForwardVector();
+			TargetLocation = LocationData->GetHitResult()->Location;
+			Direction = (TargetLocation - CharacterLocation).GetSafeNormal();
 		}
 		else if (LocationData->HasEndPoint())
 		{
-			SpawnTransform = LocationData->GetEndPointTransform();
-			Origin = LocationData->GetEndPointTransform().GetLocation();
-			Direction = SpawnTransform.GetRotation().GetForwardVector();
+			TargetLocation = LocationData->GetEndPointTransform().GetLocation();
+			Direction = (TargetLocation - CharacterLocation).GetSafeNormal();
 		}
+	}
+	
+	// 타겟 방향이 없으면 캐릭터의 앞 방향 사용
+	if (Direction.IsNearlyZero())
+	{
+		Direction = CharacterForward;
 	}
 
 	FRotator AdditionalRotator = FRotator(0.f, AdditionalAngle * 0.5f * (SkillSpawnCount - 1), 0.f);
 	FRotator DefaultRotator = FRotator(0.f, AdditionalAngle, 0.f);
 
-	Direction = AdditionalRotator.RotateVector(Direction);
-	SpawnTransform = FTransform(Direction.Rotation(), Origin);
-
-	const FGameplayAbilityActorInfo& ActorInfo = Ability->GetActorInfo();
-	AActor* Character = (ActorInfo.AvatarActor.Get());
-	APawn* Pawn = Cast<APawn>(Character);
+	// 초기 방향 설정
+	Direction = AdditionalRotator.RotateVector(Direction).GetSafeNormal();
 
 	for (int32 i = 0; i < SkillSpawnCount; i++)
-	{		
-		if (!Context.SkillActorClass)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("DiaSkillVariantSpawnExecutor::ExecuteEffect: SkillActorClass가 nullptr입니다."));
-			continue;
-		}
+	{				
+		// 각 발사체마다 캐릭터 위치 기준으로 고유한 위치 계산
+		FVector SpawnLocation = CharacterLocation + Direction * defaultDist;
+		SpawnTransform = FTransform(Direction.Rotation(), SpawnLocation);
 		
-		ADiaSkillActor* SpawnedActorRaw = GetWorld()->SpawnActorDeferred<ADiaSkillActor>(
+		AActor* SpawnedActorRaw = GetWorld()->SpawnActorDeferred<AActor>(
 			Context.SkillActorClass,
 			SpawnTransform,
 			Character,
@@ -83,35 +90,33 @@ void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVa
 			ESpawnActorCollisionHandlingMethod::AlwaysSpawn
 		);
 
-		if (!SpawnedActorRaw)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("DiaSkillVariantSpawnExecutor::ExecuteEffect: SpawnActorDeferred 실패"));
-			continue;
-		}
-
 		ADiaSkillActor* SpawnedActor = Cast<ADiaSkillActor>(SpawnedActorRaw);
 		if (SpawnedActor)
 		{
 			const FGASSkillData& SkillData = Ability->GetSkillData();
 			UAbilitySystemComponent* SourceASC = ActorInfo.AbilitySystemComponent.Get();
+			const TSubclassOf<UGameplayEffect> DamageEffectClass = Ability->GetDamageEffectClass();
 
 			//상대방에게 전달할 이펙트 생성
 			TArray<FGameplayEffectSpecHandle> TargetEffectSpecs;
 			Ability->MakeEffectSpecContextToTarget(TargetEffectSpecs);
 			SpawnedActor->InitTargetEffectHandle(TargetEffectSpecs);
-			SpawnedActor->Initialize(SkillData, Character, SourceASC, Context.SkillActorClass);
+			SpawnedActor->Initialize(SkillData, Character, SourceASC, DamageEffectClass);
 			SpawnedActor->Launch(SpawnTransform.GetRotation().GetForwardVector());
 			SpawnedActor->SetOwner(Character);
 
 			SpawnedActor->FinishSpawning(SpawnTransform);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("DiaSkillVariantSpawnExecutor::ExecuteEffect: Cast<ADiaSkillActor> 실패 - %s"), *SpawnedActorRaw->GetClass()->GetName());
-		}
+			
 
-		Direction = DefaultRotator.RotateVector(Direction);
-		SpawnTransform = FTransform(Direction.Rotation(), Origin);
+			// 디버깅: 각 발사체의 고유성 확인
+			UE_LOG(LogTemp, Warning, TEXT("DiaSkillVariantSpawnExecutor::ExecuteEffect: Spawned Actor Name: %s, Location: %s"), 
+				*SpawnedActor->GetName(), *SpawnedActor->GetActorLocation().ToString());
+		}	
+
+		// 다음 발사체를 위한 방향 업데이트 (다음 루프에서 사용)
+		Direction = DefaultRotator.RotateVector(Direction).GetSafeNormal();
+
+		UE_LOG(LogTemp, Warning, TEXT("DiaSkillVariantSpawnExecutor::ExecuteEffect: Spawned Skill Actor at location %s. rotation %s"), *SpawnLocation.ToString(), *SpawnTransform.GetRotation().ToString());
 	}
 
 }

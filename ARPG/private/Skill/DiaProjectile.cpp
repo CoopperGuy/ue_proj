@@ -120,26 +120,14 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     const FHitResult& HitResult)
 {
     ADiaBaseCharacter* OnwerActor = Cast<ADiaBaseCharacter>(Owner);
-    if (Owner)
-    {
-		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::OnHit - Owner : %s"), *Owner->GetName());
-    }
-    if (OnwerActor)
-    {
-		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::OnHit - OnwerActor : %s"), *OnwerActor->GetName());
-    }
-    else
-    {
-		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::OnHit - OnwerActor is null."));
-    }
+
     if (!IsValidTarget(OtherActor))
     {
-        UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::OnHit - Invalid OtherActor or self/owner. Ignore hit."));
         return;
     }
 
-    ApplyGameplayHit(OtherActor, HitResult, OnwerActor);
-    // 발사체 제거
+    ApplyGameplayHit(OtherActor, HitResult, OnwerActor);    
+
     Destroy();
 }
 

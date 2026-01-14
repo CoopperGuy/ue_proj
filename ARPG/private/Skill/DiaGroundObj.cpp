@@ -22,7 +22,7 @@ void ADiaGroundObj::BeginPlay()
 
 }
 
-void ADiaGroundObj::Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<ADiaSkillActor> InDamageEffect)
+void ADiaGroundObj::Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<UGameplayEffect> InDamageEffect)
 {
 	Super::Initialize(SkillData, InOwner, InSourceASC, InDamageEffect);
 	

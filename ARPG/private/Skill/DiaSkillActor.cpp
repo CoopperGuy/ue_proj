@@ -85,7 +85,7 @@ void ADiaSkillActor::Initialize(float InDamage, AActor* InOwner, UAbilitySystemC
     DamageGameplayEffect = InDamageEffect;
 }
 
-void ADiaSkillActor::Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<ADiaSkillActor> InDamageEffect)
+void ADiaSkillActor::Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<UGameplayEffect> InDamageEffect)
 {
 	Damage = SkillData.BaseDamage;
 	IntervalBetweenHits = SkillData.HitInterval;
@@ -108,6 +108,14 @@ void ADiaSkillActor::InitTargetEffectHandle(const TArray<FGameplayEffectSpecHand
 void ADiaSkillActor::BeginPlay()
 {
 	Super::BeginPlay();
+
+    // 메시 컴포넌트 렌더 상태 강제 업데이트 (멀티샷 시각화 문제 해결)
+    if (IsValid(SkilleMesh))
+    {
+        SkilleMesh->SetVisibility(true);
+        SkilleMesh->SetHiddenInGame(false);
+        SkilleMesh->RecreateRenderState_Concurrent();
+    }
 
     // 생성자에서 만든 컴포넌트에 나이아가라 시스템 설정
     if (IsValid(SkillAbilityEffectComp) && SkillEffect)
@@ -135,17 +143,20 @@ void ADiaSkillActor::OnHit(UPrimitiveComponent* OverlappedComponent,
     int32 OtherBodyIndex, bool bFromSweep,
     const FHitResult& HitResult)
 {
+    if (!OtherActor)
+    {
+        return;
+    }
+    
     ADiaBaseCharacter* OwnerActor = Cast<ADiaBaseCharacter>(Owner);
     if (!IsValidTarget(OtherActor))
     {
-		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::OnHit - Invalid OtherActor or self/owner. Ignore hit."));
         return;
     }
 
     // 다른 프로젝타일이나 스킬 액터와의 충돌 무시 (같은 스킬에서 스폰된 다른 발사체)
     if (ADiaSkillActor* OtherSkillActor = Cast<ADiaSkillActor>(OtherActor))
     {
-		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::OnHit - Collided with another SkillActor. Ignore hit."));
         // 같은 소유자를 가진 다른 스킬 액터는 무시
         if (OtherSkillActor->GetOwner() == Owner)
         {
@@ -158,10 +169,6 @@ void ADiaSkillActor::OnHit(UPrimitiveComponent* OverlappedComponent,
 
 void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitResult, ADiaBaseCharacter* OwnerActor)
 {
-    if (OtherActor)
-    {
-		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::ApplyGameplayHit - OtherActor Name %s"), *OtherActor->GetName());
-    }
     IAbilitySystemInterface* DiaOtherActor = Cast<IAbilitySystemInterface>(OtherActor);
     if (DiaOtherActor)
     {
@@ -182,14 +189,6 @@ void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitR
         {
             OwnerActor->SetTargetActor(Cast<ADiaBaseCharacter>(OtherActor));
         }
-        else
-        {
-			UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::ApplyGameplayHit - OwnerActor is not valid."));
-        }
-    }
-    else
-    {
-		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::ApplyGameplayHit - OtherActor does not implement IAbilitySystemInterface."));
     }
 }
 
@@ -234,13 +233,6 @@ void ADiaSkillActor::ProcessDamage(IAbilitySystemInterface* ASCInterface, const 
                 SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
             }
         }
-    }
-    else
-    {
-		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::ProcessDamage - SourceASC is not valid or DamageGameplayEffect is not set."));
-        UE_LOG(LogTemp, Warning, TEXT("SourceASC valid: %s, DamageGameplayEffect valid: %s"),
-            SourceASC.IsValid() ? TEXT("true") : TEXT("false"),
-			DamageGameplayEffect ? TEXT("true") : TEXT("false"));
     }
     
     // 피격 사운드 재생
@@ -300,27 +292,41 @@ void ADiaSkillActor::Launch(const FVector& Direction)
 
 bool ADiaSkillActor::IsValidTarget(AActor* OtherActor)
 {
-    ADiaBaseCharacter* OwnerActor = Cast<ADiaBaseCharacter>(Owner);
-    if (!IsValid(OtherActor) || OtherActor == this || OtherActor == OwnerActor)
+    if (!OtherActor)
     {
-		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::IsValidTarget - OtherActor is invalid or is self/owner."));
+        return false;
+    }
+    
+    ADiaBaseCharacter* OwnerActor = Cast<ADiaBaseCharacter>(Owner);
+    
+    if (!IsValid(OtherActor))
+    {
+        return false;
+    }
+    
+    if (OtherActor == this || OtherActor == OwnerActor)
+    {
         return false;
     }
 
-    // 태그 검사 로직 이동
+    // 태그 검사 로직: 팀 구분용 태그만 체크 (공통 태그는 제외)
     if (IsValid(OwnerActor))
     {
+        static const FName CharacterTag = FName(TEXT("Character")); // 공통 태그는 제외
         for (const FName& OwnerTag : OwnerActor->Tags)
         {
+            // "Character" 태그는 모든 캐릭터에 공통이므로 제외
+            if (OwnerTag == CharacterTag)
+            {
+                continue;
+            }
+            
             if (OtherActor->ActorHasTag(OwnerTag))
             {
                 return false;
             }
         }
     }
-    else
-    {
-		UE_LOG(LogTemp, Warning, TEXT("ADiaSkillActor::IsValidTarget - OwnerActor is not valid."));
-    }
+    
     return true;
 }
