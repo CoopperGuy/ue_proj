@@ -5,7 +5,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Engine/EngineTypes.h" 
-#include "Types/DiaGASSkillData.h"  
+#include "Types/DiaGASSkillData.h"
+#include "GAS/DiaGameplayAbility.h"
 #include "DiaSkillActor.generated.h"
 
 class UAbilitySystemComponent;
@@ -21,6 +22,8 @@ class UNiagaraComponent;
 class USoundBase;
 class UParticleSystem;
 class UParticleSystemComponent;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDiaSkillActorHitSignature, AActor*, HitActor, const FHitResult&, HitResult);
 
 UCLASS()
 class ARPG_API ADiaSkillActor : public AActor
@@ -58,6 +61,11 @@ public:
 	void ProcessTargetEffects(IAbilitySystemInterface* Target);
 
     virtual void Launch(const FVector& Direction);
+
+	void SetOwningAbility(UDiaGameplayAbility* InOwningAbility) { OwningAbility = InOwningAbility; }
+	UDiaGameplayAbility* GetOwningAbility() const { return OwningAbility.Get(); }
+	int32 GetPierceCount() const { return PierceCount; }
+	void SetPierceCount(int32 InPierceCount) { PierceCount = InPierceCount; }
 protected:
     bool IsValidTarget(AActor* OtherActor);
 protected:    
@@ -111,8 +119,16 @@ protected:
 
     UPROPERTY()
 	FTimerHandle LifeSpanTimerHandle;
+
+    UPROPERTY()
+	TWeakObjectPtr<UDiaGameplayAbility> OwningAbility;
+
 	int32 HitCount = 0;
 	int32 MaxHitCount = 1;
 	double IntervalBetweenHits = 0.;
+
+	// Pierce 관련 변수
+	int32 PierceCount = 0;
+	TSet<AActor*> HitActors; // 이미 히트한 적 추적 (중복 히트 방지)
 };
 

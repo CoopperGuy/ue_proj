@@ -43,7 +43,8 @@ struct ARPG_API FDiaSkillVariantContext
 	FHitResult HitResult;
 	TSubclassOf<class ADiaSkillActor> SkillActorClass;
 	FGameplayAbilityTargetDataHandle TargetData;
-
+	class UAbilitySystemComponent* AbilityComp;
+	class ADiaSkillActor* SkillActor;
 };
 
 /**
@@ -57,11 +58,23 @@ class ARPG_API UDiaSkillVariant : public UObject
 public:
 	UDiaSkillVariant();
 
-	void InitializeVariant(int32 _VariantID);
+	void InitializeVariant(const FDiaSkillVariantSpec& spec);
 
-	void ApplyVariantEffect(const FDiaSkillVariantContext& context);
-	void SetVariantSpec(const FDiaSkillVariantSpec& spec) { VariantSpec = spec; }
 	const FDiaSkillVariantSpec GetVariantSpec() const { return VariantSpec; }
+
 protected:
 	FDiaSkillVariantSpec VariantSpec;
+
+	int32 SkillID;
+	FText SkillVariantName;
+	FText SkillVariantDescription;
+
+public:
+	void SetSkillID(int32 InSkillID) { SkillID = InSkillID; }
+	void SetSkillVariantName(const FText& InName) { SkillVariantName = InName; }
+	void SetSkillVariantDescription(const FText& InDescription) { SkillVariantDescription = InDescription; }
+
+	int32 GetSkillID() const { return SkillID; }
+	FText GetSkillVariantName() const { return SkillVariantName; }
+	FText GetSkillVariantDescription() const { return SkillVariantDescription; }
 };

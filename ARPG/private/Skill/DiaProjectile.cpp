@@ -119,16 +119,20 @@ void ADiaProjectile::OnHit(UPrimitiveComponent* OverlappedComponent,
     int32 OtherBodyIndex, bool bFromSweep,
     const FHitResult& HitResult)
 {
-    ADiaBaseCharacter* OnwerActor = Cast<ADiaBaseCharacter>(Owner);
+    ADiaBaseCharacter* OwnerActor = Cast<ADiaBaseCharacter>(Owner);
 
     if (!IsValidTarget(OtherActor))
     {
         return;
     }
 
-    ApplyGameplayHit(OtherActor, HitResult, OnwerActor);    
+ //   UAbilitySystemComponent* SourceASC = OwnerActor->GetAbilitySystemComponent();
+	//OwnerActor->HandleSkillActorHit(SourceASC, OwningAbility.Get(), this, OtherActor, HitResult);
 
-    Destroy();
+    //ApplyGameplayHit(OtherActor, HitResult, OwnerActor);
+    //Destroy();
+
+    Super::OnHit(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, HitResult);
 }
 
 void ADiaProjectile::OnSkillHit(IAbilitySystemInterface* HitActor, const FHitResult& HitResult)

@@ -110,6 +110,12 @@ void ADiaCharacter::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 
     SetupInitialSkills();
+
+    if (ADiaController* PlayerController = Cast<ADiaController>(NewController))
+    {
+        PlayerController->RegisteSkillPannelWidget(SkillManagerComponent->GetSkillIDMapping());
+    }
+
 }
 
 void ADiaCharacter::SetupInitialSkills()
@@ -118,6 +124,7 @@ void ADiaCharacter::SetupInitialSkills()
     SkillManagerComponent->LoadJobSKillDataFromTable(EJobType::Warrior);
 
     Super::SetupInitialSkills();
+
 }
 
 // Called every frame
@@ -314,6 +321,7 @@ void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
 
     if (int32 skillID = SkillManagerComponent->GetMappedSkillID(ActionIndex))
     {        
+		UE_LOG(LogTemp, Log, TEXT("ExecuteSkillByIndex: 스킬 인덱스 %d에 매핑된 스킬 ID %d 실행 시도"), ActionIndex, skillID);
         // GAS 스킬 먼저 시도 (ID 1000 이상은 GAS 스킬로 간주)
         if (skillID >= 1000)
         {

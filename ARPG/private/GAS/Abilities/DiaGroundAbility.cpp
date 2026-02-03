@@ -6,6 +6,9 @@
 #include "Skill/DiaGroundObj.h"
 #include "GAS/DiaGASHelper.h"
 #include "Abilities/Tasks/AbilityTask_SpawnActor.h"
+#include "DiaComponent/DiaSkillManagerComponent.h"
+#include "Skill/DiaSkillActor.h"
+#include "DiaComponent/Skill/DiaSkillVariant.h"
 void UDiaGroundAbility::InitializeWithSkillData(const FGASSkillData& InSkillData)
 {
     Super::InitializeWithSkillData(InSkillData);
@@ -62,23 +65,30 @@ void UDiaGroundAbility::SpawnSkillGround()
     LocationData.TargetLocation.LiteralTransform = FTransform(SpawnLocation); 
     TargetDataHandle.Add(new FGameplayAbilityTargetData_LocationInfo(LocationData));
 
-    SpawnActorTask = UAbilityTask_SpawnActor::SpawnActor
-    (this, TargetDataHandle, SkillGroundClass);
+    FDiaSkillVariantContext VariantContext;
+    VariantContext.SkillActorClass = SkillGroundClass;
+    VariantContext.TargetData = TargetDataHandle;
 
-    if (SpawnActorTask)
-    {
-        SpawnActorTask->Success.AddDynamic(this, &UDiaGroundAbility::OnSpawned);
+    UDiaSkillManagerComponent* DiaSkillManagerComp = Character->FindComponentByClass<UDiaSkillManagerComponent>();
+    DiaSkillManagerComp->SpawnSkillActorUseVariants(VariantContext, this);
 
-        AActor* SpawnedActor = nullptr;
-        SpawnActorTask->BeginSpawningActor(this, TargetDataHandle, SkillGroundClass, SpawnedActor);
-        if (SpawnedActor)
-        {
-            SpawnActorTask->FinishSpawningActor(this, TargetDataHandle, SpawnedActor);
-        }
+    //SpawnActorTask = UAbilityTask_SpawnActor::SpawnActor
+    //(this, TargetDataHandle, SkillGroundClass);
 
-        // ReadyForActivation은 Begin/Finish 이후에 호출해야 합니다
-        SpawnActorTask->ReadyForActivation();
-    }
+    //if (SpawnActorTask)
+    //{
+    //    SpawnActorTask->Success.AddDynamic(this, &UDiaGroundAbility::OnSpawned);
+
+    //    AActor* SpawnedActor = nullptr;
+    //    SpawnActorTask->BeginSpawningActor(this, TargetDataHandle, SkillGroundClass, SpawnedActor);
+    //    if (SpawnedActor)
+    //    {
+    //        SpawnActorTask->FinishSpawningActor(this, TargetDataHandle, SpawnedActor);
+    //    }
+
+    //    // ReadyForActivation은 Begin/Finish 이후에 호출해야 합니다
+    //    SpawnActorTask->ReadyForActivation();
+    //}
 
 
   //  ADiaGroundObj* SkillGround = GetWorld()->SpawnActorDeferred<ADiaGroundObj>(
@@ -102,6 +112,7 @@ void UDiaGroundAbility::SpawnSkillGround()
   //      UE_LOG(LogTemp, Warning, TEXT("DiaGroundAbility: Failed to spawn SkillGround."));
   //  }
 
+    EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
 void UDiaGroundAbility::OnSpawned(AActor* SpawnedSkillGround)

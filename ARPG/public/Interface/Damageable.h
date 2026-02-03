@@ -8,6 +8,7 @@
 #include "Damageable.generated.h"
 
 class UAbilitySystemComponent;
+class UDiaGameplayAbility;
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
 class UDamageable : public UInterface
@@ -25,5 +26,12 @@ class ARPG_API IDamageable
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	
+	virtual void HandleSkillActorHit(
+		UAbilitySystemComponent* SourceASC,
+		UDiaGameplayAbility* SourceAbility,
+		AActor* SkillActor,
+		AActor* TargetActor,
+		const FHitResult& HitResult
+	) = 0;
 	
 };

@@ -146,32 +146,9 @@ void UDiaProjectileAbility::SpawnProjectile()
 		VariantContext.SkillActorClass = ProjectileClass;
 		VariantContext.TargetData = TargetDataHandle;
 
-		////SpawnTask라는걸 알내서 그걸 활용
-		//SpawnActorTask = UAbilityTask_SpawnActor::SpawnActor(this, TargetDataHandle, ProjectileClass);
-
-
-		//if (SpawnActorTask)
-		//{
-		//	SpawnActorTask->Success.AddDynamic(this, &UDiaProjectileAbility::OnSpawned);
-		//	SpawnActorTask->DidNotSpawn.AddDynamic(this, &UDiaProjectileAbility::OnDidNotSpawn);
-
-		//	// C++에서는 BeginSpawningActor를 호출해야 실제로 스폰이 시작됩니다.
-		//	AActor* SpawnedActor = nullptr;
-		//	if (!SpawnActorTask->BeginSpawningActor(this, TargetDataHandle, ProjectileClass, SpawnedActor))
-		//	{
-		//		UE_LOG(LogTemp, Warning, TEXT("DiaProjectileAbility::SpawnProjectile - BeginSpawningActor failed"));
-		//	}
-		//	if (SpawnedActor)
-		//	{
-		//		SpawnActorTask->FinishSpawningActor(this, TargetDataHandle, SpawnedActor);
-		//	}
-
-		//	// ReadyForActivation은 Begin/Finish 이후에 호출해야 합니다
-		//	SpawnActorTask->ReadyForActivation();
-		//}
 		UDiaSkillManagerComponent* DiaSkillManagerComp = Character->FindComponentByClass<UDiaSkillManagerComponent>();
 		DiaSkillManagerComp->SpawnSkillActorUseVariants(VariantContext, this);
-
+		
 		DrawDebugLine(World, CharacterLocation, CharacterLocation + LaunchDirection * 500.0f, FColor::Red, false, 1.5f, 0, 2.0f); // 캐릭터→LaunchDirection
 	}
 

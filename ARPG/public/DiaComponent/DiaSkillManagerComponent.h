@@ -12,6 +12,11 @@
 class USkillObject;
 class UDiaSkillVariant;
 class UDiaGameplayAbility;
+class UDiaSkillLoadService;
+class UDiaSkillActivationService;
+class UDiaSkillVariantExecutorService;
+class UDiaSkillVariantCache;
+
 UCLASS()
 class ARPG_API UDiaSkillManagerComponent : public UActorComponent
 {
@@ -22,8 +27,8 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-
-public:	
+public:
+	void MakeSkillVariantsArray(IN const UDiaGameplayAbility* Ability ,OUT TArray<UDiaSkillVariant*>& OutVariantsArray);	
 	void LoadJobSKillDataFromTable(EJobType JobType);
 
 	const int32 GetMappedSkillID(int32 Index) const;
@@ -32,6 +37,7 @@ public:
 	const TArray<USkillObject*>& GetSkillIDMapping() const;
 	const TArray<int32>& GetCurrentJobSkillIDs() const { return CurrentJobSkillSet.SkillIDs; }
 	void SetSkillIDMapping(const TArray<int32>& NewMapping);
+	void SetSkillIDIndex(int32 SkillID, int32 Index);
 
 	// Try activate ability by skill ID
 	UFUNCTION(BlueprintCallable, Category = "GAS|Skills")
@@ -41,7 +47,10 @@ public:
 	FGameplayAbilitySpec* GetAbilitySpecBySkillID(int32 SkillID) const;
 
 	void SpawnSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability);
+	void HitSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability);
 
+	void GetSkillVariantFromID(const int32 VariantID, OUT UDiaSkillVariant* OutVariants);
+	void GetSkillVariantsFromSkillID(const int32 SkillID, OUT TArray<UDiaSkillVariant*>& OutVariants);
 protected:
 	FJobSkillSet CurrentJobSkillSet;
 
@@ -52,8 +61,19 @@ protected:
 
 	UPROPERTY()
 	TMap<int32, UDiaSkillVariant*> SkillVariants;
-
 	const int32 MaxSkillMapping = 8;
 
+	// Service 인스턴스
+	UPROPERTY()
+	UDiaSkillLoadService* LoadService;
+
+	UPROPERTY()
+	UDiaSkillActivationService* ActivationService;
+
+	UPROPERTY()
+	UDiaSkillVariantExecutorService* VariantExecutor;
+
+	UPROPERTY()
+	UDiaSkillVariantCache* VariantCache;
 };
 

@@ -4,21 +4,23 @@
 
 #include "CoreMinimal.h"
 #include "DiaComponent/Skill/DiaSkillVariantExecutor.h"
-#include "DiaSkillVariantSpawnExecutor.generated.h"
+#include "DiaSkillEndVariantExecutor.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class ARPG_API UDiaSkillVariantSpawnExecutor : public UDiaSkillVariantExecutor
+class ARPG_API UDiaSkillEndVariantExecutor : public UDiaSkillVariantExecutor
 {
 	GENERATED_BODY()
-	
 public:
 	virtual void ExecuteEffect(
 		const TArray<class UDiaSkillVariant*>& Variants,
 		FDiaSkillVariantContext& Context,
 		class UDiaGameplayAbility* Ability
 	);
+
+	
+	
 	
 };

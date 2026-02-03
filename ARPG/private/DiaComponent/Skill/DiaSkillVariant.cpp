@@ -9,18 +9,9 @@ UDiaSkillVariant::UDiaSkillVariant()
 {
 }
 
-void UDiaSkillVariant::InitializeVariant(int32 _VariantID)
+void UDiaSkillVariant::InitializeVariant(const FDiaSkillVariantSpec& spec)
 {
-	UGASSkillManager* GasSkillMgr = GetWorld()->GetGameInstance() ? GetWorld()->GetGameInstance()->GetSubsystem<UGASSkillManager>() : nullptr;
-	if (!GasSkillMgr)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
-	}
-	const FSkillVariantData* Data = GasSkillMgr->GetSkllVariantDataPtr(_VariantID);
-	if (Data)
-	{
-		VariantSpec.ModifierValue = Data->ModifierValue;
-		VariantSpec.SkillTag = Data->VariantTag;
-	}
+	VariantSpec = spec;
+
 }
 

@@ -25,6 +25,18 @@ ADiaController::ADiaController()
 	DiaInventoryComponent = CreateDefaultSubobject<UDiaInventoryComponent>(TEXT("InventoryComponent"));
 	DiaEquipmentComponent = CreateDefaultSubobject<UDiaEquipmentComponent>(TEXT("EquipmentComponent"));
 	DiaOptionManagerComponent = CreateDefaultSubobject<UDiaOptionManagerComponent>(TEXT("OptionManagerComponent"));
+
+	// HUD 위젯 클래스 C++에서 설정
+	// Blueprint 생성 클래스는 이름 뒤에 _C 접미사가 붙음
+	static ConstructorHelpers::FClassFinder<UHUDWidget> HUDWidgetClassFinder(TEXT("/Game/UI/HUD/WBP_HUDWidget.WBP_HUDWidget_C"));
+	if (HUDWidgetClassFinder.Succeeded())
+	{
+		HUDWidgetClass = HUDWidgetClassFinder.Class;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ADiaController: Failed to find HUD widget class"));
+	}
 }
 
 void ADiaController::BeginPlay()
@@ -183,33 +195,33 @@ void ADiaController::SetTarget(ADiaBaseCharacter* NewTarget)
 
 UHUDWidget* ADiaController::GetHUDWidget() const
 {
-	// 캐시된 HUDWidget이 유효하면 그대로 반환
 	if (CachedHUDWidget.IsValid())
 	{
 		return CachedHUDWidget.Get();
 	}
 
-	// 캐시되지 않았거나 무효하면 GameMode에서 가져와서 캐시
-	ADungeonGameMode* GameMode = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());
-	if (IsValid(GameMode))
+	if (!HUDWidgetClass)
 	{
-		UHUDWidget* HUDWidget = GameMode->GetHUDWidget();
-		if (IsValid(HUDWidget))
-		{
-			CachedHUDWidget = HUDWidget;
-			return HUDWidget;
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("HUDWidget from GameMode is null"));
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("DungeonGameMode is null"));
+		UE_LOG(LogTemp, Warning, TEXT("ADiaController::GetHUDWidget - HUDWidgetClass is not set"));
+		return nullptr;
 	}
 
-	return nullptr;
+	ADiaController* NonConstThis = const_cast<ADiaController*>(this);
+	UHUDWidget* NewHUD = CreateWidget<UHUDWidget>(NonConstThis, HUDWidgetClass);
+	if (!IsValid(NewHUD))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ADiaController::GetHUDWidget - Failed to create HUDWidget"));
+		return nullptr;
+	}
+
+	// AddToViewport()가 NativeConstruct를 유발하고, 그 안에서 GetHUDWidget()이 다시 호출될 수 있음.
+	// 재귀 방지를 위해 뷰포트에 추가하기 전에 캐시를 먼저 설정.
+	NonConstThis->CachedHUDWidget = NewHUD;
+	NewHUD->AddToViewport();
+
+	UE_LOG(LogTemp, Log, TEXT("ADiaController::GetHUDWidget - HUDWidget created and cached"));
+
+	return NewHUD;
 }
 
 //인벤토리에 아이템 더하기 호출.
@@ -336,6 +348,22 @@ void ADiaController::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotInde
 	}
 
 	HUDWidget->RegisteSkillOnQuickSlotWidget(SkillID, SlotIndex);
+}
+
+void ADiaController::RegisteSkillPannelWidget(const TArray<USkillObject*>& SkillDataList)
+{
+	UHUDWidget* HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("RegisteSkillPannelWidget HUDWidget is null"));
+		return;
+	}
+	if (SkillDataList.Num() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("SkillDataList is empty"));
+		return;
+	}
+	HUDWidget->RegisteSkillPannelWidget(SkillDataList);
 }
 
 ESlateVisibility ADiaController::GetInventoryVisibility() const

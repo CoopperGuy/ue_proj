@@ -16,6 +16,13 @@ void USkillObject::InitializeSkillObject(int32 _SkillID)
 	SkillID = _SkillID;
 }
 
+const TArray<int32>& USkillObject::GetVariantApplyIDs() const
+{
+    // TODO: 여기에 return 문을 삽입합니다.
+
+    return VariantApplyIDs;
+}
+
 const FGASSkillData* USkillObject::GetSkillData() const
 {
     UGASSkillManager* GasSkillMgr = GetWorld()->GetGameInstance() ? GetWorld()->GetGameInstance()->GetSubsystem<UGASSkillManager>() : nullptr;

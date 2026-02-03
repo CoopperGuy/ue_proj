@@ -28,5 +28,5 @@ protected:
     UPROPERTY()
     UHUDWidget* HUDWidgetInstance;
 public:
-    UHUDWidget* const GetHUDWidget() const { return HUDWidgetInstance; }
+    UHUDWidget* const GetHUDWidget() const;
 };

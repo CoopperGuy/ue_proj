@@ -207,6 +207,19 @@ void UHUDWidget::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
 	}
 }
 
+void UHUDWidget::RegisteSkillPannelWidget(const TArray<USkillObject*>& Skills)
+{
+	UE_LOG(LogTemp, Warning, TEXT("UHUDWidget::RegisteSkillPannelWidget called with %d skills"), Skills.Num());
+	if (SkillPanelWidget)
+	{
+		SkillPanelWidget->RegisterSkillList(Skills);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UHUDWidget::RegisteSkillPannelWidget - SkillPanelWidget is null"));
+	}
+}
+
 void UHUDWidget::SetMonsterHPVisibility(ESlateVisibility _Visibility)
 {
 	MonsterHPWidget->SetVisibility(_Visibility);

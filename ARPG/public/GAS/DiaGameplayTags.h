@@ -75,6 +75,7 @@ public:
 	FGameplayTag Ability_Cost_Mana_NotEnough;
 	FGameplayTag GASData_Exp;
 	FGameplayTag GASData_MultipleShot;
+	FGameplayTag GASData_Pierce;
 
 
 	// ========================================

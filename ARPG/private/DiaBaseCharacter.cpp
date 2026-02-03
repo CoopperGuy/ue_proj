@@ -131,13 +131,11 @@ void ADiaBaseCharacter::GrantInitialGASAbilities()
 	}
 
 	const TArray<USkillObject*>& SkillIDMapping = SkillManagerComponent->GetSkillIDMapping();
-	UE_LOG(LogTemp, Log, TEXT("GrantInitialGASAbilities: Granting initial skills num : %d"), SkillIDMapping.Num());
 	for (const USkillObject* SkillObject : SkillIDMapping)
 	{
 		if (IsValid(SkillObject))
 		{
 			int32 SkillID = SkillObject->GetSkillID();
-			UE_LOG(LogTemp, Log, TEXT("GrantInitialGASAbilities: Trying to grant SkillID %d"), SkillID);
 			if (SkillID > 0)
 			{
 				bool bGranted = SetUpSkillID(SkillID);
@@ -218,6 +216,11 @@ bool ADiaBaseCharacter::SetUpSkillID(int32 SkillID)
 	}
 
 	return bGranted;
+}
+
+void ADiaBaseCharacter::SetSkillIDOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
+{
+	SkillManagerComponent->SetSkillIDIndex(SkillID, SlotIndex);
 }
 
 void ADiaBaseCharacter::OnStunTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
@@ -440,6 +443,24 @@ void ADiaBaseCharacter::PauseDeathMontage()
 	{
 		AnimInstance->Montage_Pause(DieMontage);
 	}
+}
+
+void ADiaBaseCharacter::HandleSkillActorHit(UAbilitySystemComponent* SourceASC, UDiaGameplayAbility* SourceAbility, AActor* SkillActor, AActor* TargetActor, const FHitResult& HitResult)
+{
+	FDiaSkillVariantContext VariantContext;
+	VariantContext.HitResult = HitResult;
+
+	SkillManagerComponent->HitSkillActorUseVariants(VariantContext, SourceAbility);
+}
+
+void ADiaBaseCharacter::GetSkillVariantFromID(int32 SkillID, OUT UDiaSkillVariant* OutSkillVariant)
+{
+	SkillManagerComponent->GetSkillVariantFromID(SkillID, OutSkillVariant);
+}
+
+void ADiaBaseCharacter::GetSkillVariantsFromSkillID(int32 SkillID, OUT TArray<class UDiaSkillVariant*>& OutSkillVariants)
+{
+	SkillManagerComponent->GetSkillVariantsFromSkillID(SkillID, OutSkillVariants);
 }
 
 void ADiaBaseCharacter::SetTargetActor(ADiaBaseCharacter* NewTarget)

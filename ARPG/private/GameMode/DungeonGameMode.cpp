@@ -3,6 +3,8 @@
 
 #include "GameMode/DungeonGameMode.h"
 #include "Character/DiaCharacter.h"
+#include "Controller/DiaController.h"
+
 #include "NavigationSystem.h"
 
 #include "Item/DiaItem.h"
@@ -21,7 +23,8 @@ ADungeonGameMode::ADungeonGameMode()
 	DefaultPawnClass = ADiaCharacter::StaticClass();
 	
 	// 기본 HUD 위젯 클래스 설정 (블루프린트에서 오버라이드 가능)
-	static ConstructorHelpers::FClassFinder<UHUDWidget> HUDWidgetClassFinder(TEXT("/Game/UI/HUD/WBP_HUDWidget.WBP_HUDWidget"));
+	// Blueprint 생성 클래스는 이름 뒤에 _C 접미사가 붙음
+	static ConstructorHelpers::FClassFinder<UHUDWidget> HUDWidgetClassFinder(TEXT("/Game/UI/HUD/WBP_HUDWidget.WBP_HUDWidget_C"));
 	if (HUDWidgetClassFinder.Succeeded())
 	{
 		HUDWidgetClass = HUDWidgetClassFinder.Class;
@@ -37,26 +40,6 @@ void ADungeonGameMode::BeginPlay()
     {
         NavSys->Build(); // 강제 리빌드
     }
-
-	// HUD 위젯 생성 및 표시
-	if (HUDWidgetClass)
-	{
-		APlayerController* playerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-		if (IsValid(playerController))
-		{
-			HUDWidgetInstance = CreateWidget<UHUDWidget>(playerController, HUDWidgetClass);            
-			if (IsValid(HUDWidgetInstance))
-			{
-				HUDWidgetInstance->AddToViewport();
-				
-				// 인벤토리 위젯을 초기에 숨김 상태로 설정
-				if (UMainInventory* InventoryWidget = HUDWidgetInstance->GetInventoryWidget())
-				{
-					InventoryWidget->SetVisibility(ESlateVisibility::Hidden);
-				}
-			}
-		}
-	}
 
 	//subsystem 초기화
 	UGameInstance* GI = GetGameInstance();
@@ -94,4 +77,19 @@ void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& 
 			SpawnedItem->FinishSpawning(SpawnActor->GetTransform());
 		}
 	}
+}
+
+UHUDWidget* const ADungeonGameMode::GetHUDWidget() const
+{
+	APlayerController* PC = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+	ADiaController* DiaPC = Cast<ADiaController>(PC);
+	if (!DiaPC)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ADungeonGameMode::GetHUDWidget - DiaController is null"));
+		return nullptr;
+	}
+
+	// 실제 HUD는 컨트롤러가 관리
+	return DiaPC->GetHUDWidget();
+
 }

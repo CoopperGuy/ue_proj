@@ -23,7 +23,10 @@ public:
 	void AddSkillLevel(int32 _AddLevel) { SkillLevel += _AddLevel; }
 	void SetSkillID(int32 _SkillID) { SkillID = _SkillID; }
 	void SetSkillVariantIDs(const TArray<int32>& _VariantIDs) { SkillVariantIDs = _VariantIDs; }
+	void SetSkillVariantID(int32 _VariantID) { SkillVariantIDs.Add(_VariantID); }
+	void RemoveSkillVariantID(int32 _VariantID) { SkillVariantIDs.Remove(_VariantID); }
 	const TArray<int32>& GetSkillVariantIDs() const { return SkillVariantIDs; }
+	const TArray<int32>& GetVariantApplyIDs() const;
 
 	int32 GetSkillID() const { return SkillID; }
 	const FGASSkillData* GetSkillData() const;
@@ -32,4 +35,5 @@ protected:
 	int32 SkillLevel = 1;
 
 	TArray<int32> SkillVariantIDs;
+	TArray<int32> VariantApplyIDs;
 };

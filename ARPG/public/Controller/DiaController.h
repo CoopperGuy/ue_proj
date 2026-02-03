@@ -17,6 +17,7 @@ class UDiaOptionManagerComponent;
 class UHUDWidget;
 class UDiaStatComponent;
 class ADiaBaseCharacter;
+class USkillObject;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnTargetChanged, ADiaBaseCharacter*);
 
@@ -39,6 +40,7 @@ public:
 	void ToggleSkillPanelVisibility(bool bVisible);
 
 	void RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
+	void RegisteSkillPannelWidget(const TArray<USkillObject*>&);
 
 	ESlateVisibility GetInventoryVisibility() const;
 	ESlateVisibility GetWidgetVisibility(const FName& FoundName) const;
@@ -78,10 +80,10 @@ protected:
 	UPROPERTY()
 	ADiaBaseCharacter* TargetMonster;
 
-private:
-	// HUDWidget을 가져오는 헬퍼 함수 (최초 1회만 GameMode에서 가져옴)
-	UHUDWidget* GetHUDWidget() const;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UHUDWidget> HUDWidgetClass;
 
 public:
 	FORCEINLINE FOnTargetChanged& GetOnTargetChanged() { return OnTargetChanged; }
+	UHUDWidget* GetHUDWidget() const;
 };

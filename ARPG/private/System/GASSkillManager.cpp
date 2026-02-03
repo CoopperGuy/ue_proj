@@ -71,6 +71,7 @@ const FSkillVariantData* UGASSkillManager::GetSkllVariantDataPtr(int32 VariantID
 	return nullptr;
 }
 
+
 void UGASSkillManager::LoadSkillDataFromTable()
 {
 	// DataTable 경로 설정 (프로젝트 설정에서 변경 가능)

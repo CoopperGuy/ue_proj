@@ -54,6 +54,7 @@ public:
 	void CreateCautionWidget();
 
 	void RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
+	void RegisteSkillPannelWidget(const TArray<class USkillObject*>& SkillDataList);
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UOrb* HpWidget;

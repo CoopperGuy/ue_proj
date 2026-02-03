@@ -5,9 +5,11 @@
 #include "CoreMinimal.h"
 #include "CommonActivatableWidget.h"
 #include "Skill/DiaSkillType.h"
+#include "Types/DiaGASSkillData.h"
 #include "SkillPanelWidget.generated.h"
 
 class UScrollBox;
+class UCommonListView;
 /**
  * 
  */
@@ -19,21 +21,23 @@ class ARPG_API USkillPanelWidget : public UCommonActivatableWidget
 public:
 	void ToggleSkillPanel();
 
-	void RegisterSkillPanel(int32 SkillID);
-	void UnregisterSkillPanel(int32 SkillID);
-
 	void InitializeSkillPanel();
-	void AddSkillToPanel(const FSkillData& SkillData, int32 SkillID, bool bIsActiveSkill);
+	void AddSkillToPanel(const FGASSkillData& SkillData, int32 SkillID, bool bIsActiveSkill);
+
+	void RegisterSkillList(const TArray<class USkillObject*>& Skills);
 protected:
 	void NativeConstruct() override;
 
+	UFUNCTION(BlueprintCallable, Category = "SkillPanel")
+	void HandleItemClicked(UObject* Item);
 private:
 	UPROPERTY(meta = (BindWidget))
-	UScrollBox* ActiveSkillScrollbar;
+	UCommonListView* ActiveSkillListView;
 
 	UPROPERTY(meta = (BindWidget))
-	UScrollBox* SubSkillScrollBar;
+	UCommonListView* SubSkillListView;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Slot", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class USkillSlotWidget> SkillSlotWidgetClass;
+
 };

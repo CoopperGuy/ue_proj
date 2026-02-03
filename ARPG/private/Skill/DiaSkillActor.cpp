@@ -31,6 +31,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "Skill/DiaDamageType.h"
 
+#include "DiaComponent/Skill/Executor/DiaSkillHitVariantExecutor.h"
+#include "DiaComponent/DiaSkillManagerComponent.h"
+
 
 // Sets default values
 ADiaSkillActor::ADiaSkillActor()
@@ -42,6 +45,8 @@ ADiaSkillActor::ADiaSkillActor()
     CollisionComp->InitSphereRadius(15.0f);
     CollisionComp->SetCollisionObjectType(ECollisionChannel::ECC_EngineTraceChannel2);
     CollisionComp->SetCollisionProfileName("Projectile");
+    // Skill 채널(SkillActor끼리) 충돌 무시 설정
+    CollisionComp->SetCollisionResponseToChannel(ECollisionChannel::ECC_EngineTraceChannel2, ECollisionResponse::ECR_Ignore);
     CollisionComp->SetGenerateOverlapEvents(true);  // Overlap 이벤트 활성화
     CollisionComp->OnComponentBeginOverlap.AddDynamic(this, &ADiaSkillActor::OnHit);
 
@@ -164,6 +169,12 @@ void ADiaSkillActor::OnHit(UPrimitiveComponent* OverlappedComponent,
         }
     }
 
+    // Pierce: 이미 히트한 적은 다시 히트하지 않음
+    if (HitActors.Contains(OtherActor))
+    {
+        return;
+    }
+
     ApplyGameplayHit(OtherActor, HitResult, OwnerActor);
 }
 
@@ -172,6 +183,9 @@ void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitR
     IAbilitySystemInterface* DiaOtherActor = Cast<IAbilitySystemInterface>(OtherActor);
     if (DiaOtherActor)
     {
+        // 이미 히트한 적 목록에 추가
+        HitActors.Add(OtherActor);
+
         // 데미지 처리
         ProcessDamage(DiaOtherActor, HitResult);
 
@@ -188,6 +202,38 @@ void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitR
         if (IsValid(OwnerActor))
         {
             OwnerActor->SetTargetActor(Cast<ADiaBaseCharacter>(OtherActor));
+        }
+
+        // Pierce: HitExecutor 호출하여 Pierce Effect 적용
+        if (IsValid(OwnerActor) && OwnerActor->GetSkillManagerComponent())
+        {
+            UDiaGameplayAbility* OwningAbilityPtr = OwningAbility.Get();
+            if (OwningAbilityPtr)
+            {
+                FDiaSkillVariantContext VariantContext;
+                VariantContext.HitResult = HitResult;
+                VariantContext.SkillActor = this;
+                VariantContext.AbilityComp = OwnerActor->GetAbilitySystemComponent();
+                
+                // Variants 배열 생성
+                TArray<UDiaSkillVariant*> VariantsToApply;
+                OwnerActor->GetSkillManagerComponent()->MakeSkillVariantsArray(OwningAbilityPtr, VariantsToApply);
+                
+                // HitExecutor 생성 및 실행 (Runtime 반환 버전)
+                UDiaSkillHitVariantExecutor* HitExecutor = NewObject<UDiaSkillHitVariantExecutor>(OwnerActor->GetSkillManagerComponent());
+                FSkillHitRuntime HitRuntime;
+                HitRuntime.PierceCount = PierceCount; // 현재 PierceCount 설정
+                HitExecutor->ExecuteEffect(VariantsToApply, VariantContext, OwningAbilityPtr, HitRuntime);
+                
+                // Runtime의 PierceCount를 SkillActor에 반영
+                PierceCount = HitRuntime.PierceCount;
+            }
+        }
+
+        // Pierce: PierceCount가 0 이하면 발사체 파괴
+        if (PierceCount <= 0)
+        {
+            Destroy();
         }
     }
 }

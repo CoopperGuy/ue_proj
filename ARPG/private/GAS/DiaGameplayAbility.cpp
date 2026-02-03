@@ -291,11 +291,9 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 	
 	if (SkillData.AbilityTags.Num() > 0)
 	{
-		AbilityTags.AppendTags(SkillData.AbilityTags);
-		//FGameplayTagContainer NewTags = GetAssetTags();
-		//NewTags.AppendTags(SkillData.AbilityTags);
-		//SetAssetTags(NewTags);
-
+		FGameplayTagContainer NewTags = GetAssetTags();
+		NewTags.AppendTags(SkillData.AbilityTags);
+		SetAssetTags(NewTags);
 	}
 
 	//if (SkillData.CastAnimation.IsValid())

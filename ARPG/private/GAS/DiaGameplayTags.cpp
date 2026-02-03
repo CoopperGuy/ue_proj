@@ -19,6 +19,7 @@ void FDiaGameplayTags::InitializeNativeTags()
 	RegisterItemOptionTags();
 
 	GameplayTags.AddTag(GameplayTags.GASData_MultipleShot, "GASData.Variant.MultipleSkill", "멀티플 샷 ");
+	GameplayTags.AddTag(GameplayTags.GASData_Pierce, "GASData.Variant.Pierce", "관통");
 }
 
 void FDiaGameplayTags::RegisterStateTags()

@@ -156,7 +156,7 @@ void UItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPoint
 	Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
 	
 	// 드래그 오퍼레이션 생성
-	UItemDragDropOperation* DragOperation = NewObject<UItemDragDropOperation>();
+	UItemDragDropOperation* DragOperation = NewObject<UItemDragDropOperation>(this);
 	
 	// 드래그 정보 설정
 	DragOperation->ItemData = ItemInfo;

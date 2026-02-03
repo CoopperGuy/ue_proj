@@ -80,6 +80,19 @@ public:
 
 	void PauseCurrentMontage();
 	void PauseDeathMontage();
+
+	virtual void HandleSkillActorHit(
+		UAbilitySystemComponent* SourceASC,
+		UDiaGameplayAbility* SourceAbility,
+		AActor* SkillActor,
+		AActor* TargetActor,
+		const FHitResult& HitResult
+	) override;
+
+	void GetSkillVariantFromID(int32 SkillID, OUT class UDiaSkillVariant* OutSkillVariant);
+	void GetSkillVariantsFromSkillID(int32 SkillID, OUT TArray<class UDiaSkillVariant*>& OutSkillVariants);
+
+	virtual void SetSkillIDOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
 protected:
 	// 기본적인 함수
 	virtual void BeginPlay() override;
@@ -109,6 +122,8 @@ protected:
 
 	UFUNCTION()
 	virtual void OnSlowTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
+
+
 protected:
 	// 상태 이상 효과 관리 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatusEffects")
