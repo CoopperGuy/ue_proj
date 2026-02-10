@@ -38,6 +38,8 @@ ADiaBaseCharacter::ADiaBaseCharacter()
 	SkillManagerComponent = CreateDefaultSubobject<UDiaSkillManagerComponent>(TEXT("SkillManagerComponent"));
 
 	Tags.Add(FName(TEXT("Character")));
+
+	OnAddSkillVariantDelegate.AddUObject(this, &ThisClass::HandleAddSkillVariant);
 }
 
 // Called when the game starts or when spawned
@@ -221,6 +223,23 @@ bool ADiaBaseCharacter::SetUpSkillID(int32 SkillID)
 void ADiaBaseCharacter::SetSkillIDOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
 {
 	SkillManagerComponent->SetSkillIDIndex(SkillID, SlotIndex);
+}
+
+void ADiaBaseCharacter::HandleAddSkillVariant(int32 SkillID, int32 VariantID, bool bApply)
+{
+	if (bApply)
+	{
+		SkillManagerComponent->AddVariantBySkillId(SkillID, VariantID);
+	}
+	else
+	{
+		// 제거 로직이 필요하면 여기에 추가
+	}
+}
+
+void ADiaBaseCharacter::AddSkillVariantToSkillObjcet(int32 SkillID, int32 VariantID, bool bApply)
+{
+	OnAddSkillVariantDelegate.Broadcast(SkillID, VariantID, bApply);
 }
 
 void ADiaBaseCharacter::OnStunTagChanged(const FGameplayTag CallbackTag, int32 NewCount)

@@ -69,7 +69,7 @@ void UDiaSkillManagerComponent::MakeSkillVariantsArray(IN const UDiaGameplayAbil
 		return;
 	}
 
-	TArray<int32> VariantIDs = SkillObj->GetSkillVariantIDs();
+	TSet<int32> VariantIDs = SkillObj->GetVariantApplyIDs();
 	constexpr int32 EstimatedNumVariants = 6;
 	OutVariantsArray.Reserve(EstimatedNumVariants);
 	if (VariantIDs.Num() > 0)
@@ -152,6 +152,26 @@ void UDiaSkillManagerComponent::SetSkillIDIndex(int32 SkillID , int32 Index)
 	}
 }
 
+void UDiaSkillManagerComponent::AddVariantBySkillId(int32 SkillID, int32 VariantID)
+{
+	USkillObject* SkillObj = nullptr;
+	for (const auto& Obj : SkillIDMapping)
+	{
+		if (Obj->GetSkillID() == SkillID)
+		{
+			SkillObj = Obj;
+			break;
+		}
+	}
+	if (!SkillObj)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::AddVariantBySkillId: SkillObject가 유효하지 않습니다."));
+		return;
+	}
+
+	SkillObj->SetVariantApplyIDs(VariantID);
+}
+
 FGameplayAbilitySpec* UDiaSkillManagerComponent::GetAbilitySpecBySkillID(int32 SkillID) const
 {
 	ADiaBaseCharacter* OwnerCharacter = Cast<ADiaBaseCharacter>(GetOwner());
@@ -187,8 +207,9 @@ void UDiaSkillManagerComponent::SpawnSkillActorUseVariants(const FDiaSkillVarian
 		return;
 	}
 
+	//여기서는 적용된 variants만 넘겨준다.
 	FDiaSkillVariantContext& MutableContext = const_cast<FDiaSkillVariantContext&>(context);
-	VariantExecutor->ExecuteVariants(SkillObj->GetSkillVariantIDs(), SkillVariants, MutableContext, Ability);
+	VariantExecutor->ExecuteVariants(SkillObj->GetVariantApplyIDs(), SkillVariants, MutableContext, Ability);
 }
 
 void UDiaSkillManagerComponent::HitSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability)
@@ -204,6 +225,7 @@ void UDiaSkillManagerComponent::HitSkillActorUseVariants(const FDiaSkillVariantC
 
 	FDiaSkillVariantContext& MutableContext = const_cast<FDiaSkillVariantContext&>(context);
 	UDiaSkillHitVariantExecutor* HitExecutor = NewObject<UDiaSkillHitVariantExecutor>(this);
+	HitExecutor->InitializeExecutor();
 	HitExecutor->ExecuteEffect(VariantsToApply, MutableContext, Ability);
 }
 

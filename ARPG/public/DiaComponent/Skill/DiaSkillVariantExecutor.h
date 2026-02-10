@@ -17,6 +17,7 @@ class ARPG_API UDiaSkillVariantExecutor : public UObject
 {
 	GENERATED_BODY()
 public:
+	UDiaSkillVariantExecutor();
 	virtual void InitializeExecutor();
 
 	void ExecuteEffect(

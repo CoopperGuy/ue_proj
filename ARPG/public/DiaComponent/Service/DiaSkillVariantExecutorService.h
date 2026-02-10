@@ -29,7 +29,7 @@ public:
 	 * @param Ability 스킬 어빌리티
 	 */
 	void ExecuteVariants(
-		const TArray<int32>& VariantIDs,
+		const TSet<int32>& VariantIDs,
 		const TMap<int32, UDiaSkillVariant*>& VariantCache,
 		FDiaSkillVariantContext& Context,
 		UDiaGameplayAbility* Ability);

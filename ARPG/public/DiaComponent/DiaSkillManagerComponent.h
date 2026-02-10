@@ -39,6 +39,7 @@ public:
 	void SetSkillIDMapping(const TArray<int32>& NewMapping);
 	void SetSkillIDIndex(int32 SkillID, int32 Index);
 
+	void AddVariantBySkillId(int32 SkillID, int32 VariantID);
 	// Try activate ability by skill ID
 	UFUNCTION(BlueprintCallable, Category = "GAS|Skills")
 	bool TryActivateAbilityBySkillID(int32 SkillID);

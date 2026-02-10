@@ -16,10 +16,15 @@ void USkillObject::InitializeSkillObject(int32 _SkillID)
 	SkillID = _SkillID;
 }
 
-const TArray<int32>& USkillObject::GetVariantApplyIDs() const
+void USkillObject::SetVariantApplyIDs(int32 _AddVariantID)
+{
+	VariantApplyIDs.Add(_AddVariantID);
+}
+
+const TSet<int32>& USkillObject::GetVariantApplyIDs() const
 {
     // TODO: 여기에 return 문을 삽입합니다.
-
+	UE_LOG(LogTemp, Warning, TEXT("USkillObject::GetVariantApplyIDs - Returning VariantApplyIDs, ID Size : %d"), VariantApplyIDs.Num());
     return VariantApplyIDs;
 }
 

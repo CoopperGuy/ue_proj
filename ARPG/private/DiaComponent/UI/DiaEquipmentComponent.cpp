@@ -17,7 +17,7 @@
 
 UDiaEquipmentComponent::UDiaEquipmentComponent()
 {
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 
 }
 
@@ -38,6 +38,7 @@ void UDiaEquipmentComponent::EquipItem(const FEquippedItem& Item, EEquipmentSlot
 {
 	//아이템 추가
 	EquipmentMap.Add(Slot, Item);
+	UE_LOG(LogTemp, Log, TEXT("EquipItem: Slot %s에 아이템 장착됨."), *UEnum::GetValueAsString(Slot));
 }
 
 void UDiaEquipmentComponent::UnEquipItem(EEquipmentSlot Slot)
@@ -46,10 +47,20 @@ void UDiaEquipmentComponent::UnEquipItem(EEquipmentSlot Slot)
 	if (FEquippedItem* EquippedItem = EquipmentMap.Find(Slot))
 	{
 		//스텟에서 제거
-		EquipmentMap.Remove(Slot);
 		OnItemUnEquipped.Broadcast(Slot);
 		UE_LOG(LogTemp, Log, TEXT("UnEquipItem: Slot %s에서 아이템 제거됨."), *UEnum::GetValueAsString(Slot));
 	}
+}
+
+void UDiaEquipmentComponent::UnEquipItemFinish(EEquipmentSlot Slot)
+{
+	if (FEquippedItem* EquippedItem = EquipmentMap.Find(Slot))
+	{
+		//스텟에서 제거
+		EquipmentMap.Remove(Slot);
+		UE_LOG(LogTemp, Log, TEXT("UnEquipItem: Slot %s에서 아이템 제거됨."), *UEnum::GetValueAsString(Slot));
+	}
+
 }
 
 const FEquippedItem* UDiaEquipmentComponent::GetEquippedItem(EEquipmentSlot Slot) const

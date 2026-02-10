@@ -14,7 +14,7 @@ void UDiaSkillVariantExecutorService::InitializeExecutorService()
 }
 
 void UDiaSkillVariantExecutorService::ExecuteVariants(
-	const TArray<int32>& VariantIDs,
+	const TSet<int32>& VariantIDs,
 	const TMap<int32, UDiaSkillVariant*>& VariantCache,
 	FDiaSkillVariantContext& Context,
 	UDiaGameplayAbility* Ability)
@@ -40,5 +40,6 @@ void UDiaSkillVariantExecutorService::ExecuteVariants(
 	// Context의 SkillActor 타입에 따라 적절한 Executor 선택
 	// 현재는 SpawnExecutor만 사용 (추후 확장 가능)
 	UDiaSkillVariantSpawnExecutor* SpawnExecutor = NewObject<UDiaSkillVariantSpawnExecutor>(this);
+	SpawnExecutor->InitializeExecutor();
 	SpawnExecutor->ExecuteEffect(VariantsToApply, Context, Ability);
 }

@@ -9,6 +9,7 @@
 
 void UDiaSkillHitVariantExecutor::InitializeExecutor()
 {
+	UE_LOG(LogTemp, Log, TEXT("UDiaSkillHitVariantExecutor::InitializeExecutor - Initializing Hit Variant Executor"));
 	EffectsByTag.Add(FDiaGameplayTags::Get().GASData_Pierce, NewObject<UDiaSkillVariantEffect_Pierce>(this));
 }
 

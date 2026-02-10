@@ -65,7 +65,16 @@ void USkillSlotWidget::OnApplyButtonClicked()
 
 	UE_LOG(LogTemp, Log, TEXT("USkillSlotWidget::OnApplyButtonClicked - Applying SkillID: %d"), SkillID);
 
-	Character->SetSkillIDOnQuickSlotWidget(SkillID, 0); // 0은 예시로 첫 번째 슬롯에 할당
+	if (SkillInfoObjectPtr->isMainSkill)
+	{
+		Character->SetSkillIDOnQuickSlotWidget(SkillID, 0); // 0은 예시로 첫 번째 슬롯에 할당
+	}
+	else
+	{
+		Character->AddSkillVariantToSkillObjcet(MainSkillID, SkillID, true); // VariantID를 SkillID로 가정
+	}
+
+	return;
 }
 
 void USkillSlotWidget::OnCancelButton()
@@ -76,6 +85,18 @@ void USkillSlotWidget::OnCancelButton()
 		return;
 
 	UE_LOG(LogTemp, Log, TEXT("USkillSlotWidget::OnApplyButtonClicked - Applying SkillID: %d"), SkillID);
+
+	if (SkillInfoObjectPtr->isMainSkill)
+	{
+		Character->SetSkillIDOnQuickSlotWidget(-1, 0); // 0은 예시로 첫 번째 슬롯에 할당
+
+	}
+	else
+	{
+		Character->AddSkillVariantToSkillObjcet(MainSkillID, SkillID, false); // VariantID를 SkillID로 가정
+	}
+
+	return;
 }
 
 void USkillSlotWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
@@ -88,6 +109,9 @@ void USkillSlotWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 	if (USkillInfoObject* SkillInfoObject = Cast<USkillInfoObject>(ListItemObject))
 	{
 		SkillInfoObjectPtr = SkillInfoObject;
+		SkillInfoObjectPtr->isMainSkill = SkillInfoObject->isMainSkill;
+		SkillInfoObjectPtr->MainSkillID = SkillInfoObject->MainSkillID;
+		MainSkillID = SkillInfoObject->MainSkillID;
 		SetSkillInfo(SkillInfoObject->SkillID, SkillInfoObject->SkillIcon, SkillInfoObject->SkillName, SkillInfoObject->SkillLevel);
 	}
 }

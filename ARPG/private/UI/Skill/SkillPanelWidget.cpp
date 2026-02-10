@@ -55,7 +55,8 @@ void USkillPanelWidget::HandleItemClicked(UObject* Item)
 		NewVariantInfo->SkillName = Variant->GetSkillVariantName();
 		NewVariantInfo->SkillLevel = 1;
 		NewVariantInfo->SkillIcon = nullptr; 
-
+		NewVariantInfo->isMainSkill = false;
+		NewVariantInfo->MainSkillID = ClickedSkillInfo->SkillID;
 		// 아이콘 설정 등 추가 정보 설정 가능
 		SubSkillListView->AddItem(NewVariantInfo);
 	}
@@ -118,15 +119,11 @@ void USkillPanelWidget::AddSkillToPanel(const FGASSkillData& SkillData, int32 Sk
 	NewSkillInfoObject->SkillIcon = IconTexture;
 	NewSkillInfoObject->SkillName = SkillData.SkillName;
 	NewSkillInfoObject->SkillLevel = 1;
-
+	NewSkillInfoObject->isMainSkill = true;
 	// 3) 어느 리스트에 넣을지만 분기
-	if (bIsActiveSkill && IsValid(ActiveSkillListView))
+	if (IsValid(ActiveSkillListView))
 	{
 		ActiveSkillListView->AddItem(NewSkillInfoObject);
-	}
-	else if (!bIsActiveSkill && IsValid(SubSkillListView))
-	{
-		SubSkillListView->AddItem(NewSkillInfoObject);
 	}
 
 }

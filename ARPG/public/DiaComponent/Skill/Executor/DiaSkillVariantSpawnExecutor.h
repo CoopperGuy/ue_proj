@@ -15,6 +15,8 @@ class ARPG_API UDiaSkillVariantSpawnExecutor : public UDiaSkillVariantExecutor
 	GENERATED_BODY()
 	
 public:
+	virtual void InitializeExecutor() override;
+
 	virtual void ExecuteEffect(
 		const TArray<class UDiaSkillVariant*>& Variants,
 		FDiaSkillVariantContext& Context,

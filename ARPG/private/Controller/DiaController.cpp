@@ -135,7 +135,7 @@ void ADiaController::OnEquipItemProgress(const FEquippedItem& Item, EEquipmentSl
 	}
 
 	DiaEquipmentComponent->EquipItem(Item, SlotType);
-	DiaOptionManagerComponent->ApplyEquipmentStats(Item, SlotType, 1);
+	DiaOptionManagerComponent->ApplyEquipmentStats(Item, SlotType);
 
 	for (const auto& option : Item.ItemInstance.PrefixOptions)
 	{
@@ -161,7 +161,7 @@ void ADiaController::OnUnequipItemProgress(EEquipmentSlot SlotType)
 		return;
 	}
 
-	DiaOptionManagerComponent->ApplyEquipmentStats(*Item, SlotType, -1);
+	DiaOptionManagerComponent->RemoveEqipmentStats(*Item, SlotType);
 	
 	for (const auto& option : Item->ItemInstance.PrefixOptions)
 	{
@@ -171,7 +171,8 @@ void ADiaController::OnUnequipItemProgress(EEquipmentSlot SlotType)
 	{
 		DiaOptionManagerComponent->RemoveOption(option);
 	}
-	//DiaOptionManagerComponent->ApplyEquipmentSlotOption(*Item);
+
+	DiaEquipmentComponent->UnEquipItemFinish(SlotType);
 }
 
 void ADiaController::SetTarget(ADiaBaseCharacter* NewTarget)

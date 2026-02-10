@@ -27,8 +27,8 @@ void UDiaAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 {
 	Super::PreAttributeChange(Attribute, NewValue);
 
-	// 음수 방지 (모든 스탯 공통)
-	NewValue = FMath::Max(NewValue, 0.0f);
+	// 음수 가능하도록 변경 (디버프도 있으니까)
+	NewValue = NewValue;
 
 	// 상한선이 있는 Attribute만 Clamp
 	if (Attribute == GetHealthAttribute())
@@ -42,7 +42,12 @@ void UDiaAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 	else if (Attribute == GetExpAttribute())
 	{
 		NewValue = FMath::Min(NewValue, GetMaxExp());
-	}
+	}else if (Attribute == GetAttackPowerAttribute()
+		|| Attribute == GetManaAttribute()
+		|| Attribute == GetExpAttribute())
+	{
+		NewValue = FMath::Max(NewValue, 0.f);
+	}	
 }
 
 void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
@@ -97,6 +102,11 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 		{
 			SetExp(FMath::Clamp(GetExp(), 0.0f, GetMaxExp()));
 		}
+	}else    if (Data.EvaluatedData.Attribute == GetAttackPowerAttribute())
+	{
+		UE_LOG(LogTemp, Warning,
+			TEXT("PostGameplayEffectExecute AttackPower: Delta=%f, NewValue=%f"),
+			DeltaValue, GetAttackPower());
 	}
 }
 

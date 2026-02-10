@@ -29,6 +29,7 @@ public:
 	void EquipItem(const FEquippedItem& Item, EEquipmentSlot Slot);
 	UFUNCTION()
 	void UnEquipItem(EEquipmentSlot Slot);
+	void UnEquipItemFinish(EEquipmentSlot Slot);
 
 	const FEquippedItem* GetEquippedItem(EEquipmentSlot Slot) const;
 public:

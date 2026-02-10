@@ -35,9 +35,10 @@ public:
 	//모든 옵션을 반환
 	const TMap<FName, FDiaActualItemOption>& GetAllOptions() const { return ActiveOptions; }
 
-	void ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot, int32 State = 1);
+	void ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot);
 	void ApplyEquipmentSlotOption(const FEquippedItem& Item);
-	void MakeGameplayEffectOptions(UAbilitySystemComponent* ASC, const TArray<FDiaActualItemOption>& ItemOptions);
+	void RemoveEqipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot);
+	FActiveGameplayEffectHandle MakeGameplayEffectOptions(UAbilitySystemComponent* ASC, const TArray<FDiaActualItemOption>& ItemOptions);
 	void ApplyitemOptionsToSpec(const TArray<FDiaActualItemOption>& Options, FGameplayEffectSpec* Spec);
 	void ApplyEquipmentAllOptions();
 private:
@@ -47,5 +48,12 @@ private:
 	//Key OptionID, Value OptionRow
 	UPROPERTY()
 	TMap<FName, FDiaActualItemOption> ActiveOptions;
-	
+
+	UPROPERTY()
+	TMap<FGuid, FActiveGameplayEffectHandle> AppliedStatHandles;
+	UPROPERTY()
+	TMap<FGuid, FActiveGameplayEffectHandle> AppliedPrefixHandles;
+	UPROPERTY()
+	TMap<FGuid, FActiveGameplayEffectHandle> AppliedSuffixHandles;
+
 };

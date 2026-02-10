@@ -14,6 +14,8 @@
 
 #include "DiaBaseCharacter.generated.h"
 
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnAddSkillVariantDelegate, int32 /*skillid*/, int32 /*variantid*/, bool /*bApply*/);
+
 class UDiaCombatComponent;
 class UAnimMontage;
 class UDiaStatusEffectComponent;
@@ -93,6 +95,11 @@ public:
 	void GetSkillVariantsFromSkillID(int32 SkillID, OUT TArray<class UDiaSkillVariant*>& OutSkillVariants);
 
 	virtual void SetSkillIDOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
+
+	UFUNCTION()
+	void HandleAddSkillVariant(int32 SkillID, int32 VariantID, bool bApply);
+
+	void AddSkillVariantToSkillObjcet(int32 SkillID, int32 VariantID, bool bApply);
 protected:
 	// 기본적인 함수
 	virtual void BeginPlay() override;
@@ -123,7 +130,7 @@ protected:
 	UFUNCTION()
 	virtual void OnSlowTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
 
-
+	
 protected:
 	// 상태 이상 효과 관리 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatusEffects")
@@ -160,8 +167,11 @@ protected:
 	bool bIsDead{ false };
 
 	float DefaultMovementSpeed{ 600.f };
+
+	FOnAddSkillVariantDelegate OnAddSkillVariantDelegate;
 public:
 	UDiaAttributeSet* GetAttributeSet() const { return AttributeSet; }
 	bool GetIsDead() const { return bIsDead; }
 	UDiaSkillManagerComponent* GetSkillManagerComponent() const { return SkillManagerComponent; }
+
 };

@@ -2,6 +2,7 @@
 
 
 #include "DiaComponent/Skill/Executor/DiaSkillVariantSpawnExecutor.h"
+#include "DiaComponent/Skill/Effect/DiaVariantEffect_MultipleShot.h"
 #include "DiaComponent/Skill/DiaSkillVariant.h"
 #include "DiaComponent/Skill/SkillObject.h"
 
@@ -16,6 +17,11 @@
 
 #include "DiaBaseCharacter.h"
 
+void UDiaSkillVariantSpawnExecutor::InitializeExecutor()
+{
+	EffectsByTag.Add(FDiaGameplayTags::Get().GASData_MultipleShot, NewObject<UDiaVariantEffect_MultipleShot>(this));
+}
+
 void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, UDiaGameplayAbility* Ability)
 {
 	if(Context.SkillActorClass == nullptr)
@@ -27,9 +33,9 @@ void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVa
 	constexpr float defaultDist = 10.f;
 
 	FSkillSpawnRuntime Runtime;
-	Runtime.ExtraSpawnCount = 4;
+	Runtime.ExtraSpawnCount = 1;
 	ApplyEffects(Variants, Context, Runtime);	
-
+	UE_LOG(LogTemp, Log, TEXT("UDiaSkillVariantSpawnExecutor::ExecuteEffect - ExtraSpawnCount: %d"), Runtime.ExtraSpawnCount);
 	const FGameplayAbilityActorInfo& ActorInfo = Ability->GetActorInfo();
 	AActor* Character = (ActorInfo.AvatarActor.Get());
 	APawn* Pawn = Cast<APawn>(Character);

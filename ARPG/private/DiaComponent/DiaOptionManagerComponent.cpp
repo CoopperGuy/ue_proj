@@ -5,6 +5,9 @@
 #include "Controller/DiaController.h"
 #include "DiaBaseCharacter.h"
 #include "AbilitySystemComponent.h"
+
+#include "GAS/DiaAttributeSet.h"
+
 #include "GAS/Effects/DiaGE_StatApply.h"
 #include "GAS/DiaGameplayTags.h"
 #include "GAS/Effects/DiaGE_OptionGeneric.h"
@@ -50,7 +53,7 @@ FDiaActualItemOption* UDiaOptionManagerComponent::GetOptionByOptionRow(const FDi
 	return GetOptionByID(OptionRow.OptionID);
 }
 
-void UDiaOptionManagerComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot, int32 State)
+void UDiaOptionManagerComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot)
 {
 	//gameplayeffect를 이용해 스탯 적용
 	ADiaController* Controller = Cast<ADiaController>(GetOwner());
@@ -91,13 +94,14 @@ void UDiaOptionManagerComponent::ApplyEquipmentStats(const FEquippedItem& Item, 
 		UE_LOG(LogTemp, Warning, TEXT("ApplyEquipmentStats: ModifiedStats가 비어있습니다."));
 		return;
 	}
-
+	
 	TArray<FGameplayTag> StatTags = FDiaGameplayTags::GetAttributeStats();
 	for (const FGameplayTag& StatTag : StatTags)
 	{
 		if (const auto StatInfo = Item.ItemInstance.ModifiedStats.Find(StatTag))
 		{
-			Spec->SetSetByCallerMagnitude(StatTag, StatInfo->Values * State);  // 값 설정
+			Spec->SetSetByCallerMagnitude(StatTag, StatInfo->Values);  // 값 설정
+			UE_LOG(LogTemp, Warning, TEXT("스탯 적용: %s = %f"), *StatTag.ToString(), StatInfo->Values);
 		}
 		else
 		{
@@ -106,6 +110,57 @@ void UDiaOptionManagerComponent::ApplyEquipmentStats(const FEquippedItem& Item, 
 	}
 
 	FActiveGameplayEffectHandle EffectHandle = ASC->ApplyGameplayEffectSpecToSelf(*Spec);
+	AppliedStatHandles.FindOrAdd(Item.ItemInstance.InstanceID, EffectHandle);
+	UE_LOG(LogTemp, Warning, TEXT("스탯 적용 완료: ItemID = %s"), *Item.ItemInstance.InstanceID.ToString());
+}
+
+void UDiaOptionManagerComponent::RemoveEqipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot)
+{
+	const FGuid& ItemID = Item.ItemInstance.InstanceID;
+	if (!AppliedStatHandles.Contains(ItemID))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("RemoveEqipmentStats: 해당 아이템의 스탯이 적용되어 있지 않습니다. ItemID = %s"), *ItemID.ToString());
+		return;
+	}
+
+	FActiveGameplayEffectHandle& EffectHandle = AppliedStatHandles[ItemID];
+
+	//gameplayeffect를 이용해 스탯 제거
+	ADiaController* Controller = Cast<ADiaController>(GetOwner());
+	if (!IsValid(Controller))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ApplyEquipmentStats: Controller가 유효하지 않습니다."));
+		return;
+	}
+
+	ADiaBaseCharacter* OwnerCharacter = Controller->GetPawn<ADiaBaseCharacter>();
+	if (!IsValid(OwnerCharacter))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ApplyEquipmentStats: OwnerCharacter가 유효하지 않습니다."));
+		return;
+	}
+
+	UAbilitySystemComponent* ASC = OwnerCharacter->GetAbilitySystemComponent();
+	if (!IsValid(ASC))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ApplyEquipmentStats: AbilitySystemComponent가 유효하지 않습니다."));
+		return;
+	}
+
+	ASC->RemoveActiveGameplayEffect(EffectHandle);
+	AppliedStatHandles.Remove(ItemID);
+	UE_LOG(LogTemp, Warning, TEXT("스탯 제거: ItemID = %s"), *ItemID.ToString());
+	//옵션도 동시에 제거
+	if (FActiveGameplayEffectHandle* PrefixHandle = AppliedPrefixHandles.Find(Item.ItemInstance.InstanceID))
+	{
+		ASC->RemoveActiveGameplayEffect(*PrefixHandle);
+		AppliedPrefixHandles.Remove(Item.ItemInstance.InstanceID);
+	}
+	if (FActiveGameplayEffectHandle* SuffixHandle = AppliedSuffixHandles.Find(Item.ItemInstance.InstanceID))
+	{
+		ASC->RemoveActiveGameplayEffect(*SuffixHandle);
+		AppliedSuffixHandles.Remove(Item.ItemInstance.InstanceID);
+	}
 }
 
 void UDiaOptionManagerComponent::ApplyEquipmentSlotOption(const FEquippedItem& Item)
@@ -132,26 +187,35 @@ void UDiaOptionManagerComponent::ApplyEquipmentSlotOption(const FEquippedItem& I
 		return;
 	}
 
-	MakeGameplayEffectOptions(ASC, Item.ItemInstance.PrefixOptions);
-	MakeGameplayEffectOptions(ASC, Item.ItemInstance.SuffixOptions);
+	FActiveGameplayEffectHandle PrefixHandle = MakeGameplayEffectOptions(ASC, Item.ItemInstance.PrefixOptions);
+	FActiveGameplayEffectHandle SuffixHandle = MakeGameplayEffectOptions(ASC, Item.ItemInstance.SuffixOptions);
+	if(PrefixHandle.IsValid())
+	{
+		AppliedPrefixHandles.FindOrAdd(Item.ItemInstance.InstanceID, PrefixHandle);
+	}
+	if (SuffixHandle.IsValid())
+	{
+		AppliedSuffixHandles.FindOrAdd(Item.ItemInstance.InstanceID, SuffixHandle);
+	}
 }
 
-void UDiaOptionManagerComponent::MakeGameplayEffectOptions(UAbilitySystemComponent* ASC, const TArray<FDiaActualItemOption>& ItemOptions)
+FActiveGameplayEffectHandle UDiaOptionManagerComponent::MakeGameplayEffectOptions(UAbilitySystemComponent* ASC, const TArray<FDiaActualItemOption>& ItemOptions)
 {
 	FGameplayEffectSpecHandle SpecHandle
 		= ASC->MakeOutgoingSpec(UDiaGE_OptionGeneric::StaticClass(), 1.0f, ASC->MakeEffectContext());
 	if (!SpecHandle.IsValid())
 	{
 		UE_LOG(LogTemp, Error, TEXT("ApplyEquipmentStats: SpecHandle 생성 실패"));
-		return;
+		return FActiveGameplayEffectHandle();
 	}
 
 	FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
 	check(Spec)
 	//UE_LOG(LogTemp, Warning, TEXT("옵션 개수: %d"), ItemOptions.Num());
 	ApplyitemOptionsToSpec(ItemOptions, Spec);
-
 	FActiveGameplayEffectHandle EffectHandle = ASC->ApplyGameplayEffectSpecToSelf(*Spec);
+
+	return EffectHandle;
 }
 
 void UDiaOptionManagerComponent::ApplyitemOptionsToSpec(const TArray<FDiaActualItemOption>& ItemOptions, FGameplayEffectSpec* Spec)

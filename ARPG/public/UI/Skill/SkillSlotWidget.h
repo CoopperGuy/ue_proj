@@ -23,6 +23,9 @@ public:
 	UTexture2D* SkillIcon;
 	FText SkillName;
 	int32 SkillLevel;
+
+	bool isMainSkill = true;
+	int32 MainSkillID = -1;
 };
 
 
@@ -65,6 +68,7 @@ private:
 	UButton* CancelBtn;
 
 	int32 SkillID;
+	int32 MainSkillID;
 
 	UPROPERTY()
 	TWeakObjectPtr<USkillInfoObject> SkillInfoObjectPtr;
