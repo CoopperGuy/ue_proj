@@ -10,10 +10,12 @@
 #include "AbilitySystemComponent.h"
 #include "GAS/DiaAttributeSet.h"
 
+DEFINE_LOG_CATEGORY_STATIC(LogARPG_UI, Log, All);
+
 void UStatusWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	UE_LOG(LogTemp, Warning, TEXT("UStatusWidget::NativeConstruct called"));
+	UE_LOG(LogARPG_UI, Display, TEXT("UStatusWidget::NativeConstruct called"));
 	// PlayerController와 Pawn 가져오기
 	APlayerController* PC = GetOwningPlayer();
 	if (!IsValid(PC)) return;
@@ -61,18 +63,18 @@ void UStatusWidget::NativeConstruct()
 			else
 			{
 				int32 FindPos = PropertyName.Find(TEXT("Max"));
-				UE_LOG(LogTemp, Warning, TEXT("Checking for Max Attribute: %s, FindPos: %d"), *PropertyName, FindPos);
+				UE_LOG(LogARPG_UI, Verbose, TEXT("Checking for Max Attribute: %s, FindPos: %d"), *PropertyName, FindPos);
 				if(FindPos != INDEX_NONE)
 				{
 					//Max Text 제거
 					PropertyName.ReplaceInline(TEXT("Max"), TEXT(""));
 					FString BaseTagName = FString::Printf(TEXT("AttributeSet.%s"), *PropertyName);
-					UE_LOG(LogTemp, Warning, TEXT("Max Attribute Found: %s"), *BaseTagName);
+					UE_LOG(LogARPG_UI, Verbose, TEXT("Max Attribute Found: %s"), *BaseTagName);
 					if (UStatusItemObject* ItemObj = StatusSetMap.FindRef(BaseTagName))
 					{
 						ItemObj->StatusMaxValue = FString::FromInt(
 						FMath::RoundToInt(CachedASC->GetNumericAttribute(Attribute)));
-						UE_LOG(LogTemp, Warning, TEXT("Set Max Value for %s to %s"), *BaseTagName, *ItemObj->StatusMaxValue);
+						UE_LOG(LogARPG_UI, Verbose, TEXT("Set Max Value for %s to %s"), *BaseTagName, *ItemObj->StatusMaxValue);
 					}
 				}
 			}

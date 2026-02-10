@@ -5,20 +5,22 @@
 #include "Engine/Engine.h"
 #include "Engine/DataTable.h"
 
+DEFINE_LOG_CATEGORY_STATIC(LogARPG_GAS, Log, All);
+
 void UGASSkillManager::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-	
+
 	// DataTable에서 로드 시도, 실패 시 기본 데이터 사용
 	LoadSkillDataFromTable();
 	LoadSkillVariantDataFromTable();
 
 	if (SkillDataMap.Num() == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GASSkillManager: DataTable load failed, using default data"));
+		UE_LOG(LogARPG_GAS, Warning, TEXT("GASSkillManager: DataTable load failed, using default data"));
 	}
-	
-	UE_LOG(LogTemp, Log, TEXT("GASSkillManager: Initialized with %d skills"), SkillDataMap.Num());
+
+	UE_LOG(LogARPG_GAS, Display, TEXT("GASSkillManager: Initialized with %d skills"), SkillDataMap.Num());
 }
 
 const FGASSkillData* UGASSkillManager::GetSkillDataPtr(int32 SkillID) const
@@ -84,7 +86,7 @@ void UGASSkillManager::LoadSkillDataFromTable()
 	UDataTable* DataTable = SkillDataTable.LoadSynchronous();
 	if (!DataTable)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GASSkillManager: Failed to load DataTable at path: %s"), 
+		UE_LOG(LogARPG_GAS, Warning, TEXT("GASSkillManager: Failed to load DataTable at path: %s"),
 			*SkillDataTable.ToString());
 		return;
 	}
@@ -92,7 +94,7 @@ void UGASSkillManager::LoadSkillDataFromTable()
 	// DataTable 구조체 검증
 	if (DataTable->GetRowStruct() != FGASSkillData::StaticStruct())
 	{
-		UE_LOG(LogTemp, Error, TEXT("GASSkillManager: DataTable row struct mismatch!"));
+		UE_LOG(LogARPG_GAS, Error, TEXT("GASSkillManager: DataTable row struct mismatch!"));
 		return;
 	}
 
@@ -106,12 +108,12 @@ void UGASSkillManager::LoadSkillDataFromTable()
 		if (RowData)
 		{
 			SkillDataMap.Add(RowData->SkillID, *RowData);
-			UE_LOG(LogTemp, Log, TEXT("GASSkillManager: Loaded skill %d: %s"), 
+			UE_LOG(LogARPG_GAS, Verbose, TEXT("GASSkillManager: Loaded skill %d: %s"),
 				RowData->SkillID, *RowData->SkillName.ToString());
 		}
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("GASSkillManager: Loaded %d skills from DataTable"), SkillDataMap.Num());
+	UE_LOG(LogARPG_GAS, Display, TEXT("GASSkillManager: Loaded %d skills from DataTable"), SkillDataMap.Num());
 }
 
 void UGASSkillManager::LoadSkillVariantDataFromTable()
@@ -126,7 +128,7 @@ void UGASSkillManager::LoadSkillVariantDataFromTable()
 	UDataTable* DataTable = SkillVariationTable.LoadSynchronous();
 	if (!DataTable)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GASSkillManager: Failed to load DataTable at path: %s"),
+		UE_LOG(LogARPG_GAS, Warning, TEXT("GASSkillManager: Failed to load DataTable at path: %s"),
 			*SkillVariationTable.ToString());
 		return;
 	}
@@ -134,7 +136,7 @@ void UGASSkillManager::LoadSkillVariantDataFromTable()
 	// DataTable 구조체 검증
 	if (DataTable->GetRowStruct() != FSkillVariantData::StaticStruct())
 	{
-		UE_LOG(LogTemp, Error, TEXT("GASSkillManager: DataTable row struct mismatch!"));
+		UE_LOG(LogARPG_GAS, Error, TEXT("GASSkillManager: DataTable row struct mismatch!"));
 		return;
 	}
 
@@ -148,10 +150,10 @@ void UGASSkillManager::LoadSkillVariantDataFromTable()
 		if (RowData)
 		{
 			SkillVariantDataMap.Add(RowData->VariantID, *RowData);
-			UE_LOG(LogTemp, Log, TEXT("GASSkillManager: Loaded skill %d"),
+			UE_LOG(LogARPG_GAS, Verbose, TEXT("GASSkillManager: Loaded skill %d"),
 				RowData->VariantID);
 		}
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("GASSkillManager: Loaded %d skills from DataTable"), SkillVariantDataMap.Num());
+	UE_LOG(LogARPG_GAS, Display, TEXT("GASSkillManager: Loaded %d skills from DataTable"), SkillVariantDataMap.Num());
 }
