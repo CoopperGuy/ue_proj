@@ -19,6 +19,35 @@
 #include "GameMode/DungeonGameMode.h"
 #include "DiaBaseCharacter.h"
 
+DEFINE_LOG_CATEGORY_STATIC(LogARPG_Inventory, Log, All);
+
+namespace
+{
+	bool ShouldLogControllerWarning(const UObject* ContextObject, const TCHAR* ContextKey, const double IntervalSeconds = 2.0)
+	{
+		static TMap<FString, double> LastLogTimes;
+
+		double Now = FPlatformTime::Seconds();
+		if (IsValid(ContextObject))
+		{
+			if (const UWorld* World = ContextObject->GetWorld())
+			{
+				Now = World->GetTimeSeconds();
+			}
+		}
+
+		const FString Key = FString::Printf(TEXT("%p-%s"), ContextObject, ContextKey);
+		double& LastLogTime = LastLogTimes.FindOrAdd(Key);
+		if ((Now - LastLogTime) < IntervalSeconds)
+		{
+			return false;
+		}
+
+		LastLogTime = Now;
+		return true;
+	}
+}
+
 ADiaController::ADiaController()
 {
 	bShowMouseCursor = true;
@@ -35,7 +64,7 @@ ADiaController::ADiaController()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ADiaController: Failed to find HUD widget class"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("ADiaController: Failed to find HUD widget class"));
 	}
 }
 
@@ -53,13 +82,13 @@ void ADiaController::BeginPlay()
 	const bool bHasInventoryWidget = IsValid(InventoryWidget);
 	if (!bHasInventoryWidget)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("InventoryWidget is missing from HUDWidget; inventory setup skipped."));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("InventoryWidget is missing from HUDWidget; inventory setup skipped."));
 	}
 
 	const bool bHasEquipmentWidget = IsValid(EquipmentWidget);
 	if (!bHasEquipmentWidget)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("EquipmentWidget is missing from HUDWidget; equipment setup skipped."));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("EquipmentWidget is missing from HUDWidget; equipment setup skipped."));
 	}
 
 	if (!bHasInventoryWidget && !bHasEquipmentWidget)
@@ -83,7 +112,7 @@ void ADiaController::BeginPlay()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaInventoryComponent is null"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("DiaInventoryComponent is null"));
 	}
 
 	if (IsValid(DiaEquipmentComponent))
@@ -102,7 +131,7 @@ void ADiaController::BeginPlay()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaEquipmentComponent is null"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("DiaEquipmentComponent is null"));
 	}
 
 	for (int32 i = 0; i < static_cast<int32>(EEquipmentSlot::EES_Max); ++i)
@@ -185,11 +214,11 @@ void ADiaController::SetTarget(ADiaBaseCharacter* NewTarget)
 #if defined(WITH_EDITOR) || UE_BUILD_DEVELOPMENT
 	if (TargetMonster)
 	{
-		//UE_LOG(LogTemp, Log, TEXT("Target Changed: %s"), *TargetMonster->GetName());
+		//UE_LOG(LogARPG_Inventory, Verbose, TEXT("Target Changed: %s"), *TargetMonster->GetName());
 	}
 	else
 	{
-		//UE_LOG(LogTemp, Log, TEXT("Target Cleared"));
+		//UE_LOG(LogARPG_Inventory, Verbose, TEXT("Target Cleared"));
 	}
 #endif
 }
@@ -203,7 +232,7 @@ UHUDWidget* ADiaController::GetHUDWidget() const
 
 	if (!HUDWidgetClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ADiaController::GetHUDWidget - HUDWidgetClass is not set"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("ADiaController::GetHUDWidget - HUDWidgetClass is not set"));
 		return nullptr;
 	}
 
@@ -211,7 +240,7 @@ UHUDWidget* ADiaController::GetHUDWidget() const
 	UHUDWidget* NewHUD = CreateWidget<UHUDWidget>(NonConstThis, HUDWidgetClass);
 	if (!IsValid(NewHUD))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ADiaController::GetHUDWidget - Failed to create HUDWidget"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("ADiaController::GetHUDWidget - Failed to create HUDWidget"));
 		return nullptr;
 	}
 
@@ -220,7 +249,7 @@ UHUDWidget* ADiaController::GetHUDWidget() const
 	NonConstThis->CachedHUDWidget = NewHUD;
 	NewHUD->AddToViewport();
 
-	UE_LOG(LogTemp, Log, TEXT("ADiaController::GetHUDWidget - HUDWidget created and cached"));
+	UE_LOG(LogARPG_Inventory, Display, TEXT("ADiaController::GetHUDWidget - HUDWidget created and cached"));
 
 	return NewHUD;
 }
@@ -231,14 +260,14 @@ bool ADiaController::ItemAddedToInventory(const FInventorySlot& Item)
 {
 	if (!IsValid(DiaInventoryComponent))
 	{
-		UE_LOG(LogTemp, Error, TEXT("DiaInventoryComponent is null"));
+		UE_LOG(LogARPG_Inventory, Error, TEXT("DiaInventoryComponent is null"));
 		return false;
 	}
 
 	ADungeonGameMode* GameMode = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());
 	if (!IsValid(GameMode))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("DungeonGameMode is null"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("DungeonGameMode is null"));
 		return false;
 	}
 
@@ -246,7 +275,7 @@ bool ADiaController::ItemAddedToInventory(const FInventorySlot& Item)
 	//인벤토리 위젯을 가져와서 넣는다.
 	if (!IsValid(HUDWidget))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
 		return false;
 	}
 
@@ -256,7 +285,7 @@ bool ADiaController::ItemAddedToInventory(const FInventorySlot& Item)
 	bool bResult = DiaInventoryComponent->TryAddItem(Item, InventoryWidget);
 	if (bResult)
 	{
-		UE_LOG(LogTemp, Log, TEXT("Item successfully added to inventory: %s"), *Item.ItemInstance.BaseItem.ItemID.ToString());
+		UE_LOG(LogARPG_Inventory, Verbose, TEXT("Item successfully added to inventory: %s"), *Item.ItemInstance.BaseItem.ItemID.ToString());
 	}
 
 	return bResult;
@@ -266,14 +295,14 @@ void ADiaController::ItemRemoved(const FInventorySlot& Item)
 {
 	if (!IsValid(DiaInventoryComponent))
 	{
-		UE_LOG(LogTemp, Error, TEXT("DiaInventoryComponent is null"));
+		UE_LOG(LogARPG_Inventory, Error, TEXT("DiaInventoryComponent is null"));
 		return;
 	}
 
 	UHUDWidget* HUDWidget = GetHUDWidget();
 	if (!IsValid(HUDWidget))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
 		return;
 	}
 
@@ -287,14 +316,14 @@ void ADiaController::ToggleInventoryVisibility(bool bVisible)
 	UHUDWidget* HUDWidget = GetHUDWidget();
 	if (!IsValid(HUDWidget))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
 		return;
 	}
 
 	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
 	if (!InventoryWidget)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("InventoryWidget is null"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("InventoryWidget is null"));
 		return;
 	}
 	UEquipWidget* EquipmentWidget = HUDWidget->GetEquipmentWidget();
@@ -308,14 +337,14 @@ void ADiaController::ToggleChracterStatusVisibility(bool bVisible)
 	UHUDWidget* HUDWidget = GetHUDWidget();
 	if (!IsValid(HUDWidget))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
 		return;
 	}
 
 	UStatusWidget* StatusWidget = HUDWidget->GetCharacterStatusWidget();
 	if (!StatusWidget)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("StatusWidget is null"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("StatusWidget is null"));
 		return;
 	}
 
@@ -327,13 +356,13 @@ void ADiaController::ToggleSkillPanelVisibility(bool bVisible)
 	UHUDWidget* HUDWidget = GetHUDWidget();
 	if (!IsValid(HUDWidget))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
 		return;
 	}
 	USkillPanelWidget* SkillPanelWidget = Cast<USkillPanelWidget>(HUDWidget->FindWidgetByName("SkillPanelWidget"));
 	if (!SkillPanelWidget)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SkillPanelWidget is null"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("SkillPanelWidget is null"));
 		return;
 	}
 	SkillPanelWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
@@ -344,7 +373,7 @@ void ADiaController::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotInde
 	UHUDWidget* HUDWidget = GetHUDWidget();
 	if (!IsValid(HUDWidget))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
 		return;
 	}
 
@@ -356,12 +385,12 @@ void ADiaController::RegisteSkillPannelWidget(const TArray<USkillObject*>& Skill
 	UHUDWidget* HUDWidget = GetHUDWidget();
 	if (!IsValid(HUDWidget))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("RegisteSkillPannelWidget HUDWidget is null"));
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("RegisteSkillPannelWidget HUDWidget is null"));
 		return;
 	}
 	if (SkillDataList.Num() == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SkillDataList is empty"));
+		UE_LOG(LogARPG_Inventory, Display, TEXT("SkillDataList is empty"));
 		return;
 	}
 	HUDWidget->RegisteSkillPannelWidget(SkillDataList);
@@ -372,14 +401,20 @@ ESlateVisibility ADiaController::GetInventoryVisibility() const
 	const UHUDWidget* const HUDWidget = GetHUDWidget();
 	if (!IsValid(HUDWidget))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		if (ShouldLogControllerWarning(this, TEXT("GetInventoryVisibility_HUDWidgetNull")))
+		{
+			UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
+		}
 		return ESlateVisibility::Collapsed;
 	}
 
 	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
 	if (!InventoryWidget)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("InventoryWidget is null"));
+		if (ShouldLogControllerWarning(this, TEXT("GetInventoryVisibility_InventoryWidgetNull")))
+		{
+			UE_LOG(LogARPG_Inventory, Warning, TEXT("InventoryWidget is null"));
+		}
 		return ESlateVisibility::Collapsed;
 	}
 
@@ -391,13 +426,19 @@ ESlateVisibility ADiaController::GetWidgetVisibility(const FName& FoundName) con
 	UHUDWidget* const HUDWidget = GetHUDWidget();
 	if (!IsValid(HUDWidget))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("HUDWidget is null"));
+		if (ShouldLogControllerWarning(this, TEXT("GetWidgetVisibility_HUDWidgetNull")))
+		{
+			UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
+		}
 		return ESlateVisibility::Collapsed;
 	}
 	UUserWidget* FoundWidget = HUDWidget->FindWidgetByName(FoundName);
 	if (!IsValid(FoundWidget))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Widget with name '%s' not found in HUDWidget"), *FoundName.ToString());
+		if (ShouldLogControllerWarning(this, *FString::Printf(TEXT("GetWidgetVisibility_%s_NotFound"), *FoundName.ToString())))
+		{
+			UE_LOG(LogARPG_Inventory, Warning, TEXT("Widget with name '%s' not found in HUDWidget"), *FoundName.ToString());
+		}
 		return ESlateVisibility::Collapsed;
 	}
 	return FoundWidget->GetVisibility();

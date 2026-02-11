@@ -9,6 +9,40 @@
 #include "Monster/DiaMonster.h"
 #include "System/MonsterManager.h"
 
+DEFINE_LOG_CATEGORY_STATIC(LogARPG_Spawn, Log, All);
+
+namespace
+{
+	bool ShouldLogRetry(const int32 Retry)
+	{
+		return Retry <= 3 || (Retry % 5) == 0;
+	}
+
+	bool ShouldLogThrottled(UObject* ContextObject, TMap<TWeakObjectPtr<UObject>, double>& LastLogTimes, const double IntervalSeconds)
+	{
+		if (!IsValid(ContextObject))
+		{
+			return false;
+		}
+
+		const UWorld* World = ContextObject->GetWorld();
+		if (!IsValid(World))
+		{
+			return true;
+		}
+
+		const double Now = World->GetTimeSeconds();
+		double& LastLogTime = LastLogTimes.FindOrAdd(ContextObject);
+		if ((Now - LastLogTime) < IntervalSeconds)
+		{
+			return false;
+		}
+
+		LastLogTime = Now;
+		return true;
+	}
+}
+
 void UMonsterSpawnSubSystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -32,11 +66,15 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
     if (!NavSys)
     {
         const int32 Retry = GetAndIncrementRetry(GroupID);
-        UE_LOG(LogTemp, Verbose, TEXT("[Spawn] NavSys null. Retry=%d Group=%s"), Retry, *GroupID.ToString());
+        if (ShouldLogRetry(Retry))
+        {
+            UE_LOG(LogARPG_Spawn, Verbose, TEXT("[Spawn] NavSys null. Retry=%d Group=%s"), Retry, *GroupID.ToString());
+        }
         const float Delay = FMath::Min(0.5f + Retry * 0.1f, 3.0f);
         if (UWorld* World = GetWorld())
         {
-            World->GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &UMonsterSpawnSubSystem::SpawnMonsterGroup, GroupID, CenterLocation, Radius));
+            FTimerHandle Handle;
+            World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateUObject(this, &UMonsterSpawnSubSystem::SpawnMonsterGroup, GroupID, CenterLocation, Radius), Delay, false);
         }
         return;
     }
@@ -46,7 +84,10 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
     if (bNavBuilding || DefaultNav == nullptr)
     {
         const int32 Retry = GetAndIncrementRetry(GroupID);
-        UE_LOG(LogTemp, Verbose, TEXT("[Spawn] Nav building or no default nav. Retry=%d Group=%s"), Retry, *GroupID.ToString());
+        if (ShouldLogRetry(Retry))
+        {
+            UE_LOG(LogARPG_Spawn, Verbose, TEXT("[Spawn] Nav building or no default nav. Retry=%d Group=%s"), Retry, *GroupID.ToString());
+        }
         const float Delay = FMath::Min(0.5f + Retry * 0.1f, 3.0f);
         if (UWorld* World = GetWorld())
         {
@@ -78,7 +119,10 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
         if (SpawnLocations.Num() == 0)
         {
             const int32 Retry = GetAndIncrementRetry(GroupID);
-            UE_LOG(LogTemp, Warning, TEXT("[Spawn] No valid locations. Retry=%d Group=%s Center=%s Radius=%.1f"), Retry, *GroupID.ToString(), *CenterLocation.ToString(), Radius);
+            if (ShouldLogRetry(Retry))
+            {
+                UE_LOG(LogARPG_Spawn, Warning, TEXT("[Spawn] No valid locations. Retry=%d Group=%s Center=%s Radius=%.1f"), Retry, *GroupID.ToString(), *CenterLocation.ToString(), Radius);
+            }
             const float Delay = FMath::Min(0.5f + Retry * 0.1f, 3.0f);
             if (UWorld* World = GetWorld())
             {
@@ -96,10 +140,10 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
 			const FVector& Location = SpawnLocations[i];
 			const FMonsterSpawnInfo& SpawnMonsters = SpawnInfo.MonsterSpawnInfos[i % SpawnInfo.MonsterSpawnInfos.Num()];
 
-			ADiaMonster* SpawnedMonster = MM->SpawnMonster(GetWorld(), SpawnMonsters.MonsterID, Location); // 임시 위치에 스폰
+            ADiaMonster* SpawnedMonster = MM->SpawnMonster(GetWorld(), SpawnMonsters.MonsterID, Location); // 임시 위치에 스폰
             if (!IsValid(SpawnedMonster))
             {
-                UE_LOG(LogTemp, Error, TEXT("[Spawn] Failed to spawn monster id=%s at %s"), *SpawnMonsters.MonsterID.ToString(), *Location.ToString());
+                UE_LOG(LogARPG_Spawn, Error, TEXT("[Spawn] Failed to spawn monster id=%s at %s"), *SpawnMonsters.MonsterID.ToString(), *Location.ToString());
             }
 		}
         ResetRetry(GroupID);
@@ -130,14 +174,22 @@ bool UMonsterSpawnSubSystem::FindValidSpawnLocation(const FVector& Center, float
 	UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
 	if (!NavSys)
 	{
-		UE_LOG(LogTemp, Verbose, TEXT("[Spawn] FindValidSpawnLocation: NavSys null"));
+		static TMap<TWeakObjectPtr<UObject>, double> LastLogTimes;
+		if (ShouldLogThrottled(this, LastLogTimes, 1.0))
+		{
+			UE_LOG(LogARPG_Spawn, Verbose, TEXT("[Spawn] FindValidSpawnLocation: NavSys null"));
+		}
 		return false;
 	}
 
 	ANavigationData* DefaultNav = NavSys->GetDefaultNavDataInstance(FNavigationSystem::DontCreate);
 	if (!DefaultNav)
 	{
-		UE_LOG(LogTemp, Verbose, TEXT("[Spawn] FindValidSpawnLocation: DefaultNav is null"));
+		static TMap<TWeakObjectPtr<UObject>, double> LastLogTimes;
+		if (ShouldLogThrottled(this, LastLogTimes, 1.0))
+		{
+			UE_LOG(LogARPG_Spawn, Verbose, TEXT("[Spawn] FindValidSpawnLocation: DefaultNav is null"));
+		}
 		return false;
 	}
 
@@ -169,14 +221,22 @@ bool UMonsterSpawnSubSystem::FindValidSpawnLocation(const FVector& Center, float
 				}
 			}
 		}
-		else
-		{
-			UE_LOG(LogTemp, Verbose, TEXT("[Spawn] FindValidSpawnLocation: ProjectPointToNavigation failed. Center=%s"), *Center.ToString());
+			else
+			{
+				static TMap<TWeakObjectPtr<UObject>, double> LastLogTimes;
+				if (ShouldLogThrottled(this, LastLogTimes, 1.0))
+				{
+					UE_LOG(LogARPG_Spawn, Verbose, TEXT("[Spawn] FindValidSpawnLocation: ProjectPointToNavigation failed. Center=%s"), *Center.ToString());
+				}
+			}
 		}
-	}
 
 	// 3) 최후 수단: 탐색 실패 로그
-	UE_LOG(LogTemp, Warning, TEXT("[Spawn] FindValidSpawnLocation: failed. Center=%s Radius=%.1f"), *Center.ToString(), Radius);
+	static TMap<TWeakObjectPtr<UObject>, double> LastLogTimes;
+	if (ShouldLogThrottled(this, LastLogTimes, 1.0))
+	{
+		UE_LOG(LogARPG_Spawn, Verbose, TEXT("[Spawn] FindValidSpawnLocation: failed. Center=%s Radius=%.1f"), *Center.ToString(), Radius);
+	}
 	return false;
 }
 
@@ -213,9 +273,9 @@ void UMonsterSpawnSubSystem::LoadMonsterSpawnGroupData()
         }
     }
 #ifdef UE_BUILD_DEBUG
-    else
-    {
-        UE_LOG(LogTemp, Warning, TEXT("UMonsterSpawnSubSystem: Failed to load item data table from path: %s"), *SpawnGroupDataPath);
-    }
+	else
+	{
+		UE_LOG(LogARPG_Spawn, Warning, TEXT("UMonsterSpawnSubSystem: Failed to load item data table from path: %s"), *SpawnGroupDataPath);
+	}
 #endif
 }
