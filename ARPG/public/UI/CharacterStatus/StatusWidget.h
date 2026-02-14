@@ -26,6 +26,9 @@ public:
 				
 	void OnUpdateStats(const FOnAttributeChangeData& Data);
 
+	/** 변경된 아이템을 표시하는 엔트리 위젯에만 갱신 요청 (ListView는 RequestRefresh 시 setter를 다시 호출하지 않음) */
+	void RefreshEntryForItem(UStatusItemObject* Item);
+
 protected:
 	// ASC 캐싱
 	UPROPERTY()

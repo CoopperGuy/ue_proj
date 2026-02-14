@@ -15,6 +15,8 @@
 	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
 	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
 
+DECLARE_LOG_CATEGORY_EXTERN(LogARPGAttribute, Log, All);
+
 
 UCLASS()
 class ARPG_API UDiaAttributeSet : public UAttributeSet
@@ -26,6 +28,8 @@ public:
 
 	virtual void PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue) override;
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
+	virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
+
 	void InitializeCharacterAttributes(FName CharacterID, int32 Level = 1);
 	void InitializeMonsterAttributes(const FMonsterInfo& MonsterInfo);
 	// Health Attributes

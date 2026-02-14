@@ -4,7 +4,9 @@
 #include "UI/CharacterStatus/StatusSet.h"
 
 #include "Components/ListView.h"
+#include "Components/ListViewBase.h"
 #include "Components/TextBlock.h"
+#include "Blueprint/IUserObjectListEntry.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
@@ -89,26 +91,39 @@ void UStatusWidget::OnUpdateStats(const FOnAttributeChangeData& Data)
 	if (!IsValid(CachedASC)) return;
 
 	FString AttributeName = Data.Attribute.GetName();
-	int32 FindPos = AttributeName.Find(TEXT("Max"));
-	if (FindPos != INDEX_NONE)
+	const bool bIsMaxAttribute = (AttributeName.Find(TEXT("Max")) != INDEX_NONE);
+	if (bIsMaxAttribute)
 	{
 		AttributeName.ReplaceInline(TEXT("Max"), TEXT(""));
 	}
 	AttributeName = FString::Printf(TEXT("AttributeSet.%s"), *AttributeName);
 	UStatusItemObject* FindStatusSet = StatusSetMap.FindRef(AttributeName);
-	if (IsValid(FindStatusSet))
+
+	UE_LOG(LogARPG_UI, Display, TEXT("%s : Old %f , New %f"), *AttributeName, Data.OldValue, Data.NewValue);
+
+	if (!IsValid(FindStatusSet)) return;
+
+	// MaxHealth/MaxMana 변경 시에는 StatusValue(현재값)를 건드리지 않음. Data.NewValue는 최대값이므로.
+	if (!bIsMaxAttribute)
 	{
 		FindStatusSet->StatusValue = FString::FromInt(FMath::RoundToInt(Data.NewValue));
-		if (FindStatusSet->bShowMaxValue)
+	}
+
+	if (FindStatusSet->bShowMaxValue)
+	{
+		if (bIsMaxAttribute)
 		{
-			//최대값도 업데이트
-			//HACK (임시로 그냥 박아놓음) AttributeSet에서 Tag로 가져오는 함수 작성해야함
+			FindStatusSet->StatusMaxValue = FString::FromInt(FMath::RoundToInt(Data.NewValue));
+		}
+		else
+		{
+			//HACK (임시) AttributeSet에서 Tag로 가져오는 함수 작성하면 제거
 			FGameplayAttribute MaxAttribute;
-			if (AttributeName == "AttributeSet.Health")
+			if (AttributeName == TEXT("AttributeSet.Health"))
 			{
 				MaxAttribute = UDiaAttributeSet::GetMaxHealthAttribute();
 			}
-			else if (AttributeName == "AttributeSet.Mana")
+			else if (AttributeName == TEXT("AttributeSet.Mana"))
 			{
 				MaxAttribute = UDiaAttributeSet::GetMaxManaAttribute();
 			}
@@ -119,6 +134,26 @@ void UStatusWidget::OnUpdateStats(const FOnAttributeChangeData& Data)
 				FindStatusSet->StatusMaxValue = FString::FromInt(FMath::RoundToInt(MaxValue));
 			}
 		}
-		StatusList->RequestRefresh();
+	}
+	RefreshEntryForItem(FindStatusSet);
+}
+
+void UStatusWidget::RefreshEntryForItem(UStatusItemObject* Item)
+{
+	if (!IsValid(StatusList) || !IsValid(Item)) return;
+
+	TArray<UUserWidget*> Entries = StatusList->GetDisplayedEntryWidgets();
+	for (UUserWidget* Entry : Entries)
+	{
+		if (!IsValid(Entry)) continue;
+		IUserObjectListEntry* ListEntry = Cast<IUserObjectListEntry>(Entry);
+		if (ListEntry && ListEntry->GetListItem() == Item)
+		{
+			if (UStatusSet* StatusSet = Cast<UStatusSet>(Entry))
+			{
+				StatusSet->UpdateStatusItemObject(Item);
+			}
+			break;
+		}
 	}
 }

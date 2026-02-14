@@ -6,6 +6,10 @@
 #include "AbilitySystemComponent.h"
 #include "DiaBaseCharacter.h"
 
+
+DEFINE_LOG_CATEGORY(LogARPGAttribute);
+
+
 TMap<FGameplayTag, FGameplayAttribute> UDiaAttributeSet::AttributeTagMap;
 
 UDiaAttributeSet::UDiaAttributeSet()
@@ -42,7 +46,8 @@ void UDiaAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 	else if (Attribute == GetExpAttribute())
 	{
 		NewValue = FMath::Min(NewValue, GetMaxExp());
-	}else if (Attribute == GetAttackPowerAttribute()
+	}
+	else if (Attribute == GetAttackPowerAttribute()
 		|| Attribute == GetManaAttribute()
 		|| Attribute == GetExpAttribute())
 	{
@@ -50,6 +55,7 @@ void UDiaAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 	}	
 }
 
+//이게 어떤 GE 때문에 일어났는지 알 수 있느 훅 
 void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
 {
 	Super::PostGameplayEffectExecute(Data);
@@ -108,6 +114,15 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 			TEXT("PostGameplayEffectExecute AttackPower: Delta=%f, NewValue=%f"),
 			DeltaValue, GetAttackPower());
 	}
+}
+
+void UDiaAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue)
+{
+	Super::PostAttributeChange(Attribute, OldValue, NewValue);
+	// 추가적인 후처리 로직이 필요한 경우 여기에 작성
+	UE_LOG(LogARPGAttribute, Warning,
+		TEXT("PostAttributeChange Attribute: %s, OldValue=%f, NewValue=%f"),
+		*Attribute.GetName(), OldValue, NewValue);
 }
 
 void UDiaAttributeSet::InitializeCharacterAttributes(FName CharacterID, int32 Level)
