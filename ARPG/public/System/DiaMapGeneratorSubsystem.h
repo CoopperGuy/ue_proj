@@ -7,6 +7,14 @@
 #include "Types/MapGenerate.h"
 #include "DiaMapGeneratorSubsystem.generated.h"
 
+UENUM(BlueprintType)
+enum class ETileType : uint8
+{
+	Floor,
+	Coridor,
+	Empty
+};
+
 USTRUCT(BlueprintType)
 struct FDiaRoomData
 {
@@ -21,6 +29,14 @@ struct FDiaRoomData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FIntPoint RoomPosition; // 맵 내에서의 위치 (X, Y)
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	ETileType TileType = ETileType::Empty;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	uint8 Directions = 0; // 비트 필드로 방향 정보 저장 (예: 1<<0: North, 1<<1: East, 1<<2: South, 1<<3: West)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 RotateDegree = 0; // 회전 각도 (0, 90, 180, 270) 그래서 int타입
 };
 
 class UDiaRoomType;
@@ -53,11 +69,11 @@ protected:
 	void LoadRoomData(const FName& RoomID);
 	bool CanPlaceRoom(const FDiaAdjacencyRule& Rule, int32 X, int32 Y) const;
 	EDiaDirection CanConnectRooms(const FDiaAdjacencyRule& SourceRule, const FDiaAdjacencyRule& DestRule) const;
-
+	bool CanConnectRooms(const FDiaRoomData& SourceRoom, const FDiaRoomData& DestRoom, const EDiaDirection Direction, int32& OutRotateDegree) const;
 
 	void BFSGenerateMap(FName MapID);
 	void CreateMapFromData();
-	void CraeteRoomActor(UDiaRoomType* RoomType, const FIntPoint& RoomPosition, float TileSize);
+	void CraeteRoomActor(UDiaRoomType* RoomType, const FIntPoint& RoomPosition, float RotateDegree, float TileSize);
 protected:
 	UPROPERTY()
 	TArray<FDiaAdjacencyRule> AdjacencyRules;

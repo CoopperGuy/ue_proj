@@ -152,7 +152,6 @@ EDiaDirection UDiaMapGeneratorSubsystem::CanConnectRooms(const FDiaAdjacencyRule
 
 	for(EDiaDirection SourceDir : SourceRule.Directions)
 	{
-
 		for(EDiaDirection DestDir : DestRule.Directions)
 		{
 			if(GetOppositeDirection(SourceDir) == DestDir)
@@ -163,6 +162,28 @@ EDiaDirection UDiaMapGeneratorSubsystem::CanConnectRooms(const FDiaAdjacencyRule
 	} 
 
 	return EDiaDirection::None;
+}
+
+//이건 그냥 bool값 넘겨도 되는데 일단 일관성 유지, 근데 몇 도 만큼 회전했는지는 반환 해야함.
+bool UDiaMapGeneratorSubsystem::CanConnectRooms(const FDiaRoomData& SourceRoom, const FDiaRoomData& DestRoom, const EDiaDirection Direction, int32& OutRotateDegree) const
+{
+	for (int32 i = 0; i < 360; i += 90)
+	{
+		uint8 DestDirection = DiaMapGenerator::RotateDirectionsDegree(i, DestRoom.Directions);
+		TArray<EDiaDirection> DestDirections = DiaMapGenerator::GetDirections(DestDirection);
+
+		for (const EDiaDirection& DestDir : DestDirections)
+		{
+			if (GetOppositeDirection(Direction) == DestDir)
+			{
+				OutRotateDegree = i;
+				return true;
+			}
+		}
+	}
+
+	OutRotateDegree = 0;
+	return false;
 }
 
 void UDiaMapGeneratorSubsystem::BFSGenerateMap(FName MapID)
@@ -180,6 +201,7 @@ void UDiaMapGeneratorSubsystem::BFSGenerateMap(FName MapID)
 	MainRoomData.RoomID = MainRoom.SourceRoomID;
 	MainRoomData.RoomSize = RoomType ? RoomType->RoomSize : FIntPoint(1, 1);
 	MainRoomData.RoomPosition = FIntPoint(MapWidth / 2, MapHeight / 2); // 중앙에 배치
+	MainRoomData.Directions = DiaMapGenerator::AllDirectionsBit;
 
 	RoomQueue.Enqueue(MainRoomData);
 	MapData[GetIndex(MainRoomData.RoomPosition.X, MainRoomData.RoomPosition.Y)] = MainRoomData;
@@ -191,43 +213,61 @@ void UDiaMapGeneratorSubsystem::BFSGenerateMap(FName MapID)
 		FindRoomCandidates(SelectRoom, Candidates);
 		int32 SelectIndex = GetIndex(MainRoomData.RoomPosition.X, MainRoomData.RoomPosition.Y);
 
-		for(const FDiaAdjacencyRule& Candidate : Candidates)
+		// Dir은 North, East, South, West 순서로 순회됨
+		for (const EDiaDirection& Dir : GetAllDirections())
 		{
-			EDiaDirection dir = CanConnectRooms(SelectRoom, Candidate);
-			if(dir != EDiaDirection::None)
+			//현재 MainRoom이 해당 방향으로 연결 가능한지 체크.
+			uint8 Direction = DiaMapGenerator::SetDirection(Dir);
+			if(MainRoomData.Directions & Direction)
 			{
-				int32 DirectionX = dir == EDiaDirection::East ? 1 : (dir == EDiaDirection::West ? -1 : 0);
-				int32 DirectionY = dir == EDiaDirection::North ? -1 : (dir == EDiaDirection::South ? 1 : 0);
-
-				int32 NextX = SelectIndex % MapWidth + DirectionX;
-				int32 NextY = SelectIndex / MapWidth + DirectionY;
-
-				if (CanPlaceRoom(Candidate, NextX, NextY))
+				for (const FDiaAdjacencyRule& Candidate : Candidates)
 				{
-					UDiaRoomType* NextRoomType = RoomDataCache.FindRef(Candidate.SourceRoomID);
-
-					FDiaRoomData NextRoomData;
-					NextRoomData.RoomID = Candidate.SourceRoomID;
-					NextRoomData.RoomSize = NextRoomType ? NextRoomType->RoomSize : FIntPoint(1, 1);
-					NextRoomData.RoomPosition = FIntPoint(NextX, NextY);
-					
-					//size 에러가 나기 때문에 로깅
-
-					UE_LOG(LogARPG_Map, Log, TEXT("Placing Room: %s at (%d, %d) with size (%d, %d)"),
-						*NextRoomData.RoomID.ToString(),
-						NextX, NextY,
-						NextRoomData.RoomSize.X, NextRoomData.RoomSize.Y);
-
-					MapData[GetIndex(NextX, NextY)] = NextRoomData;
-
-					if (NextRoomData.RoomID != TEXT("End"))
+					const UDiaRoomType* CandidateRoomType = RoomDataCache.FindRef(Candidate.SourceRoomID);
+					if (!CandidateRoomType)
 					{
-						RoomQueue.Enqueue(NextRoomData);
-						++CreatedRooms;
+						continue;
 					}
-					else
+
+					FDiaRoomData CandidateRoomData;
+					CandidateRoomData.RoomID = Candidate.SourceRoomID;
+					CandidateRoomData.RoomSize = CandidateRoomType->RoomSize;
+					CandidateRoomData.RoomPosition = MainRoomData.RoomPosition; // 임시
+					CandidateRoomData.Directions = DiaMapGenerator::MakeDirectionByArray(Candidate.Directions);
+
+					int32 RotateDegree = 0;
+					if (CanConnectRooms(MainRoomData, CandidateRoomData, Dir, RotateDegree))
 					{
-						return;
+						int32 DirectionX = Dir == EDiaDirection::East ? 1 : (Dir == EDiaDirection::West ? -1 : 0);
+						int32 DirectionY = Dir == EDiaDirection::North ? -1 : (Dir == EDiaDirection::South ? 1 : 0);
+
+						int32 NextX = SelectIndex % MapWidth + DirectionX;
+						int32 NextY = SelectIndex / MapWidth + DirectionY;
+
+						//돌아간 각도 및, 돌아간 방향으로 Direction 체크하고 업데이트
+						if (CanPlaceRoom(Candidate, NextX, NextY))
+						{
+							CandidateRoomData.RoomPosition = FIntPoint(NextX, NextY);
+							CandidateRoomData.RotateDegree = RotateDegree;
+							CandidateRoomData.Directions = DiaMapGenerator::RotateDirectionsDegree(RotateDegree, CandidateRoomData.Directions);
+
+							MapData[GetIndex(NextX, NextY)] = CandidateRoomData;
+
+							UE_LOG(LogARPG_Map, Log, TEXT("Placing Room: %s at (%d, %d) with size (%d, %d)"),
+								*CandidateRoomData.RoomID.ToString(),
+								NextX, NextY,
+								CandidateRoomData.RoomSize.X, CandidateRoomData.RoomSize.Y);
+
+							if (CandidateRoomData.RoomID != TEXT("End"))
+							{
+								RoomQueue.Enqueue(CandidateRoomData);
+								++CreatedRooms;
+							}
+							else
+							{
+								return;
+							}
+
+						}
 					}
 				}
 			}
@@ -251,25 +291,25 @@ void UDiaMapGeneratorSubsystem::CreateMapFromData()
 		if(RoomData.RoomID != NAME_None)
 		{
 			UDiaRoomType* RoomType = RoomDataCache.FindRef(RoomData.RoomID);
-			UE_LOG(LogARPG_Map, Log, TEXT("RoomType for %s is %s"), *RoomData.RoomID.ToString(), RoomType ? *RoomType->GetName() : TEXT("nullptr"));
 			if (RoomType)
 			{
-				CraeteRoomActor(RoomType, RoomData.RoomPosition, TileSize);
+				CraeteRoomActor(RoomType, RoomData.RoomPosition, RoomData.RotateDegree, TileSize);
 			}
 		}
 	}
 }
 
-void UDiaMapGeneratorSubsystem::CraeteRoomActor(UDiaRoomType* RoomType, const FIntPoint& RoomPosition, float TileSize)
+void UDiaMapGeneratorSubsystem::CraeteRoomActor(UDiaRoomType* RoomType, const FIntPoint& RoomPosition, float RotateDegree, float TileSize)
 {
 	UClass* RoomCls = RoomType->Roomclass.LoadSynchronous();
-	UE_LOG(LogARPG_Map, Log, TEXT("Loaded Room Class for %s: %s"), *RoomType->GetName(), RoomCls ? *RoomCls->GetName() : TEXT("nullptr"));
 	if (RoomCls)
 	{
 		FVector SpawnLocation = FVector(RoomPosition.X * TileSize, RoomPosition.Y * TileSize, 0.f);
+		FRotator SpawnRotation = FRotator(0.f, RotateDegree, 0.f);
+
 		FActorSpawnParameters SpawnParams;
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		GetWorld()->SpawnActor<AActor>(RoomCls, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
+		GetWorld()->SpawnActor<AActor>(RoomCls, SpawnLocation, SpawnRotation, SpawnParams);
 		UE_LOG(LogARPG_Map, Log, TEXT("Spawned Room Actor: %s at location (%f, %f)"), *RoomCls->GetName(), SpawnLocation.X, SpawnLocation.Y);
 	}
 }
@@ -291,21 +331,21 @@ void UDiaMapGeneratorSubsystem::FindRoomCandidates(const FDiaAdjacencyRule& Rule
 	OutCandidates.Reset();
 
 	float TotalWeight = 0.f;
-	for (const auto& Pair : Rule.CandidateWeights)
+	for (const FRoomWeight& Entry : Rule.CandidateWeights)
 	{
-		TotalWeight += Pair.Value;
+		TotalWeight += Entry.Weight;
 	}
 	if (TotalWeight <= 0.f) return;
 
 	float RandomValue = FMath::FRandRange(0.f, TotalWeight);
 	float Acc = 0.f;
 	FName ChosenID = NAME_None;
-	for (const auto& Pair : Rule.CandidateWeights)
+	for (const FRoomWeight& Entry : Rule.CandidateWeights)
 	{
-		Acc += Pair.Value;
+		Acc += Entry.Weight;
 		if (RandomValue <= Acc)
 		{
-			ChosenID = Pair.Key;
+			ChosenID = Entry.RoomID;
 			break;
 		}
 	}
