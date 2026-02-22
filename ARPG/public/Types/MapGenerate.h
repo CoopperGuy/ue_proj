@@ -14,6 +14,15 @@ enum class EDiaDirection : uint8
 	None
 };
 
+UENUM(BlueprintType)
+enum class ETileType : uint8
+{
+	Floor,
+	Corridor,
+	Empty
+};
+
+
 // 대응 방향 반환: North↔South, East↔West
 inline EDiaDirection GetOppositeDirection(EDiaDirection Direction)
 {
@@ -55,14 +64,16 @@ struct FDiaAdjacencyRule : public FTableRowBase
 	TArray<EDiaDirection> Directions;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FRoomWeight> CandidateWeights;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	ETileType TileType = ETileType::Empty;
 };
 
 namespace DiaMapGenerator
 {
-	constexpr uint8 NorthBit = 1 << 0; // 0001
-	constexpr uint8 EastBit = 1 << 1;  // 0010
-	constexpr uint8 SouthBit = 1 << 2; // 0100
-	constexpr uint8 WestBit = 1 << 3;  // 1000
+	constexpr uint8 NorthBit = 1 << 3; // 1000
+	constexpr uint8 EastBit = 1 << 2;  // 0100
+	constexpr uint8 SouthBit = 1 << 1; // 0010
+	constexpr uint8 WestBit = 1 << 0;  // 0001
 	constexpr uint8 AllDirectionsBit = NorthBit | EastBit | SouthBit | WestBit; // 1111
 
 	inline uint8 SetDirection(EDiaDirection Direction)

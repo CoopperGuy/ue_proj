@@ -7,14 +7,6 @@
 #include "Types/MapGenerate.h"
 #include "DiaMapGeneratorSubsystem.generated.h"
 
-UENUM(BlueprintType)
-enum class ETileType : uint8
-{
-	Floor,
-	Coridor,
-	Empty
-};
-
 USTRUCT(BlueprintType)
 struct FDiaRoomData
 {
@@ -74,6 +66,10 @@ protected:
 	void BFSGenerateMap(FName MapID);
 	void CreateMapFromData();
 	void CraeteRoomActor(UDiaRoomType* RoomType, const FIntPoint& RoomPosition, float RotateDegree, float TileSize);
+	void CheckConnectedPointCount(int32 X, int32 Y, uint8& OutDirections, FDiaRoomData& RoomData) const;
+
+	void CalcuateCorridorType(uint8 Directions, int32& OutRotateDegree, FName& OutRoomID) const;
+	void CalcuateCorridorDegree(uint8 SourceDirections, uint8 DestDirections, int32& OutRotateDegree) const;
 protected:
 	UPROPERTY()
 	TArray<FDiaAdjacencyRule> AdjacencyRules;

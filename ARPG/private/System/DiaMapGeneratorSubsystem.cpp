@@ -233,6 +233,7 @@ void UDiaMapGeneratorSubsystem::BFSGenerateMap(FName MapID)
 					CandidateRoomData.RoomSize = CandidateRoomType->RoomSize;
 					CandidateRoomData.RoomPosition = MainRoomData.RoomPosition; // 임시
 					CandidateRoomData.Directions = DiaMapGenerator::MakeDirectionByArray(Candidate.Directions);
+					CandidateRoomData.TileType = Candidate.TileType;
 
 					int32 RotateDegree = 0;
 					if (CanConnectRooms(MainRoomData, CandidateRoomData, Dir, RotateDegree))
@@ -286,10 +287,19 @@ void UDiaMapGeneratorSubsystem::BFSGenerateMap(FName MapID)
 void UDiaMapGeneratorSubsystem::CreateMapFromData()
 {
 	const float TileSize = 1000.f;
-	for(const FDiaRoomData& RoomData : MapData)
+	for(FDiaRoomData& RoomData : MapData)
 	{
 		if(RoomData.RoomID != NAME_None)
 		{
+			//복도의 경우에는 맵이 완성된 후에 더 체크한다.
+			if(RoomData.TileType == ETileType::Corridor)
+			{
+				RoomData.RoomID = TEXT("None");
+				uint8 Directions = 0;
+				CheckConnectedPointCount(RoomData.RoomPosition.X, RoomData.RoomPosition.Y, Directions, RoomData);
+				RoomData.Directions = Directions;
+			}
+
 			UDiaRoomType* RoomType = RoomDataCache.FindRef(RoomData.RoomID);
 			if (RoomType)
 			{
@@ -311,6 +321,84 @@ void UDiaMapGeneratorSubsystem::CraeteRoomActor(UDiaRoomType* RoomType, const FI
 		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		GetWorld()->SpawnActor<AActor>(RoomCls, SpawnLocation, SpawnRotation, SpawnParams);
 		UE_LOG(LogARPG_Map, Log, TEXT("Spawned Room Actor: %s at location (%f, %f)"), *RoomCls->GetName(), SpawnLocation.X, SpawnLocation.Y);
+	}
+}
+
+void UDiaMapGeneratorSubsystem::CheckConnectedPointCount(int32 X, int32 Y, uint8& OutDirections, FDiaRoomData& RoomData) const
+{
+	for(const EDiaDirection& Dir : GetAllDirections())
+	{
+		int32 DirectionX = Dir == EDiaDirection::East ? 1 : (Dir == EDiaDirection::West ? -1 : 0);
+		int32 DirectionY = Dir == EDiaDirection::North ? -1 : (Dir == EDiaDirection::South ? 1 : 0);
+
+		int32 NextX = X + DirectionX;
+		int32 NextY = Y + DirectionY;
+
+		if(NextX >= 0 && NextX < MapWidth && NextY >= 0 && NextY < MapHeight)
+		{
+			int32 Index = GetIndex(NextX, NextY);
+			if(MapData[GetIndex(NextX, NextY)].RoomID != NAME_None)
+			{
+				TArray<EDiaDirection> DestDirections = DiaMapGenerator::GetDirections(MapData[Index].Directions);
+				for (const EDiaDirection& DestDir : DestDirections)
+				{
+					if (GetOppositeDirection(Dir) == DestDir)
+					{
+						OutDirections |= DiaMapGenerator::SetDirection(Dir);
+					}
+				}
+			}
+		}
+	}
+
+	CalcuateCorridorType(OutDirections, RoomData.RotateDegree, RoomData.RoomID);
+}
+
+void UDiaMapGeneratorSubsystem::CalcuateCorridorType(uint8 Directions, int32& OutRotateDegree, FName& OutRoomID) const
+{
+	const TArray<EDiaDirection>& EDirections = DiaMapGenerator::GetDirections(Directions);
+	const int32 Count = EDirections.Num();
+	switch (Count)
+	{
+	case 1:
+		OutRoomID = TEXT("None");
+		break;
+	case 2:
+	{
+		// 직선(ㅡ): E|W = 0b1010. ㄴ(N|E) = 0b0011. 반대 방향 쌍이면 직선.
+		const bool bStraight = (GetOppositeDirection(EDirections[0]) == EDirections[1]);
+		const uint8 DefaultShapeBit = bStraight ? static_cast<uint8>(0b0101) : static_cast<uint8>(0b1001);
+		OutRoomID = bStraight ? TEXT("StraightCorridor") : TEXT("CornerCorridor");
+		CalcuateCorridorDegree(DefaultShapeBit, Directions, OutRotateDegree);
+	}
+		break;
+	case 3:
+	{
+		//T자 return;
+		//여긴 회전 각도 중요함.
+		const uint8 DefaultShapeBit = 0b1101; // North, East, West 연결된 T자 모양
+		OutRoomID = TEXT("TCorridor");
+		CalcuateCorridorDegree(DefaultShapeBit, Directions, OutRotateDegree);
+	}
+		break;
+	case 4:
+		//Cross모양 return;
+		OutRotateDegree = 0;
+		OutRoomID = TEXT("CrossCorridor");
+		break;
+	}
+}
+
+void UDiaMapGeneratorSubsystem::CalcuateCorridorDegree(uint8 SourceDirections, uint8 DestDirections, int32& OutRotateDegree) const
+{
+	for(int32 i = 0; i < 360; i += 90)
+	{
+		uint8 RotatedSource = DiaMapGenerator::RotateDirectionsDegree(i, SourceDirections);
+		if(RotatedSource == DestDirections)
+		{
+			OutRotateDegree = i;
+			return;
+		}
 	}
 }
 
