@@ -365,7 +365,7 @@ void UDiaMapGeneratorSubsystem::CalcuateCorridorType(uint8 Directions, int32& Ou
 		break;
 	case 2:
 	{
-		// 직선(ㅡ): E|W = 0b1010. ㄴ(N|E) = 0b0011. 반대 방향 쌍이면 직선.
+		// 직선(ㅡ): E|W = 0b0101. ㄴ(뒤집은거)(W|N) = 0b1001. 반대 방향 쌍이면 직선.
 		const bool bStraight = (GetOppositeDirection(EDirections[0]) == EDirections[1]);
 		const uint8 DefaultShapeBit = bStraight ? static_cast<uint8>(0b0101) : static_cast<uint8>(0b1001);
 		OutRoomID = bStraight ? TEXT("StraightCorridor") : TEXT("CornerCorridor");
