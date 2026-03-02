@@ -123,6 +123,26 @@ void UMapInfoSubsystem::CreateMapSpawnData()
 	UE_LOG(LogTemp, Log, TEXT("[MapInfoSubsystem] CreateMapSpawnData 종료"));
 }
 
+FName UMapInfoSubsystem::GetCurrentMapID() const
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return FName();
+	}
+
+	FString CleanMapName = UGameplayStatics::GetCurrentLevelName(World);
+	FName MapName = FName(*CleanMapName);
+
+	const FMapInfoTable* MapInfo = MapInfoCache.Find(MapName);
+	if (MapInfo)
+	{
+		return MapInfo->MapID;
+	}
+
+	return FName();
+}
+
 void UMapInfoSubsystem::LoadMapInfo()
 {
 	UE_LOG(LogTemp, Log, TEXT("[MapInfoSubsystem] LoadMapInfo 시작 - 데이터 테이블 경로: %s"), *MapInfoDataTablePath);

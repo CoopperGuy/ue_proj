@@ -21,6 +21,7 @@ public:
 	virtual void Deinitialize() override;
 	
 	void CreateMapSpawnData();
+	FName GetCurrentMapID() const;
 private:
 	// 맵 정보 로드
 	void LoadMapInfo();

@@ -9,10 +9,19 @@
 #include "Misc/FileHelper.h"
 #include "HAL/PlatformFilemanager.h"
 
+#include "Map/DiaRoomBase.h"
+
+#include "System/MonsterSpawnSubSystem.h"
+#include "System/MapInfoSubsystem.h"
+
 DEFINE_LOG_CATEGORY_STATIC(LogARPG_Map, Log, All);
 
 void UDiaMapGeneratorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
+	//여기서 MonsterSpawnSubSystem을 먼저 초기화한다.
+	//여기서 각 Room에 Spawn될 몬스터 그룹 정보를 로드할 수 있도록 하기 위해서.
+	Collection.InitializeDependency<UMonsterSpawnSubSystem>();
+
 	Super::Initialize(Collection);
 
 	MapData.SetNum(MapWidth * MapHeight);
@@ -275,8 +284,10 @@ void UDiaMapGeneratorSubsystem::BFSGenerateMap(FName MapID)
 		}
 
 		//맵의 일정 비율 이상이 생성되면 종료 (무한 루프 방지)
+		//end로 고정한다
 		if (CreatedRooms >= MapSize * 0.6)
 		{
+			MainRoomData.RoomID = TEXT("End");
 			break;
 		}
 	}
@@ -286,7 +297,18 @@ void UDiaMapGeneratorSubsystem::BFSGenerateMap(FName MapID)
 
 void UDiaMapGeneratorSubsystem::CreateMapFromData()
 {
-	const float TileSize = 1000.f;
+	using namespace DiaMapConstants;
+
+	const UMonsterSpawnSubSystem* MonsterSpawnSubSystem = GetWorld()->GetSubsystem<UMonsterSpawnSubSystem>();
+	const UMapInfoSubsystem* MapInfoSubsystem = GetWorld()->GetGameInstance() ? GetWorld()->GetGameInstance()->GetSubsystem<UMapInfoSubsystem>() : nullptr;
+	if (!MonsterSpawnSubSystem || !MapInfoSubsystem)
+	{
+		UE_LOG(LogARPG_Map, Warning, TEXT("UDiaMapGeneratorSubsystem: Failed to get UMonsterSpawnSubSystem"));
+		return;
+	}
+
+	FName MapID = MapInfoSubsystem->GetCurrentMapID();
+
 	for(FDiaRoomData& RoomData : MapData)
 	{
 		if(RoomData.RoomID != NAME_None)
@@ -303,25 +325,51 @@ void UDiaMapGeneratorSubsystem::CreateMapFromData()
 			UDiaRoomType* RoomType = RoomDataCache.FindRef(RoomData.RoomID);
 			if (RoomType)
 			{
-				CraeteRoomActor(RoomType, RoomData.RoomPosition, RoomData.RotateDegree, TileSize);
+				ADiaRoomBase* RoomActor = CraeteRoomActor(RoomType, RoomData.RoomPosition, RoomData.RotateDegree, DiaMapConstants::TileSize);
+				if (RoomActor)
+				{
+					const TArray<FMapSpawnInfo>& SpawnInfo = MonsterSpawnSubSystem->GetSpawnInfosForMap(MapID);
+					UE_LOG(LogARPG_Map, Log, TEXT("Found %d spawn infos for MapID: %s"), SpawnInfo.Num(), *MapID.ToString());
+					if (SpawnInfo.Num() > 0)
+					{
+						const int32 RandSpawnInfoIndex = FMath::RandRange(0, SpawnInfo.Num() - 1);
+						RoomActor->SetMapSpawnInfo(SpawnInfo[RandSpawnInfoIndex].GroupName);
+						RoomActor->SetTileType(RoomData.TileType);
+						UE_LOG(LogARPG_Map, Log, TEXT("Created Room Actor: %s at (%d, %d) with RotateDegree: %d and Spawn Group: %s"),
+							*RoomData.RoomID.ToString(),
+							RoomData.RoomPosition.X, RoomData.RoomPosition.Y,
+							RoomData.RotateDegree,
+							*SpawnInfo[RandSpawnInfoIndex].GroupName.ToString());
+					}
+				}
 			}
 		}
 	}
 }
 
-void UDiaMapGeneratorSubsystem::CraeteRoomActor(UDiaRoomType* RoomType, const FIntPoint& RoomPosition, float RotateDegree, float TileSize)
+ADiaRoomBase* UDiaMapGeneratorSubsystem::CraeteRoomActor(UDiaRoomType* RoomType, const FIntPoint& RoomPosition, float RotateDegree, float TileSize)
 {
 	UClass* RoomCls = RoomType->Roomclass.LoadSynchronous();
-	if (RoomCls)
+	if (!RoomCls && !RoomCls->IsChildOf(ADiaRoomBase::StaticClass()))
 	{
-		FVector SpawnLocation = FVector(RoomPosition.X * TileSize, RoomPosition.Y * TileSize, 0.f);
-		FRotator SpawnRotation = FRotator(0.f, RotateDegree, 0.f);
-
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		GetWorld()->SpawnActor<AActor>(RoomCls, SpawnLocation, SpawnRotation, SpawnParams);
-		UE_LOG(LogARPG_Map, Log, TEXT("Spawned Room Actor: %s at location (%f, %f)"), *RoomCls->GetName(), SpawnLocation.X, SpawnLocation.Y);
+		UE_LOG(LogARPG_Map, Warning, TEXT("UDiaMapGeneratorSubsystem: Failed to load RoomClass for RoomID: %s"), *RoomType->RoomID.ToString());
+		return nullptr;
 	}
+
+	const FVector SpawnLocation(RoomPosition.X * TileSize, RoomPosition.Y * TileSize, 0.f);
+	const FRotator SpawnRotation(0.f, RotateDegree, 0.f);
+	const FTransform SpawnTransform(SpawnRotation, SpawnLocation);
+
+	ADiaRoomBase* RoomActor = GetWorld()->SpawnActorDeferred<ADiaRoomBase>(RoomCls, SpawnTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+	if (!RoomActor)
+	{
+		UE_LOG(LogARPG_Map, Warning, TEXT("UDiaMapGeneratorSubsystem: Failed to spawn Room Actor for RoomID: %s"), *RoomType->RoomID.ToString());
+		return nullptr;
+	}
+
+	RoomActor->FinishSpawning(SpawnTransform);
+
+	return RoomActor;
 }
 
 void UDiaMapGeneratorSubsystem::CheckConnectedPointCount(int32 X, int32 Y, uint8& OutDirections, FDiaRoomData& RoomData) const
@@ -358,6 +406,7 @@ void UDiaMapGeneratorSubsystem::CalcuateCorridorType(uint8 Directions, int32& Ou
 {
 	const TArray<EDiaDirection>& EDirections = DiaMapGenerator::GetDirections(Directions);
 	const int32 Count = EDirections.Num();
+	UE_LOG(LogARPG_Map, Log, TEXT("Calculating Corridor Type for Directions: %d (Count: %d)"), Directions, Count);
 	switch (Count)
 	{
 	case 1:
@@ -367,20 +416,20 @@ void UDiaMapGeneratorSubsystem::CalcuateCorridorType(uint8 Directions, int32& Ou
 	{
 		// 직선(ㅡ): E|W = 0b0101. ㄴ(뒤집은거)(W|N) = 0b1001. 반대 방향 쌍이면 직선.
 		const bool bStraight = (GetOppositeDirection(EDirections[0]) == EDirections[1]);
-		const uint8 DefaultShapeBit = bStraight ? static_cast<uint8>(0b0101) : static_cast<uint8>(0b1001);
+		const uint8 DefaultShapeBit = bStraight ? static_cast<uint8>(0b1010) : static_cast<uint8>(0b1001);
 		OutRoomID = bStraight ? TEXT("StraightCorridor") : TEXT("CornerCorridor");
 		CalcuateCorridorDegree(DefaultShapeBit, Directions, OutRotateDegree);
 	}
-		break;
+	break;
 	case 3:
 	{
-		//T자 return;
+		//T자 return;Spawned Room Acto
 		//여긴 회전 각도 중요함.
-		const uint8 DefaultShapeBit = 0b1101; // North, East, West 연결된 T자 모양
+		const uint8 DefaultShapeBit = 0b1011; // North, East, West 연결된 T자 모양
 		OutRoomID = TEXT("TCorridor");
 		CalcuateCorridorDegree(DefaultShapeBit, Directions, OutRotateDegree);
 	}
-		break;
+	break;
 	case 4:
 		//Cross모양 return;
 		OutRotateDegree = 0;

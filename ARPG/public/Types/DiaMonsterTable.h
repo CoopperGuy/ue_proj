@@ -85,7 +85,7 @@ struct FMapSpawnInfo : public FTableRowBase
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-		int32 MapID = 0;
+	FName MapID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName GroupName;

@@ -4,6 +4,13 @@
 #include "Engine/DataTable.h"
 #include "MapGenerate.generated.h"
 
+/** 맵/방 타일 크기 - 한 곳에서만 변경 */
+namespace DiaMapConstants
+{
+	constexpr float TileSize = 1000.f;
+	constexpr float HalfTileSize = TileSize * 0.5f;
+}
+
 UENUM(BlueprintType)
 enum class EDiaDirection : uint8
 {
@@ -70,10 +77,10 @@ struct FDiaAdjacencyRule : public FTableRowBase
 
 namespace DiaMapGenerator
 {
-	constexpr uint8 NorthBit = 1 << 3; // 1000
-	constexpr uint8 EastBit = 1 << 2;  // 0100
-	constexpr uint8 SouthBit = 1 << 1; // 0010
-	constexpr uint8 WestBit = 1 << 0;  // 0001
+	constexpr uint8 NorthBit = 1 << 0; // 0001
+	constexpr uint8 EastBit = 1 << 1;  // 0010
+	constexpr uint8 SouthBit = 1 << 2; // 0100
+	constexpr uint8 WestBit = 1 << 3;  // 1000
 	constexpr uint8 AllDirectionsBit = NorthBit | EastBit | SouthBit | WestBit; // 1111
 
 	inline uint8 SetDirection(EDiaDirection Direction)

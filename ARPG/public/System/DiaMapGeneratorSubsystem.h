@@ -7,6 +7,8 @@
 #include "Types/MapGenerate.h"
 #include "DiaMapGeneratorSubsystem.generated.h"
 
+class ADiaRoomBase;
+
 USTRUCT(BlueprintType)
 struct FDiaRoomData
 {
@@ -65,7 +67,7 @@ protected:
 
 	void BFSGenerateMap(FName MapID);
 	void CreateMapFromData();
-	void CraeteRoomActor(UDiaRoomType* RoomType, const FIntPoint& RoomPosition, float RotateDegree, float TileSize);
+	ADiaRoomBase* CraeteRoomActor(UDiaRoomType* RoomType, const FIntPoint& RoomPosition, float RotateDegree, float TileSize);
 	void CheckConnectedPointCount(int32 X, int32 Y, uint8& OutDirections, FDiaRoomData& RoomData) const;
 
 	void CalcuateCorridorType(uint8 Directions, int32& OutRotateDegree, FName& OutRoomID) const;

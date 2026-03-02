@@ -46,10 +46,10 @@ void ADungeonGameMode::BeginPlay()
 	if (!GI) return;
 	UMapInfoSubsystem* MapInfo = GI->GetSubsystem<UMapInfoSubsystem>();
 
-	if (IsValid(MapInfo))
-	{
-		MapInfo->CreateMapSpawnData();
-	}
+	//if (IsValid(MapInfo))
+	//{
+	//	MapInfo->CreateMapSpawnData();
+	//}
 }
 
 void ADungeonGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)

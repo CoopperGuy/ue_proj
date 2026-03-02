@@ -36,6 +36,7 @@ public:
     void StartWave(int32 WaveNumber);
     void EndCurrentWave();
     
+	TArray<FMapSpawnInfo> GetSpawnInfosForMap(FName MapID) const;
 private:
     // 네비메시에서 유효한 스폰 위치 찾기
     bool FindValidSpawnLocation(const FVector& Center, float Radius, FVector& OutLocation);

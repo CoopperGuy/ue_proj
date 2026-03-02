@@ -168,6 +168,21 @@ void UMonsterSpawnSubSystem::EndCurrentWave()
 {
 }
 
+TArray<FMapSpawnInfo> UMonsterSpawnSubSystem::GetSpawnInfosForMap(FName MapID) const
+{
+	TArray<FMapSpawnInfo> Result;
+
+	for(const auto& Pair : MapSpawnCache)
+	{
+		if (Pair.Value.MapID == MapID)
+		{
+			Result.Emplace(Pair.Value);
+		}
+	}
+
+	return Result;
+}
+
 bool UMonsterSpawnSubSystem::FindValidSpawnLocation(const FVector& Center, float Radius, FVector& OutLocation)
 {
 	FNavLocation NavLocation;
