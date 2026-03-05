@@ -66,10 +66,6 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
     if (!NavSys)
     {
         const int32 Retry = GetAndIncrementRetry(GroupID);
-        if (ShouldLogRetry(Retry))
-        {
-            UE_LOG(LogARPG_Spawn, Verbose, TEXT("[Spawn] NavSys null. Retry=%d Group=%s"), Retry, *GroupID.ToString());
-        }
         const float Delay = FMath::Min(0.5f + Retry * 0.1f, 3.0f);
         if (UWorld* World = GetWorld())
         {
@@ -84,10 +80,6 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
     if (bNavBuilding || DefaultNav == nullptr)
     {
         const int32 Retry = GetAndIncrementRetry(GroupID);
-        if (ShouldLogRetry(Retry))
-        {
-            UE_LOG(LogARPG_Spawn, Verbose, TEXT("[Spawn] Nav building or no default nav. Retry=%d Group=%s"), Retry, *GroupID.ToString());
-        }
         const float Delay = FMath::Min(0.5f + Retry * 0.1f, 3.0f);
         if (UWorld* World = GetWorld())
         {
@@ -119,10 +111,6 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
         if (SpawnLocations.Num() == 0)
         {
             const int32 Retry = GetAndIncrementRetry(GroupID);
-            if (ShouldLogRetry(Retry))
-            {
-                UE_LOG(LogARPG_Spawn, Warning, TEXT("[Spawn] No valid locations. Retry=%d Group=%s Center=%s Radius=%.1f"), Retry, *GroupID.ToString(), *CenterLocation.ToString(), Radius);
-            }
             const float Delay = FMath::Min(0.5f + Retry * 0.1f, 3.0f);
             if (UWorld* World = GetWorld())
             {
@@ -135,17 +123,22 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
 		// 몬스터 스폰 로직 추가
 		// 해당 몬스터를 랜덤한 위치에 차례대로 스폰
 		// 아직 비중에 따른 스폰이라던가 이런것은 미구현 (차후 구현 예정)
+		
+		TArray<ADiaMonster*> SpawnedMonsters;
         for (int32 i = 0; i < SpawnLocations.Num(); ++i)
 		{
 			const FVector& Location = SpawnLocations[i];
 			const FMonsterSpawnInfo& SpawnMonsters = SpawnInfo.MonsterSpawnInfos[i % SpawnInfo.MonsterSpawnInfos.Num()];
 
-            ADiaMonster* SpawnedMonster = MM->SpawnMonster(GetWorld(), SpawnMonsters.MonsterID, Location); // 임시 위치에 스폰
+            ADiaMonster* SpawnedMonster = MM->SpawnMonster(GetWorld(), SpawnMonsters.MonsterID, Location); 
             if (!IsValid(SpawnedMonster))
             {
                 UE_LOG(LogARPG_Spawn, Error, TEXT("[Spawn] Failed to spawn monster id=%s at %s"), *SpawnMonsters.MonsterID.ToString(), *Location.ToString());
             }
+			SpawnedMonsters.Add(SpawnedMonster);
 		}
+
+		OnMonsterGroupSpawned.ExecuteIfBound(SpawnedMonsters);
         ResetRetry(GroupID);
 	}
 }

@@ -11,6 +11,18 @@
 #include "MonsterManager.generated.h"
 
 class ADiaMonster;
+
+USTRUCT()
+struct FRoomSpawnInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FGuid RoomID;
+
+	UPROPERTY()
+	TArray<TObjectPtr<ADiaMonster>> SpawnedMonsters;
+};
 /**
 * 몬스터 데이터 관리 및 생성을 담당하는 서브시스템
 * 해당 스펙 이상의 기능을 부여하지 말아야 한다.
@@ -33,6 +45,9 @@ public:
 	const TMap<FName, FMonsterInfo>& GetMonsterCache() const { return MonsterCache; }
 	//정보 가져오기
 	const FMonsterInfo* GetMonsterInfo(FName MonsterID) const;
+
+	void SetSpawnedMonstersForRoom(const FGuid& RoomID, const TArray<ADiaMonster*>& SpawnedMonsters);
+	void ReportSpawnedMonsterDie(const FGuid& RoomID, ADiaMonster* DeadMonster);
 private:
 	UPROPERTY()
     UDataTable* MonDataTable;
@@ -42,4 +57,7 @@ private:
 
     UPROPERTY()
     TMap<FName, FMonsterInfo> MonsterCache;
+
+	UPROPERTY()
+	TArray<FRoomSpawnInfo> RoomSpawnInfos;
 };

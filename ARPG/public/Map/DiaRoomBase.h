@@ -8,8 +8,10 @@
 #include "Types/MapGenerate.h"
 #include "DiaRoomBase.generated.h"
 
+class ADiaMonster;
 class UBoxComponent;
 class USceneComponent;
+class UArrowComponent;
 class UChildActorComponent;
 
 /// <summary>
@@ -32,8 +34,11 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	void OnConstruction(const FTransform& Transform) override;
 public:	
 	virtual void Tick(float DeltaTime) override;
+
+	void InitRoom();
 
 	UFUNCTION()
 	void OnRoomEnterTriggerOverlap(UPrimitiveComponent* OverlappedComponent,
@@ -48,6 +53,7 @@ public:
 	void OnBattleStart();
 	void OnBattleEnd();
 
+	void RemoveRoomonster(ADiaMonster* Monster);
 protected:
 	UPROPERTY(EditAnywhere)
 	UChildActorComponent* PackedLevelChildActorComponent;
@@ -59,7 +65,7 @@ protected:
 	FName SpawnGroup;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
-	TArray<AActor*> SpawnedMonsters;
+	TArray<ADiaMonster*> SpawnedMonsters;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
 	bool bIsBattleActive;
@@ -68,14 +74,30 @@ protected:
 	bool bMonstersSpawned;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
-	TArray<AActor*> RoomDoors;
+	TSubclassOf<AActor> RoomDoorClass;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
-	TArray<FMonsterInfo> MonsterInfos;
+	TArray<UArrowComponent*> DoorSpawnPoints;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
+	TArray<AActor*> RoomDoors;
+
+	UPROPERTY()
+	int32 MaxMonsterCount = 0;
+
+	UPROPERTY()
+	uint8 DoorDirections = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
 	ETileType TileType;
+
+	UPROPERTY()
+	FGuid RoomGuid;
 public:
 	FORCEINLINE void SetMapSpawnInfo(const FName& _SpawnGroup) { SpawnGroup = _SpawnGroup; }
 	FORCEINLINE void SetTileType(ETileType _TileType) { TileType = _TileType; }
+	FORCEINLINE void SetRoomGuid(const FGuid& _RoomGuid) { RoomGuid = _RoomGuid; }
+	FORCEINLINE const FGuid& GetRoomGuid() const { return RoomGuid; }
+	FORCEINLINE void SetDoorDirections(uint8 _DoorDir) { DoorDirections = _DoorDir; }
+	FORCEINLINE uint8 GetDoorDirections() const { return DoorDirections; }
 };

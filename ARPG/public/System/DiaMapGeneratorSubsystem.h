@@ -67,7 +67,7 @@ protected:
 
 	void BFSGenerateMap(FName MapID);
 	void CreateMapFromData();
-	ADiaRoomBase* CraeteRoomActor(UDiaRoomType* RoomType, const FIntPoint& RoomPosition, float RotateDegree, float TileSize);
+	ADiaRoomBase* CraeteRoomActor(UDiaRoomType* RoomType, const FDiaRoomData& RoomData, float TileSize, FName SpawnGroupName);
 	void CheckConnectedPointCount(int32 X, int32 Y, uint8& OutDirections, FDiaRoomData& RoomData) const;
 
 	void CalcuateCorridorType(uint8 Directions, int32& OutRotateDegree, FName& OutRoomID) const;
@@ -79,6 +79,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 	TArray<FDiaRoomData> MapData;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
+	TMap<FGuid,TObjectPtr<ADiaRoomBase>> MapObjList;
+
 	int32 MapWidth = 5;
 	int32 MapHeight = 5;
 
@@ -88,4 +91,6 @@ protected:
 	UPROPERTY()
 	TMap<FName, UDiaRoomType*> RoomDataCache;
 
+public:
+	TObjectPtr<ADiaRoomBase> GetRoomActor(const FGuid& RoomGuid) const;
 };

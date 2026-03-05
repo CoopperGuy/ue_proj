@@ -111,8 +111,8 @@ void UDiaMapGeneratorSubsystem::GenerateMap(FName MapID)
 			break;
 		}
 
-		int32 DirectionX = dir == EDiaDirection::East ? 1 : (dir == EDiaDirection::West ? -1 : 0);
-		int32 DirectionY = dir == EDiaDirection::North ? -1 : (dir == EDiaDirection::South ? 1 : 0);
+		int32 DirectionX = dir == EDiaDirection::North ? 1 : (dir == EDiaDirection::South ? -1 : 0);
+		int32 DirectionY = dir == EDiaDirection::East ? 1 : (dir == EDiaDirection::West ? -1 : 0);
 
 		int32 NextX = StartIndex % MapWidth + DirectionX;
 		int32 NextY = StartIndex / MapWidth + DirectionY;
@@ -156,8 +156,8 @@ bool UDiaMapGeneratorSubsystem::CanPlaceRoom(const FDiaAdjacencyRule& Rule, int3
 //현재 room의 가능한 방향, 다음 위치가 룸이 놓일 수 있는지.
 EDiaDirection UDiaMapGeneratorSubsystem::CanConnectRooms(const FDiaAdjacencyRule& SourceRule, const FDiaAdjacencyRule& DestRule) const
 {
-	//int32 DirectionX = Dir == EDiaDirection::East ? 1 : (Dir == EDiaDirection::West ? -1 : 0);
-	//int32 DirectionY = Dir == EDiaDirection::North ? -1 : (Dir == EDiaDirection::South ? 1 : 0);
+	//int32 DirectionX = Dir == EDiaDirection::North ? 1 : (Dir == EDiaDirection::South ? -1 : 0);
+	//int32 DirectionY = Dir == EDiaDirection::East ? 1 : (Dir == EDiaDirection::West ? -1 : 0);
 
 	for(EDiaDirection SourceDir : SourceRule.Directions)
 	{
@@ -247,8 +247,8 @@ void UDiaMapGeneratorSubsystem::BFSGenerateMap(FName MapID)
 					int32 RotateDegree = 0;
 					if (CanConnectRooms(MainRoomData, CandidateRoomData, Dir, RotateDegree))
 					{
-						int32 DirectionX = Dir == EDiaDirection::East ? 1 : (Dir == EDiaDirection::West ? -1 : 0);
-						int32 DirectionY = Dir == EDiaDirection::North ? -1 : (Dir == EDiaDirection::South ? 1 : 0);
+						int32 DirectionX = Dir == EDiaDirection::North ? 1 : (Dir == EDiaDirection::South ? -1 : 0);
+						int32 DirectionY = Dir == EDiaDirection::East ? 1 : (Dir == EDiaDirection::West ? -1 : 0);
 
 						int32 NextX = SelectIndex % MapWidth + DirectionX;
 						int32 NextY = SelectIndex / MapWidth + DirectionY;
@@ -325,39 +325,37 @@ void UDiaMapGeneratorSubsystem::CreateMapFromData()
 			UDiaRoomType* RoomType = RoomDataCache.FindRef(RoomData.RoomID);
 			if (RoomType)
 			{
-				ADiaRoomBase* RoomActor = CraeteRoomActor(RoomType, RoomData.RoomPosition, RoomData.RotateDegree, DiaMapConstants::TileSize);
-				if (RoomActor)
+				FName SpawnGroupName = NAME_None;
+				const TArray<FMapSpawnInfo>& SpawnInfo = MonsterSpawnSubSystem->GetSpawnInfosForMap(MapID);
+				if (SpawnInfo.Num() > 0)
 				{
-					const TArray<FMapSpawnInfo>& SpawnInfo = MonsterSpawnSubSystem->GetSpawnInfosForMap(MapID);
-					UE_LOG(LogARPG_Map, Log, TEXT("Found %d spawn infos for MapID: %s"), SpawnInfo.Num(), *MapID.ToString());
-					if (SpawnInfo.Num() > 0)
-					{
-						const int32 RandSpawnInfoIndex = FMath::RandRange(0, SpawnInfo.Num() - 1);
-						RoomActor->SetMapSpawnInfo(SpawnInfo[RandSpawnInfoIndex].GroupName);
-						RoomActor->SetTileType(RoomData.TileType);
-						UE_LOG(LogARPG_Map, Log, TEXT("Created Room Actor: %s at (%d, %d) with RotateDegree: %d and Spawn Group: %s"),
-							*RoomData.RoomID.ToString(),
-							RoomData.RoomPosition.X, RoomData.RoomPosition.Y,
-							RoomData.RotateDegree,
-							*SpawnInfo[RandSpawnInfoIndex].GroupName.ToString());
-					}
+					const int32 RandSpawnInfoIndex = FMath::RandRange(0, SpawnInfo.Num() - 1);
+					SpawnGroupName = SpawnInfo[RandSpawnInfoIndex].GroupName;
+				}
+
+				ADiaRoomBase* RoomBase = CraeteRoomActor(RoomType, RoomData, DiaMapConstants::TileSize, SpawnGroupName);
+				if (RoomBase)
+				{
+					FGuid RoomGuid = FGuid::NewGuid();
+					RoomBase->SetRoomGuid(RoomGuid);
+					MapObjList.Add(RoomGuid, RoomBase);
 				}
 			}
 		}
 	}
 }
 
-ADiaRoomBase* UDiaMapGeneratorSubsystem::CraeteRoomActor(UDiaRoomType* RoomType, const FIntPoint& RoomPosition, float RotateDegree, float TileSize)
+ADiaRoomBase* UDiaMapGeneratorSubsystem::CraeteRoomActor(UDiaRoomType* RoomType, const FDiaRoomData& RoomData, float TileSize, FName SpawnGroupName)
 {
 	UClass* RoomCls = RoomType->Roomclass.LoadSynchronous();
-	if (!RoomCls && !RoomCls->IsChildOf(ADiaRoomBase::StaticClass()))
+	if (!RoomCls)
 	{
 		UE_LOG(LogARPG_Map, Warning, TEXT("UDiaMapGeneratorSubsystem: Failed to load RoomClass for RoomID: %s"), *RoomType->RoomID.ToString());
 		return nullptr;
 	}
 
-	const FVector SpawnLocation(RoomPosition.X * TileSize, RoomPosition.Y * TileSize, 0.f);
-	const FRotator SpawnRotation(0.f, RotateDegree, 0.f);
+	const FVector SpawnLocation(RoomData.RoomPosition.X * TileSize, RoomData.RoomPosition.Y * TileSize, 0.f);
+	const FRotator SpawnRotation(0.f, RoomData.RotateDegree, 0.f);
 	const FTransform SpawnTransform(SpawnRotation, SpawnLocation);
 
 	ADiaRoomBase* RoomActor = GetWorld()->SpawnActorDeferred<ADiaRoomBase>(RoomCls, SpawnTransform, nullptr, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
@@ -366,6 +364,20 @@ ADiaRoomBase* UDiaMapGeneratorSubsystem::CraeteRoomActor(UDiaRoomType* RoomType,
 		UE_LOG(LogARPG_Map, Warning, TEXT("UDiaMapGeneratorSubsystem: Failed to spawn Room Actor for RoomID: %s"), *RoomType->RoomID.ToString());
 		return nullptr;
 	}
+	 
+	if (SpawnGroupName != NAME_None)
+	{
+		RoomActor->SetMapSpawnInfo(SpawnGroupName);
+	}
+
+	if (RoomData.TileType == ETileType::Floor)
+	{
+		RoomActor->SetDoorDirections(RoomData.Directions);
+	}
+
+	RoomActor->SetTileType(RoomData.TileType);
+
+	RoomActor->InitRoom();
 
 	RoomActor->FinishSpawning(SpawnTransform);
 
@@ -376,8 +388,8 @@ void UDiaMapGeneratorSubsystem::CheckConnectedPointCount(int32 X, int32 Y, uint8
 {
 	for(const EDiaDirection& Dir : GetAllDirections())
 	{
-		int32 DirectionX = Dir == EDiaDirection::East ? 1 : (Dir == EDiaDirection::West ? -1 : 0);
-		int32 DirectionY = Dir == EDiaDirection::North ? -1 : (Dir == EDiaDirection::South ? 1 : 0);
+		int32 DirectionX = Dir == EDiaDirection::North ? 1 : (Dir == EDiaDirection::South ? -1 : 0);
+		int32 DirectionY = Dir == EDiaDirection::East ? 1 : (Dir == EDiaDirection::West ? -1 : 0);
 
 		int32 NextX = X + DirectionX;
 		int32 NextY = Y + DirectionY;
@@ -449,6 +461,15 @@ void UDiaMapGeneratorSubsystem::CalcuateCorridorDegree(uint8 SourceDirections, u
 			return;
 		}
 	}
+}
+
+TObjectPtr<ADiaRoomBase> UDiaMapGeneratorSubsystem::GetRoomActor(const FGuid& RoomGuid) const
+{
+	if (const TObjectPtr<ADiaRoomBase>* FoundActor = MapObjList.Find(RoomGuid))
+	{
+		return *FoundActor;
+	}
+	return nullptr;
 }
 
 FDiaAdjacencyRule UDiaMapGeneratorSubsystem::FindAdjacencyRule(const FName& RoomID) const

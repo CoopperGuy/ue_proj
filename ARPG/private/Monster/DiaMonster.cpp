@@ -28,6 +28,8 @@
 #include "GAS/DiaGameplayTags.h"
 #include "DiaComponent/DiaSkillManagerComponent.h"
 
+#include "System/MonsterManager.h"
+
 #include "UI/HUDWidget.h"
 
 ADiaMonster::ADiaMonster()
@@ -349,6 +351,12 @@ void ADiaMonster::Die(ADiaBaseCharacter* Causer)
 
 	Super::Die(Causer);
 
+	UGameInstance* GI = GetWorld()->GetGameInstance();
+	if (UMonsterManager* MM = GI->GetSubsystem<UMonsterManager>())
+	{
+		MM->ReportSpawnedMonsterDie(OwnerRoomGuid, this);
+		MM->DespawnMonster(this);
+	}
 }
 
 // SetGravity 메서드 추가

@@ -173,5 +173,4 @@ public:
 	UDiaAttributeSet* GetAttributeSet() const { return AttributeSet; }
 	bool GetIsDead() const { return bIsDead; }
 	UDiaSkillManagerComponent* GetSkillManagerComponent() const { return SkillManagerComponent; }
-
 };

@@ -116,7 +116,7 @@ namespace DiaMapGenerator
 	inline uint8 RotateDirectionsDegree(int32 Degree, uint8 Directions)
 	{
 		uint32 RotatedDirections = 0;
-		int32 RotateSteps = FMath::RoundToInt(Degree / 90.f);
+		int32 RotateSteps = ((FMath::RoundToInt(Degree / 90.f) % 4) + 4) % 4;
 		for (uint8 i = 0; i < 4; ++i)
 		{
 			if (Directions & (1 << i))
@@ -127,6 +127,19 @@ namespace DiaMapGenerator
 		}
 
 		return RotatedDirections;
+	}
+
+	inline uint32 CountSetBits(uint8 Value)
+	{
+		uint32 Count = 0;
+		for (uint8 i = 0; i < 4; ++i)
+		{
+			if (Value & (1 << i))
+			{
+				++Count;
+			}
+		}
+		return Count;
 	}
 
 }

@@ -7,6 +7,9 @@
 #include "Types/DiaMonsterTable.h"
 #include "MonsterSpawnSubSystem.generated.h"
 
+
+
+DECLARE_DELEGATE_OneParam(FOnMonsterGroupSpawned, const TArray<class ADiaMonster*>&);
 /**
  * 
  * 오직 스폰만을 관리하기 위해 만든 서브 시스템.
@@ -36,7 +39,7 @@ public:
     void StartWave(int32 WaveNumber);
     void EndCurrentWave();
     
-	TArray<FMapSpawnInfo> GetSpawnInfosForMap(FName MapID) const;
+
 private:
     // 네비메시에서 유효한 스폰 위치 찾기
     bool FindValidSpawnLocation(const FVector& Center, float Radius, FVector& OutLocation);
@@ -46,6 +49,7 @@ private:
 	
     void LoadMonsterSpawnGroupData();
 
+private:
     UPROPERTY()
     UDataTable* MapSpawnGroupData;
     
@@ -58,6 +62,8 @@ private:
     // 스폰 재시도 관리
     UPROPERTY()
     TMap<FName, int32> GroupRetryCount;
+
+
     int32 GetAndIncrementRetry(FName GroupID)
     {
         int32& Cnt = GroupRetryCount.FindOrAdd(GroupID);
@@ -69,4 +75,22 @@ private:
     {
         GroupRetryCount.Remove(GroupID);
     }
+
+public:
+    FORCEINLINE const FMapSpawnInfo& GetSpawnInfo(FName GroupID) const
+    {
+        const FMapSpawnInfo* Info = MapSpawnCache.Find(GroupID);
+        if (Info)
+        {
+            return *Info;
+        }
+        else
+        {
+            static const FMapSpawnInfo EmptyInfo;
+            return EmptyInfo;
+        }
+	}
+    FORCEINLINE TArray<FMapSpawnInfo> GetSpawnInfosForMap(FName MapID) const;
+
+    FOnMonsterGroupSpawned OnMonsterGroupSpawned;
 };

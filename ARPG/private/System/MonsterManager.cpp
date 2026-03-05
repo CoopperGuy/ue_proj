@@ -3,6 +3,10 @@
 
 #include "System/MonsterManager.h"
 #include "System/MonsterPoolSubsystem.h"
+#include "System/DiaMapGeneratorSubsystem.h"
+
+#include "Map/DiaRoomBase.h"
+
 #include "Monster/DiaMonster.h"
 
 void UMonsterManager::Initialize(FSubsystemCollectionBase& Collection)
@@ -72,4 +76,45 @@ const FMonsterInfo* UMonsterManager::GetMonsterInfo(FName MonsterID) const
 		return MonsterInfo;
 	}
     return nullptr;
+}
+
+void UMonsterManager::SetSpawnedMonstersForRoom(const FGuid& RoomID, const TArray<ADiaMonster*>& SpawnedMonsters)
+{
+	FRoomSpawnInfo NewSpawnInfo;
+	NewSpawnInfo.RoomID = RoomID;
+	NewSpawnInfo.SpawnedMonsters = SpawnedMonsters;
+
+	RoomSpawnInfos.Add(NewSpawnInfo);
+}
+
+void UMonsterManager::ReportSpawnedMonsterDie(const FGuid& RoomID, ADiaMonster* DeadMonster)
+{
+    UWorld* CurrentWorld = GetGameInstance()->GetWorld();
+
+    if (CurrentWorld)
+    {
+        UDiaMapGeneratorSubsystem* MyWorldSub = CurrentWorld->GetSubsystem<UDiaMapGeneratorSubsystem>();
+        if (MyWorldSub)
+        {
+            ADiaRoomBase* RoomBase = MyWorldSub->GetRoomActor(RoomID);
+            if (RoomBase)
+            {
+                RoomBase->RemoveRoomonster(DeadMonster);
+            }
+        }
+    }
+
+    for (FRoomSpawnInfo& SpawnInfo : RoomSpawnInfos)
+    {
+        if (SpawnInfo.RoomID == RoomID)
+        {
+            SpawnInfo.SpawnedMonsters.Remove(DeadMonster);
+
+            if (SpawnInfo.SpawnedMonsters.Num() == 0)
+            {
+				SpawnInfo.SpawnedMonsters.Empty();
+            }
+            break;
+        }
+	}
 }

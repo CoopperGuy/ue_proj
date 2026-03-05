@@ -74,8 +74,6 @@ protected:
     void SetMonsterCollisionSetup(const FMonsterInfo& MonsterInfo);
     
 	void AddToExperience(ADiaBaseCharacter* Causer);
-public:	
-
 protected:
     UPROPERTY()
     FName MonsterID;
@@ -93,4 +91,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Experience")
 	TSubclassOf<UGameplayEffect> experienceGameplayEffect;
 
+    UPROPERTY()
+    FGuid OwnerRoomGuid;
+
+public:
+    void SetOwningRoom(const FGuid& RoomGuid) { OwnerRoomGuid = RoomGuid; }
 };
