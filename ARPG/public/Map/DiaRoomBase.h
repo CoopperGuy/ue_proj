@@ -48,6 +48,13 @@ public:
 		bool bFromSweep,
 		const FHitResult& SweepResult
 	);
+
+	UFUNCTION()
+	void OnRoomEnterTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex
+	);
 	void CreateRoomMonsters();
 
 	void OnBattleStart();

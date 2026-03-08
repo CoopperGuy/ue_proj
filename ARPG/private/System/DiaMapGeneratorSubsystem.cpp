@@ -156,9 +156,6 @@ bool UDiaMapGeneratorSubsystem::CanPlaceRoom(const FDiaAdjacencyRule& Rule, int3
 //현재 room의 가능한 방향, 다음 위치가 룸이 놓일 수 있는지.
 EDiaDirection UDiaMapGeneratorSubsystem::CanConnectRooms(const FDiaAdjacencyRule& SourceRule, const FDiaAdjacencyRule& DestRule) const
 {
-	//int32 DirectionX = Dir == EDiaDirection::North ? 1 : (Dir == EDiaDirection::South ? -1 : 0);
-	//int32 DirectionY = Dir == EDiaDirection::East ? 1 : (Dir == EDiaDirection::West ? -1 : 0);
-
 	for(EDiaDirection SourceDir : SourceRule.Directions)
 	{
 		for(EDiaDirection DestDir : DestRule.Directions)
@@ -426,20 +423,26 @@ void UDiaMapGeneratorSubsystem::CalcuateCorridorType(uint8 Directions, int32& Ou
 		break;
 	case 2:
 	{
-		// 직선(ㅡ): E|W = 0b0101. ㄴ(뒤집은거)(W|N) = 0b1001. 반대 방향 쌍이면 직선.
+		// North=+X, East=+Y 좌표계 기준 DefaultShapeBit
+		// 직선: 메시가 ±X로 열림 → N|S = 0b0101
+		// ㄴ자: 메시가 서-북으로 열림 → W|N = 0b1001. 메시 기준 Yaw +90° 보정.
 		const bool bStraight = (GetOppositeDirection(EDirections[0]) == EDirections[1]);
-		const uint8 DefaultShapeBit = bStraight ? static_cast<uint8>(0b1010) : static_cast<uint8>(0b1001);
+		const uint8 DefaultShapeBit = bStraight ? static_cast<uint8>(0b0101) : static_cast<uint8>(0b1001);
 		OutRoomID = bStraight ? TEXT("StraightCorridor") : TEXT("CornerCorridor");
 		CalcuateCorridorDegree(DefaultShapeBit, Directions, OutRotateDegree);
+		if (!bStraight)
+		{
+			OutRotateDegree = (OutRotateDegree + 90) % 360;
+		}
 	}
 	break;
 	case 3:
 	{
-		//T자 return;Spawned Room Acto
-		//여긴 회전 각도 중요함.
-		const uint8 DefaultShapeBit = 0b1011; // North, East, West 연결된 T자 모양
+		// T자: 메시가 -X, +Y, -Y로 열림 → S|E|W = 0b1110. 메시 기준 Yaw -90° 보정.
+		const uint8 DefaultShapeBit = 0b1110;
 		OutRoomID = TEXT("TCorridor");
 		CalcuateCorridorDegree(DefaultShapeBit, Directions, OutRotateDegree);
+		OutRotateDegree = (OutRotateDegree - 90 + 360) % 360;
 	}
 	break;
 	case 4:

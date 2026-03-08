@@ -38,15 +38,16 @@ ADiaRoomBase::ADiaRoomBase()
 		UBoxComponent* Trigger = CreateDefaultSubobject<UBoxComponent>(*TriggerName);
 		Trigger->SetupAttachment(RootComponent);
 		Trigger->SetCollisionProfileName(TEXT("RoomEnterTrigger"));
-		Trigger->SetBoxExtent(FVector(200.f, 200.f, 100.f));
+		Trigger->SetBoxExtent(FVector(10.f, 200.f, 100.f));
 		Trigger->SetRelativeLocation(TriggerOffsets[i]);
+		Trigger->SetRelativeRotation(FRotator(0.f, i * 90.f, 0.f));
 		RoomEnterTriggers.Add(Trigger);
 
 		FString ArrowName = FString::Printf(TEXT("DoorSpawnPoint%d"), i);
 		UArrowComponent* Arrow = CreateDefaultSubobject<UArrowComponent>(*ArrowName);
 		Arrow->SetupAttachment(RootComponent);
 		Arrow->SetRelativeLocation(TriggerOffsets[i]);
-		Arrow->SetRelativeRotation(FRotator(0.f, (i + 1) * 90.f, 0.f));
+		Arrow->SetRelativeRotation(FRotator(0.f, i * 90.f, 0.f));
 		DoorSpawnPoints.Add(Arrow);
 	}
 }
@@ -60,7 +61,7 @@ void ADiaRoomBase::BeginPlay()
 	{
 		if (Trigger && TileType == ETileType::Floor)
 		{
-			Trigger->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnRoomEnterTriggerOverlap);
+			Trigger->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnRoomEnterTriggerEndOverlap);
 		}
 	}
 
@@ -68,6 +69,23 @@ void ADiaRoomBase::BeginPlay()
 
 void ADiaRoomBase::OnConstruction(const FTransform& Transform)
 {
+	// DoorSpawnPoint(Arrow)를 북·동·남·서 순으로 각 방향을 바라보게 설정 (스폰 시점에 확실히 적용)
+	for(int32 i = 0; i < RoomEnterTriggers.Num(); ++i)
+	{
+		if (UBoxComponent* Trigger = RoomEnterTriggers[i])
+		{
+			Trigger->SetRelativeRotation(FRotator(0.f, i * 90.f, 0.f));
+		}
+	}
+
+	for (int32 i = 0; i < DoorSpawnPoints.Num(); ++i)
+	{
+		if (UArrowComponent* Arrow = DoorSpawnPoints[i])
+		{
+			Arrow->SetRelativeRotation(FRotator(0.f, i * 90.f, 0.f));
+		}
+	}
+
 	if (!IsValid(RoomDoorClass))
 	{
 		return;
@@ -99,6 +117,8 @@ void ADiaRoomBase::OnConstruction(const FTransform& Transform)
 			if (Door)
 			{
 				RoomDoors.Add(Door);
+				Door->SetActorHiddenInGame(true);
+				Door->SetActorEnableCollision(false);
 			}
 		}
 		else
@@ -133,6 +153,74 @@ void ADiaRoomBase::InitRoom()
 
 void ADiaRoomBase::OnRoomEnterTriggerOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	//UMonsterSpawnSubSystem* SpawnSubsystem = GetWorld()->GetSubsystem<UMonsterSpawnSubSystem>();
+	//if (!IsValid(SpawnSubsystem))
+	//{
+	//	UE_LOG(LogARPG_Room, Warning, TEXT("ADiaRoomBase::OnRoomEnterTriggerOverlap: Failed to get UMonsterSpawnSubSystem"));
+	//	return;
+	//}
+
+	//SpawnSubsystem->OnMonsterGroupSpawned.BindLambda([this](const TArray<ADiaMonster*>& InSpawnedMonsters)
+	//{
+	//	this->SpawnedMonsters.Reset();
+	//	for (ADiaMonster* Monster : InSpawnedMonsters)
+	//	{
+	//		this->SpawnedMonsters.Add(Monster);
+	//	}
+
+	//	this->bMonstersSpawned = true;
+	//	this->bIsBattleActive = true;
+
+	//	UGameInstance* GI = GetWorld()->GetGameInstance();
+	//	if (!GI) return;
+
+	//	UMonsterManager* MM = GI->GetSubsystem<UMonsterManager>();
+	//	if (!MM) return;
+	//	MM->SetSpawnedMonstersForRoom(this->GetRoomGuid(), this->SpawnedMonsters);
+
+	//	for(ADiaMonster* Monster : InSpawnedMonsters)
+	//	{
+	//		if (Monster)
+	//		{
+	//			Monster->SetOwningRoom(this->GetRoomGuid());
+	//		}
+	//	}
+	//	UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase: Monster group %d monsters"), InSpawnedMonsters.Num());
+	//});
+
+	//for (UBoxComponent* Trigger : RoomEnterTriggers)
+	//{
+	//	if (Trigger)
+	//	{
+	//		Trigger->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//	}
+	//}
+	//SpawnSubsystem->SpawnMonsterGroup(SpawnGroup, GetActorLocation(), DiaMapConstants::HalfTileSize);
+
+	//OnBattleStart();
+}
+
+void ADiaRoomBase::OnRoomEnterTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	FVector PlayerLocation = OtherActor->GetActorLocation();
+	FVector DoorLocation = OverlappedComponent->GetComponentLocation();
+	FVector ToPlayer = PlayerLocation - DoorLocation;
+	ToPlayer.Z = 0.f; // 수평 방향으로만 계산
+	ToPlayer.Normalize();
+	//Trigger의 ForwardVector는 방의 바깥을 향하도록 설정되어 있으므로, ToPlayer와 ForwardVector의 내적이 음수이면 플레이어가 방 안으로 들어오는 방향입니다.
+	FVector TriggerForward = OverlappedComponent->GetForwardVector();
+	float DotProduct = FVector::DotProduct(ToPlayer, TriggerForward);
+	if (DotProduct > 0.f)
+	{
+		UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase::OnRoomEnterTriggerEndOverlap: Player is exiting the room, ignoring overlap event."));
+		return;
+	}
+	else
+	{
+		UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase::OnRoomEnterTriggerEndOverlap: Player is entering the room, processing overlap event."));
+	}
+
+
 	UMonsterSpawnSubSystem* SpawnSubsystem = GetWorld()->GetSubsystem<UMonsterSpawnSubSystem>();
 	if (!IsValid(SpawnSubsystem))
 	{
@@ -141,32 +229,32 @@ void ADiaRoomBase::OnRoomEnterTriggerOverlap(UPrimitiveComponent* OverlappedComp
 	}
 
 	SpawnSubsystem->OnMonsterGroupSpawned.BindLambda([this](const TArray<ADiaMonster*>& InSpawnedMonsters)
-	{
-		this->SpawnedMonsters.Reset();
-		for (ADiaMonster* Monster : InSpawnedMonsters)
 		{
-			this->SpawnedMonsters.Add(Monster);
-		}
-
-		this->bMonstersSpawned = true;
-		this->bIsBattleActive = true;
-
-		UGameInstance* GI = GetWorld()->GetGameInstance();
-		if (!GI) return;
-
-		UMonsterManager* MM = GI->GetSubsystem<UMonsterManager>();
-		if (!MM) return;
-		MM->SetSpawnedMonstersForRoom(this->GetRoomGuid(), this->SpawnedMonsters);
-
-		for(ADiaMonster* Monster : InSpawnedMonsters)
-		{
-			if (Monster)
+			this->SpawnedMonsters.Reset();
+			for (ADiaMonster* Monster : InSpawnedMonsters)
 			{
-				Monster->SetOwningRoom(this->GetRoomGuid());
+				this->SpawnedMonsters.Add(Monster);
 			}
-		}
-		UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase: Monster group %d monsters"), InSpawnedMonsters.Num());
-	});
+
+			this->bMonstersSpawned = true;
+			this->bIsBattleActive = true;
+
+			UGameInstance* GI = GetWorld()->GetGameInstance();
+			if (!GI) return;
+
+			UMonsterManager* MM = GI->GetSubsystem<UMonsterManager>();
+			if (!MM) return;
+			MM->SetSpawnedMonstersForRoom(this->GetRoomGuid(), this->SpawnedMonsters);
+
+			for (ADiaMonster* Monster : InSpawnedMonsters)
+			{
+				if (Monster)
+				{
+					Monster->SetOwningRoom(this->GetRoomGuid());
+				}
+			}
+			UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase: Monster group %d monsters"), InSpawnedMonsters.Num());
+		});
 
 	for (UBoxComponent* Trigger : RoomEnterTriggers)
 	{
@@ -192,12 +280,29 @@ void ADiaRoomBase::OnBattleStart()
 	//4. 플레이어에게 "Battle Start" UI 띄우기
 	//5. 기타 등등..
 
+	for (const auto& Door : RoomDoors)
+	{
+		if (Door)
+		{
+			Door->SetActorHiddenInGame(false);
+			Door->SetActorEnableCollision(true);
+		}
+	}
 
 	UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase::OnBattleEnd: Battle Started"));
 }
 
 void ADiaRoomBase::OnBattleEnd()
 {
+	for (const auto& Door : RoomDoors)
+	{
+		if (Door)
+		{
+			Door->SetActorHiddenInGame(true);
+			Door->SetActorEnableCollision(false);
+		}
+	}
+
 	//화면에 "Battle Clear" UI 띄우기, 플레이어가 방을 나갈 수 있도록 문 열기, 보상 등등..
 	UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase::OnBattleEnd: Battle ended, all monsters defeated!"));
 }
