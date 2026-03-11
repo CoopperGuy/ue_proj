@@ -8,6 +8,7 @@
 #include "MonsterSpawnSubSystem.generated.h"
 
 
+class ADiaMonster;
 
 DECLARE_DELEGATE_OneParam(FOnMonsterGroupSpawned, const TArray<class ADiaMonster*>&);
 /**
@@ -28,6 +29,7 @@ public:
 public:
     // 특정 영역에 몬스터 그룹 스폰
     void SpawnMonsterGroup(FName GroupID, FVector CenterLocation, float Radius);
+	void DeSpawnMonsterGroup(ADiaMonster* Monster);
 
     // 이벤트 트리거 기반 스폰
     void TriggerEventSpawn(FName EventID);

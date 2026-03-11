@@ -143,6 +143,14 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
 	}
 }
 
+void UMonsterSpawnSubSystem::DeSpawnMonsterGroup(ADiaMonster* Monster)
+{
+	UMonsterManager* MM = GetWorld()->GetGameInstance()->GetSubsystem<UMonsterManager>();
+	if (!MM) return;
+
+	MM->DespawnMonster(Monster);
+}
+
 // 몬스터 스폰 로직 추가
 //추가적인 상황에 대한 스폰 방식
 void UMonsterSpawnSubSystem::TriggerEventSpawn(FName EventID)

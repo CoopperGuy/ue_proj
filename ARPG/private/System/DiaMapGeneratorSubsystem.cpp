@@ -362,19 +362,12 @@ ADiaRoomBase* UDiaMapGeneratorSubsystem::CraeteRoomActor(UDiaRoomType* RoomType,
 		return nullptr;
 	}
 	 
-	if (SpawnGroupName != NAME_None)
-	{
-		RoomActor->SetMapSpawnInfo(SpawnGroupName);
-	}
-
 	if (RoomData.TileType == ETileType::Floor)
 	{
 		RoomActor->SetDoorDirections(RoomData.Directions);
 	}
 
 	RoomActor->SetTileType(RoomData.TileType);
-
-	RoomActor->InitRoom();
 
 	RoomActor->FinishSpawning(SpawnTransform);
 

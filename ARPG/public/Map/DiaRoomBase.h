@@ -38,8 +38,6 @@ protected:
 public:	
 	virtual void Tick(float DeltaTime) override;
 
-	void InitRoom();
-
 	UFUNCTION()
 	void OnRoomEnterTriggerOverlap(UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
@@ -57,10 +55,9 @@ public:
 	);
 	void CreateRoomMonsters();
 
-	void OnBattleStart();
-	void OnBattleEnd();
+	void OnBattleStart(const FGuid InGuid);
+	void OnBattleEnd(const FGuid InGuid);
 
-	void RemoveRoomonster(ADiaMonster* Monster);
 protected:
 	UPROPERTY(EditAnywhere)
 	UChildActorComponent* PackedLevelChildActorComponent;
@@ -68,18 +65,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
 	TArray<UBoxComponent*> RoomEnterTriggers;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
-	FName SpawnGroup;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
-	TArray<ADiaMonster*> SpawnedMonsters;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
-	bool bIsBattleActive;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
-	bool bMonstersSpawned;
-
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
 	TSubclassOf<AActor> RoomDoorClass;
 
@@ -90,9 +75,6 @@ protected:
 	TArray<AActor*> RoomDoors;
 
 	UPROPERTY()
-	int32 MaxMonsterCount = 0;
-
-	UPROPERTY()
 	uint8 DoorDirections = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
@@ -100,8 +82,9 @@ protected:
 
 	UPROPERTY()
 	FGuid RoomGuid;
+
+	bool isCleared = false;
 public:
-	FORCEINLINE void SetMapSpawnInfo(const FName& _SpawnGroup) { SpawnGroup = _SpawnGroup; }
 	FORCEINLINE void SetTileType(ETileType _TileType) { TileType = _TileType; }
 	FORCEINLINE void SetRoomGuid(const FGuid& _RoomGuid) { RoomGuid = _RoomGuid; }
 	FORCEINLINE const FGuid& GetRoomGuid() const { return RoomGuid; }

@@ -5,6 +5,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Monster/Controller/DiaAIController.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "DiaGameState.h"
 
 #include "GameMode/DungeonGameMode.h"
 #include "System/ItemSubsystem.h"
@@ -351,10 +352,16 @@ void ADiaMonster::Die(ADiaBaseCharacter* Causer)
 
 	Super::Die(Causer);
 
+
+	ADiaGameState* GameState = GetWorld()->GetGameState<ADiaGameState>();
+	if(IsValid(GameState))
+	{
+		GameState->ReportMonsterDeath(OwnerRoomGuid);
+	}
+	
 	UGameInstance* GI = GetWorld()->GetGameInstance();
 	if (UMonsterManager* MM = GI->GetSubsystem<UMonsterManager>())
 	{
-		MM->ReportSpawnedMonsterDie(OwnerRoomGuid, this);
 		MM->DespawnMonster(this);
 	}
 }

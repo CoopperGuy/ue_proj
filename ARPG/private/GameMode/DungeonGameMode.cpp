@@ -7,6 +7,8 @@
 
 #include "NavigationSystem.h"
 
+#include "DiaGameState.h"
+
 #include "Item/DiaItem.h"
 
 #include "UI/HUDWidget.h"
@@ -21,7 +23,8 @@ ADungeonGameMode::ADungeonGameMode()
 {
 	// 기본 클래스 설정
 	DefaultPawnClass = ADiaCharacter::StaticClass();
-	
+	GameStateClass = ADiaGameState::StaticClass();
+
 	// 기본 HUD 위젯 클래스 설정 (블루프린트에서 오버라이드 가능)
 	// Blueprint 생성 클래스는 이름 뒤에 _C 접미사가 붙음
 	static ConstructorHelpers::FClassFinder<UHUDWidget> HUDWidgetClassFinder(TEXT("/Game/UI/HUD/WBP_HUDWidget.WBP_HUDWidget_C"));
@@ -29,8 +32,8 @@ ADungeonGameMode::ADungeonGameMode()
 	{
 		HUDWidgetClass = HUDWidgetClassFinder.Class;
 	}
-	
-	
+
+
 }
 
 void ADungeonGameMode::BeginPlay()
@@ -65,9 +68,9 @@ void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& 
 		FVector SpawnLocation = SpawnActor->GetActorLocation();
 		SpawnLocation.Z += 100.f;
 
-		ADiaItem* SpawnedItem = GetWorld()->SpawnActorDeferred<ADiaItem>(ADiaItem::StaticClass(), 
+		ADiaItem* SpawnedItem = GetWorld()->SpawnActorDeferred<ADiaItem>(ADiaItem::StaticClass(),
 			 SpawnActor->GetTransform(), SpawnActor);
-		
+
 		UE_LOG(LogTemp, Warning, TEXT("Spawned Item at Location: %s"), *SpawnLocation.ToString());
 
 		if (SpawnedItem)

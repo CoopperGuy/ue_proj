@@ -11,8 +11,7 @@
 
 #include "Monster/DiaMonster.h"
 
-#include "System/MonsterSpawnSubSystem.h"
-
+#include "DiaGameState.h"
 //문은 blueprint에서 만들어놓고 붙인다.
 
 DEFINE_LOG_CATEGORY_STATIC(LogARPG_Room, Log, All);
@@ -63,6 +62,13 @@ void ADiaRoomBase::BeginPlay()
 		{
 			Trigger->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnRoomEnterTriggerEndOverlap);
 		}
+	}
+
+	ADiaGameState* DiaGameState = GetWorld() ? GetWorld()->GetGameState<ADiaGameState>() : nullptr;
+	if (IsValid(DiaGameState))
+	{
+		DiaGameState->OnRoomCleared.AddUObject(this, &ThisClass::OnBattleEnd);
+		DiaGameState->OnRoomBattleStart.AddUObject(this, &ThisClass::OnBattleStart);
 	}
 
 }
@@ -136,19 +142,6 @@ void ADiaRoomBase::OnConstruction(const FTransform& Transform)
 void ADiaRoomBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-}
-
-void ADiaRoomBase::InitRoom()
-{
-	UMonsterSpawnSubSystem* SpawnSubsystem = GetWorld()->GetSubsystem<UMonsterSpawnSubSystem>();
-	if (!IsValid(SpawnSubsystem))
-	{
-		UE_LOG(LogARPG_Room, Warning, TEXT("ADiaRoomBase::OnRoomEnterTriggerOverlap: Failed to get UMonsterSpawnSubSystem"));
-		return;
-	}
-	const FMapSpawnInfo& MapSpawnInfo = SpawnSubsystem->GetSpawnInfo(SpawnGroup);
-	MaxMonsterCount = MapSpawnInfo.MonsterSpawnInfos.Num();
 }
 
 void ADiaRoomBase::OnRoomEnterTriggerOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
@@ -202,6 +195,9 @@ void ADiaRoomBase::OnRoomEnterTriggerOverlap(UPrimitiveComponent* OverlappedComp
 
 void ADiaRoomBase::OnRoomEnterTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
+	if (isCleared)
+		return;
+
 	FVector PlayerLocation = OtherActor->GetActorLocation();
 	FVector DoorLocation = OverlappedComponent->GetComponentLocation();
 	FVector ToPlayer = PlayerLocation - DoorLocation;
@@ -221,59 +217,72 @@ void ADiaRoomBase::OnRoomEnterTriggerEndOverlap(UPrimitiveComponent* OverlappedC
 	}
 
 
-	UMonsterSpawnSubSystem* SpawnSubsystem = GetWorld()->GetSubsystem<UMonsterSpawnSubSystem>();
-	if (!IsValid(SpawnSubsystem))
+	ADiaGameState* DiaGameState = GetWorld()->GetGameState<ADiaGameState>();
+
+	if (DiaGameState)
 	{
-		UE_LOG(LogARPG_Room, Warning, TEXT("ADiaRoomBase::OnRoomEnterTriggerOverlap: Failed to get UMonsterSpawnSubSystem"));
-		return;
+		DiaGameState->SpawnRoomMonsters(this->GetRoomGuid(), GetActorLocation(), DiaMapConstants::HalfTileSize);
+	}
+	else
+	{
+		UE_LOG(LogARPG_Room, Warning, TEXT("ADiaRoomBase::OnRoomEnterTriggerEndOverlap: Failed to get ADiaGameState"));
 	}
 
-	SpawnSubsystem->OnMonsterGroupSpawned.BindLambda([this](const TArray<ADiaMonster*>& InSpawnedMonsters)
-		{
-			this->SpawnedMonsters.Reset();
-			for (ADiaMonster* Monster : InSpawnedMonsters)
-			{
-				this->SpawnedMonsters.Add(Monster);
-			}
+	//UMonsterSpawnSubSystem* SpawnSubsystem = GetWorld()->GetSubsystem<UMonsterSpawnSubSystem>();
+	//if (!IsValid(SpawnSubsystem))
+	//{
+	//	UE_LOG(LogARPG_Room, Warning, TEXT("ADiaRoomBase::OnRoomEnterTriggerOverlap: Failed to get UMonsterSpawnSubSystem"));
+	//	return;
+	//}
 
-			this->bMonstersSpawned = true;
-			this->bIsBattleActive = true;
+	//SpawnSubsystem->OnMonsterGroupSpawned.BindLambda([this](const TArray<ADiaMonster*>& InSpawnedMonsters)
+	//	{
+	//		this->SpawnedMonsters.Reset();
+	//		for (ADiaMonster* Monster : InSpawnedMonsters)
+	//		{
+	//			this->SpawnedMonsters.Add(Monster);
+	//		}
 
-			UGameInstance* GI = GetWorld()->GetGameInstance();
-			if (!GI) return;
+	//		this->bMonstersSpawned = true;
+	//		this->bIsBattleActive = true;
 
-			UMonsterManager* MM = GI->GetSubsystem<UMonsterManager>();
-			if (!MM) return;
-			MM->SetSpawnedMonstersForRoom(this->GetRoomGuid(), this->SpawnedMonsters);
+	//		UGameInstance* GI = GetWorld()->GetGameInstance();
+	//		if (!GI) return;
 
-			for (ADiaMonster* Monster : InSpawnedMonsters)
-			{
-				if (Monster)
-				{
-					Monster->SetOwningRoom(this->GetRoomGuid());
-				}
-			}
-			UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase: Monster group %d monsters"), InSpawnedMonsters.Num());
-		});
+	//		UMonsterManager* MM = GI->GetSubsystem<UMonsterManager>();
+	//		if (!MM) return;
+	//		MM->SetSpawnedMonstersForRoom(this->GetRoomGuid(), this->SpawnedMonsters);
 
-	for (UBoxComponent* Trigger : RoomEnterTriggers)
-	{
-		if (Trigger)
-		{
-			Trigger->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-		}
-	}
-	SpawnSubsystem->SpawnMonsterGroup(SpawnGroup, GetActorLocation(), DiaMapConstants::HalfTileSize);
+	//		for (ADiaMonster* Monster : InSpawnedMonsters)
+	//		{
+	//			if (Monster)
+	//			{
+	//				Monster->SetOwningRoom(this->GetRoomGuid());
+	//			}
+	//		}
+	//		UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase: Monster group %d monsters"), InSpawnedMonsters.Num());
+	//	});
 
-	OnBattleStart();
+	//for (UBoxComponent* Trigger : RoomEnterTriggers)
+	//{
+	//	if (Trigger)
+	//	{
+	//		Trigger->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//	}
+	//}
+	//SpawnSubsystem->SpawnMonsterGroup(SpawnGroup, GetActorLocation(), DiaMapConstants::HalfTileSize);
 }
 
 void ADiaRoomBase::CreateRoomMonsters()
 {
 }
 
-void ADiaRoomBase::OnBattleStart()
+void ADiaRoomBase::OnBattleStart(const FGuid InGuid)
 {
+	if(InGuid != GetRoomGuid())
+	{
+		return;
+	}
 	//1. 몬스터 스폰
 	//2. 문 닫기
 	//3. 이동 막기 트리거 활성화
@@ -292,8 +301,13 @@ void ADiaRoomBase::OnBattleStart()
 	UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase::OnBattleEnd: Battle Started"));
 }
 
-void ADiaRoomBase::OnBattleEnd()
+void ADiaRoomBase::OnBattleEnd(const FGuid InGuid)
 {
+	if (InGuid != GetRoomGuid())
+	{
+		return;
+	}
+
 	for (const auto& Door : RoomDoors)
 	{
 		if (Door)
@@ -303,19 +317,8 @@ void ADiaRoomBase::OnBattleEnd()
 		}
 	}
 
+	isCleared = true;
+
 	//화면에 "Battle Clear" UI 띄우기, 플레이어가 방을 나갈 수 있도록 문 열기, 보상 등등..
 	UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase::OnBattleEnd: Battle ended, all monsters defeated!"));
-}
-
-void ADiaRoomBase::RemoveRoomonster(ADiaMonster* Monster)
-{
-	if (!IsValid(Monster))
-		return;
-	SpawnedMonsters.Remove(Monster);
-	--MaxMonsterCount;
-	if(MaxMonsterCount <= 0)
-	{
-		OnBattleEnd();
-	}
-	UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase::Remove Roomonster: Monster removed, remaining count: %d"), MaxMonsterCount);
 }

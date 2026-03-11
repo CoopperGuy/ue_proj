@@ -13,10 +13,10 @@ UCLASS()
 class ARPG_API ADungeonGameMode : public AGameModeBase
 {
     GENERATED_BODY()
-    
+
 public:
     ADungeonGameMode();
-    
+
     virtual void BeginPlay() override;
     virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 
@@ -24,7 +24,7 @@ public:
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UHUDWidget> HUDWidgetClass;
-    
+
     UPROPERTY()
     UHUDWidget* HUDWidgetInstance;
 public:
