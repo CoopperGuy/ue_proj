@@ -11,8 +11,12 @@
 #include "UI/Skill/SkillPanelWidget.h"
 #include "UI/SkillQuickSlotWidget.h"
 #include "UI/Skill/SkillQuickSlot.h"
+#include "UI/Alret/ClearAlret.h"
+#include "UI/DiaCaution.h"
 
+#include "GAS/DiaGameplayTags.h"
 #include "GAS/DiaAttributeSet.h"
+
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemBlueprintLibrary.h"
 #include "Character/DiaCharacter.h"
@@ -20,9 +24,12 @@
 
 #include "Monster/DiaMonster.h"
 
-#include "UI/DiaCaution.h"
+#include "DiaGameState.h"
+
+#include "System/GameViewPort/DiaCustomGameViewPort.h"
 
 #include "Blueprint/WidgetTree.h"
+
 
 void UHUDWidget::NativeConstruct()
 {
@@ -75,6 +82,18 @@ void UHUDWidget::NativeConstruct()
 	if (IsValid(OwningController))
 	{
 		OwningController->GetOnTargetChanged().AddUObject(this, &UHUDWidget::UpdateTagetMonster);
+	}
+
+	ADiaGameState* DiaGameState = GetWorld() ? GetWorld()->GetGameState<ADiaGameState>() : nullptr;
+	if (IsValid(DiaGameState))
+	{
+		DiaGameState->OnRoomCleared.AddUObject(this, &UHUDWidget::ShowClearAlret);
+	}
+	
+	UDiaCustomGameViewPort* DiaCumstomGameViewPort = GetWorld() ? Cast<UDiaCustomGameViewPort>(GetWorld()->GetGameViewport()) : nullptr;
+	if (IsValid(DiaCumstomGameViewPort))
+	{
+		DiaPrimaryLayout = DiaCumstomGameViewPort->GetDiaPrimaryLayout();
 	}
 }
 
@@ -218,6 +237,22 @@ void UHUDWidget::RegisteSkillPannelWidget(const TArray<USkillObject*>& Skills)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("UHUDWidget::RegisteSkillPannelWidget - SkillPanelWidget is null"));
 	}
+}
+
+void UHUDWidget::ShowClearAlret(FGuid RoomGuid)
+{
+	UDiaPrimaryLayout* Layout = DiaPrimaryLayout;
+	if (!Layout)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UHUDWidget::ShowClearAlret - DiaPrimaryLayout is null"));
+		return;
+	}
+	if (!ClearAlertWidgetClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UHUDWidget::ShowClearAlret - ClearAlertWidgetClass is null"));
+		return;
+	}
+	UClearAlret* ClearAlretWidget = Layout->PushToHudLayer<UClearAlret>(FDiaGameplayTags::Get().UI_Layer_HUD, ClearAlertWidgetClass);
 }
 
 void UHUDWidget::SetMonsterHPVisibility(ESlateVisibility _Visibility)

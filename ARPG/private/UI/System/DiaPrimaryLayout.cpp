@@ -20,55 +20,6 @@ UCommonActivatableWidgetStack* UDiaPrimaryLayout::GetLayerByTag(const FGameplayT
 	return nullptr;
 }
 
-UUserWidget* UDiaPrimaryLayout::PushToHudLayer(const FGameplayTag InTag, UCommonActivatableWidget* Widget)
-{
-	if (!Widget)
-	{
-		return nullptr;
-	}
-	
-	UCommonActivatableWidgetStack* Layer = GetLayerByTag(InTag);
-	if (!Layer)
-	{
-		return nullptr;
-	}
-	
-	// 이미 이 위젯이 레이어에 있는지 확인
-	if (Layer->GetActiveWidget() == Widget)
-	{
-		return Widget;
-	}
-	
-	// DiaPrimaryLayout이 Viewport에 있는지 확인
-	if (!this->IsInViewport())
-	{
-		this->AddToViewport();
-	}
-	
-	// 레이어 가시성 확보
-	Layer->SetVisibility(ESlateVisibility::Visible);
-	
-	// 위젯 가시성 설정
-	Widget->SetVisibility(ESlateVisibility::Visible);
-	
-	// 먼저 위젯을 부모에서 제거 (이미 다른 부모에 있을 경우)
-	if (Widget->GetParent())
-	{
-		Widget->RemoveFromParent();
-	}
-	
-	// Stack에 추가
-	Layer->AddWidgetInstance(*Widget);
-	
-	// CommonActivatableWidget 명시적 활성화
-	if (UCommonActivatableWidget* ActivatableWidget = Cast<UCommonActivatableWidget>(Widget))
-	{
-		ActivatableWidget->ActivateWidget();
-	}
-
-	return Widget;
-}
-
 void UDiaPrimaryLayout::PopTopFromLayer(const FGameplayTag InTag)
 {
 	UCommonActivatableWidgetStack* Layer = GetLayerByTag(InTag);

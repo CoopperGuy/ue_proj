@@ -9,6 +9,8 @@
 
 #include "DiaGameState.h"
 
+#include "Map/DiaRoomBase.h"
+
 #include "Item/DiaItem.h"
 
 #include "UI/HUDWidget.h"
@@ -16,6 +18,7 @@
 #include "Blueprint/UserWidget.h"
 
 #include "System/MapInfoSubsystem.h"
+#include "System/DiaMapGeneratorSubsystem.h"
 
 #include "Kismet/GameplayStatics.h"
 
@@ -32,8 +35,6 @@ ADungeonGameMode::ADungeonGameMode()
 	{
 		HUDWidgetClass = HUDWidgetClassFinder.Class;
 	}
-
-
 }
 
 void ADungeonGameMode::BeginPlay()
@@ -49,6 +50,12 @@ void ADungeonGameMode::BeginPlay()
 	if (!GI) return;
 	UMapInfoSubsystem* MapInfo = GI->GetSubsystem<UMapInfoSubsystem>();
 
+	ADiaGameState* DiaGameState = Cast<ADiaGameState>(GameState);
+	if (IsValid(DiaGameState))
+	{
+		DiaGameState->OnRoomCleared.AddUObject(this, &ADungeonGameMode::OnRoomCleared);
+	}
+
 	//if (IsValid(MapInfo))
 	//{
 	//	MapInfo->CreateMapSpawnData();
@@ -58,6 +65,24 @@ void ADungeonGameMode::BeginPlay()
 void ADungeonGameMode::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
 {
 	Super::InitGame(MapName, Options, ErrorMessage);
+}
+
+void ADungeonGameMode::OnRoomCleared(FGuid RoomID)
+{
+	UDiaMapGeneratorSubsystem* MapInfo = GetWorld()->GetSubsystem<UDiaMapGeneratorSubsystem>();
+	if (!IsValid(MapInfo))
+		return;
+
+	ADiaRoomBase* RoomBase = MapInfo->GetRoomActor(RoomID);
+	//보스룸 클리어 하면 클리어 했다고 보내야함.
+	if (IsValid(RoomBase) && RoomBase->GetTileType() == ETileType::Boss)
+	{
+		ADiaGameState* DiaGameState = Cast<ADiaGameState>(GameState);
+		if (IsValid(DiaGameState))
+		{
+			DiaGameState->ClearCurrentLevel();
+		}
+	}
 }
 
 void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData)

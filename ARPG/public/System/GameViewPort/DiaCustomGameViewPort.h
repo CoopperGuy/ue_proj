@@ -10,6 +10,7 @@ class UItemDragDropOperation;
 class UItemWidget;
 class UDiaPrimaryLayout;
 class UDragDropOperation;
+class UDiaInstance;
 /**
  * 
  */
@@ -27,6 +28,8 @@ public:
 	virtual bool InputKey(const FInputKeyEventArgs& EventArgs) override;
 
 	void CreateCautionWidget(UItemDragDropOperation* DragOp);
+
+	void SetupGameInstance(UDiaInstance* DiaInstance);
 private:
 	// 현재 드래그 상태 추적
 	bool bIsDraggingItem = false;
@@ -43,7 +46,7 @@ private:
 	void DisplayCautionWidget(class UDiaCaution* CautionWidget);
 	
 	UPROPERTY()
-	UDiaPrimaryLayout* DiaPrimaryLayout;
+	TObjectPtr<UDiaPrimaryLayout> DiaPrimaryLayout;
 public:
 	// 드래그 시작/종료 감지 함수들
 	void OnDragStarted(UItemDragDropOperation* DragOp);
@@ -52,4 +55,5 @@ public:
 	//아이템의 id를 넘겨서 해당 아이템을 delegate형식으로 삭제하도록 해보자. 
 	//delegate를 인벤토리 위젯에 바인딩해야 할듯.
 	void OnDragEnd_CreateCautionWidget();
+	UDiaPrimaryLayout* GetDiaPrimaryLayout() const { return DiaPrimaryLayout; }
 };

@@ -86,6 +86,7 @@ protected:
 	bool isCleared = false;
 public:
 	FORCEINLINE void SetTileType(ETileType _TileType) { TileType = _TileType; }
+	FORCEINLINE ETileType GetTileType() const { return TileType; }
 	FORCEINLINE void SetRoomGuid(const FGuid& _RoomGuid) { RoomGuid = _RoomGuid; }
 	FORCEINLINE const FGuid& GetRoomGuid() const { return RoomGuid; }
 	FORCEINLINE void SetDoorDirections(uint8 _DoorDir) { DoorDirections = _DoorDir; }

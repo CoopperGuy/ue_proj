@@ -27,8 +27,6 @@ void UDiaCustomGameViewPort::Init(struct FWorldContext& WorldContext, UGameInsta
 		DiaPrimaryLayout->InitLayers();
 	}
 
-	DiaPrimaryLayout->AddToViewport();
-	DiaPrimaryLayout->SetVisibility(ESlateVisibility::Visible);
 }
 
 void UDiaCustomGameViewPort::Draw(FViewport* InViewport, FCanvas* SceneCanvas)
@@ -131,6 +129,17 @@ void UDiaCustomGameViewPort::CreateCautionWidget(UItemDragDropOperation* DragOp)
 
 	// 위젯 표시
 	DisplayCautionWidget(CautionWidget);
+}
+
+void UDiaCustomGameViewPort::SetupGameInstance(UDiaInstance* DiaInstance)
+{
+	if(!IsValid(DiaPrimaryLayout))
+	{
+		return;
+	}
+
+	DiaPrimaryLayout->AddToViewport();
+	DiaPrimaryLayout->SetVisibility(ESlateVisibility::Visible);
 }
 
 bool UDiaCustomGameViewPort::IsCautionWidgetAlreadyActive() const
@@ -237,6 +246,6 @@ void UDiaCustomGameViewPort::DisplayCautionWidget(UDiaCaution* CautionWidget)
 
 	if (IsValid(DiaPrimaryLayout))
 	{
-		DiaPrimaryLayout->PushToHudLayer(DiaPrimaryLayout->DefaultHudTag, CautionWidget);
+		//DiaPrimaryLayout->PushToHudLayer(DiaPrimaryLayout->DefaultHudTag, CautionWidget);
 	}
 }

@@ -20,6 +20,7 @@ public:
 	void SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& CenterPos, const float TileSize);
 
 	void ReportMonsterDeath(const FGuid& RoomID);
+	void ClearCurrentLevel();
 private:
 	UPROPERTY()
 	FGuid CurrentRoomID;

@@ -239,7 +239,7 @@ void UDiaMapGeneratorSubsystem::BFSGenerateMap(FName MapID)
 					CandidateRoomData.RoomSize = CandidateRoomType->RoomSize;
 					CandidateRoomData.RoomPosition = MainRoomData.RoomPosition; // 임시
 					CandidateRoomData.Directions = DiaMapGenerator::MakeDirectionByArray(Candidate.Directions);
-					CandidateRoomData.TileType = Candidate.TileType;
+					CandidateRoomData.TileType = CandidateRoomType->TileType;
 
 					int32 RotateDegree = 0;
 					if (CanConnectRooms(MainRoomData, CandidateRoomData, Dir, RotateDegree))

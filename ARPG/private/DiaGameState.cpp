@@ -62,3 +62,7 @@ void ADiaGameState::ReportMonsterDeath(const FGuid& RoomID)
 		OnRoomCleared.Broadcast(CurrentRoomID);
 	}
 }
+
+void ADiaGameState::ClearCurrentLevel()
+{
+}

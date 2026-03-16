@@ -36,6 +36,7 @@ class ADiaController;
 class UAbilitySystemComponent;
 class ADiaMonster;
 class USkillQuickSlotWidget;
+class UCommonActivatableWidget;
 /**
  * 
  */
@@ -55,6 +56,8 @@ public:
 
 	void RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
 	void RegisteSkillPannelWidget(const TArray<class USkillObject*>& SkillDataList);
+
+	void ShowClearAlret(FGuid RoomGuid);
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UOrb* HpWidget;
@@ -88,6 +91,9 @@ protected:
 
 	FDelegateHandle HealthChangedDelegateHandle;
 	FDelegateHandle ManaChangedDelegateHandle;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CommonWidget")
+	TSubclassOf<UCommonActivatableWidget> ClearAlertWidgetClass;
 
 	void HandleHealthChanged(const FOnAttributeChangeData& Data);
 	void HandleManaChanged(const FOnAttributeChangeData& Data);

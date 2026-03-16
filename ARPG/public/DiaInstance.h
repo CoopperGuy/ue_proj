@@ -20,6 +20,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Managers")
     UDiaSkillManager* GetSkillManager() const { return SkillManager; }
 
+    virtual void OnStart() override;
 protected:
     UPROPERTY()
     UDiaSkillManager* SkillManager;

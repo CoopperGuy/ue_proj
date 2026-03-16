@@ -26,6 +26,7 @@ enum class ETileType : uint8
 {
 	Floor,
 	Corridor,
+	Boss,
 	Empty
 };
 
@@ -71,8 +72,6 @@ struct FDiaAdjacencyRule : public FTableRowBase
 	TArray<EDiaDirection> Directions;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FRoomWeight> CandidateWeights;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	ETileType TileType = ETileType::Empty;
 };
 
 namespace DiaMapGenerator

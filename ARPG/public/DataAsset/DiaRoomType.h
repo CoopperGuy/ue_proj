@@ -26,6 +26,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room Info")
 	FIntPoint RoomSize;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room Info")
+	ETileType TileType = ETileType::Empty;
+
 public:
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override
 	{

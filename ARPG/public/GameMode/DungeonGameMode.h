@@ -20,6 +20,8 @@ public:
     virtual void BeginPlay() override;
     virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 
+    UFUNCTION()
+	void OnRoomCleared(FGuid RoomID);
 	void SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData);
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "UI")
