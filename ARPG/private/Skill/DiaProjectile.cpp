@@ -66,36 +66,6 @@ void ADiaProjectile::Launch(const FVector& Direction)
 void ADiaProjectile::BeginPlay()
 {
 	Super::BeginPlay();
-
-    // 액터의 수명 설정
-    SetLifeSpan(LifeSpan);
-
-    // 효과 자산 확인 및 활성화
-    if (LagacySkillAbilityEffectComp)
-    {
-        if (LegacySkillEffect)
-        {
-            LagacySkillAbilityEffectComp->SetTemplate(LegacySkillEffect);
-            LagacySkillAbilityEffectComp->Activate(true);
-        }
-        else
-        {
-            //UE_LOG(LogTemp, Warning, TEXT("%s: LegacySkillEffect 가 설정되지 않았습니다."), *GetName());
-        }
-    }
-
-    if (SkillAbilityEffectComp)
-    {
-        if (SkillEffect)
-        {
-            SkillAbilityEffectComp->SetAsset(SkillEffect);
-            SkillAbilityEffectComp->Activate(true);
-        }
-        else
-        {
-            //UE_LOG(LogTemp, Warning, TEXT("%s: SkillEffect 가 설정되지 않았습니다."), *GetName());
-        }
-    }
 }
 
 void ADiaProjectile::EndPlay(const EEndPlayReason::Type EndPlayReason)

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "GameplayTagsManager.h"
 
 /**
  * DiaGameplayTags
@@ -29,6 +30,7 @@ private:
 	static void RegisterUITags();
 	static void RegisterAttributeSetTags();
 	static void RegisterItemOptionTags();
+	static void RegisterCooldownTagsFromDataTable();
 public:
 	// ========================================
 	// State Tags - 캐릭터 상태
@@ -124,7 +126,15 @@ public:
 	 */
 	static FGameplayTag CoolDown_GetTag(int32 SkillID)
 	{
-		return FGameplayTag::RequestGameplayTag(FName(*FString::Printf(TEXT("GASData.CoolDown.%d"), SkillID)));
+		FName SkillIDTagName = FName(*FString::Printf(TEXT("GASData.CoolDown.%d"), SkillID));
+		FString TagComment = FString::Printf(TEXT("스킬 ID %d의 쿨다운 태그"), SkillID);
+		FGameplayTag FindVal = FGameplayTag::RequestGameplayTag(SkillIDTagName, false);
+		if(!FindVal.IsValid())
+		{
+			FindVal = UGameplayTagsManager::Get().AddNativeGameplayTag(SkillIDTagName, TagComment);
+			return FindVal;
+		}
+		return FindVal;
 	}
 	static const TArray<FGameplayTag>& GetAttributeStats();
 	static const TArray<FGameplayTag>& GetItemOptionList();

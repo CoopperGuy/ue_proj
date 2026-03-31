@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "GAS/DiaGameplayTags.h"
+#include "System/GASSkillManager.h"
 #include "GameplayTagsManager.h"
 
 FDiaGameplayTags FDiaGameplayTags::GameplayTags;
@@ -9,6 +10,7 @@ void FDiaGameplayTags::InitializeNativeTags()
 {
 	UGameplayTagsManager& Manager = UGameplayTagsManager::Get();
 
+	RegisterCooldownTagsFromDataTable();
 	RegisterStateTags();
 	RegisterCoolDownTags();
 	RegisterSkillTypeTags();
@@ -181,4 +183,37 @@ const TArray<FGameplayTag>& FDiaGameplayTags::GetItemOptionList()
 void FDiaGameplayTags::AddTag(FGameplayTag& OutTag, const ANSICHAR* TagName, const ANSICHAR* TagComment)
 {
 	OutTag = UGameplayTagsManager::Get().AddNativeGameplayTag(FName(TagName), FString(ANSI_TO_TCHAR(TagComment)));
+}
+
+void FDiaGameplayTags::RegisterCooldownTagsFromDataTable()
+{
+	TSoftObjectPtr<UDataTable> SkillDataTable;
+	if (!SkillDataTable.IsValid())
+	{
+		// 기본 DataTable 경로 설정
+		SkillDataTable = TSoftObjectPtr<UDataTable>(FSoftObjectPath(TEXT("/Game/Datatable/DT_GASSkillData.DT_GASSkillData")));
+	}
+
+	UDataTable* DataTable = SkillDataTable.LoadSynchronous();
+	if (!DataTable)
+	{
+		return;
+	}
+
+	// DataTable 구조체 검증
+	if (DataTable->GetRowStruct() != FGASSkillData::StaticStruct())
+	{
+		return;
+	}
+
+	// 모든 행 가져오기
+	TArray<FName> RowNames = DataTable->GetRowNames();
+	for (const FName& RowName : RowNames)
+	{
+		FGASSkillData* RowData = DataTable->FindRow<FGASSkillData>(RowName, TEXT("GASSkillManager"));
+		if (RowData)
+		{
+			CoolDown_GetTag(RowData->SkillID);
+		}
+	}
 }

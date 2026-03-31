@@ -5,11 +5,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 
+#include "Components/TimelineComponent.h"
+
 #include "AbilitySystemInterface.h"
 #include "Interface/Damageable.h"
 
 #include "DiaComponent/DiaStatusEffectComponent.h"
-
 #include "GameplayTagContainer.h"
 
 #include "DiaBaseCharacter.generated.h"
@@ -23,6 +24,7 @@ class UAbilitySystemComponent;
 class UDiaAttributeSet;
 class UDiaLevelComponent;
 class UDiaSkillManagerComponent;
+class UCurveFloat;
 UCLASS()
 class ARPG_API ADiaBaseCharacter : public ACharacter, public IAbilitySystemInterface, public IDamageable
 {
@@ -100,6 +102,7 @@ public:
 	void HandleAddSkillVariant(int32 SkillID, int32 VariantID, bool bApply);
 
 	void AddSkillVariantToSkillObjcet(int32 SkillID, int32 VariantID, bool bApply);
+	void OnRecieveDamage(const float Damage);
 protected:
 	// 기본적인 함수
 	virtual void BeginPlay() override;
@@ -130,7 +133,9 @@ protected:
 	UFUNCTION()
 	virtual void OnSlowTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
 
-	
+	UFUNCTION()
+	void OnHitFlashUpdate(float Value); 
+
 protected:
 	// 상태 이상 효과 관리 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatusEffects")
@@ -161,6 +166,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
 	UAnimMontage* DieMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Hit Effect")
+	TObjectPtr<UCurveFloat> HitFlashCurve;
+
+	UPROPERTY()
+	FTimeline HitFlashTimeline;
 
 	TWeakObjectPtr<ADiaBaseCharacter> KillerCharacterWeakPtr;
 

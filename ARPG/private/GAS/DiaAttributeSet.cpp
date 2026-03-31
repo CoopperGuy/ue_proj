@@ -80,6 +80,7 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 	{
 		// Clamp health
 		SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
+		Character->OnRecieveDamage(DeltaValue);
 		if (GetHealth() <= 0.f)
 		{
 			if (IsValid(Character))

@@ -136,6 +136,19 @@ void ADiaSkillActor::BeginPlay()
 		FString NameString = isSkillEffectValid ? SkillEffect->GetName() : TEXT("None");
 		UE_LOG(LogTemp, Warning, TEXT("DiaSkillActor::BeginPlay - SkillEffect or SkillAbilityEffectComp is not valid. effect : %s"), *NameString);
     }
+
+    // 액터의 수명 설정
+    SetLifeSpan(LifeSpan);
+
+    // 효과 자산 확인 및 활성화
+    if (IsValid(LagacySkillAbilityEffectComp) && LegacySkillEffect)
+    {
+        if (LegacySkillEffect)
+        {
+            LagacySkillAbilityEffectComp->SetTemplate(LegacySkillEffect);
+            LagacySkillAbilityEffectComp->Activate(true);
+        }
+    }
 }
 
 void ADiaSkillActor::Tick(float DeltaTime)

@@ -4,6 +4,7 @@
 #include "GAS/Abilities/DiaProjectileAbility.h"
 #include "GAS/Abilities/DiaBasicAttackAbility.h"
 #include "GAS/Abilities/DiaGroundAbility.h"
+#include "GAS/DiaGameplayTags.h"
 #include "AbilitySystemComponent.h"
 #include "DiaBaseCharacter.h"
 
@@ -34,19 +35,13 @@ bool UDiaGASHelper::GrantAbilityFromSkillData(UAbilitySystemComponent* ASC, cons
 	// Create ability spec with SkillID as InputID
 	FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, SkillID);
 	
-	// ★ SkillID 기반 쿨다운 태그 조회 (INI 파일에 미리 등록되어 있어야 함)
-	FString CooldownTagName = FString::Printf(TEXT("GASData.CoolDown.%d"), SkillID);
-	FGameplayTag CooldownTag = FGameplayTag::RequestGameplayTag(FName(*CooldownTagName), false);
-	
-	if (!CooldownTag.IsValid())
-	{
-		UE_LOG(LogTemp, Error, TEXT("GrantAbilityFromSkillData: Cooldown tag not found for SkillID %d. Add 'GASData.CoolDown.%d' to DefaultGameplayTags.ini"), 
-			SkillID, SkillID);
-	}
-	
+	FGameplayTag CooldownTag = FDiaGameplayTags::Get().CoolDown_GetTag(SkillID);
+		
 	// Spec의 SetByCallerTagMagnitudes에 쿨다운 태그 저장 (나중에 참조용)
 	if (CooldownTag.IsValid())
 	{
+		UE_LOG(LogTemp, Log, TEXT("GrantAbilityFromSkillData: Adding cooldown tag %s with duration %.2f to AbilitySpec for SkillID %d"), 
+			*CooldownTag.ToString(), SkillData.CooldownDuration, SkillID);
 		AbilitySpec.SetByCallerTagMagnitudes.Add(CooldownTag, SkillData.CooldownDuration);
 	}
 	

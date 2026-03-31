@@ -13,6 +13,7 @@
 #include "UI/Skill/SkillQuickSlot.h"
 #include "UI/Alret/ClearAlret.h"
 #include "UI/DiaCaution.h"
+#include "UI/DiaDamagePopup.h"
 
 #include "GAS/DiaGameplayTags.h"
 #include "GAS/DiaAttributeSet.h"
@@ -253,6 +254,24 @@ void UHUDWidget::ShowClearAlret(FGuid RoomGuid)
 		return;
 	}
 	UClearAlret* ClearAlretWidget = Layout->PushToHudLayer<UClearAlret>(FDiaGameplayTags::Get().UI_Layer_HUD, ClearAlertWidgetClass);
+}
+
+void UHUDWidget::ShowDamagePopup(float DamageAmount, const FVector2D& ScreenPos, bool bIsCritical)
+{
+	if (IsValid(DamagePopupWidgetClass))
+	{
+		UDiaDamagePopup* PopupWidget = CreateWidget<UDiaDamagePopup>(GetWorld(), DamagePopupWidgetClass);
+		if (IsValid(PopupWidget))
+		{
+			PopupWidget->AddToViewport();
+			PopupWidget->SetPositionInViewport(ScreenPos);
+			PopupWidget->InitializeDamagePopup(DamageAmount);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UHUDWidget::ShowDamagePopup - DamagePopupWidgetClass is null"));
+	}
 }
 
 void UHUDWidget::SetMonsterHPVisibility(ESlateVisibility _Visibility)

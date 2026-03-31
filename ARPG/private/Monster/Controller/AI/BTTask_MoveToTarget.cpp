@@ -26,7 +26,7 @@ UBTTask_MoveToTarget::UBTTask_MoveToTarget()
 
 EBTNodeResult::Type UBTTask_MoveToTarget::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-    AAIController* aiController = Cast<ADiaAIController>(OwnerComp.GetAIOwner());
+    ADiaAIController* aiController = Cast<ADiaAIController>(OwnerComp.GetAIOwner());
     if (!IsValid(aiController))
         return EBTNodeResult::Failed;
 
@@ -50,5 +50,5 @@ EBTNodeResult::Type UBTTask_MoveToTarget::ExecuteTask(UBehaviorTreeComponent& Ow
 
     EPathFollowingRequestResult::Type res = aiController->MoveToActor(TargetActor, 150.0f, true, true);
 
-	return EBTNodeResult::Type();
+	return EBTNodeResult::Succeeded;
 }

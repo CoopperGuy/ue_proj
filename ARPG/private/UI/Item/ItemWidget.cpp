@@ -187,7 +187,7 @@ void UItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPoint
 	{
 		if (UDiaCustomGameViewPort* CustomViewport = Cast<UDiaCustomGameViewPort>(GEngine->GameViewport))
 		{
-			CustomViewport->OnDragStarted(DragOperation);
+			//CustomViewport->OnDragStarted(DragOperation);
 		}
 	}
 	
@@ -277,7 +277,7 @@ void UItemWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, U
 	{
 		if (UDiaCustomGameViewPort* CustomViewport = Cast<UDiaCustomGameViewPort>(GEngine->GameViewport))
 		{
-			CustomViewport->OnDragEnd_CreateCautionWidget();
+			//CustomViewport->OnDragEnd_CreateCautionWidget();
 		}
 	}
 }

@@ -517,7 +517,8 @@ void UDiaGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
 		// SetByCallerTagMagnitudes에서 쿨다운 태그와 Duration 가져오기
 		for (const auto& Pair : AbilitySpec->SetByCallerTagMagnitudes)
 		{
-			if (Pair.Key.MatchesTag(FGameplayTag::RequestGameplayTag(FName("GASData.CoolDown"), false)))
+			UE_LOG(LogTemp, Log, TEXT("Checking SetByCallerTag: %s, GetTag : %s"), *Pair.Key.ToString(), *FDiaGameplayTags::Get().CoolDown_GetTag(SkillData.SkillID).ToString());
+			if (Pair.Key.MatchesTagExact(FDiaGameplayTags::Get().CoolDown_GetTag(SkillData.SkillID)))
 			{
 				CooldownTag = Pair.Key;
 				cooldownDuration = Pair.Value; // Spec에 저장된 Duration 사용

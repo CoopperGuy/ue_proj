@@ -37,6 +37,7 @@ class UAbilitySystemComponent;
 class ADiaMonster;
 class USkillQuickSlotWidget;
 class UCommonActivatableWidget;
+class UDiaDamagePopup;
 /**
  * 
  */
@@ -58,6 +59,7 @@ public:
 	void RegisteSkillPannelWidget(const TArray<class USkillObject*>& SkillDataList);
 
 	void ShowClearAlret(FGuid RoomGuid);
+	void ShowDamagePopup(float DamageAmount, const FVector2D& ScreenPos, bool bIsCritical);
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UOrb* HpWidget;
@@ -94,6 +96,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="CommonWidget")
 	TSubclassOf<UCommonActivatableWidget> ClearAlertWidgetClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Damage")
+	TSubclassOf<UDiaDamagePopup> DamagePopupWidgetClass;
 
 	void HandleHealthChanged(const FOnAttributeChangeData& Data);
 	void HandleManaChanged(const FOnAttributeChangeData& Data);

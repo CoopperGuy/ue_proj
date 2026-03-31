@@ -27,33 +27,27 @@ public:
 	
 	virtual bool InputKey(const FInputKeyEventArgs& EventArgs) override;
 
-	void CreateCautionWidget(UItemDragDropOperation* DragOp);
-
 	void SetupGameInstance(UDiaInstance* DiaInstance);
+
+	// TODO: Caution 관련 로직 DiaController로 이전 예정
+	// void CreateCautionWidget(UItemDragDropOperation* DragOp);
+	// void OnDragStarted(UItemDragDropOperation* DragOp);
+	// void OnDragEnded();
+	// void OnDragEnd_CreateCautionWidget();
+
 private:
-	// 현재 드래그 상태 추적
-	bool bIsDraggingItem = false;
-	UItemDragDropOperation* CurrentDragOperation = nullptr;
-	
-	// 허공 드롭 처리 함수
-	void HandleDropInVoid(const FIntPoint& MousePosition);
-	
-	// CreateCautionWidget 리팩토링된 헬퍼 함수들
-	bool IsCautionWidgetAlreadyActive() const;
-	class UDiaCaution* CreateAndInitializeCautionWidget(UItemDragDropOperation* DragOp);
-	class UDiaInventoryComponent* GetInventoryComponent() const;
-	void BindCautionWidgetEvents(class UDiaCaution* CautionWidget, const struct FInventorySlot& ItemData, class UDiaInventoryComponent* InvenComp);
-	void DisplayCautionWidget(class UDiaCaution* CautionWidget);
-	
+	// TODO: 드래그 상태 추적 - DiaController로 이전 예정
+	// bool bIsDraggingItem = false;
+	// UItemDragDropOperation* CurrentDragOperation = nullptr;
+	// void HandleDropInVoid(const FIntPoint& MousePosition);
+	// bool IsCautionWidgetAlreadyActive() const;
+	// class UDiaCaution* CreateAndInitializeCautionWidget(UItemDragDropOperation* DragOp);
+	// class UDiaInventoryComponent* GetInventoryComponent() const;
+	// void BindCautionWidgetEvents(class UDiaCaution* CautionWidget, const struct FInventorySlot& ItemData, class UDiaInventoryComponent* InvenComp);
+	// void DisplayCautionWidget(class UDiaCaution* CautionWidget);
+
 	UPROPERTY()
 	TObjectPtr<UDiaPrimaryLayout> DiaPrimaryLayout;
 public:
-	// 드래그 시작/종료 감지 함수들
-	void OnDragStarted(UItemDragDropOperation* DragOp);
-	void OnDragEnded();
-
-	//아이템의 id를 넘겨서 해당 아이템을 delegate형식으로 삭제하도록 해보자. 
-	//delegate를 인벤토리 위젯에 바인딩해야 할듯.
-	void OnDragEnd_CreateCautionWidget();
 	UDiaPrimaryLayout* GetDiaPrimaryLayout() const { return DiaPrimaryLayout; }
 };

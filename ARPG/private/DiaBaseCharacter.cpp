@@ -6,6 +6,10 @@
 #include "DiaComponent/DiaSkillManagerComponent.h"
 #include "DiaComponent/Skill/SkillObject.h"
 
+#include "UI/HUDWidget.h"
+
+#include "Controller/DiaController.h"
+
 #include "AbilitySystemComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -56,6 +60,11 @@ void ADiaBaseCharacter::BeginPlay()
 		FDiaGameplayTags::Get().State_Slowed,
 		EGameplayTagEventType::AnyCountChange
 	).AddUObject(this, &ADiaBaseCharacter::OnSlowTagChanged);
+
+	FOnTimelineFloat TimerHandle;
+	TimerHandle.BindUFunction(this, FName("OnHitFlashUpdate"));
+	HitFlashTimeline.AddInterpFloat(HitFlashCurve, TimerHandle);
+	HitFlashTimeline.SetLooping(false);
 }
 
 void ADiaBaseCharacter::PossessedBy(AController* NewController)
@@ -102,6 +111,7 @@ void ADiaBaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	HitFlashTimeline.TickTimeline(DeltaTime);
 }
 
 // Called to bind functionality to input
@@ -242,6 +252,29 @@ void ADiaBaseCharacter::AddSkillVariantToSkillObjcet(int32 SkillID, int32 Varian
 	OnAddSkillVariantDelegate.Broadcast(SkillID, VariantID, bApply);
 }
 
+void ADiaBaseCharacter::OnRecieveDamage(const float Damage)
+{
+	HitFlashTimeline.PlayFromStart();
+	ADiaController* PC = Cast<ADiaController>(GetWorld()->GetFirstPlayerController());
+	if(PC)
+	{
+		UHUDWidget* HUD = PC->GetHUDWidget();
+		if (IsValid(HUD))
+		{
+
+			FVector2D ScreenPos;
+			bool bSuccess = PC->ProjectWorldLocationToScreen(
+				GetActorLocation(),   // 몬스터 3D 위치
+				ScreenPos,       // 결과 2D 스크린 좌표
+				false            // bPlayerViewportRelative
+			);
+
+
+			HUD->ShowDamagePopup(Damage, ScreenPos, false);
+		}
+	}
+}
+
 void ADiaBaseCharacter::OnStunTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
 {
 	if (NewCount > 0)
@@ -282,6 +315,15 @@ void ADiaBaseCharacter::OnSlowTagChanged(const FGameplayTag CallbackTag, int32 N
 	else
 	{
 		GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed; 
+	}
+}
+
+void ADiaBaseCharacter::OnHitFlashUpdate(float Value)
+{
+	UMeshComponent* MeshComp = GetMesh();
+	if (MeshComp)
+	{
+		MeshComp->SetCustomPrimitiveDataFloat(0, Value);
 	}
 }
 

@@ -20,7 +20,7 @@
 
 UBTTask_PlayGAS::UBTTask_PlayGAS()
 {
-	NodeName = TEXT("Player GameplayAbilitySystemSkill");
+	NodeName = TEXT("Play GameplayAbilitySystemSkill");
 	bNotifyTick = true; // 틱 활성화
 
 	BlackboardKey.AddIntFilter(this, GET_MEMBER_NAME_CHECKED(UBTTask_PlayGAS, BlackboardKey));
@@ -29,6 +29,9 @@ UBTTask_PlayGAS::UBTTask_PlayGAS()
 
 EBTNodeResult::Type UBTTask_PlayGAS::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
+	FBTPlayGASTaskMemory* TaskMemory = CastInstanceNodeMemory<FBTPlayGASTaskMemory>(NodeMemory);
+	if(!TaskMemory) return EBTNodeResult::Failed;
+
 	ADiaAIController* AIController = Cast<ADiaAIController>(OwnerComp.GetAIOwner());
 	if (!IsValid(AIController)) return EBTNodeResult::Aborted;
 
@@ -62,15 +65,45 @@ EBTNodeResult::Type UBTTask_PlayGAS::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 			return EBTNodeResult::Failed;
 		}
 #endif
-	if (DiaMonster && DiaMonster->GetSkillManagerComponent() && DiaMonster->GetSkillManagerComponent()->TryActivateAbilityBySkillID(SkillID))
-	{
-		CurrentAbilityHandle = Spec->Handle;
-		bAbilityEnded = false; // 플래그 초기화
 		
-		AbilityEndedHandle = ASC->AbilityEndedCallbacks.AddUObject(this, &UBTTask_PlayGAS::OnAbilityEnded);
-		
-		return EBTNodeResult::InProgress; 
-	}
+		TaskMemory->CurrentAbilityHandle = Spec->Handle;
+		TaskMemory->bAbilityEnded = false; // 플래그 초기화
+
+		TaskMemory->AbilityEndedHandle = ASC->AbilityEndedCallbacks.AddLambda([TaskMemory](UGameplayAbility* AbilityEndedData) {
+			if (AbilityEndedData && AbilityEndedData->GetCurrentAbilitySpecHandle() == TaskMemory->CurrentAbilityHandle)
+			{
+				UE_LOG(LogTemp, Log, TEXT("BTTask_PlayGAS: Ability handle matches current ability. Marking as ended."));
+				// 콜백 제거
+				if (TaskMemory->AbilityEndedHandle.IsValid())
+				{
+					UE_LOG(LogTemp, Log, TEXT("BTTask_PlayGAS: Removing AbilityEnded callback"));
+					if (UAbilitySystemComponent* ASC = AbilityEndedData->GetAbilitySystemComponentFromActorInfo())
+					{
+						ASC->AbilityEndedCallbacks.Remove(TaskMemory->AbilityEndedHandle);
+					}
+					TaskMemory->AbilityEndedHandle.Reset();
+				}
+
+				// 태스크 완료는 TickTask에서 처리하도록 플래그 설정
+				TaskMemory->bAbilityEnded = true;
+			}
+			}
+		);
+
+
+		if (DiaMonster && DiaMonster->GetSkillManagerComponent() && DiaMonster->GetSkillManagerComponent()->TryActivateAbilityBySkillID(SkillID))
+		{
+			return EBTNodeResult::InProgress;
+		}
+		else
+		{
+			//실패할 경우 ability 자체 종료하도록 유도
+			ASC->AbilityEndedCallbacks.Remove(TaskMemory->AbilityEndedHandle);
+			TaskMemory->AbilityEndedHandle.Reset();
+			TaskMemory->CurrentAbilityHandle = FGameplayAbilitySpecHandle();
+			TaskMemory->bAbilityEnded = true;
+			return EBTNodeResult::Aborted;
+		}
 	}
 
 	return EBTNodeResult::Failed;
@@ -80,10 +113,17 @@ void UBTTask_PlayGAS::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMem
 {
 	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
 	
+	FBTPlayGASTaskMemory* TaskMemory = CastInstanceNodeMemory<FBTPlayGASTaskMemory>(NodeMemory);
+	if (!TaskMemory)
+	{
+		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+		return;
+	}
 	// 어빌리티가 여전히 활성화되어 있는지 확인
 	ADiaAIController* AIController = Cast<ADiaAIController>(OwnerComp.GetAIOwner());
 	if (!IsValid(AIController))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("BTTask_PlayGAS: Invalid AIController during TickTask"));
 		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 		return;
 	}
@@ -91,6 +131,7 @@ void UBTTask_PlayGAS::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMem
 	ADiaMonster* DiaMonster = Cast<ADiaMonster>(AIController->GetPawn());
 	if (!IsValid(DiaMonster))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("BTTask_PlayGAS: Invalid Pawn during TickTask"));
 		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 		return;
 	}
@@ -98,13 +139,15 @@ void UBTTask_PlayGAS::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMem
 	UAbilitySystemComponent* ASC = DiaMonster->GetAbilitySystemComponent();
 	if (!ASC)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("BTTask_PlayGAS: Invalid AbilitySystemComponent during TickTask"));
 		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 		return;
 	}
 
 	// 어빌리티 종료 플래그 확인
-	if (bAbilityEnded)
+	if (TaskMemory->bAbilityEnded)
 	{
+		UE_LOG(LogTemp, Log, TEXT("BTTask_PlayGAS: Ability ended detected in TickTask"));
 		// 어빌리티가 완료됨 - SkillID 초기화하고 태스크 완료
 		int32 CompletedSkillID = OwnerComp.GetBlackboardComponent()->GetValueAsInt(BlackboardKey.SelectedKeyName);
 		OwnerComp.GetBlackboardComponent()->SetValueAsInt(BlackboardKey.SelectedKeyName, 0);
@@ -114,6 +157,12 @@ void UBTTask_PlayGAS::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMem
 
 EBTNodeResult::Type UBTTask_PlayGAS::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
+	FBTPlayGASTaskMemory* TaskMemory = CastInstanceNodeMemory<FBTPlayGASTaskMemory>(NodeMemory);
+	if (!TaskMemory)
+	{
+		EBTNodeResult::Aborted;
+	}
+
 	ADiaAIController* AIController = Cast<ADiaAIController>(OwnerComp.GetAIOwner());
 	if (IsValid(AIController))
 	{
@@ -121,36 +170,16 @@ EBTNodeResult::Type UBTTask_PlayGAS::AbortTask(UBehaviorTreeComponent& OwnerComp
 		if (IsValid(DiaMonster))
 		{
 			UAbilitySystemComponent* ASC = DiaMonster->GetAbilitySystemComponent();
-			if (ASC && AbilityEndedHandle.IsValid())
+			if (ASC && TaskMemory->AbilityEndedHandle.IsValid())
 			{
-				ASC->AbilityEndedCallbacks.Remove(AbilityEndedHandle);
-				AbilityEndedHandle.Reset();
+				ASC->AbilityEndedCallbacks.Remove(TaskMemory->AbilityEndedHandle);
+				TaskMemory->AbilityEndedHandle.Reset();
 			}
 		}
 	}
 	
 	int32 AbortedSkillID = OwnerComp.GetBlackboardComponent()->GetValueAsInt(BlackboardKey.SelectedKeyName);
-	UE_LOG(LogTemp, Log, TEXT("BTTask_PlayGAS: Task aborted. Resetting ActionRequest from SkillID %d to 0"), AbortedSkillID);
 	OwnerComp.GetBlackboardComponent()->SetValueAsInt(BlackboardKey.SelectedKeyName, 0);
 	
 	return EBTNodeResult::Aborted;
-}
-
-void UBTTask_PlayGAS::OnAbilityEnded(UGameplayAbility* AbilityEndedData)
-{
-	if (AbilityEndedData && AbilityEndedData->GetCurrentAbilitySpecHandle() == CurrentAbilityHandle)
-	{
-		// 콜백 제거
-		if (AbilityEndedHandle.IsValid())
-		{
-			if (UAbilitySystemComponent* ASC = AbilityEndedData->GetAbilitySystemComponentFromActorInfo())
-			{
-				ASC->AbilityEndedCallbacks.Remove(AbilityEndedHandle);
-			}
-			AbilityEndedHandle.Reset();
-		}
-		
-		// 태스크 완료는 TickTask에서 처리하도록 플래그 설정
-		bAbilityEnded = true;
-	}
 }

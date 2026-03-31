@@ -91,26 +91,26 @@ void UDiaGroundAbility::SpawnSkillGround()
     //}
 
 
-  //  ADiaGroundObj* SkillGround = GetWorld()->SpawnActorDeferred<ADiaGroundObj>(
-  //      SkillGroundClass,
-  //      SpawnTransform,
-  //      Character,
-  //      Character,
-  //      ESpawnActorCollisionHandlingMethod::AlwaysSpawn
-  //  );
+	ADiaGroundObj* SkillGround = GetWorld()->SpawnActorDeferred<ADiaGroundObj>(
+		SkillGroundClass,
+		SpawnTransform,
+		Character,
+		Character,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+	);
 
-  //  if (SkillGround)
-  //  {
-  //      const FGameplayAbilityActorInfo& Info = GetActorInfo();
-  //      UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
-  //      SkillGround->Initialize(SkillData, Character, SourceASC, DamageEffectClass);
-		//SkillGround->FinishSpawning(SpawnTransform);
-		//UE_LOG(LogTemp, Log, TEXT("DiaGroundAbility: Spawned SkillGround at location %s."), *SpawnLocation.ToString());
-  //  }
-  //  else
-  //  {
-  //      UE_LOG(LogTemp, Warning, TEXT("DiaGroundAbility: Failed to spawn SkillGround."));
-  //  }
+	if (SkillGround)
+	{
+		const FGameplayAbilityActorInfo& Info = GetActorInfo();
+		UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
+		SkillGround->Initialize(SkillData, Character, SourceASC, DamageEffectClass);
+		SkillGround->FinishSpawning(SpawnTransform);
+		UE_LOG(LogTemp, Log, TEXT("DiaGroundAbility: Spawned SkillGround at location %s."), *SpawnLocation.ToString());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DiaGroundAbility: Failed to spawn SkillGround."));
+	}
 
     EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
