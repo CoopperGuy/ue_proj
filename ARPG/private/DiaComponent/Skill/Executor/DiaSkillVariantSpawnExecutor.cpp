@@ -128,7 +128,11 @@ void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVa
 			}
 
 			SpawnedActor->FinishSpawning(SpawnTransform);
-			
+
+			if (Ability)
+			{
+				Ability->ApplySkillObjectRemovalTimer(SpawnedActor);
+			}
 		}	
 		// 다음 발사체를 위한 방향 업데이트 (다음 루프에서 사용)
 		Direction = DefaultRotator.RotateVector(Direction).GetSafeNormal();

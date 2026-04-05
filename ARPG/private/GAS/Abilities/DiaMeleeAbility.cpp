@@ -55,13 +55,16 @@ void UDiaMeleeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 	TotalHitCount = FMath::Max(1, SkillData.HitCount);
 	HitInterval = FMath::Max(0.0f, SkillData.HitInterval);
 
-	if (TotalHitCount == 1)
+	if (SkillData.CastTime == 0.f)
 	{
-		PerformHitDetection();
-	}
-	else
-	{
-		StartMultiHit();
+		if (TotalHitCount == 1)
+		{
+			PerformHitDetection();
+		}
+		else
+		{
+			StartMultiHit();
+		}
 	}
 }
 
@@ -212,6 +215,24 @@ void UDiaMeleeAbility::StartMultiHit()
 	UE_LOG(LogTemp, Log, TEXT("DiaMeleeAbility: Starting Multi Hit - TotalHits: %d, Interval: %.2f"), TotalHitCount, HitInterval);
 
 	ProcessNextHit();
+}
+
+void UDiaMeleeAbility::ProcessSkillDelayEvents()
+{
+	Super::ProcessSkillDelayEvents();
+
+	// HitCount 체크: 1이면 단일 히트, 2 이상이면 Multi Hit
+	TotalHitCount = FMath::Max(1, SkillData.HitCount);
+	HitInterval = FMath::Max(0.0f, SkillData.HitInterval);
+
+	if (TotalHitCount == 1)
+	{
+		PerformHitDetection();
+	}
+	else
+	{
+		StartMultiHit();
+	}
 }
 
 void UDiaMeleeAbility::ProcessNextHit()

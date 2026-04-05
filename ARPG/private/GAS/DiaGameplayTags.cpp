@@ -22,6 +22,14 @@ void FDiaGameplayTags::InitializeNativeTags()
 
 	GameplayTags.AddTag(GameplayTags.GASData_MultipleShot, "GASData.Variant.MultipleSkill", "멀티플 샷 ");
 	GameplayTags.AddTag(GameplayTags.GASData_Pierce, "GASData.Variant.Pierce", "관통");
+
+
+	GameplayTags.AddTag(GameplayTags.Actor_Player, "Actor.Player", "몬스터");
+	GameplayTags.AddTag(GameplayTags.Actor_Monster, "Actor.Monster", "몬스터");
+	
+	GameplayTags.AddTag(GameplayTags.SkillActor_Ground, "SkillActor.Ground", "땅 생성");
+	GameplayTags.AddTag(GameplayTags.SkillActor_Projectile, "SkillActor.Projectile", "탄환");
+	GameplayTags.AddTag(GameplayTags.SkillActor_Default, "SkillActor.Default", "기본값");
 }
 
 void FDiaGameplayTags::RegisterStateTags()

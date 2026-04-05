@@ -32,6 +32,7 @@ class ARPG_API ADiaSkillActor : public AActor
 	
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
     virtual void Tick(float DeltaTime) override;
 public:	
     ADiaSkillActor();
@@ -64,6 +65,9 @@ public:
 
 	void SetOwningAbility(UDiaGameplayAbility* InOwningAbility) { OwningAbility = InOwningAbility; }
 	UDiaGameplayAbility* GetOwningAbility() const { return OwningAbility.Get(); }
+
+	/** LifeSpan 타이머를 끄고 지정 초 후 Destroy (스킬 데이터 기반 잔존 시간용). */
+	void ArmRemovalTimer(float Seconds);
 	int32 GetPierceCount() const { return PierceCount; }
 	void SetPierceCount(int32 InPierceCount) { PierceCount = InPierceCount; }
 protected:
@@ -119,6 +123,9 @@ protected:
 
     UPROPERTY()
 	FTimerHandle LifeSpanTimerHandle;
+
+	UFUNCTION()
+	void OnSkillObjectRemovalTimer();
 
     UPROPERTY()
 	TWeakObjectPtr<UDiaGameplayAbility> OwningAbility;

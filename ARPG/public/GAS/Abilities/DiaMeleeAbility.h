@@ -38,6 +38,8 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Melee")
 	void StartMultiHit();
 
+	virtual void ProcessSkillDelayEvents() override;
+protected:
 	// 공격 범위
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Melee|Settings")
 	float AttackRange = 200.0f;

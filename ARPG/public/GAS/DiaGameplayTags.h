@@ -32,6 +32,13 @@ private:
 	static void RegisterItemOptionTags();
 	static void RegisterCooldownTagsFromDataTable();
 public:
+	FGameplayTag Actor_Player;	// 플레이어
+	FGameplayTag Actor_Monster;	// 몬스터
+
+	FGameplayTag SkillActor_Ground; // SkillActor 중 그라운드 오브젝트 태그 (예: 스킬의 지속 효과로 바닥에 남는 오브젝트)
+	FGameplayTag SkillActor_Projectile; // SkillActor 중 탄환 오브젝트 태그 
+	FGameplayTag SkillActor_Default; // SkillActor 중 기본 오브젝트 태그 
+
 	// ========================================
 	// State Tags - 캐릭터 상태
 	// ========================================

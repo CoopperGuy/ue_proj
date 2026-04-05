@@ -44,6 +44,9 @@ public:
 	void SetSkillObject(const USkillObject* InSkillObject);
 	const USkillObject* GetSkillObject() const { return SkillObject; }
 
+	/** SkillData.SkillObjectRemainTime > 0 이면 엔진 LifeSpan을 끄고 월드 타이머로 액터를 제거합니다. 스폰 직후 호출. */
+	void ApplySkillObjectRemovalTimer(class ADiaSkillActor* SkillActor) const;
+
 	const TSubclassOf<UGameplayEffect> GetDamageEffectClass() const { return DamageEffectClass; }
 
 	void MakeEffectSpecContextToTarget(TArray<FGameplayEffectSpecHandle>& OutContext) const;
@@ -87,6 +90,9 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	void StopAbilityMontage(float BlendOutTime = 0.2f);
+
+	UFUNCTION()
+	virtual void ProcessSkillDelayEvents();
 
 	UFUNCTION()
 	void OnMontageCompleted();

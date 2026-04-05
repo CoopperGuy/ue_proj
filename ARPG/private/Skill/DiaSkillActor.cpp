@@ -29,6 +29,8 @@
 #include <AbilitySystemBlueprintLibrary.h>
 
 #include "Kismet/GameplayStatics.h"
+#include "Engine/World.h"
+#include "TimerManager.h"
 #include "Skill/DiaDamageType.h"
 
 #include "DiaComponent/Skill/Executor/DiaSkillHitVariantExecutor.h"
@@ -88,6 +90,8 @@ void ADiaSkillActor::Initialize(float InDamage, AActor* InOwner, UAbilitySystemC
 
     SourceASC = InSourceASC;
     DamageGameplayEffect = InDamageEffect;
+
+    Tags.Add(InOwner->Tags[1]);
 }
 
 void ADiaSkillActor::Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC, TSubclassOf<UGameplayEffect> InDamageEffect)
@@ -103,11 +107,40 @@ void ADiaSkillActor::Initialize(const FGASSkillData& SkillData, AActor* InOwner,
     }
     SourceASC = InSourceASC;
 	DamageGameplayEffect = InDamageEffect;
+    Tags.Add(InOwner->Tags[1]);
 }
 
 void ADiaSkillActor::InitTargetEffectHandle(const TArray<FGameplayEffectSpecHandle>& InTargetEffectHandles)
 {
 	TargetEffectHandles = InTargetEffectHandles;
+}
+
+void ADiaSkillActor::ArmRemovalTimer(float Seconds)
+{
+	if (Seconds <= 0.f)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	SetLifeSpan(0.f);
+	World->GetTimerManager().ClearTimer(LifeSpanTimerHandle);
+	World->GetTimerManager().SetTimer(
+		LifeSpanTimerHandle,
+		this,
+		&ADiaSkillActor::OnSkillObjectRemovalTimer,
+		Seconds,
+		false);
+}
+
+void ADiaSkillActor::OnSkillObjectRemovalTimer()
+{
+	Destroy();
 }
 
 void ADiaSkillActor::BeginPlay()
@@ -126,7 +159,7 @@ void ADiaSkillActor::BeginPlay()
     if (IsValid(SkillAbilityEffectComp) && SkillEffect)
     {
         SkillAbilityEffectComp->SetAsset(SkillEffect);
-        SkillAbilityEffectComp->SetVariableFloat(FName("EffectScale"), 1.0f);
+        SkillAbilityEffectComp->SetVariableFloat(FName(TEXT("EffectScale")), 1.0f);
         SkillAbilityEffectComp->Activate(true);
 		UE_LOG(LogTemp, Warning, TEXT("DiaSkillActor::BeginPlay - SkillEffect activated."));
     }
@@ -149,6 +182,15 @@ void ADiaSkillActor::BeginPlay()
             LagacySkillAbilityEffectComp->Activate(true);
         }
     }
+}
+
+void ADiaSkillActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(LifeSpanTimerHandle);
+	}
+	Super::EndPlay(EndPlayReason);
 }
 
 void ADiaSkillActor::Tick(float DeltaTime)
@@ -246,7 +288,12 @@ void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitR
         // Pierce: PierceCount가 0 이하면 발사체 파괴
         if (PierceCount <= 0)
         {
-            Destroy();
+            FName SkillActorTag = FDiaGameplayTags::Get().SkillActor_Ground.GetTagName();
+            if (!Tags.Contains(SkillActorTag))
+            {
+                // 땅에 닿는 스킬 액터는 파괴 안함
+                Destroy();
+            }
         }
     }
 }
@@ -315,7 +362,7 @@ void ADiaSkillActor::SpawnHitEffect(const FVector& ImpactPoint, const FVector& I
 
         if (NiagaraComp)
         {
-            NiagaraComp->SetVariableFloat(FName("EffectScale"), 1.0f);
+            NiagaraComp->SetVariableFloat(FName(TEXT("EffectScale")), 1.0f);
         }
     }
 }
@@ -371,7 +418,7 @@ bool ADiaSkillActor::IsValidTarget(AActor* OtherActor)
     // 태그 검사 로직: 팀 구분용 태그만 체크 (공통 태그는 제외)
     if (IsValid(OwnerActor))
     {
-        static const FName CharacterTag = FName(TEXT("Character")); // 공통 태그는 제외
+        static const FName CharacterTag = FName(TEXT("Character")); 
         for (const FName& OwnerTag : OwnerActor->Tags)
         {
             // "Character" 태그는 모든 캐릭터에 공통이므로 제외

@@ -41,4 +41,9 @@ namespace BlackboardKeys
         static const FName PatrolWaitTime = TEXT("PatrolWaitTime");
         static const FName IsPatrolling = TEXT("IsPatrolling");
     }
+
+    namespace Movement
+    {
+        static const FName MaxSpeed= TEXT("MaxSpeed");
+    }
 }

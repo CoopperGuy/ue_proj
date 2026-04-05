@@ -31,6 +31,8 @@
 
 #include "System/MonsterManager.h"
 
+#include "GAS/DiaGameplayTags.h"
+
 #include "UI/HUDWidget.h"
 
 ADiaMonster::ADiaMonster()
@@ -42,7 +44,7 @@ ADiaMonster::ADiaMonster()
 
 	AutoPossessAI = EAutoPossessAI::Disabled;
 
-	Tags.Add(FName(TEXT("Monster")));
+	Tags.Emplace(FDiaGameplayTags::Get().Actor_Monster.GetTagName());
 }
 
 void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
@@ -164,8 +166,6 @@ void ADiaMonster::DeactivateAI()
 		{
 			BehaviorTreeComp->StopTree();
 		}
-		
-		UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s]의 AI 비활성화됨"), *GetName());
 	}
 }
 
@@ -181,8 +181,6 @@ void ADiaMonster::ActivateAI()
 		
 		// AI 컨트롤러 초기화
 		AIController->InitializeAI();
-		
-		UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s]의 AI 활성화됨"), *GetName());
 	}
 }
 

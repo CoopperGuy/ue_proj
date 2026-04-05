@@ -11,6 +11,7 @@
 #include "GameplayEffectTypes.h"
 
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
+#include "Abilities/Tasks/AbilityTask_WaitDelay.h"
 #include "GameFramework/Character.h"
 #include "Animation/AnimInstance.h"
 
@@ -19,6 +20,7 @@
 #include "GAS/Effects/DiaGameplayEffect_Damage.h"
 
 #include "Engine/World.h"
+#include "Skill/DiaSkillActor.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
@@ -29,7 +31,7 @@ UDiaGameplayAbility::UDiaGameplayAbility()
 	// Set default values
 	InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
 	NetExecutionPolicy = EGameplayAbilityNetExecutionPolicy::LocalPredicted;
-	
+
 	// Set default activation requirements - 신규 API 사용
 	{
 		//FGameplayTagContainer Tags;
@@ -94,6 +96,14 @@ void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 			AbilityEffect,
 			ActorInfo->AvatarActor->GetActorLocation()
 		);
+	}
+
+
+	if (SkillData.CastTime > 0.f)
+	{
+		UAbilityTask_WaitDelay* Task = UAbilityTask_WaitDelay::WaitDelay(this, SkillData.CastTime);
+		Task->OnFinish.AddDynamic(this, &UDiaGameplayAbility::ProcessSkillDelayEvents);
+		Task->ReadyForActivation();
 	}
 
 	ApplyGameplayEffectToSelf();
@@ -323,8 +333,29 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 
 void UDiaGameplayAbility::SetSkillObject(const USkillObject* InSkillObject)
 {
-	UE_LOG(LogTemp, Log, TEXT("Setting SkillObject: %s"), InSkillObject ? *InSkillObject->GetName() : TEXT("None"));
 	SkillObject = InSkillObject;
+}
+
+void UDiaGameplayAbility::ApplySkillObjectRemovalTimer(ADiaSkillActor* SkillActor) const
+{
+	if (!IsValid(SkillActor))
+	{
+		return;
+	}
+
+	const float RemainSeconds = SkillData.SkillObjectRemainTime;
+	if (RemainSeconds <= 0.f)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	SkillActor->ArmRemovalTimer(RemainSeconds);
 }
 
 float UDiaGameplayAbility::PlayAbilityMontage(UAnimMontage* MontageToPlay, float PlayRate)
@@ -381,6 +412,10 @@ void UDiaGameplayAbility::StopAbilityMontage(float BlendOutTime)
 		MontageTask = nullptr;
 	}
 	CurrentAbilityMontage = nullptr;
+}
+
+void UDiaGameplayAbility::ProcessSkillDelayEvents()
+{
 }
 
 void UDiaGameplayAbility::OnMontageCompleted()

@@ -66,6 +66,10 @@ struct ARPG_API FGASSkillData : public FTableRowBase
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TSubclassOf<ADiaSkillActor> SkillObjectClass;
 
+    /** 스킬 오브젝트(ADiaSkillActor 등)가 월드에 남는 시간(초). 0 이하면 액터 기본 LifeSpan·블루프린트 설정을 따름. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill Object", meta = (ClampMin = "0.0"))
+    float SkillObjectRemainTime = 0.0f;
+
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     EGASSkillType SkillType = EGASSkillType::MeleeAttack;
 
@@ -189,7 +193,7 @@ struct ARPG_API FJobSkillSet : public FTableRowBase
     GENERATED_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EJobType JobType;;
+	EJobType JobType = EJobType::Warrior;
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<int32> SkillIDs;
 };

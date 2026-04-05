@@ -68,7 +68,7 @@ ADiaCharacter::ADiaCharacter()
 
     SkillActions.Init(nullptr, MaxSkillMapping);
 
-    Tags.Add(FName(TEXT("Player")));
+    Tags.Emplace(FDiaGameplayTags::Get().Actor_Player.GetTagName());
 }
 
 // Called when the game starts or when spawned
@@ -254,7 +254,9 @@ void ADiaCharacter::Move(const FInputActionValue& Value)
 
 void ADiaCharacter::SetTargetActor(ADiaBaseCharacter* NewTarget)
 {
-    if (NewTarget->ActorHasTag(FName("Monster")))
+    if (!NewTarget) return;
+
+    if (NewTarget->ActorHasTag(FDiaGameplayTags::Get().Actor_Monster.GetTagName()))
     {
         Cast<ADiaController>(GetController())->SetTarget(NewTarget);
     }

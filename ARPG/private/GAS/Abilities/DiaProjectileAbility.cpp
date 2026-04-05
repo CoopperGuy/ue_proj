@@ -36,8 +36,10 @@ void UDiaProjectileAbility::ActivateAbility(const FGameplayAbilitySpecHandle Han
 	// Call parent implementation
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
 
-	// Spawn projectile(s) immediately after ability activation
-	SpawnProjectile();
+	if (SkillData.CastTime == 0.f)
+	{
+		SpawnProjectile();
+	}
 }
 
 void UDiaProjectileAbility::OnSpawned(AActor* SpawnedProjectile)
@@ -153,6 +155,14 @@ void UDiaProjectileAbility::SpawnProjectile()
 	}
 
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+}
+
+void UDiaProjectileAbility::ProcessSkillDelayEvents()
+{
+	Super::ProcessSkillDelayEvents();
+
+	// Spawn projectile(s) immediately after ability activation
+	SpawnProjectile();
 }
 
 void UDiaProjectileAbility::InitializeWithSkillData(const FGASSkillData& InSkillData)

@@ -5,6 +5,7 @@
 #include "DiaBaseCharacter.h"   
 #include "Skill/DiaGroundObj.h"
 #include "GAS/DiaGASHelper.h"
+#include "GAS/DiaGameplayTags.h"
 #include "Abilities/Tasks/AbilityTask_SpawnActor.h"
 #include "DiaComponent/DiaSkillManagerComponent.h"
 #include "Skill/DiaSkillActor.h"
@@ -30,7 +31,11 @@ void UDiaGroundAbility::InitializeWithSkillData(const FGASSkillData& InSkillData
 void UDiaGroundAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-	SpawnSkillGround();
+
+    if(SkillData.CastTime == 0.f)
+    {
+        SpawnSkillGround();
+    }
 }
 
 void UDiaGroundAbility::SpawnSkillGround()
@@ -50,8 +55,17 @@ void UDiaGroundAbility::SpawnSkillGround()
         return;
     }
 
+    //태그 가져와서 몬스터일경우, 플레이어일 경우 구분하자.
+
+	bool bIsPlayer = Character->ActorHasTag(FDiaGameplayTags::Get().Actor_Player.GetTagName());
      
-    FVector SpawnLocation = UDiaGASHelper::GetMouseWorldLocation(ActorInfo);
+	//HACK: 플레이어가 아니면 캐릭터 방향으로 발사하도록 강제
+    if (!bIsPlayer)
+    {
+        bUseOwnerRotation = true;
+    }
+
+    FVector SpawnLocation = bIsPlayer ? UDiaGASHelper::GetMouseWorldLocation(ActorInfo) : Character->GetActorLocation();
     FRotator SpawnRotation = bUseOwnerRotation ? Character->GetActorRotation() : FRotator::ZeroRotator;
 	FTransform SpawnTransform(SpawnRotation, SpawnLocation);
 
@@ -90,33 +104,46 @@ void UDiaGroundAbility::SpawnSkillGround()
     //    SpawnActorTask->ReadyForActivation();
     //}
 
+    //ClassName 확인 디버그
+    if (SkillGroundClass)
+    {
+		UE_LOG(LogTemp, Log, TEXT("DiaGroundAbility: SkillGroundClass is set to %s."), *SkillGroundClass->GetName());
+    }
 
-	ADiaGroundObj* SkillGround = GetWorld()->SpawnActorDeferred<ADiaGroundObj>(
-		SkillGroundClass,
-		SpawnTransform,
-		Character,
-		Character,
-		ESpawnActorCollisionHandlingMethod::AlwaysSpawn
-	);
+	//ADiaGroundObj* SkillGround = GetWorld()->SpawnActorDeferred<ADiaGroundObj>(
+	//	SkillGroundClass,
+	//	SpawnTransform,
+	//	Character,
+	//	Character,
+	//	ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+	//);
 
-	if (SkillGround)
-	{
-		const FGameplayAbilityActorInfo& Info = GetActorInfo();
-		UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
-		SkillGround->Initialize(SkillData, Character, SourceASC, DamageEffectClass);
-		SkillGround->FinishSpawning(SpawnTransform);
-		UE_LOG(LogTemp, Log, TEXT("DiaGroundAbility: Spawned SkillGround at location %s."), *SpawnLocation.ToString());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaGroundAbility: Failed to spawn SkillGround."));
-	}
+	//if (SkillGround)
+	//{
+	//	const FGameplayAbilityActorInfo& Info = GetActorInfo();
+	//	UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
+	//	SkillGround->Initialize(SkillData, Character, SourceASC, DamageEffectClass);
+	//	SkillGround->FinishSpawning(SpawnTransform);
+	//	UE_LOG(LogTemp, Log, TEXT("DiaGroundAbility: Spawned SkillGround at location %s."), *SpawnTransform.GetLocation().ToString());
+	//}
+	//else
+	//{
+	//	UE_LOG(LogTemp, Warning, TEXT("DiaGroundAbility: Failed to spawn SkillGround."));
+	//}
 
     EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
+void UDiaGroundAbility::ProcessSkillDelayEvents()
+{
+    Super::ProcessSkillDelayEvents();
+
+    SpawnSkillGround();
+}
+
 void UDiaGroundAbility::OnSpawned(AActor* SpawnedSkillGround)
 {
+	UE_LOG(LogTemp, Log, TEXT("DiaGroundAbility::OnSpawned - Skill ground spawned successfully: %s"), *SpawnedSkillGround->GetName());
     ADiaGroundObj* SkillGround = Cast<ADiaGroundObj>(SpawnedSkillGround);
     if (SkillGround)
     {

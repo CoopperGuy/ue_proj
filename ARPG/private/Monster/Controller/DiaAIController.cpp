@@ -21,6 +21,8 @@
 
 #include "DiaComponent/DiaOptionManagerComponent.h"
 
+#include "GAS/DiaGameplayTags.h"
+
 #include "NavigationSystem.h"
 #include "Navigation/PathFollowingComponent.h"
 
@@ -72,7 +74,7 @@ void ADiaAIController::OnPossess(APawn* InPawn)
 //우선 타겟 설정으로만 한다.
 void ADiaAIController::OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus)
 {
-	if (Actor && Actor->ActorHasTag(FName(TEXT("Player"))))
+	if (Actor && Actor->ActorHasTag(FDiaGameplayTags::Get().Actor_Player.GetTagName()))
 	{
 		bIsLineOfSight = Stimulus.WasSuccessfullySensed();
 		if (bIsLineOfSight)

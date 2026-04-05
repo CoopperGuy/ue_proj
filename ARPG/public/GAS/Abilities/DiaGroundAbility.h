@@ -24,6 +24,8 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "Ground")
 	void SpawnSkillGround();
 
+	virtual void ProcessSkillDelayEvents() override;
+protected:
 	// 발사체 클래스
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")
 	TSubclassOf<ADiaSkillActor> SkillGroundClass;

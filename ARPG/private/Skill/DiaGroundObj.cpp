@@ -1,6 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Skill/DiaGroundObj.h"
+
+#include "GAS/DiaGameplayTags.h"
+
 #include "Engine/World.h"
 #include "AbilitySystemInterface.h"
 #include "TimerManager.h"
@@ -13,6 +16,9 @@ ADiaGroundObj::ADiaGroundObj()
 	CollisionComp->SetSphereRadius(Radius);
 
 	SpawnCollisionHandlingMethod = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	FName SkillActorTag = FDiaGameplayTags::Get().SkillActor_Ground.GetTagName();
+	Tags.Add(SkillActorTag);
 }
 
 void ADiaGroundObj::BeginPlay()
@@ -40,7 +46,7 @@ void ADiaGroundObj::OnHitDetect()
 	if(HitCount > MaxHitCount)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(LifeSpanTimerHandle);
-		Destroy();
+		//그냥 히트 판정을 끄자. 그라운드는 그래야한다
 		UE_LOG(LogTemp, Warning, TEXT("DiaGroundObj::OnHitDetect - MaxHitCount reached. Destroying ground object. HitCount :%d, MaxHitCount : %d"), HitCount, MaxHitCount);
 		return;
 	}

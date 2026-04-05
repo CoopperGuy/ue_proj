@@ -74,7 +74,8 @@ void ADiaBaseCharacter::PossessedBy(AController* NewController)
 	// Initialize Ability System
 	if (AbilitySystemComponent)
 	{
-		if(Tags.Contains(FName("Player")))
+		FName TagToUse = FDiaGameplayTags::Get().Actor_Player.GetTagName();
+		if (Tags.Contains(TagToUse))
 		{
 			APlayerState* PS = GetPlayerState<APlayerState>();
 			if (PS)
