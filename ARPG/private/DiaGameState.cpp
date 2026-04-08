@@ -6,10 +6,10 @@
 #include "System/MapInfoSubsystem.h"
 #include "System/MonsterSpawnSubSystem.h"
 
-void ADiaGameState::SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& CenterPos, const float TileSize)
+void ADiaGameState::SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& CenterPos, const ETileType NewRoomType, const float TileSize)
 {
 	CurrentRoomID = NewRoomID;
-
+	CurrentRoomType = NewRoomType;
 	const UMapInfoSubsystem* MapInfoSubsystem = GetWorld()->GetGameInstance() ? GetWorld()->GetGameInstance()->GetSubsystem<UMapInfoSubsystem>() : nullptr;
 	UMonsterSpawnSubSystem* MonsterSpawnSubSystem = GetWorld()->GetSubsystem<UMonsterSpawnSubSystem>();
 
@@ -58,11 +58,15 @@ void ADiaGameState::ReportMonsterDeath(const FGuid& RoomID)
 
 	if (CurrentMaxMonsterCount == 0)
 	{
-		bIsInBattle = false;
 		OnRoomCleared.Broadcast(CurrentRoomID);
-	}
+
+		bIsInBattle = false;
+		CurrentRoomType = ETileType::Empty;
+		CurrentRoomID.Invalidate();
+	}	
 }
 
 void ADiaGameState::ClearCurrentLevel()
 {
+	OnStageCleared.Broadcast(CurrentRoomID);
 }

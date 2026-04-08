@@ -182,7 +182,7 @@ void ADiaAIController::SetTarget(AActor* NewTarget)
 	
 	if (GetBlackboardComponent())
 	{
-		if (IsValid(NewTarget))
+		if (IsValid(NewTarget))	
 		{
 			GetBlackboardComponent()->SetValueAsObject(BlackboardKeys::Monster::TargetActor, NewTarget);
 			GetBlackboardComponent()->SetValueAsVector(BlackboardKeys::Monster::LastKnownLocation, NewTarget->GetActorLocation());	

@@ -75,6 +75,7 @@ void UDiaMapGeneratorSubsystem::LoadAdjacencyRules()
 //Soruce RoomID로 Map을 Generate하자.
 void UDiaMapGeneratorSubsystem::GenerateMap(FName MapID)
 {
+	int32 CurrentRooms = 0;
 	const int32 MapSize = MapWidth * MapHeight;
 	MapData.Empty();
 	MapData.SetNum(MapSize);
@@ -97,7 +98,7 @@ void UDiaMapGeneratorSubsystem::GenerateMap(FName MapID)
 	while (true)
 	{
 		TArray<FDiaAdjacencyRule> Candidates;
-		FindRoomCandidates(Room, Candidates);
+		FindRoomCandidates(Room, Candidates, CurrentRooms);
 		if (Candidates.Num() == 0)
 		{
 			break;
@@ -133,6 +134,7 @@ void UDiaMapGeneratorSubsystem::GenerateMap(FName MapID)
 		{
 			break;
 		}
+		CurrentRooms++;
 	}
 	
 	PrintMapAsText(); // 생성된 맵을 텍스트로 출력
@@ -216,7 +218,7 @@ void UDiaMapGeneratorSubsystem::BFSGenerateMap(FName MapID)
 	{
 		TArray<FDiaAdjacencyRule> Candidates;
 		const FDiaAdjacencyRule& SelectRoom = FindAdjacencyRule(MainRoomData.RoomID);
-		FindRoomCandidates(SelectRoom, Candidates);
+		FindRoomCandidates(SelectRoom, Candidates, CreatedRooms);
 		int32 SelectIndex = GetIndex(MainRoomData.RoomPosition.X, MainRoomData.RoomPosition.Y);
 
 		// Dir은 North, East, South, West 순서로 순회됨
@@ -480,15 +482,28 @@ FDiaAdjacencyRule UDiaMapGeneratorSubsystem::FindAdjacencyRule(const FName& Room
 	return FDiaAdjacencyRule();
 }
 
-void UDiaMapGeneratorSubsystem::FindRoomCandidates(const FDiaAdjacencyRule& Rule, TArray<FDiaAdjacencyRule>& OutCandidates) const
+void UDiaMapGeneratorSubsystem::FindRoomCandidates(const FDiaAdjacencyRule& Rule, TArray<FDiaAdjacencyRule>& OutCandidates, int32 CurrentRooms) const
 {
 	OutCandidates.Reset();
-
+	int32 MaxRooms = MapWidth * MapHeight; // 최대 방 수는 맵 크기에 따라 결정
 	float TotalWeight = 0.f;
 	for (const FRoomWeight& Entry : Rule.CandidateWeights)
 	{
+		// 최대 방 수를 초과한 경우 End가 아닌 방은 후보에서 제외
+		if (CurrentRooms >= MaxRooms && Entry.RoomID != TEXT("End"))
+		{
+			continue;
+		}
+		//최소 방 개수가 안된 경우 END 호출 금지
+		if(CurrentRooms < MinMapRoomCount && Entry.RoomID == TEXT("End"))
+		{
+			continue;
+		}
+		
+
 		TotalWeight += Entry.Weight;
 	}
+
 	if (TotalWeight <= 0.f) return;
 
 	float RandomValue = FMath::FRandRange(0.f, TotalWeight);
@@ -496,6 +511,17 @@ void UDiaMapGeneratorSubsystem::FindRoomCandidates(const FDiaAdjacencyRule& Rule
 	FName ChosenID = NAME_None;
 	for (const FRoomWeight& Entry : Rule.CandidateWeights)
 	{
+		// 최대 방 수를 초과한 경우 End가 아닌 방은 후보에서 제외
+		if (CurrentRooms >= MaxRooms && Entry.RoomID != TEXT("End"))
+		{
+			continue;
+		}
+		//최소 방 개수가 안된 경우 END 호출 금지
+		if (CurrentRooms < MinMapRoomCount && Entry.RoomID == TEXT("End"))
+		{
+			continue;
+		}
+
 		Acc += Entry.Weight;
 		if (RandomValue <= Acc)
 		{

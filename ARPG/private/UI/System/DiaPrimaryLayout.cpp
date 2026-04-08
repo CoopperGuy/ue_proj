@@ -44,15 +44,15 @@ void UDiaPrimaryLayout::InitLayers()
 	
 	if (HudLayer)
 	{
-		HudLayer->SetVisibility(ESlateVisibility::Visible);
-		HudLayer->SetRenderOpacity(1.0f);
+		//HudLayer->SetVisibility(ESlateVisibility::Visible);
+		//HudLayer->SetRenderOpacity(1.0f);
 		HudWidgets.Add(DefaultHudTag, HudLayer);
 	}
 	
 	if (ModelLayer)
 	{
-		ModelLayer->SetVisibility(ESlateVisibility::Visible);
-		ModelLayer->SetRenderOpacity(1.0f);
+		//ModelLayer->SetVisibility(ESlateVisibility::Visible);
+		//ModelLayer->SetRenderOpacity(1.0f);
 		HudWidgets.Add(DefaultModelTag, ModelLayer);
 	}
 }

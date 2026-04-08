@@ -83,7 +83,10 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UHUDWidget> HUDWidgetClass;
 
+	bool bBlockSkillInput = false;
 public:
 	FORCEINLINE FOnTargetChanged& GetOnTargetChanged() { return OnTargetChanged; }
 	UHUDWidget* GetHUDWidget() const;
+	void SetBlockSkillInput(bool bBlock) { bBlockSkillInput = bBlock; }
+	bool IsSkillInputBlocked() const { return bBlockSkillInput; }
 };

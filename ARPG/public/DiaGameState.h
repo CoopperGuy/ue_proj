@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
+#include "DataAsset/DiaRoomType.h"
 #include "DiaGameState.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FDiaRoomClearedDelegate, FGuid);
 DECLARE_MULTICAST_DELEGATE_OneParam(FDiaRoomBattleStartDelegate, FGuid);
+DECLARE_MULTICAST_DELEGATE_OneParam(FDiaStageClearedDelegate, FGuid);
 /**
  * 
  */
@@ -17,13 +19,16 @@ class ARPG_API ADiaGameState : public AGameStateBase
 	GENERATED_BODY()
 	
 public:	
-	void SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& CenterPos, const float TileSize);
+	void SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& CenterPos, const ETileType NewRoomType, const float TileSize);
 
 	void ReportMonsterDeath(const FGuid& RoomID);
 	void ClearCurrentLevel();
 private:
 	UPROPERTY()
 	FGuid CurrentRoomID;
+
+	UPROPERTY()
+	ETileType CurrentRoomType = ETileType::Empty;
 
 	UPROPERTY()
 	int32 CurrentMaxMonsterCount = 0;
@@ -34,4 +39,5 @@ private:
 public:
 	FDiaRoomClearedDelegate OnRoomCleared;
 	FDiaRoomBattleStartDelegate OnRoomBattleStart;
+	FDiaStageClearedDelegate OnStageCleared;
 };

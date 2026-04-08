@@ -58,7 +58,7 @@ void ADiaRoomBase::BeginPlay()
 	
 	for (UBoxComponent* Trigger : RoomEnterTriggers)
 	{
-		if (Trigger && TileType == ETileType::Floor)
+		if (Trigger && TileType == ETileType::Floor || TileType == ETileType::Boss)
 		{
 			Trigger->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnRoomEnterTriggerEndOverlap);
 		}
@@ -221,7 +221,7 @@ void ADiaRoomBase::OnRoomEnterTriggerEndOverlap(UPrimitiveComponent* OverlappedC
 
 	if (DiaGameState)
 	{
-		DiaGameState->SpawnRoomMonsters(this->GetRoomGuid(), GetActorLocation(), DiaMapConstants::HalfTileSize);
+		DiaGameState->SpawnRoomMonsters(this->GetRoomGuid(), GetActorLocation(), GetTileType(), DiaMapConstants::HalfTileSize);
 	}
 	else
 	{
@@ -318,7 +318,4 @@ void ADiaRoomBase::OnBattleEnd(const FGuid InGuid)
 	}
 
 	isCleared = true;
-
-	//화면에 "Battle Clear" UI 띄우기, 플레이어가 방을 나갈 수 있도록 문 열기, 보상 등등..
-	UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase::OnBattleEnd: Battle ended, all monsters defeated!"));
 }

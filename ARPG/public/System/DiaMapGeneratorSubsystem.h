@@ -59,7 +59,7 @@ public:
 	FDiaAdjacencyRule FindAdjacencyRule(const FName& RoomID) const;
 
 protected:
-	void FindRoomCandidates(const FDiaAdjacencyRule& Rule, TArray<FDiaAdjacencyRule>& OutCandidates) const;
+	void FindRoomCandidates(const FDiaAdjacencyRule& Rule, TArray<FDiaAdjacencyRule>& OutCandidates, int32 CurrentRooms) const;
 	void LoadRoomData(const FName& RoomID);
 	bool CanPlaceRoom(const FDiaAdjacencyRule& Rule, int32 X, int32 Y) const;
 	EDiaDirection CanConnectRooms(const FDiaAdjacencyRule& SourceRule, const FDiaAdjacencyRule& DestRule) const;
@@ -84,6 +84,7 @@ protected:
 
 	int32 MapWidth = 5;
 	int32 MapHeight = 5;
+	const int32 MinMapRoomCount = 5;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings")
 	TSoftObjectPtr<UDataTable> MapAdjacencyTable;

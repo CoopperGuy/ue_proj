@@ -18,7 +18,7 @@ FReply UItemName::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPo
 	Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 
 	OnItemNameClicked.Broadcast();
-	UE_LOG(LogTemp, Warning, TEXT("Widget clicked!"));
+
 	return FReply::Handled();
 }
 

@@ -85,6 +85,7 @@ void ADungeonGameMode::OnRoomCleared(FGuid RoomID)
 	}
 }
 
+
 void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData)
 {
 	if (IsValid(SpawnActor))
@@ -105,6 +106,12 @@ void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& 
 			SpawnedItem->FinishSpawning(SpawnActor->GetTransform());
 		}
 	}
+}
+
+void ADungeonGameMode::WarpOtherLevel(const FName& LevelName)
+{
+	UGameplayStatics::OpenLevel(GetWorld(), LevelName);
+
 }
 
 UHUDWidget* const ADungeonGameMode::GetHUDWidget() const

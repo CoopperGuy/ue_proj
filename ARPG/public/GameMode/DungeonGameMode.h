@@ -23,6 +23,8 @@ public:
     UFUNCTION()
 	void OnRoomCleared(FGuid RoomID);
 	void SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData);
+
+	void WarpOtherLevel(const FName& LevelName);
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UHUDWidget> HUDWidgetClass;

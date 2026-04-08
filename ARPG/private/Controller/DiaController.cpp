@@ -2,6 +2,8 @@
 
 
 #include "Controller/DiaController.h"
+#include "Engine/LocalPlayer.h"
+#include "Engine/EngineBaseTypes.h"
 
 #include "DiaComponent/UI/DiaInventoryComponent.h"
 #include "DiaComponent/UI/DiaEquipmentComponent.h"
@@ -51,6 +53,10 @@ namespace
 ADiaController::ADiaController()
 {
 	bShowMouseCursor = true;
+	bEnableClickEvents = true;
+	bEnableMouseOverEvents = true;
+	DefaultClickTraceChannel = ECollisionChannel::ECC_Visibility;
+
 	DiaInventoryComponent = CreateDefaultSubobject<UDiaInventoryComponent>(TEXT("InventoryComponent"));
 	DiaEquipmentComponent = CreateDefaultSubobject<UDiaEquipmentComponent>(TEXT("EquipmentComponent"));
 	DiaOptionManagerComponent = CreateDefaultSubobject<UDiaOptionManagerComponent>(TEXT("OptionManagerComponent"));
@@ -148,6 +154,12 @@ void ADiaController::BeginPlay()
 void ADiaController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
+
+	FInputModeGameAndUI InputModeData;
+	//InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
+	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture);
+	InputModeData.SetHideCursorDuringCapture(false);
+	SetInputMode(InputModeData);
 }
 
 void ADiaController::OnPossess(APawn* InPawn)

@@ -25,6 +25,8 @@ void UDiaCustomGameViewPort::Init(struct FWorldContext& WorldContext, UGameInsta
 	{
 		DiaPrimaryLayout = CreateWidget<UDiaPrimaryLayout>(OwningGameInstance, WidgetClass);
 		DiaPrimaryLayout->InitLayers();
+		DiaPrimaryLayout->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		DiaPrimaryLayout->AddToViewport();
 	}
 
 }

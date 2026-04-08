@@ -320,6 +320,9 @@ void ADiaCharacter::Dodge(const FInputActionValue& Value)
 
 void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
 {
+    //스킬 막아야 하는 상황이면 막는다.
+    if (GetController<ADiaController>()->IsSkillInputBlocked())
+        return;
 
     if (int32 skillID = SkillManagerComponent->GetMappedSkillID(ActionIndex))
     {        
