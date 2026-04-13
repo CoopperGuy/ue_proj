@@ -15,13 +15,13 @@ struct FItemDropInfo : public FTableRowBase
     FName ItemID;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	    float DropRate = 0.0f; // 0.0 ~ 1.0
+	float DropRate = 0.0f; // 0.0 ~ 1.0
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	    int32 MinQuantity = 0;
+	int32 MinQuantity = 0;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	    int32 MaxQuantity = 0;
+	int32 MaxQuantity = 0;
 };
 
 USTRUCT(BlueprintType)
@@ -34,4 +34,19 @@ struct FMonsterDropTable : public FTableRowBase
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FItemDropInfo> DropItems;
+
+    TArray<FItemDropInfo> GetRandomizedDropItems() const
+    {
+        TArray<FItemDropInfo> RandomizedDrops;
+        for (const FItemDropInfo& DropInfo : DropItems)
+        {
+            if (FMath::FRand() <= DropInfo.DropRate)
+            {
+                FItemDropInfo RandomizedDrop = DropInfo;
+                RandomizedDrop.MinQuantity = FMath::RandRange(DropInfo.MinQuantity, DropInfo.MaxQuantity);
+                RandomizedDrops.Add(RandomizedDrop);
+            }
+        }
+        return RandomizedDrops;
+	}
 };

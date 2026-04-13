@@ -2,15 +2,13 @@
 
 
 #include "UI/Item/ItemName.h"
-#include "Components/TextBlock.h"
 #include "Components/RichTextBlock.h"
-
-#include "Controller/DiaController.h"
-#include "Character/DiaCharacter.h"
 
 void UItemName::NativeConstruct()
 {
 	Super::NativeConstruct();
+	SetVisibility(ESlateVisibility::Visible);
+	SetIsEnabled(true);
 }
 
 FReply UItemName::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)

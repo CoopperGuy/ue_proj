@@ -21,6 +21,7 @@
 #include "GameMode/DungeonGameMode.h"
 #include "DiaBaseCharacter.h"
 
+
 DEFINE_LOG_CATEGORY_STATIC(LogARPG_Inventory, Log, All);
 
 namespace
@@ -55,7 +56,6 @@ ADiaController::ADiaController()
 	bShowMouseCursor = true;
 	bEnableClickEvents = true;
 	bEnableMouseOverEvents = true;
-	DefaultClickTraceChannel = ECollisionChannel::ECC_Visibility;
 
 	DiaInventoryComponent = CreateDefaultSubobject<UDiaInventoryComponent>(TEXT("InventoryComponent"));
 	DiaEquipmentComponent = CreateDefaultSubobject<UDiaEquipmentComponent>(TEXT("EquipmentComponent"));
@@ -156,7 +156,6 @@ void ADiaController::SetupInputComponent()
 	Super::SetupInputComponent();
 
 	FInputModeGameAndUI InputModeData;
-	//InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);
 	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture);
 	InputModeData.SetHideCursorDuringCapture(false);
 	SetInputMode(InputModeData);

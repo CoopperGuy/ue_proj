@@ -7,7 +7,7 @@
 
 #include "UI/Item/ItemName.h"
 
-#include "Components/WidgetComponent.h"
+#include "Item/DiaItemWidgetComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/BoxComponent.h"
@@ -31,19 +31,19 @@ ADiaItem::ADiaItem()
 	//ItemMeshComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	//ItemMeshComp->SetCollisionProfileName(TEXT("Item"));
 	
-	ItemMeshComp->SetNotifyRigidBodyCollision(true);
+	ItemMeshComp->SetNotifyRigidBodyCollision(false);
+	ItemMeshComp->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
 	ItemMeshComp->OnComponentHit.AddDynamic(this, &ADiaItem::OnHit);
 
-	ItemWidgetComp = CreateDefaultSubobject<UWidgetComponent>(TEXT("ItemWidget"));
+	ItemWidgetComp = CreateDefaultSubobject<UDiaItemWidgetComponent>(TEXT("ItemWidget"));
 	ItemWidgetComp->SetupAttachment(ItemMeshComp);
 	ItemWidgetComp->SetWidgetSpace(EWidgetSpace::Screen);
 	ItemWidgetComp->SetDrawSize(FVector2D(150, 30));
-	ItemWidgetComp->SetRelativeLocation(FVector(0.f, 0.f, 100.f)); 
+	ItemWidgetComp->SetRelativeLocation(FVector(0.f, 0.f, 100.f));
 	ItemWidgetComp->SetVisibility(false);
 	ItemWidgetComp->SetTwoSided(true);
-
-
+	// Receive Hardware Input 은 UDiaItemWidgetComponent 생성자에서 bReceiveHardwareInput = true 로 설정.
 
 	//지형과는 충돌 판정만, 캐릭터와는 겹침(오버랩) 판정만 하도록 설정
 	CollisionComp = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionComp"));
@@ -66,6 +66,28 @@ void ADiaItem::BeginPlay()
 void ADiaItem::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+
+	if (bIsRolling)
+	{
+		CurrentRotSpeed = FMath::FInterpTo(CurrentRotSpeed, 1000.0f, DeltaTime, 100.f);
+
+		FRotator NewRotation = FRotator(0.0f, CurrentRotSpeed, 0.0f);
+
+		SetActorRotation(NewRotation);
+
+		FVector Location = GetActorLocation();
+		LandLocation = FMath::VInterpTo(Location, LandLocation, DeltaTime, RollingSpeed);
+		SetActorLocation(LandLocation);
+
+		//목표 Location에 거의 도달했을 때 회전 멈추고 위치 고정
+		if (FVector::Dist(Location, LandLocation) < 10.f)
+		{
+			bIsRolling = false;
+			SetActorLocation(LandLocation);
+			CurrentRotSpeed = 0.f;
+		}
+	}
 }
 
 void ADiaItem::SetItemProperty(const FItemBase& _ItemData)
@@ -116,28 +138,50 @@ void ADiaItem::SetItemProperty(const FItemBase& _ItemData)
 
 void ADiaItem::DropItem(const FItemBase& ItemData)
 {
+	bIsRolling = true;
 	RollingItem();
 	SetItemName(FText::FromName(InventoryItem.ItemInstance.BaseItem.ItemID));
 }
 
+//피직스 안쓰고 그냥 돌리는 거로 변경해야함.
 void ADiaItem::RollingItem()
 {
-	ItemMeshComp->SetSimulatePhysics(true);
-	ItemMeshComp->SetEnableGravity(true);
+	//LineTraceSingleByChannel 등으로 바닥과의 충돌 감지 후 ItemMeshComp에 물리 시뮬레이션 적용하는 방식으로 변경 필요
+	//현재는 그냥 아이템이 회전하는 애니메이션만 적용되어 있음
 
-	FVector Impulse = FVector(
-		FMath::FRandRange(50.f, 100.f), 
-		FMath::FRandRange(5.f, 100.f), 
-		RollingSpeed);
-	ItemMeshComp->AddImpulse(Impulse, NAME_None, true);
+	// 1. 필요한 변수들 준비
+	FHitResult HitResult;                             // 충돌 결과 저장용
+	FVector Start = GetActorLocation();            // 시작점: 캐릭터 시점(눈) 위치
+	FVector DownVector = FVector::DownVector;
+	FVector End = Start + (DownVector * 500.f);    // 끝점: 시작점 + (방향 * 거리)
 
-	FVector Angular = FVector(
-		FMath::FRandRange(20.f, 40.f),
-		FMath::FRandRange(20.f, 40.f),
-		FMath::FRandRange(20.f, 40.f));
+	// 2. 쿼리 파라미터 설정 (보통 자신은 무시하도록 설정)
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this); // 나 자신은 레이에 맞지 않게 제외
 
-	ItemMeshComp->SetPhysicsAngularVelocityInDegrees(Angular, true);
+	// 3. 레이트레이스 실행
+	bool bHit = GetWorld()->LineTraceSingleByChannel(
+		HitResult,
+		Start,
+		End,
+		ECC_WorldStatic, // 가시성 채널 사용 (보통 정적인 물체 감지)
+		Params
+	);
 
+	// 4. 결과 확인 및 디버그 라인 그리기
+	DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 2.0f, 0, 1.0f);
+
+	if (bHit)
+	{
+		AActor* HitActor = HitResult.GetActor();
+		if (HitActor)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("충돌한 액터: %s"), *HitActor->GetName());
+			// 부딪힌 위치에 작은 점 표시
+			DrawDebugPoint(GetWorld(), HitResult.ImpactPoint, 10.f, FColor::Green, false, 2.f);
+			LandLocation = HitResult.ImpactPoint;
+		}
+	}
 }
 
 
@@ -178,6 +222,7 @@ void ADiaItem::BindItemName(TSoftClassPtr<UUserWidget>& WidgetAssetPtr)
 
 	ItemWidgetComp->SetWidgetClass(WidgetClass);
 	ItemWidgetComp->InitWidget();
+	ItemWidgetComp->EnsureReceiveHardwareInput();
 	ItemWidgetComp->SetVisibility(false);
 
 	UUserWidget* UserWidget = ItemWidgetComp->GetUserWidgetObject();

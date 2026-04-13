@@ -36,6 +36,9 @@ void UHUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	// 루트가 Visible이면 화면 전체가 히트 테스트를 먹어서 월드 UWidgetComponent(아이템 이름 등)로 입력이 가지 않음.
+	SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
 	SetMonsterHPVisibility(ESlateVisibility::Collapsed);
 	InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
 	CharacterStatus->SetVisibility(ESlateVisibility::Collapsed);

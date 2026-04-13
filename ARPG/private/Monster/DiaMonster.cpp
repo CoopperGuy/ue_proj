@@ -250,8 +250,14 @@ void ADiaMonster::DropItem()
 	{
 		// 아이템 데이터 생성
 		UItemSubsystem* ItemSubsystem = GetGameInstance()->GetSubsystem<UItemSubsystem>();
-		const FItemBase& ItemBaseData = ItemSubsystem->GetItemData("Weapon_Sword_01");
-		DungeonGameMode->SpawnItemAtLocation(this, ItemBaseData);
+
+		TArray<FItemDropInfo> DropInfos = ItemSubsystem->GetRandomDropItem(MonsterID);
+
+		for (const auto& DropInfo : DropInfos)
+		{
+			const FItemBase& ItemBaseData = ItemSubsystem->GetItemData(DropInfo.ItemID);
+			DungeonGameMode->SpawnItemAtLocation(this, ItemBaseData);
+		}
 	}
 	else
 	{

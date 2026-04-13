@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Types/ItemBase.h"  
+#include "Types/DiaItemOptionRow.h"
+#include "Types/DiaDropTable.h"
 #include "ItemSubsystem.generated.h"
 
 class UItemWidget;
@@ -21,9 +23,6 @@ public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
     
-    void LoadItemData();
-	void LoadOptionData();
-
     const FItemBase& GetItemData(const FName& ItemID) const;
     
     void CreateInventoryInstance(FInventorySlot& OutItem, FName& ItemID, int32 Level = 1, bool bRandomStats = false);
@@ -31,6 +30,12 @@ public:
 
 	UItemWidget* CreateItemWidget(const FInventorySlot& Item);
     UItemWidget* CreateItemWidgetEmpty();
+
+    TArray<FItemDropInfo> GetRandomDropItem(const FName& MonsterID) const;
+private:
+    void LoadItemData();
+    void LoadOptionData();
+    void LoadDropData();
 
 private:
     UPROPERTY()
@@ -40,16 +45,22 @@ private:
     FString ItemDataTablePath = TEXT("/Game/Datatable/DT_DiaitemTable.DT_DiaitemTable");
     
     UPROPERTY()
-    UDataTable* OptionDataTable;
+	UDataTable* OptionDataTable;
     
     UPROPERTY()
     FString OptionDataTablePath = TEXT("/Game/Datatable/DT_ItemOptions.DT_ItemOptions");
+
+    UPROPERTY()
+    FString DropDataTablePath = TEXT("/Game/Datatable/DT_MonsterDropTable.DT_MonsterDropTable");
 
     UPROPERTY()
     mutable TMap<FName, FItemBase> ItemCache;
     
     UPROPERTY()
     mutable TMap<FName, FDiaItemOptionRow> OptionCache;
+
+    UPROPERTY()
+	mutable TMap<FName, FMonsterDropTable> DropCache;
 
     void GenerateRandomStats(FItemInstance& Item, int32 Level);
 	void GenerateItemOptions(FItemInstance& Item, int32 Level);

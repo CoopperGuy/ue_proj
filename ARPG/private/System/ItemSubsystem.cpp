@@ -11,8 +11,9 @@ void UItemSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     Super::Initialize(Collection);
 	LoadItemData();
     LoadOptionData();
-    UE_LOG(LogTemp, Warning, TEXT("ItemSubsystem: LoadComplete! "));
+    LoadDropData();
 
+    UE_LOG(LogTemp, Warning, TEXT("ItemSubsystem: LoadComplete! "));
 }
 
 void UItemSubsystem::Deinitialize()
@@ -73,6 +74,23 @@ void UItemSubsystem::LoadOptionData()
 
 }
 
+void UItemSubsystem::LoadDropData()
+{
+    UDataTable* DropDataTable = LoadObject<UDataTable>(nullptr, *DropDataTablePath);
+    if (DropDataTable)
+    {
+        DropCache.Empty();
+        TArray<FName> RowNames = DropDataTable->GetRowNames();
+        for (const FName& RowName : RowNames)
+        {
+            FMonsterDropTable* DropRow = DropDataTable->FindRow<FMonsterDropTable>(RowName, TEXT(""));
+            if (DropRow )
+            {
+                DropCache.Emplace(DropRow->MonsterID, *DropRow);
+            }
+        }
+    }
+}
 
 UItemWidget* UItemSubsystem::CreateItemWidget(const FInventorySlot& Item)
 {
@@ -106,6 +124,18 @@ UItemWidget* UItemSubsystem::CreateItemWidgetEmpty()
     }
 
     return nullptr;
+}
+
+TArray<FItemDropInfo> UItemSubsystem::GetRandomDropItem(const FName& MonsterID) const
+{
+    if(FMonsterDropTable* DropInfo = DropCache.Find(MonsterID))
+    {
+        TArray<FItemDropInfo> DropList = DropInfo->GetRandomizedDropItems();
+
+		return DropList;
+    }
+
+    return TArray<FItemDropInfo>();
 }
 
 void UItemSubsystem::GenerateRandomStats(FItemInstance& Item, int32 Level)

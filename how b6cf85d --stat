@@ -1,0 +1,43 @@
+[33mcommit b6cf85d9de91a4d9656629ec8fe265b42b43cc10[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: CoopperGuy <crisente235@gmail.com>
+Date:   Thu Apr 9 00:23:19 2026 +0900
+
+    Implement skill input blocking, enhance portal functionality, and update room monster spawning logic
+
+[1mdiff --git a/ARPG/private/Controller/DiaController.cpp b/ARPG/private/Controller/DiaController.cpp[m
+[1mindex de53a9f..84288b0 100644[m
+[1m--- a/ARPG/private/Controller/DiaController.cpp[m
+[1m+++ b/ARPG/private/Controller/DiaController.cpp[m
+[36m@@ -2,6 +2,8 @@[m
+ [m
+ [m
+ #include "Controller/DiaController.h"[m
+[32m+[m[32m#include "Engine/LocalPlayer.h"[m
+[32m+[m[32m#include "Engine/EngineBaseTypes.h"[m
+ [m
+ #include "DiaComponent/UI/DiaInventoryComponent.h"[m
+ #include "DiaComponent/UI/DiaEquipmentComponent.h"[m
+[36m@@ -51,6 +53,10 @@[m [mnamespace[m
+ ADiaController::ADiaController()[m
+ {[m
+ 	bShowMouseCursor = true;[m
+[32m+[m	[32mbEnableClickEvents = true;[m
+[32m+[m	[32mbEnableMouseOverEvents = true;[m
+[32m+[m	[32mDefaultClickTraceChannel = ECollisionChannel::ECC_Visibility;[m
+[32m+[m
+ 	DiaInventoryComponent = CreateDefaultSubobject<UDiaInventoryComponent>(TEXT("InventoryComponent"));[m
+ 	DiaEquipmentComponent = CreateDefaultSubobject<UDiaEquipmentComponent>(TEXT("EquipmentComponent"));[m
+ 	DiaOptionManagerComponent = CreateDefaultSubobject<UDiaOptionManagerComponent>(TEXT("OptionManagerComponent"));[m
+[36m@@ -148,6 +154,12 @@[m [mvoid ADiaController::BeginPlay()[m
+ void ADiaController::SetupInputComponent()[m
+ {[m
+ 	Super::SetupInputComponent();[m
+[32m+[m
+[32m+[m	[32mFInputModeGameAndUI InputModeData;[m
+[32m+[m	[32m//InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::LockAlways);[m
+[32m+[m	[32mInputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture);[m
+[32m+[m	[32mInputModeData.SetHideCursorDuringCapture(false);[m
+[32m+[m	[32mSetInputMode(InputModeData);[m
+ }[m
+ [m
+ void ADiaController::OnPossess(APawn* InPawn)[m

@@ -108,7 +108,9 @@ void UDiaCustomGameViewPort::SetupGameInstance(UDiaInstance* DiaInstance)
 	}
 
 	DiaPrimaryLayout->AddToViewport();
-	DiaPrimaryLayout->SetVisibility(ESlateVisibility::Visible);
+	// Visible 이면 루트가 화면 전체 히트 테스트를 먹어서 월드 UWidgetComponent(아이템 이름 등)로 마우스가 전달되지 않음.
+	// SelfHitTestInvisible: 본인은 빈 영역에서 통과, 자식(버튼 등)은 기존처럼 히트 가능.
+	DiaPrimaryLayout->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 }
 
 // bool UDiaCustomGameViewPort::IsCautionWidgetAlreadyActive() const { ... }

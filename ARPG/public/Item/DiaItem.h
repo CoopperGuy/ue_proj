@@ -5,11 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Types/ItemBase.h"
+#include "Item/DiaItemWidgetComponent.h"
 #include "DiaItem.generated.h"
 
 class UStaticMeshComponent;
 class UTexture2D;
-class UWidgetComponent;
 class ADiaController;
 class UBoxComponent;
 UCLASS()
@@ -59,10 +59,16 @@ private:
 	UTexture2D* ItemIcon;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
-	UWidgetComponent* ItemWidgetComp;
+	UDiaItemWidgetComponent* ItemWidgetComp;
 
 	UPROPERTY()
 	UBoxComponent* CollisionComp;
+
+	float CurrentRotSpeed;
+	bool bIsRolling;
+	float CachedBoxHalfHeight;
+
+	FVector LandLocation = FVector::ZeroVector;
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item", meta = (AllowPrivateAccess = "true"))
 	float RollingSpeed = 1000.0f;

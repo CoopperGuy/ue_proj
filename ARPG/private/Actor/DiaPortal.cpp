@@ -79,7 +79,7 @@ void ADiaPortal::OnPortalCursorOver()
 {
 	if (ADiaController* DiaPC = Cast<ADiaController>(GetWorld()->GetFirstPlayerController()))
 	{
-		//DiaPC->CurrentMouseCursor = EMouseCursor::Hand;
+		DiaPC->CurrentMouseCursor = EMouseCursor::Hand;
 		DiaPC->SetBlockSkillInput(true);
 	}
 }
@@ -88,7 +88,7 @@ void ADiaPortal::OnPortalCursorOut()
 {
 	if (ADiaController* DiaPC = Cast<ADiaController>(GetWorld()->GetFirstPlayerController()))
 	{
-		//DiaPC->CurrentMouseCursor = EMouseCursor::Default;
+		DiaPC->CurrentMouseCursor = EMouseCursor::Default;
 		DiaPC->SetBlockSkillInput(false);
 	}
 }
