@@ -12,6 +12,7 @@ class UStaticMeshComponent;
 class UTexture2D;
 class ADiaController;
 class UBoxComponent;
+class UProjectileMovementComponent;
 UCLASS()
 class ARPG_API ADiaItem : public AActor
 {
@@ -24,8 +25,6 @@ public:
 	void SetItemProperty(const FItemBase& _ItemData);
 	void DropItem(const FItemBase& ItemData);
 
-	//테스트용 블루프린트 함수 설정
-	UFUNCTION(BlueprintCallable, Category = "Item")
 	void RollingItem();
 	
 	UFUNCTION()
@@ -34,6 +33,9 @@ public:
 		FVector NormalImpulse, const FHitResult& Hit);
 	UFUNCTION()
 	void OnItemNameClicked();
+
+	UFUNCTION()
+	void OnItemLanded(const FHitResult& Hit);
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -42,6 +44,7 @@ protected:
 
 	void BindItemName(TSoftClassPtr<UUserWidget>& WidgetAssetPtr);
 	void SetItemName(const FText& NewName);
+	const FVector ComputeDropTarget() const;
 private:
 	ADiaController* FindBestPlayerForPickup();
 public:	
@@ -63,6 +66,9 @@ private:
 
 	UPROPERTY()
 	UBoxComponent* CollisionComp;
+
+	UPROPERTY()
+	UProjectileMovementComponent* ProjectileMovementComp;
 
 	float CurrentRotSpeed;
 	bool bIsRolling;

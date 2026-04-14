@@ -5,6 +5,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/ChildActorComponent.h"
 #include "Components/ArrowComponent.h"
+#include "Components/PrimitiveComponent.h"
 
 #include "Types/MapGenerate.h"
 #include "System/MonsterManager.h"
@@ -55,6 +56,7 @@ ADiaRoomBase::ADiaRoomBase()
 void ADiaRoomBase::BeginPlay()
 {
 	Super::BeginPlay();
+
 	
 	for (UBoxComponent* Trigger : RoomEnterTriggers)
 	{
@@ -72,6 +74,7 @@ void ADiaRoomBase::BeginPlay()
 	}
 
 }
+
 
 void ADiaRoomBase::OnConstruction(const FTransform& Transform)
 {

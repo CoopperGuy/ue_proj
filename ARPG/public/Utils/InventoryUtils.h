@@ -64,5 +64,6 @@ public:
      * @param ItemData 생성할 아이템 데이터
      * @return 생성된 ItemWidget (실패 시 nullptr)
      */
-    static UItemWidget* CreateItemWidget(const UObject* WorldContext, const FInventorySlot* ItemData);
+    static UItemWidget* CreateItemWidget(UWorld* WorldContext, const FInventorySlot* ItemData);
+    static UItemWidget* CreateItemWidget(UUserWidget* WidgetContext, const FInventorySlot* ItemData);
 }; 

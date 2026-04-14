@@ -92,7 +92,7 @@ void UItemSubsystem::LoadDropData()
     }
 }
 
-UItemWidget* UItemSubsystem::CreateItemWidget(const FInventorySlot& Item)
+UItemWidget* UItemSubsystem::CreateItemWidget(UWorld* WorldContext, const FInventorySlot& Item)
 {
     FSoftObjectPath ItemWidgetPath(TEXT("/Game/UI/Inventory/WBP_ItemWidget.WBP_ItemWidget_C"));
     TSoftClassPtr<UUserWidget> WidgetAssetPtr(ItemWidgetPath);
@@ -100,13 +100,32 @@ UItemWidget* UItemSubsystem::CreateItemWidget(const FInventorySlot& Item)
 
     if (ItemWidgetClass)
     {
-        UItemWidget* ItemWidget = CreateWidget<UItemWidget>(GetWorld(), ItemWidgetClass);
+        UItemWidget* ItemWidget = CreateWidget<UItemWidget>(WorldContext, ItemWidgetClass);
         if (ItemWidget)
         {
             ItemWidget->SetItemInfo(Item);
             return ItemWidget;
         }
 	}
+
+    return nullptr;
+}
+
+UItemWidget* UItemSubsystem::CreateItemWidget(UUserWidget* WidgetContext, const FInventorySlot& Item)
+{
+    FSoftObjectPath ItemWidgetPath(TEXT("/Game/UI/Inventory/WBP_ItemWidget.WBP_ItemWidget_C"));
+    TSoftClassPtr<UUserWidget> WidgetAssetPtr(ItemWidgetPath);
+    UClass* ItemWidgetClass = WidgetAssetPtr.LoadSynchronous();
+
+    if (ItemWidgetClass)
+    {
+        UItemWidget* ItemWidget = CreateWidget<UItemWidget>(WidgetContext, ItemWidgetClass);
+        if (ItemWidget)
+        {
+            ItemWidget->SetItemInfo(Item);
+            return ItemWidget;
+        }
+    }
 
     return nullptr;
 }

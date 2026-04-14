@@ -103,7 +103,7 @@ void FInventoryUtils::GetOccupiedCellIndices(int32 GridWidth, int32 ItemWidth, i
     }
 }
 
-UItemWidget* FInventoryUtils::CreateItemWidget(const UObject* WorldContext, const FInventorySlot* ItemData)
+UItemWidget* FInventoryUtils::CreateItemWidget(UWorld* WorldContext, const FInventorySlot* ItemData)
 {
     if (!IsValid(WorldContext))
     {
@@ -140,7 +140,7 @@ UItemWidget* FInventoryUtils::CreateItemWidget(const UObject* WorldContext, cons
     }
     else
     {
-        ItemWidget = ItemSubsystem->CreateItemWidget(*ItemData);
+        ItemWidget = ItemSubsystem->CreateItemWidget(WorldContext, *ItemData);
     }
 
 
@@ -155,4 +155,57 @@ UItemWidget* FInventoryUtils::CreateItemWidget(const UObject* WorldContext, cons
            *ItemData->ItemInstance.BaseItem.ItemID.ToString());
 
     return ItemWidget;
-} 
+}
+UItemWidget* FInventoryUtils::CreateItemWidget(UUserWidget* WidgetContext, const FInventorySlot* ItemData)
+{
+    if (!IsValid(WidgetContext))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - WidgetContext is null"));
+        return nullptr;
+    }
+
+    UWorld* World = WidgetContext->GetWorld();
+    if (!IsValid(World))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - World is null"));
+        return nullptr;
+    }
+
+    UGameInstance* GameInstance = World->GetGameInstance();
+    if (!IsValid(GameInstance))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - GameInstance is null"));
+        return nullptr;
+    }
+
+    UItemSubsystem* ItemSubsystem = GameInstance->GetSubsystem<UItemSubsystem>();
+    if (!IsValid(ItemSubsystem))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - ItemSubsystem is null"));
+        return nullptr;
+    }
+
+    UItemWidget* ItemWidget = nullptr;
+    // ItemSubsystem에서 아이템 위젯을 생성한다.
+    if (ItemData == nullptr)
+    {
+        ItemWidget = ItemSubsystem->CreateItemWidgetEmpty();
+    }
+    else
+    {
+        ItemWidget = ItemSubsystem->CreateItemWidget(WidgetContext, *ItemData);
+    }
+
+
+    if (!IsValid(ItemWidget))
+    {
+        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - Failed to create ItemWidget for item: %s"),
+            *ItemData->ItemInstance.BaseItem.ItemID.ToString());
+        return nullptr;
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("FInventoryUtils::CreateItemWidget - Successfully created ItemWidget for item: %s"),
+        *ItemData->ItemInstance.BaseItem.ItemID.ToString());
+
+    return ItemWidget;
+}

@@ -28,7 +28,8 @@ public:
     void CreateInventoryInstance(FInventorySlot& OutItem, FName& ItemID, int32 Level = 1, bool bRandomStats = false);
     void CreateInventoryInstanceByItemBase(FInventorySlot& OutItem, const FItemBase& ItemData, int32 Level = 1, bool bRandomStats = false);
 
-	UItemWidget* CreateItemWidget(const FInventorySlot& Item);
+	UItemWidget* CreateItemWidget(UWorld* WorldContext, const FInventorySlot& Item);
+    UItemWidget* CreateItemWidget(UUserWidget* WidgetContext, const FInventorySlot& Item);
     UItemWidget* CreateItemWidgetEmpty();
 
     TArray<FItemDropInfo> GetRandomDropItem(const FName& MonsterID) const;

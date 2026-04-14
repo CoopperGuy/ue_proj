@@ -44,6 +44,7 @@ bool UEquipSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
 	UItemDragDropOperation* ItemDragOp = Cast<UItemDragDropOperation>(InOperation);
 	if (!IsValid(ItemDragOp))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("EquipSlot: Invalid drag operation dropped on equip slot."));
 		return false;
 	}
 
@@ -51,15 +52,18 @@ bool UEquipSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
 	EEquipmentSlot EquipSlot = ItemDragOp->ItemData.ItemInstance.BaseItem.EquipmentSlot;
 	if (EquipSlot != SlotType)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("EquipSlot: Dropped item does not match equip slot type. Expected: %s, Got: %s"), *UEnum::GetValueAsString(SlotType), *UEnum::GetValueAsString(EquipSlot));
 		return false;
 	}
 
 	//인벤토리에서 온 경우에만 가능.
 	if (ItemDragOp->DragType == EItemDragDropType::EIDT_Inventory)
 	{
+		UE_LOG(LogTemp, Log, TEXT("EquipSlot: Attempting to equip item from inventory. Item: %s"), *ItemDragOp->ItemData.ItemInstance.InstanceID.ToString());
 		return AddItem(ItemDragOp->ItemData, ItemDragOp->SourceWidget);
 	}
 
+	UE_LOG(LogTemp, Warning, TEXT("EquipSlot: Unsupported drag type dropped on equip slot. Expected Inventory, Got: %d"), static_cast<int32>(ItemDragOp->DragType));
 	return false;
 }
 

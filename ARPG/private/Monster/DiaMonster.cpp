@@ -241,7 +241,7 @@ float ADiaMonster::TakeDamage(float DamageAmount, const FDamageEvent& DamageEven
 	return ActualDamage;
 }
 
-void ADiaMonster::DropItem()
+void ADiaMonster::DropItem(FName DieMonsterID)
 {
 	// 몬스터가 죽었을 때 아이템 드랍 로직 구현
 	// 예시: 아이템 생성 및 월드에 스폰
@@ -251,7 +251,7 @@ void ADiaMonster::DropItem()
 		// 아이템 데이터 생성
 		UItemSubsystem* ItemSubsystem = GetGameInstance()->GetSubsystem<UItemSubsystem>();
 
-		TArray<FItemDropInfo> DropInfos = ItemSubsystem->GetRandomDropItem(MonsterID);
+		TArray<FItemDropInfo> DropInfos = ItemSubsystem->GetRandomDropItem(DieMonsterID);
 
 		for (const auto& DropInfo : DropInfos)
 		{
@@ -328,6 +328,7 @@ void ADiaMonster::PlayDieAnimation()
 
 void ADiaMonster::Die(ADiaBaseCharacter* Causer)
 {
+	FName DieMonsterID = this->MonsterID;
 	//BT 모두 정지
 	ADiaAIController* AIController = Cast<ADiaAIController>(GetController());
 	if(IsValid(AIController))
@@ -338,9 +339,6 @@ void ADiaMonster::Die(ADiaBaseCharacter* Causer)
 			BehaviorTreeComp->StopTree();
 		}
 	}
-
-	//드랍되는아이템을 가져오는 방법 고안 필요하다.
-	DropItem();
 
 	ADungeonGameMode* DungeonGameMode = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());
 	if (IsValid(DungeonGameMode))
@@ -353,9 +351,7 @@ void ADiaMonster::Die(ADiaBaseCharacter* Causer)
 	}
 
 	AddToExperience(Causer);
-
 	Super::Die(Causer);
-
 
 	ADiaGameState* GameState = GetWorld()->GetGameState<ADiaGameState>();
 	if(IsValid(GameState))
@@ -363,11 +359,14 @@ void ADiaMonster::Die(ADiaBaseCharacter* Causer)
 		GameState->ReportMonsterDeath(OwnerRoomGuid);
 	}
 	
+	DropItem(DieMonsterID);
+
 	UGameInstance* GI = GetWorld()->GetGameInstance();
 	if (UMonsterManager* MM = GI->GetSubsystem<UMonsterManager>())
 	{
 		MM->DespawnMonster(this);
 	}
+
 }
 
 // SetGravity 메서드 추가

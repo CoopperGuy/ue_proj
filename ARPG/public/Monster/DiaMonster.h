@@ -69,7 +69,7 @@ protected:
 	/// 아이템 생성
 	/// 몬스터 정보 혹은 맵 정보에 등록된 아이템을 생성
 	/// </summary>
-	virtual void DropItem();
+	virtual void DropItem(FName DieMonsterID);
 
     void SetMonsterCollisionSetup(const FMonsterInfo& MonsterInfo);
     

@@ -33,6 +33,7 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	void ConfigurePackedLevelTraceCollision();
 
 	void OnConstruction(const FTransform& Transform) override;
 public:	

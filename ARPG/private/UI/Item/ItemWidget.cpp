@@ -199,7 +199,10 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	// 아이템 드래그 오퍼레이션인지 확인
 	UItemDragDropOperation* ItemDragOp = Cast<UItemDragDropOperation>(InOperation);
 	if (!ItemDragOp)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ItemWidget::NativeOnDrop - Invalid drag operation type"));
 		return false;
+	}
 	
 	// 자기 자신에게 드롭하는 경우 처리하지 않음
 	if (ItemDragOp->SourceWidget == this)
@@ -210,22 +213,11 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	}
 	
 	// 부모 인벤토리 위젯 찾기 - 위젯 계층을 따라 올라가며 UMainInventory 찾기
-	UMainInventory* ParentInventory = nullptr;
-	UWidget* CurrentWidget = GetParent();
-	while (CurrentWidget)
-	{
-		ParentInventory = Cast<UMainInventory>(CurrentWidget);
-		if (IsValid(ParentInventory))
-		{
-			break;
-		}
-		CurrentWidget = CurrentWidget->GetParent();
-	}
-	
+	UMainInventory* ParentInventory = GetTypedOuter<UMainInventory>();
 	if (!IsValid(ParentInventory))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ItemWidget::NativeOnDrop - Parent inventory not found"));
-		return false; 
+		return false;
 	}
 
 	// 드롭 위치를 그리드 좌표로 변환
