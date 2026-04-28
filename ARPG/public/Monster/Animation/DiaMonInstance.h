@@ -28,6 +28,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Dead")
 	bool bIsDead = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+	int32 Phase = 1;
+
 	bool bIsMoving = false;
 
 	

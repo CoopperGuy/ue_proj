@@ -62,6 +62,15 @@ struct FMonsterInfo : public FTableRowBase
 	TSubclassOf<ADiaMonster> BP_MonsterAsset;
 };
 
+UENUM(BlueprintType)
+enum class ESpawnType : uint8
+{
+	Normal UMETA(DisplayName = "Normal"),
+	Boss UMETA(DisplayName = "Boss"),
+	Event UMETA(DisplayName = "Event"),
+	Dynamic UMETA(DisplayName = "Dynamic"),
+	Wave UMETA(DisplayName = "Wave")
+};
 
 USTRUCT(BlueprintType)
 struct FMonsterSpawnInfo
@@ -108,5 +117,6 @@ struct FMapSpawnInfo : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SpawnInterval = 5.f;
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	ESpawnType SpawnType = ESpawnType::Normal;
 };

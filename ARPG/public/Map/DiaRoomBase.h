@@ -58,7 +58,7 @@ public:
 
 	void OnBattleStart(const FGuid InGuid);
 	void OnBattleEnd(const FGuid InGuid);
-
+	bool IsMonsterGenerateRoom(ETileType _TileType);
 protected:
 	UPROPERTY(EditAnywhere)
 	UChildActorComponent* PackedLevelChildActorComponent;
@@ -84,6 +84,9 @@ protected:
 	UPROPERTY()
 	FGuid RoomGuid;
 
+	UPROPERTY()
+	ESpawnType SpawnType;
+
 	bool isCleared = false;
 public:
 	FORCEINLINE void SetTileType(ETileType _TileType) { TileType = _TileType; }
@@ -92,4 +95,6 @@ public:
 	FORCEINLINE const FGuid& GetRoomGuid() const { return RoomGuid; }
 	FORCEINLINE void SetDoorDirections(uint8 _DoorDir) { DoorDirections = _DoorDir; }
 	FORCEINLINE uint8 GetDoorDirections() const { return DoorDirections; }
+	FORCEINLINE void SetSpawnType(ESpawnType _SpawnType) { SpawnType = _SpawnType; }
+	FORCEINLINE ESpawnType GetSpawnType() const { return SpawnType; }
 };

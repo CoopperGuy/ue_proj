@@ -102,7 +102,9 @@ public:
 	void HandleAddSkillVariant(int32 SkillID, int32 VariantID, bool bApply);
 
 	void AddSkillVariantToSkillObjcet(int32 SkillID, int32 VariantID, bool bApply);
-	void OnRecieveDamage(const float Damage);
+	virtual void OnRecieveDamage(const float Damage);
+	
+	bool CheckBossMonsterByAbilityTag() const;
 protected:
 	// 기본적인 함수
 	virtual void BeginPlay() override;

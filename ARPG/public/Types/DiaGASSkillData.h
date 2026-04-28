@@ -4,6 +4,9 @@
 #include "Engine/DataTable.h"
 #include "GameplayTagContainer.h"
 #include "GameplayAbilities/Public/GameplayAbilitySpec.h"
+#include "StructUtils/InstancedStruct.h"
+#include "Types/DiaGASSkillExtraData.h"
+#include "Types/DiaGASSkillStepData.h"
 #include "DiaGASSkillData.generated.h"
 
 class UGameplayAbility;
@@ -63,12 +66,19 @@ struct ARPG_API FGASSkillData : public FTableRowBase
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TSubclassOf<UDiaGameplayAbility> AbilityClass;
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    TSubclassOf<ADiaSkillActor> SkillObjectClass;
+    /**
+     * 기존 단일 실행 스킬용 추가 데이터(Projectile/Melee/Ground/Charge/Dodge 등).
+     * 신규 복합 스킬은 Steps 사용을 우선한다.
+     */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Extra", meta = (BaseStruct = "/Script/ARPG.GASSkillExtraDataBase"))
+    FInstancedStruct ExtraData;
 
-    /** 스킬 오브젝트(ADiaSkillActor 등)가 월드에 남는 시간(초). 0 이하면 액터 기본 LifeSpan·블루프린트 설정을 따름. */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Skill Object", meta = (ClampMin = "0.0"))
-    float SkillObjectRemainTime = 0.0f;
+    /**
+     * 복합 스킬 실행 단계.
+     * 예: ChargeStep -> GroundSpawnStep 처럼 여러 실행부를 데이터로 조합한다.
+     */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Steps", meta = (BaseStruct = "/Script/ARPG.GASSkillStepDataBase"))
+    TArray<FInstancedStruct> Steps;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     EGASSkillType SkillType = EGASSkillType::MeleeAttack;
@@ -104,12 +114,6 @@ struct ARPG_API FGASSkillData : public FTableRowBase
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     float CastTime = 0.0f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    float Range = 0.0f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite)
-    float Radius = 0.0f;
 
     // 다단 히트 설정
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Multi Hit")
@@ -164,8 +168,6 @@ struct ARPG_API FGASSkillData : public FTableRowBase
         ManaCost = 0.0f;
         CooldownDuration = 0.0f;
         CastTime = 0.0f;
-        Range = 0.0f;
-        Radius = 0.0f;
         MaxLevel = 1;
         RequiredCharacterLevel = 1;
         HitCount = 1;
@@ -176,6 +178,26 @@ struct ARPG_API FGASSkillData : public FTableRowBase
         EffectsToApplyOnHit.Reserve(6);
         EffectsToApplyOnSelf.Reserve(6);
         PrerequisiteSkills.Reserve(3);
+    }
+
+    /**
+     * ExtraData 에서 특정 파생 타입을 안전하게 읽는 헬퍼.
+     * 타입이 일치하거나 파생 관계이면 포인터, 아니면 nullptr.
+     */
+    template<typename T>
+    const T* GetExtraPtr() const
+    {
+        static_assert(TIsDerivedFrom<T, FGASSkillExtraDataBase>::IsDerived,
+            "T must derive from FGASSkillExtraDataBase");
+        return ExtraData.GetPtr<T>();
+    }
+
+    template<typename T>
+    const T* GetStepPtr(int32 StepIndex) const
+    {
+        static_assert(TIsDerivedFrom<T, FGASSkillStepDataBase>::IsDerived,
+            "T must derive from FGASSkillStepDataBase");
+        return Steps.IsValidIndex(StepIndex) ? Steps[StepIndex].GetPtr<T>() : nullptr;
     }
 };
 

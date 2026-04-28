@@ -40,11 +40,16 @@ struct ARPG_API FDiaSkillVariantContext
 	FDiaSkillVariantContext() {}
 	FDiaSkillVariantContext(const FDiaSkillVariantSpec& spec) {}
 
+	UPROPERTY(BlueprintReadOnly)
 	FHitResult HitResult;
+	UPROPERTY(BlueprintReadOnly)
 	TSubclassOf<class ADiaSkillActor> SkillActorClass;
+	UPROPERTY(BlueprintReadOnly)
 	FGameplayAbilityTargetDataHandle TargetData;
+	UPROPERTY(BlueprintReadOnly)
 	class UAbilitySystemComponent* AbilityComp;
-	class ADiaSkillActor* SkillActor;
+	UPROPERTY(BlueprintReadOnly)
+	TArray<TObjectPtr<ADiaSkillActor>> SkillActors;
 };
 
 /**

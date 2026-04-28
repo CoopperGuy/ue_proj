@@ -57,10 +57,9 @@ void ADiaRoomBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	
 	for (UBoxComponent* Trigger : RoomEnterTriggers)
 	{
-		if (Trigger && TileType == ETileType::Floor || TileType == ETileType::Boss)
+		if (Trigger && IsMonsterGenerateRoom(TileType))
 		{
 			Trigger->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnRoomEnterTriggerEndOverlap);
 		}
@@ -198,6 +197,7 @@ void ADiaRoomBase::OnRoomEnterTriggerOverlap(UPrimitiveComponent* OverlappedComp
 
 void ADiaRoomBase::OnRoomEnterTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
+	UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase::OnRoomEnterTriggerEndOverlap: Overlap ended with actor %s"), *OtherActor->GetName());
 	if (isCleared)
 		return;
 
@@ -224,7 +224,7 @@ void ADiaRoomBase::OnRoomEnterTriggerEndOverlap(UPrimitiveComponent* OverlappedC
 
 	if (DiaGameState)
 	{
-		DiaGameState->SpawnRoomMonsters(this->GetRoomGuid(), GetActorLocation(), GetTileType(), DiaMapConstants::HalfTileSize);
+		DiaGameState->SpawnRoomMonsters(this->GetRoomGuid(), GetActorLocation(), GetTileType(), SpawnType, DiaMapConstants::HalfTileSize);
 	}
 	else
 	{
@@ -321,4 +321,11 @@ void ADiaRoomBase::OnBattleEnd(const FGuid InGuid)
 	}
 
 	isCleared = true;
+}
+
+bool ADiaRoomBase::IsMonsterGenerateRoom(ETileType _TileType)
+{
+	if (_TileType != ETileType::Corridor && _TileType != ETileType::Empty)
+		return true;
+	return false;
 }

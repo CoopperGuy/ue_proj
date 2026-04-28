@@ -90,7 +90,10 @@ void UDiaProjectileAbility::SpawnProjectile()
 	const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
 	if (!ProjectileClass || !ActorInfo.AvatarActor.IsValid())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaProjectileAbility::SpawnProjectile - Cannot spawn projectile: missing requirements"));
+		UE_LOG(LogTemp, Warning, TEXT("DiaProjectileAbility::SpawnProjectile - Cannot spawn projectile. SkillID: %d, ProjectileClass: %s, AvatarValid: %s"),
+			SkillData.SkillID,
+			*GetNameSafe(ProjectileClass),
+			ActorInfo.AvatarActor.IsValid() ? TEXT("true") : TEXT("false"));
 		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 
 		return;
@@ -128,6 +131,12 @@ void UDiaProjectileAbility::SpawnProjectile()
 	const float SpawnDistance = FMath::Max(ProjectileOffset.Size(), MinimumRange);
 	FVector SpawnLocation = CharacterLocation + LaunchDirection * SpawnDistance;
 
+	UE_LOG(LogTemp, Log, TEXT("DiaProjectileAbility::SpawnProjectile - SkillID: %d, Class: %s, Location: %s, Direction: %s"),
+		SkillData.SkillID,
+		*GetNameSafe(ProjectileClass),
+		*SpawnLocation.ToString(),
+		*LaunchDirection.ToString());
+
 #if UE_EDITOR
 	DrawDebugLine(World, CharacterLocation, SpawnLocation, FColor::Green, false, 1.5f, 0, 2.0f);
 #endif
@@ -161,25 +170,37 @@ void UDiaProjectileAbility::ProcessSkillDelayEvents()
 {
 	Super::ProcessSkillDelayEvents();
 
+	UE_LOG(LogTemp, Log, TEXT("DiaProjectileAbility::ProcessSkillDelayEvents - SkillID: %d"), SkillData.SkillID);
+
 	// Spawn projectile(s) immediately after ability activation
 	SpawnProjectile();
+}
+
+bool UDiaProjectileAbility::ShouldEndAbilityOnMontageCompleted() const
+{
+	return SkillData.CastTime <= 0.f;
 }
 
 void UDiaProjectileAbility::InitializeWithSkillData(const FGASSkillData& InSkillData)
 {
     Super::InitializeWithSkillData(InSkillData);
-    if (InSkillData.SkillObjectClass)
+
+    const FGASProjectileData* P = InSkillData.GetExtraPtr<FGASProjectileData>();
+    if (!P)
     {
-        ProjectileClass = InSkillData.SkillObjectClass;
+        return;
     }
-    // Multi-shot 같은 값은 데이터 구조에 따라 매핑 (예시로 Count/Spread를 Range/Radius로 매핑)
-    if (InSkillData.SkillType == EGASSkillType::RangedAttack || InSkillData.SkillType == EGASSkillType::Magic)
+
+    if (P->SkillActorClass)
     {
-        // 선택적 매핑 규칙: Range -> ProjectileCount(정수 변환), Radius -> SpreadAngle
-        ProjectileCount = FMath::Clamp(static_cast<int32>(InSkillData.Range / 200.0f), 1, 7);
-        bFireMultipleProjectiles = ProjectileCount > 1;
-        SpreadAngle = FMath::Clamp(InSkillData.Radius * 0.2f, 5.0f, 45.0f);
+        ProjectileClass = P->SkillActorClass;
     }
+    ProjectileOffset = P->ProjectileOffset;
+    MinimumRange = P->MinimumRange;
+    bUseOwnerRotation = P->bUseOwnerRotation;
+    bFireMultipleProjectiles = P->bFireMultipleProjectiles;
+    ProjectileCount = P->ProjectileCount;
+    SpreadAngle = P->SpreadAngle;
 }
 
 FVector UDiaProjectileAbility::CalculateLaunchDirection(ACharacter* Character) const
@@ -209,7 +230,7 @@ FVector UDiaProjectileAbility::CalculateLaunchDirection(ACharacter* Character) c
 		FVector ToMouse = MouseWorldLocation - CharacterLocation;
 		ToMouse.Z = 0.0f;
 
-		DrawDebugLine(GetWorld(), CharacterLocation, MouseWorldLocation, FColor::Blue, false, 1.5f, 0, 2.0f);          // 캐릭터→마우스
+		DrawDebugLine(GetWorld(), CharacterLocation, MouseWorldLocation, FColor::Blue, false, 1.5f, 0, 2.0f);
 
 		const float Distance = ToMouse.Size();
 		if (Distance < KINDA_SMALL_NUMBER)
@@ -222,54 +243,4 @@ FVector UDiaProjectileAbility::CalculateLaunchDirection(ACharacter* Character) c
 		return Direction;
 	}
 }
-//
-//FVector UDiaProjectileAbility::GetMouseWorldLocation() const
-//{
-//	const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
-//	if (!ActorInfo.PlayerController.IsValid())
-//	{
-//		return FVector::ZeroVector;
-//	}
-//
-//	APlayerController* PC = ActorInfo.PlayerController.Get();
-//	
-//	FVector MouseWorldLocation, MouseWorldDirection;
-//	bool bDeprojectSuccess = PC->DeprojectMousePositionToWorld(MouseWorldLocation, MouseWorldDirection);
-//	
-//	if (!bDeprojectSuccess)
-//	{
-//		return FVector::ZeroVector;
-//	}
-//
-//	// Trace from mouse position to ground
-//	FHitResult HitResult;
-//	FVector TraceStart = MouseWorldLocation;
-//	FVector TraceEnd = MouseWorldLocation + MouseWorldDirection * 10000.0f; // Trace far distance
-//
-//	FCollisionQueryParams QueryParams;
-//	QueryParams.AddIgnoredActor(ActorInfo.AvatarActor.Get());
-//
-//	bool bHit = GetWorld()->LineTraceSingleByChannel(
-//		HitResult,
-//		TraceStart,
-//		TraceEnd,
-//		ECC_WorldStatic,
-//		QueryParams
-//	);
-//
-//	if (bHit)
-//	{
-//		return HitResult.Location;
-//	}
-//
-//	// If no hit, project to character's Z level
-//	ACharacter* Character = Cast<ACharacter>(ActorInfo.AvatarActor.Get());
-//	if (Character)
-//	{
-//		float CharacterZ = Character->GetActorLocation().Z;
-//		float T = (CharacterZ - MouseWorldLocation.Z) / MouseWorldDirection.Z;
-//		return MouseWorldLocation + MouseWorldDirection * T;
-//	}
-//
-//	return FVector::ZeroVector;
-//}
+

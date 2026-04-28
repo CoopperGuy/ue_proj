@@ -50,7 +50,7 @@ public:
 	virtual void NativeConstruct() override;
 	
 	void UpdateOrbPercentage(OrbType _Type, float _Percentage);
-	void UpdateMonsterPercentage(BarType _Type, float _Percentage);
+	void UpdateMonsterPercentage(BarType _Type, float _Percentage, bool IsBoss = false);
 	void UpdateExpPercentage(float _Percentage);
 
 	void CreateCautionWidget();
@@ -69,6 +69,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UMonsterHP* MonsterHPWidget;
+
+	UPROPERTY(meta = (BindWidget))
+	UMonsterHP* BossMonsterHPWidget;
 
 	UPROPERTY(meta = (BindWidget))
 	UMainInventory* InventoryWidget;

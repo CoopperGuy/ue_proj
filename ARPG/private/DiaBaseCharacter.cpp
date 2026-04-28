@@ -276,6 +276,15 @@ void ADiaBaseCharacter::OnRecieveDamage(const float Damage)
 	}
 }
 
+bool ADiaBaseCharacter::CheckBossMonsterByAbilityTag() const
+{
+	if(AbilityTags.Num() > 0)
+	{
+		return AbilityTags.HasTag(FDiaGameplayTags::Get().SkillType_Character_BossMonster);
+	}
+	return false;
+}
+
 void ADiaBaseCharacter::OnStunTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
 {
 	if (NewCount > 0)

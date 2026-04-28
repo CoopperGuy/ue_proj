@@ -30,7 +30,6 @@ void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVa
 		return;
 	}
 	constexpr float AdditionalAngle = 10.f;
-	constexpr float defaultDist = 10.f;
 
 	FSkillSpawnRuntime Runtime;
 	Runtime.ExtraSpawnCount = 1;
@@ -46,12 +45,28 @@ void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVa
 	
 	FVector TargetLocation = FVector::ZeroVector;
 	FVector Direction = FVector::ForwardVector;
+	FTransform BaseSpawnTransform(CharacterForward.Rotation(), CharacterLocation + CharacterForward * 100.f);
+	bool bHasSpawnTransform = false;
 
 	// 타겟 위치와 방향 가져오기
-	FTransform SpawnTransform;
 	if (const FGameplayAbilityTargetData* LocationData = Context.TargetData.Get(0))
 	{
-		if (LocationData->HasHitResult())
+		if (LocationData->GetScriptStruct() == FGameplayAbilityTargetData_LocationInfo::StaticStruct())
+		{
+			const FGameplayAbilityTargetData_LocationInfo* LocationInfo = static_cast<const FGameplayAbilityTargetData_LocationInfo*>(LocationData);
+			if (LocationInfo->SourceLocation.LocationType == EGameplayAbilityTargetingLocationType::LiteralTransform)
+			{
+				BaseSpawnTransform = LocationInfo->SourceLocation.LiteralTransform;
+				bHasSpawnTransform = true;
+			}
+
+			if (LocationInfo->TargetLocation.LocationType == EGameplayAbilityTargetingLocationType::LiteralTransform)
+			{
+				TargetLocation = LocationInfo->TargetLocation.LiteralTransform.GetLocation();
+				Direction = (TargetLocation - BaseSpawnTransform.GetLocation()).GetSafeNormal();
+			}
+		}
+		else if (LocationData->HasHitResult())
 		{
 			TargetLocation = LocationData->GetHitResult()->Location;
 			Direction = (TargetLocation - CharacterLocation).GetSafeNormal();
@@ -68,6 +83,7 @@ void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVa
 	{
 		Direction = CharacterForward;
 	}
+	BaseSpawnTransform.SetRotation(Direction.Rotation().Quaternion());
 
 	FRotator AdditionalRotator = FRotator(0.f, -AdditionalAngle * 0.5f * (Runtime.ExtraSpawnCount - 1), 0.f);
 	FRotator DefaultRotator = FRotator(0.f, AdditionalAngle, 0.f);
@@ -84,9 +100,19 @@ void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVa
 
 	for (int32 i = 0; i < Runtime.ExtraSpawnCount; i++)
 	{				
-		// 각 발사체마다 캐릭터 위치 기준으로 고유한 위치 계산
-		FVector SpawnLocation = CharacterLocation + Direction * defaultDist;
-		SpawnTransform = FTransform(Direction.Rotation(), SpawnLocation);
+		FTransform SpawnTransform = BaseSpawnTransform;
+		SpawnTransform.SetRotation(Direction.Rotation().Quaternion());
+
+		if (!bHasSpawnTransform)
+		{
+			SpawnTransform.SetLocation(CharacterLocation + Direction * 100.f);
+		}
+
+		UE_LOG(LogTemp, Log, TEXT("UDiaSkillVariantSpawnExecutor::ExecuteEffect - SkillID: %d, Class: %s, SpawnLocation: %s, Direction: %s"),
+			Ability ? Ability->GetSkillData().SkillID : -1,
+			*GetNameSafe(Context.SkillActorClass),
+			*SpawnTransform.GetLocation().ToString(),
+			*Direction.ToString());
 		
 		AActor* SpawnedActorRaw = World->SpawnActorDeferred<AActor>(
 			Context.SkillActorClass,
@@ -97,6 +123,13 @@ void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVa
 		);
 
 		ADiaSkillActor* SpawnedActor = Cast<ADiaSkillActor>(SpawnedActorRaw);
+		if (!SpawnedActor)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("UDiaSkillVariantSpawnExecutor::ExecuteEffect - Spawn failed or class is not ADiaSkillActor. Raw: %s, Class: %s"),
+				*GetNameSafe(SpawnedActorRaw),
+				*GetNameSafe(Context.SkillActorClass));
+		}
+
 		if (SpawnedActor)
 		{
 			const FGASSkillData& SkillData = Ability->GetSkillData();
@@ -128,6 +161,8 @@ void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<class UDiaSkillVa
 			}
 
 			SpawnedActor->FinishSpawning(SpawnTransform);
+
+			Context.SkillActors.Add(SpawnedActor);
 
 			if (Ability)
 			{

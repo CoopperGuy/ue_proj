@@ -20,6 +20,7 @@ void UDiaMonInstance::NativeUpdateAnimation(float DeltaSeconds)
 	Speed = Velocity.Size();
 	bIsMoving = Speed > 3.f;
 	bIsDead = diaMonster->GetIsDead();
+	Phase = diaMonster->GetPhase();
 
 	if (bIsMoving && !bIsDead)
 	{

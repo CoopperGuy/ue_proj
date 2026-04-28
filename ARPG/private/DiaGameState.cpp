@@ -6,7 +6,7 @@
 #include "System/MapInfoSubsystem.h"
 #include "System/MonsterSpawnSubSystem.h"
 
-void ADiaGameState::SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& CenterPos, const ETileType NewRoomType, const float TileSize)
+void ADiaGameState::SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& CenterPos, const ETileType NewRoomType, const ESpawnType SpawnType, const float TileSize)
 {
 	CurrentRoomID = NewRoomID;
 	CurrentRoomType = NewRoomType;
@@ -37,7 +37,7 @@ void ADiaGameState::SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& Cen
 
 	FName MapID = MapInfoSubsystem->GetCurrentMapID();
 	FName SpawnGroupName = NAME_None;
-	const TArray<FMapSpawnInfo>& SpawnInfo = MonsterSpawnSubSystem->GetSpawnInfosForMap(MapID);
+	const TArray<FMapSpawnInfo>& SpawnInfo = MonsterSpawnSubSystem->GetSpawnInfosForMapWithSpawnType(MapID, SpawnType);
 	if (SpawnInfo.Num() > 0)
 	{
 		const int32 RandSpawnInfoIndex = FMath::RandRange(0, SpawnInfo.Num() - 1);

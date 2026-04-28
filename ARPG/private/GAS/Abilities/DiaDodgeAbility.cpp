@@ -10,6 +10,20 @@ UDiaDodgeAbility::UDiaDodgeAbility()
 	ActivationOwnedTags.AddTag(FDiaGameplayTags::Get().State_Invincible);
 }
 
+void UDiaDodgeAbility::InitializeWithSkillData(const FGASSkillData& InSkillData)
+{
+	Super::InitializeWithSkillData(InSkillData);
+
+	const FGASDodgeData* D = InSkillData.GetExtraPtr<FGASDodgeData>();
+	if (!D)
+	{
+		return;
+	}
+
+	DodgeStrength = D->DodgeStrength;
+	DodgeDuration = D->DodgeDuration;
+}
+
 void UDiaDodgeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);

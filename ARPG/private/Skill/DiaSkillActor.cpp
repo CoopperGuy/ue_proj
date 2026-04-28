@@ -267,7 +267,7 @@ void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitR
             {
                 FDiaSkillVariantContext VariantContext;
                 VariantContext.HitResult = HitResult;
-                VariantContext.SkillActor = this;
+				VariantContext.SkillActors.Add(this);
                 VariantContext.AbilityComp = OwnerActor->GetAbilitySystemComponent();
                 
                 // Variants 배열 생성

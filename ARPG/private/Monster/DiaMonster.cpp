@@ -313,7 +313,8 @@ void ADiaMonster::UpdateHPGauge(float CurHealth, float MaxHelath)
     if (HUD)
     {
         float HPPersentage = CurHealth / MaxHelath;
-        HUD->UpdateMonsterPercentage(BarType::BT_HP, HPPersentage);
+		bool IsBoss = CheckBossMonsterByAbilityTag();
+        HUD->UpdateMonsterPercentage(BarType::BT_HP, HPPersentage, IsBoss);
     }
     else
     {
@@ -373,4 +374,16 @@ void ADiaMonster::Die(ADiaBaseCharacter* Causer)
 void ADiaMonster::SetGravity(bool bEnableGravity)
 {
 	Super::SetGravity(bEnableGravity);
+}
+
+void ADiaMonster::OnRecieveDamage(const float Damage)
+{
+	Super::OnRecieveDamage(Damage);
+
+	float health = GetAttributeSet()->GetHealth();
+	float maxHealth = GetAttributeSet()->GetMaxHealth();
+	if(health < maxHealth * 0.5f)
+	{
+		Phase = 2;
+	}
 }

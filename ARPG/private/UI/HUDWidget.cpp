@@ -45,6 +45,8 @@ void UHUDWidget::NativeConstruct()
 	EquipmentWidget->SetVisibility(ESlateVisibility::Collapsed);
 	SkillPanelWidget->SetVisibility(ESlateVisibility::Collapsed);
 	SkillQuickSlotWidget->SetVisibility(ESlateVisibility::Visible);
+	BossMonsterHPWidget->SetVisibility(ESlateVisibility::Collapsed);
+	MonsterHPWidget->SetVisibility(ESlateVisibility::Collapsed);
 
 	ADiaBaseCharacter* OwningActor = Cast<ADiaBaseCharacter>(GetOwningPlayerPawn());
 	ADiaController* OwningController = Cast<ADiaController>(GetOwningPlayer());
@@ -115,13 +117,25 @@ void UHUDWidget::UpdateOrbPercentage(OrbType _Type, float _Percentage)
 }
 
 //-> DiaCombatComponent 
-void UHUDWidget::UpdateMonsterPercentage(BarType _Type, float _Percentage)
+void UHUDWidget::UpdateMonsterPercentage(BarType _Type, float _Percentage, bool IsBoss)
 {
-	MonsterHPWidget->SetVisibility(ESlateVisibility::Visible);
 	switch (_Type)
 	{
 	case BarType::BT_HP:
-		MonsterHPWidget->UpdatePercentage(_Percentage);
+		if (IsBoss)
+		{
+			MonsterHPWidget->SetVisibility(ESlateVisibility::Collapsed);
+			BossMonsterHPWidget->SetVisibility(ESlateVisibility::Visible);
+
+			BossMonsterHPWidget->UpdatePercentage(_Percentage);
+		}
+		else
+		{
+			MonsterHPWidget->SetVisibility(ESlateVisibility::Visible);
+			BossMonsterHPWidget->SetVisibility(ESlateVisibility::Collapsed);
+
+			MonsterHPWidget->UpdatePercentage(_Percentage);
+		}
 		break;
 	}
 }
@@ -193,14 +207,18 @@ void UHUDWidget::UpdateTagetMonster(ADiaBaseCharacter* NewTarget)
 	TargetMonster = NewTarget;
 	if (IsValid(TargetMonster))
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Target Changed: %s"), *TargetMonster->GetName());
-		MonsterHPWidget->SetVisibility(ESlateVisibility::Visible);
-
+		bool IsBoss = TargetMonster->CheckBossMonsterByAbilityTag();
+		UE_LOG(LogTemp, Warning, TEXT("Target Changed: %s, IsBoss: %s"), *TargetMonster->GetName(), IsBoss ? TEXT("True") : TEXT("False"));
 		UAbilitySystemComponent* AbilitySystem = TargetMonster->GetAbilitySystemComponent();
 
 		const float CurHP = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute());
 		const float MaxHP = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxHealthAttribute());
-		UpdateMonsterPercentage(BarType::BT_HP, CurHP / MaxHP);
+
+		UpdateMonsterPercentage(BarType::BT_HP, CurHP / MaxHP, IsBoss);
+		if (CurHP == 0.f)
+		{
+			SetMonsterHPVisibility(ESlateVisibility::Collapsed);
+		}
 	}
 	else
 	{
@@ -219,7 +237,6 @@ void UHUDWidget::UpdateTagetMonster(ADiaBaseCharacter* NewTarget)
 		//UE_LOG(LogTemp, Log, TEXT("Target Cleared"));
 	}
 #endif
-
 }
 
 void UHUDWidget::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
@@ -280,6 +297,7 @@ void UHUDWidget::ShowDamagePopup(float DamageAmount, const FVector2D& ScreenPos,
 void UHUDWidget::SetMonsterHPVisibility(ESlateVisibility _Visibility)
 {
 	MonsterHPWidget->SetVisibility(_Visibility);
+	BossMonsterHPWidget->SetVisibility(_Visibility);
 }
 
 UUserWidget* UHUDWidget::FindWidgetByName(const FName& WidgetName)

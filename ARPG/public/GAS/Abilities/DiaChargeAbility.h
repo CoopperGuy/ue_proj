@@ -6,6 +6,7 @@
 #include "GAS/DiaGameplayAbility.h"
 #include "DiaChargeAbility.generated.h"
 
+class UCurveVector;
 /**
  * 
  */
@@ -16,12 +17,15 @@ class ARPG_API UDiaChargeAbility : public UDiaGameplayAbility
 	
 public:
 	UDiaChargeAbility();
+	virtual void InitializeWithSkillData(const FGASSkillData& InSkillData) override;
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
 private:
-	void UpdateCharge();
 	FVector CalcSweepPosition(const FGameplayAbilityActorInfo* ActorInfo);
 	void ApplyHitToActorsInPath(AActor* TargetActor);
+
+	UFUNCTION()
+	void OnDashFinished();
 private:
 	FTimerHandle ChargeTimerHandle;
 
@@ -43,4 +47,6 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="GAS|Ability", meta = (AllowPrivateAccess = "true"))
 	float ChargeDist = 600.f;
 
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UCurveVector> PathOffsetCurve;
 };

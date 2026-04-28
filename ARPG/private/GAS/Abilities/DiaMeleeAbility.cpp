@@ -27,6 +27,22 @@ UDiaMeleeAbility::UDiaMeleeAbility()
 	CurrentHitCount = 0;
 	TotalHitCount = 1;
 	HitInterval = 0.0f;
+}
+
+void UDiaMeleeAbility::InitializeWithSkillData(const FGASSkillData& InSkillData)
+{
+	Super::InitializeWithSkillData(InSkillData);
+
+	const FGASMeleeData* M = InSkillData.GetExtraPtr<FGASMeleeData>();
+	if (!M)
+	{
+		return;
+	}
+
+	AttackRange = M->AttackRange;
+	AttackAngle = M->AttackAngle;
+	AttackOffset = M->AttackOffset;
+	bShowDebugShape = M->bShowDebugShape;
 
 	// Set ability tags
 	//FGameplayTagContainer Tags;

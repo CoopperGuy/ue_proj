@@ -61,7 +61,7 @@ ADiaItem::ADiaItem()
 	ProjectileMovementComp->bAutoActivate = false;
 	ProjectileMovementComp->UpdatedComponent = RootComponent;
 	ProjectileMovementComp->bShouldBounce = false;
-	ProjectileMovementComp->ProjectileGravityScale = 2.0f;
+	ProjectileMovementComp->ProjectileGravityScale = 5.0f;
 	ProjectileMovementComp->MaxSpeed = 3000.f;
 	ProjectileMovementComp->InitialSpeed = 100.f;
 }

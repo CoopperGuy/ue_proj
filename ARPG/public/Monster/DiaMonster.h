@@ -52,6 +52,11 @@ public:
      * @param bEnableGravity 중력 활성화 여부
      */
     void SetGravity(bool bEnableGravity);
+
+    /*
+    * 몬스터 피격시 로직 작동 (공용 로직으로만 하려고 했는데, 페이즈 전환같은거 필요해서 진행.)
+    */
+    virtual void OnRecieveDamage(const float Damage);
 protected:
 	/// <summary>
 	/// 엔진 기본 기능 
@@ -94,6 +99,8 @@ protected:
     UPROPERTY()
     FGuid OwnerRoomGuid;
 
+	int32 Phase = 1;
 public:
     void SetOwningRoom(const FGuid& RoomGuid) { OwnerRoomGuid = RoomGuid; }
+	int32 GetPhase() const { return Phase; }
 };

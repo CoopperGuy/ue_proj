@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "Types/MapGenerate.h"
+#include "Types/DiaMapTable.h"
+#include "Types/DiaMonsterTable.h"
 #include "DiaMapGeneratorSubsystem.generated.h"
 
 class ADiaRoomBase;

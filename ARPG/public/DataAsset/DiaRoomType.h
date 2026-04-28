@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
 #include "Types/MapGenerate.h"
+#include "Types/DiaMonsterTable.h"
 #include "DiaRoomType.generated.h"
 
 /**
@@ -28,6 +29,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room Info")
 	ETileType TileType = ETileType::Empty;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room Info")
+	ESpawnType SpawnType = ESpawnType::Normal;
 
 public:
 	virtual FPrimaryAssetId GetPrimaryAssetId() const override

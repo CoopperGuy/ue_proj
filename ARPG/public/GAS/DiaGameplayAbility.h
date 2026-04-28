@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbility.h"
 #include "Types/DiaGASSkillData.h"
+#include "GAS/Executor/DiaSkillStepExecutor.h"
 #include "DiaGameplayAbility.generated.h"
 
 class UAnimMontage;
@@ -12,7 +13,8 @@ class UNiagaraComponent;
 class UAbilitySystemComponent;
 class UDiaSkillVariant;
 class USkillObject;
-UCLASS(Abstract, Blueprintable)
+
+UCLASS(Blueprintable)
 class ARPG_API UDiaGameplayAbility : public UGameplayAbility
 {
 	GENERATED_BODY()
@@ -44,12 +46,14 @@ public:
 	void SetSkillObject(const USkillObject* InSkillObject);
 	const USkillObject* GetSkillObject() const { return SkillObject; }
 
-	/** SkillData.SkillObjectRemainTime > 0 이면 엔진 LifeSpan을 끄고 월드 타이머로 액터를 제거합니다. 스폰 직후 호출. */
+	/** SkillData.ExtraData(FGASSkillActorSpawnData)의 LifeSpan > 0 이면 엔진 LifeSpan을 끄고 월드 타이머로 액터를 제거합니다. 스폰 직후 호출. */
 	void ApplySkillObjectRemovalTimer(class ADiaSkillActor* SkillActor) const;
 
 	const TSubclassOf<UGameplayEffect> GetDamageEffectClass() const { return DamageEffectClass; }
 
 	void MakeEffectSpecContextToTarget(TArray<FGameplayEffectSpecHandle>& OutContext) const;
+
+
 protected:
 	// Skill data from GAS system
 	UPROPERTY(BlueprintReadOnly, Category = "Skill")
@@ -83,6 +87,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Melee|Effects")
 	USoundBase* HitSound;
 
+	UPROPERTY()
+	TArray<TObjectPtr<UDiaSkillStepExecutor>> StepExecutors;
 
 	// Helper functions
 	UFUNCTION(BlueprintCallable, Category = "Animation")
@@ -99,6 +105,8 @@ protected:
 
 	UFUNCTION()
 	void OnMontageCancelled();
+
+	virtual bool ShouldEndAbilityOnMontageCompleted() const;
 
 	/**
 	 * 히트 이펙트 스폰 (오버라이드 가능)
@@ -132,6 +140,15 @@ protected:
 
 	virtual void ApplyGameplayEffectToTarget(UAbilitySystemComponent* TargetASC) const;
 	virtual void ApplyGameplayEffectToSelf() const;
+
+	void ExecuteAbilityLogic(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData);
+
+	UPROPERTY()
+	FDiaSkillExecutionContext ExecutionContext;
+
+	int32 CurrentStepIndex = 0;
+	void RunNextStep();
+
 protected:
 	// Current playing montage (renamed to avoid shadowing)
 	UPROPERTY()

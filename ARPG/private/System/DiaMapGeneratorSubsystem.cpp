@@ -325,6 +325,7 @@ void UDiaMapGeneratorSubsystem::CreateMapFromData()
 			if (RoomType)
 			{
 				FName SpawnGroupName = NAME_None;
+				ESpawnType SpawnType = RoomType->SpawnType;
 				const TArray<FMapSpawnInfo>& SpawnInfo = MonsterSpawnSubSystem->GetSpawnInfosForMap(MapID);
 				if (SpawnInfo.Num() > 0)
 				{
@@ -337,6 +338,7 @@ void UDiaMapGeneratorSubsystem::CreateMapFromData()
 				{
 					FGuid RoomGuid = FGuid::NewGuid();
 					RoomBase->SetRoomGuid(RoomGuid);
+					RoomBase->SetSpawnType(SpawnType);
 					MapObjList.Add(RoomGuid, RoomBase);
 				}
 			}
@@ -364,13 +366,12 @@ ADiaRoomBase* UDiaMapGeneratorSubsystem::CraeteRoomActor(UDiaRoomType* RoomType,
 		return nullptr;
 	}
 	 
-	if (RoomData.TileType == ETileType::Floor)
+	if (RoomActor->IsMonsterGenerateRoom(RoomData.TileType))
 	{
 		RoomActor->SetDoorDirections(RoomData.Directions);
 	}
 
 	RoomActor->SetTileType(RoomData.TileType);
-
 	RoomActor->FinishSpawning(SpawnTransform);
 
 	return RoomActor;

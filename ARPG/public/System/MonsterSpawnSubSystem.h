@@ -93,6 +93,7 @@ public:
         }
 	}
     FORCEINLINE TArray<FMapSpawnInfo> GetSpawnInfosForMap(FName MapID) const;
+    FORCEINLINE TArray<FMapSpawnInfo> GetSpawnInfosForMapWithSpawnType(FName MapID, ESpawnType SpawnType) const;
 
     FOnMonsterGroupSpawned OnMonsterGroupSpawned;
 };

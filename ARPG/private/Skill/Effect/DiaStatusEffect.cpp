@@ -46,7 +46,7 @@ void UDiaStatusEffect::Apply()
     RemainingTime = Duration;
     CurrentStacks = FMath::Clamp(CurrentStacks + 1, 1, MaxStacks);
 
-    // È¿°ú Àû¿ë ·ÎÁ÷ (ÀÚ½Ä Å¬·¡½º¿¡¼­ ±¸Çö)
+    // È¿ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½Ú½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
 
     UE_LOG(LogTemp, Log, TEXT("Status Effect Applied: %s on %s (Stacks: %d)"),
         *DisplayName.ToString(), *OwnerCharacter->GetName(), CurrentStacks);
@@ -61,7 +61,7 @@ void UDiaStatusEffect::Remove()
 
     bIsActive = false;
 
-    // È¿°ú Á¦°Å ·ÎÁ÷ (ÀÚ½Ä Å¬·¡½º¿¡¼­ ±¸Çö)
+    // È¿ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½Ú½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)
 
     UE_LOG(LogTemp, Log, TEXT("Status Effect Removed: %s from %s"),
         *DisplayName.ToString(), *OwnerCharacter->GetName());
@@ -74,12 +74,12 @@ void UDiaStatusEffect::Tick(float DeltaTime)
         return;
     }
 
-    // Áö¼Ó ½Ã°£ °¨¼Ò
+    // ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½
     if (Duration > 0.0f)
     {
         RemainingTime -= DeltaTime;
 
-        // Áö¼Ó ½Ã°£ Á¾·á
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½
         if (RemainingTime <= 0.0f)
         {
             Remove();
@@ -87,7 +87,7 @@ void UDiaStatusEffect::Tick(float DeltaTime)
         }
     }
 
-    // ÁÖ±âÀû È¿°ú Ã³¸®
+    // ï¿½Ö±ï¿½ï¿½ï¿½ È¿ï¿½ï¿½ Ã³ï¿½ï¿½
     TimeSinceLastTick += DeltaTime;
     if (TimeSinceLastTick >= TickInterval)
     {
@@ -103,7 +103,7 @@ bool UDiaStatusEffect::HasTag(const FName& Tag) const
 
 void UDiaStatusEffect::OnEffectTick()
 {
-    // ÀÚ½Ä Å¬·¡½º¿¡¼­ ±¸Çö
+    // ï¿½Ú½ï¿½ Å¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 }
 
 bool UDiaStatusEffect::AddStack()
@@ -115,7 +115,7 @@ bool UDiaStatusEffect::AddStack()
 
     CurrentStacks++;
 
-    // ½ºÅÃÀÌ Ãß°¡µÉ ¶§ Áö¼Ó½Ã°£ °»½Å
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ß°ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½Ó½Ã°ï¿½ ï¿½ï¿½ï¿½ï¿½
     if (Duration > 0)
     {
         RemainingTime = Duration;
@@ -133,7 +133,7 @@ bool UDiaStatusEffect::RemoveStack()
 
     CurrentStacks--;
 
-    // ½ºÅÃÀÌ 0ÀÌ µÇ¸é È¿°ú Á¦°Å
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 0ï¿½ï¿½ ï¿½Ç¸ï¿½ È¿ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     if (CurrentStacks <= 0)
     {
         Remove();
@@ -152,7 +152,7 @@ void UDiaStatusEffect::SetCurrentStacks(int32 NewStacks)
 
     CurrentStacks = FMath::Clamp(NewStacks, 0, MaxStacks);
 
-    // ½ºÅÃÀÌ 0ÀÌ µÇ¸é È¿°ú Á¦°Å
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 0ï¿½ï¿½ ï¿½Ç¸ï¿½ È¿ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
     if (CurrentStacks <= 0)
     {
         Remove();

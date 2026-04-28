@@ -22,6 +22,12 @@ void UDiaSkillHitVariantExecutor::ExecuteEffect(const TArray<class UDiaSkillVari
 void UDiaSkillHitVariantExecutor::ExecuteEffect(const TArray<class UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, const UDiaGameplayAbility* Ability, FSkillHitRuntime& OutRuntime)
 {
 	// 기존 PierceCount를 Runtime에 설정
-	OutRuntime.PierceCount = Context.SkillActor ? Context.SkillActor->GetPierceCount() : 0;
-	ApplyEffects(Variants, Context, OutRuntime);
+	for (const ADiaSkillActor* SkillActor : Context.SkillActors)
+	{
+		if (SkillActor)
+		{
+			OutRuntime.PierceCount = SkillActor ? SkillActor->GetPierceCount() : 0;
+			ApplyEffects(Variants, Context, OutRuntime);
+		}
+	}
 }

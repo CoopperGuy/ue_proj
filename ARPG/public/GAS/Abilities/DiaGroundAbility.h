@@ -25,6 +25,7 @@ protected:
 	void SpawnSkillGround();
 
 	virtual void ProcessSkillDelayEvents() override;
+	virtual bool ShouldEndAbilityOnMontageCompleted() const override;
 protected:
 	// 발사체 클래스
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Projectile")

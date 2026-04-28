@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameStateBase.h"
 #include "DataAsset/DiaRoomType.h"
+#include "Types/DiaMonsterTable.h"
 #include "DiaGameState.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FDiaRoomClearedDelegate, FGuid);
@@ -19,7 +20,7 @@ class ARPG_API ADiaGameState : public AGameStateBase
 	GENERATED_BODY()
 	
 public:	
-	void SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& CenterPos, const ETileType NewRoomType, const float TileSize);
+	void SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& CenterPos, const ETileType NewRoomType, const ESpawnType SpawnType, const float TileSize);
 
 	void ReportMonsterDeath(const FGuid& RoomID);
 	void ClearCurrentLevel();

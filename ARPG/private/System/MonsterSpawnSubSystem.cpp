@@ -128,7 +128,8 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
         for (int32 i = 0; i < SpawnLocations.Num(); ++i)
 		{
 			const FVector& Location = SpawnLocations[i];
-			const FMonsterSpawnInfo& SpawnMonsters = SpawnInfo.MonsterSpawnInfos[i % SpawnInfo.MonsterSpawnInfos.Num()];
+			int32 MonsterTypeIndex = FMath::RandRange(0, SpawnInfo.MonsterSpawnInfos.Num() - 1);
+			const FMonsterSpawnInfo& SpawnMonsters = SpawnInfo.MonsterSpawnInfos[MonsterTypeIndex];
 
             ADiaMonster* SpawnedMonster = MM->SpawnMonster(GetWorld(), SpawnMonsters.MonsterID, Location); 
             if (!IsValid(SpawnedMonster))
@@ -137,7 +138,6 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
             }
 			SpawnedMonsters.Add(SpawnedMonster);
 		}
-
 		OnMonsterGroupSpawned.ExecuteIfBound(SpawnedMonsters);
         ResetRetry(GroupID);
 	}
@@ -176,6 +176,21 @@ TArray<FMapSpawnInfo> UMonsterSpawnSubSystem::GetSpawnInfosForMap(FName MapID) c
 	for(const auto& Pair : MapSpawnCache)
 	{
 		if (Pair.Value.MapID == MapID)
+		{
+			Result.Emplace(Pair.Value);
+		}
+	}
+
+	return Result;
+}
+
+TArray<FMapSpawnInfo> UMonsterSpawnSubSystem::GetSpawnInfosForMapWithSpawnType(FName MapID, ESpawnType SpawnType) const
+{
+	TArray<FMapSpawnInfo> Result;
+
+	for (const auto& Pair : MapSpawnCache)
+	{
+		if (Pair.Value.MapID == MapID && Pair.Value.SpawnType == SpawnType)
 		{
 			Result.Emplace(Pair.Value);
 		}

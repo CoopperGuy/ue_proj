@@ -212,6 +212,41 @@ void UDiaGameplayAbility::ApplyGameplayEffectToSelf() const
 	}
 }
 
+void UDiaGameplayAbility::ExecuteAbilityLogic(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
+{
+
+	CurrentStepIndex = 0;
+	ExecutionContext = FDiaSkillExecutionContext();
+	RunNextStep();
+}
+
+void UDiaGameplayAbility::RunNextStep()
+{
+	if (CurrentStepIndex >= SkillData.Steps.Num())
+	{
+		return;
+	}
+
+	FInstancedStruct& CurrentStep = SkillData.Steps[CurrentStepIndex];
+	for (UDiaSkillStepExecutor* Executor : StepExecutors)
+	{
+		if (Executor && Executor->CanExecute(CurrentStep))
+		{
+			// 한 번 실행된 후에는 다음 스텝으로 넘어가지 않도록 반환
+			Executor->Execute(CurrentStep, this, ExecutionContext, [this]()
+			{
+				CurrentStepIndex++;
+				RunNextStep();
+			});
+			return; 
+		}
+	}
+
+	// 실행할 수 있는 Executor가 없는 경우에도 다음 스텝으로 넘어감
+	CurrentStepIndex++;
+	RunNextStep();
+}
+
 void UDiaGameplayAbility::MakeEffectSpecContextToTarget(TArray<FGameplayEffectSpecHandle>& OutContext) const
 {
 	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
@@ -329,6 +364,9 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 	{
 		LagacyAbilityEffect = SkillData.LegacyCastEffect.LoadSynchronous();
 	}
+
+	StepExecutors.Add(NewObject<UDiaChargeStepExecutor>(this));
+	StepExecutors.Add(NewObject<UDiaGroundSpawnStepExecutor>(this));
 }
 
 void UDiaGameplayAbility::SetSkillObject(const USkillObject* InSkillObject)
@@ -343,7 +381,11 @@ void UDiaGameplayAbility::ApplySkillObjectRemovalTimer(ADiaSkillActor* SkillActo
 		return;
 	}
 
-	const float RemainSeconds = SkillData.SkillObjectRemainTime;
+	float RemainSeconds = 0.f;
+	if (const FGASSkillActorSpawnData* SpawnData = SkillData.GetExtraPtr<FGASSkillActorSpawnData>())
+	{
+		RemainSeconds = SpawnData->LifeSpan;
+	}
 	if (RemainSeconds <= 0.f)
 	{
 		return;
@@ -416,12 +458,18 @@ void UDiaGameplayAbility::StopAbilityMontage(float BlendOutTime)
 
 void UDiaGameplayAbility::ProcessSkillDelayEvents()
 {
+	ExecuteAbilityLogic(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, nullptr);
 }
 
 void UDiaGameplayAbility::OnMontageCompleted()
 {
 	MontageTask = nullptr;
 	CurrentAbilityMontage = nullptr;
+
+	if (!ShouldEndAbilityOnMontageCompleted())
+	{
+		return;
+	}
 	
 	// End ability when montage completes
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
@@ -434,6 +482,11 @@ void UDiaGameplayAbility::OnMontageCancelled()
 	
 	// End ability when montage is cancelled
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+}
+
+bool UDiaGameplayAbility::ShouldEndAbilityOnMontageCompleted() const
+{
+	return true;
 }
 
 bool UDiaGameplayAbility::CheckCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags) const
