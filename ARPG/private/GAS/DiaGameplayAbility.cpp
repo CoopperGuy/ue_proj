@@ -105,6 +105,10 @@ void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 		Task->OnFinish.AddDynamic(this, &UDiaGameplayAbility::ProcessSkillDelayEvents);
 		Task->ReadyForActivation();
 	}
+	else
+	{
+		ProcessSkillDelayEvents();
+	}
 
 	ApplyGameplayEffectToSelf();
 }
@@ -222,11 +226,14 @@ void UDiaGameplayAbility::ExecuteAbilityLogic(const FGameplayAbilitySpecHandle H
 
 void UDiaGameplayAbility::RunNextStep()
 {
+	UE_LOG(LogTemp, Log, TEXT("Running step %d"), CurrentStepIndex);
 	if (CurrentStepIndex >= SkillData.Steps.Num())
 	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 		return;
 	}
 
+	UE_LOG(LogTemp, Log, TEXT("Current step type: %s"), *SkillData.Steps[CurrentStepIndex].GetScriptStruct()->GetName());
 	FInstancedStruct& CurrentStep = SkillData.Steps[CurrentStepIndex];
 	for (UDiaSkillStepExecutor* Executor : StepExecutors)
 	{
@@ -367,6 +374,9 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 
 	StepExecutors.Add(NewObject<UDiaChargeStepExecutor>(this));
 	StepExecutors.Add(NewObject<UDiaGroundSpawnStepExecutor>(this));
+	StepExecutors.Add(NewObject<UDiaProjectileSpawnStepExecutor>(this));
+	StepExecutors.Add(NewObject<UDiaMeleeSpawnStepExecutor>(this));
+
 }
 
 void UDiaGameplayAbility::SetSkillObject(const USkillObject* InSkillObject)

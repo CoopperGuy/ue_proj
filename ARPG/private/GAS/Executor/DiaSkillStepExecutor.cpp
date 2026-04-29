@@ -277,26 +277,41 @@ bool UDiaProjectileSpawnStepExecutor::CanExecute(const FInstancedStruct& StepDat
 
 void UDiaProjectileSpawnStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGameplayAbility* Ability, FDiaSkillExecutionContext& Context, TFunction<void()> OnFinished)
 {
-	const FGameplayAbilityActorInfo& ActorInfo = Ability->GetActorInfo();
-	const FGASSkillData& SkillData = Ability->GetSkillData();
-	const FGASProjectileData* ProjectileData = StepData.GetPtr<FGASProjectileData>();
-	if (!SkillData.AbilityClass || !ActorInfo.AvatarActor.IsValid())
+	if (!Ability)
 	{
+		OnFinished();
+		return;
+	}
+
+	const FGASProjectileSpawnStepData* ProjectileStep = StepData.GetPtr<FGASProjectileSpawnStepData>();
+	if (!ProjectileStep)
+	{
+		OnFinished();
+		return;
+	}
+
+	const FGameplayAbilityActorInfo& ActorInfo = Ability->GetActorInfo();
+	const FGASProjectileData* ProjectileData = &ProjectileStep->ProjectileData;
+
+	if (!ActorInfo.AvatarActor.IsValid() || !ProjectileData->SkillActorClass)
+	{
+		OnFinished();
 		return;
 	}
 
 	ACharacter* Character = Cast<ACharacter>(ActorInfo.AvatarActor.Get());
 	if (!Character)
 	{
+		OnFinished();
 		return;
 	}
 
 	UWorld* World = Character->GetWorld();
 	if (!World)
 	{
+		OnFinished();
 		return;
 	}
-
 
 	// Calculate launch direction (수평 방향으로 정규화 + 최소 거리 보정)
 	FVector LaunchDirection = CalcSpawnLocation(ActorInfo, ProjectileData);
@@ -318,7 +333,7 @@ void UDiaProjectileSpawnStepExecutor::Execute(const FInstancedStruct& StepData, 
 #endif
 
 
-	if (IsValid(SkillData.AbilityClass))
+	if (IsValid(ProjectileData->SkillActorClass))
 	{
 		FGameplayAbilityTargetDataHandle TargetDataHandle;
 
@@ -330,14 +345,31 @@ void UDiaProjectileSpawnStepExecutor::Execute(const FInstancedStruct& StepData, 
 		TargetDataHandle.Add(LocationData);
 
 		FDiaSkillVariantContext VariantContext;
-		VariantContext.SkillActorClass = SkillData.AbilityClass;
+		VariantContext.SkillActorClass = ProjectileData->SkillActorClass;
 		VariantContext.TargetData = TargetDataHandle;
 
 		UDiaSkillManagerComponent* DiaSkillManagerComp = Character->FindComponentByClass<UDiaSkillManagerComponent>();
+		if (!DiaSkillManagerComp)
+		{
+			OnFinished();
+			return;
+		}
+
 		DiaSkillManagerComp->SpawnSkillActorUseVariants(VariantContext, Ability);
+
+		for (ADiaSkillActor* SpawnedActor : VariantContext.SkillActors)
+		{
+			if (SpawnedActor)
+			{
+				Context.SpawnedActors.Add(SpawnedActor);
+				Context.LastStepLocation = SpawnedActor->GetActorLocation();
+			}
+		}
 
 		DrawDebugLine(World, CharacterLocation, CharacterLocation + LaunchDirection * 500.0f, FColor::Red, false, 1.5f, 0, 2.0f); // 캐릭터→LaunchDirection
 	}
+
+	OnFinished();
 }
 
 FVector UDiaProjectileSpawnStepExecutor::CalcSpawnLocation(const FGameplayAbilityActorInfo& ActorInfo, const FGASProjectileData* ProjectileData)
@@ -346,6 +378,11 @@ FVector UDiaProjectileSpawnStepExecutor::CalcSpawnLocation(const FGameplayAbilit
 	{
 		return FVector::ForwardVector;
 	}
+	if (!ProjectileData)
+	{
+		return FVector::ForwardVector;
+	}
+
 	ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(ActorInfo.AvatarActor.Get());
 	if (!Character)
 	{
@@ -378,6 +415,4 @@ FVector UDiaProjectileSpawnStepExecutor::CalcSpawnLocation(const FGameplayAbilit
 		FVector Direction = ToMouse.GetSafeNormal();
 		return Direction;
 	}
-
-	return FVector();
 }
