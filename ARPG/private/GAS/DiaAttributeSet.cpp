@@ -5,6 +5,7 @@
 #include "GameplayEffectExtension.h"
 #include "AbilitySystemComponent.h"
 #include "DiaBaseCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 
 DEFINE_LOG_CATEGORY(LogARPGAttribute);
@@ -124,6 +125,30 @@ void UDiaAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, 
 	UE_LOG(LogARPGAttribute, Warning,
 		TEXT("PostAttributeChange Attribute: %s, OldValue=%f, NewValue=%f"),
 		*Attribute.GetName(), OldValue, NewValue);
+
+	if (Attribute == GetMovementSpeedAttribute())
+	{
+		AActor* AvatarActor = nullptr;
+		if (UAbilitySystemComponent* ASC = GetOwningAbilitySystemComponent())
+		{
+			AvatarActor = ASC->GetAvatarActor();
+		}
+		if (!AvatarActor)
+		{
+			AvatarActor = GetOwningActor();
+		}
+
+		if (ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(AvatarActor))
+		{
+			if (UCharacterMovementComponent* MovementComponent = Character->GetCharacterMovement())
+			{
+				MovementComponent->MaxWalkSpeed = FMath::Max(NewValue, 0.f);
+				UE_LOG(LogARPGAttribute, Warning,
+					TEXT("Apply MovementSpeed to MaxWalkSpeed: %s, MaxWalkSpeed=%f"),
+					*GetNameSafe(Character), MovementComponent->MaxWalkSpeed);
+			}
+		}
+	}
 }
 
 void UDiaAttributeSet::InitializeCharacterAttributes(FName CharacterID, int32 Level)

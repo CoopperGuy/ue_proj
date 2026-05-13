@@ -4,8 +4,6 @@
 #include "DiaComponent/DiaSkillManagerComponent.h"
 #include "DiaComponent/Skill/SkillObject.h"
 #include "DiaComponent/Skill/DiaSkillVariant.h"
-#include "DiaComponent/Skill/Executor/DiaSkillVariantSpawnExecutor.h"
-#include "DiaComponent/Skill/Executor/DiaSkillHitVariantExecutor.h"
 #include "DiaComponent/Service/DiaSkillLoadService.h"
 #include "DiaComponent/Service/DiaSkillActivationService.h"
 #include "DiaComponent/Service/DiaSkillVariantExecutorService.h"
@@ -44,6 +42,7 @@ void UDiaSkillManagerComponent::BeginPlay()
 	LoadService = NewObject<UDiaSkillLoadService>(this);
 	ActivationService = NewObject<UDiaSkillActivationService>(this);
 	VariantExecutor = NewObject<UDiaSkillVariantExecutorService>(this);
+	VariantExecutor->InitializeExecutorService();
 	VariantCache = NewObject<UDiaSkillVariantCache>(this);
 }
 
@@ -198,6 +197,15 @@ FGameplayAbilitySpec* UDiaSkillManagerComponent::GetAbilitySpecBySkillID(int32 S
 	return nullptr;
 }
 
+void UDiaSkillManagerComponent::ActiveModifierSkillUseVariants(const FDiaSkillVariantContext& context, const UDiaGameplayAbility* Ability, FSkillModifierRuntime& OutRuntime)
+{
+	TArray<UDiaSkillVariant*> VariantsToApply;
+	MakeSkillVariantsArray(Ability, VariantsToApply);
+	FDiaSkillVariantContext& MutableContext = const_cast<FDiaSkillVariantContext&>(context);
+
+	VariantExecutor->ExecuteActiveModifierVariants(VariantsToApply, MutableContext, Ability, OutRuntime);
+}
+
 void UDiaSkillManagerComponent::SpawnSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability)
 {
 	const USkillObject* SkillObj = Ability->GetSkillObject();
@@ -209,24 +217,25 @@ void UDiaSkillManagerComponent::SpawnSkillActorUseVariants(const FDiaSkillVarian
 
 	//여기서는 적용된 variants만 넘겨준다.
 	FDiaSkillVariantContext& MutableContext = const_cast<FDiaSkillVariantContext&>(context);
-	VariantExecutor->ExecuteVariants(SkillObj->GetVariantApplyIDs(), SkillVariants, MutableContext, Ability);
+	VariantExecutor->ExecuteSpawnVariants(SkillObj->GetVariantApplyIDs(), SkillVariants, MutableContext, Ability);
 }
 
 void UDiaSkillManagerComponent::HitSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability)
 {
-	if (!context.SkillActorClass)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: SkillActorClass가 유효하지 않습니다."));
-		return;
-	}
-
 	TArray<UDiaSkillVariant*> VariantsToApply;
 	MakeSkillVariantsArray(Ability, VariantsToApply);
 
 	FDiaSkillVariantContext& MutableContext = const_cast<FDiaSkillVariantContext&>(context);
-	UDiaSkillHitVariantExecutor* HitExecutor = NewObject<UDiaSkillHitVariantExecutor>(this);
-	HitExecutor->InitializeExecutor();
-	HitExecutor->ExecuteEffect(VariantsToApply, MutableContext, Ability);
+	VariantExecutor->ExecuteHitVariants(VariantsToApply, MutableContext, Ability);
+}
+
+void UDiaSkillManagerComponent::HitSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability, FSkillHitRuntime& OutRuntime)
+{
+	TArray<UDiaSkillVariant*> VariantsToApply;
+	MakeSkillVariantsArray(Ability, VariantsToApply);
+
+	FDiaSkillVariantContext& MutableContext = const_cast<FDiaSkillVariantContext&>(context);
+	VariantExecutor->ExecuteHitVariants(VariantsToApply, MutableContext, Ability, OutRuntime);
 }
 
 void UDiaSkillManagerComponent::GetSkillVariantFromID(const int32 VariantID, OUT UDiaSkillVariant* OutVariants)

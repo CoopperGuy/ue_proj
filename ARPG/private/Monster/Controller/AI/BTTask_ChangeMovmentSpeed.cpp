@@ -11,6 +11,8 @@
 
 #include "Monster/Controller/DiaAIController.h"
 #include "Monster/DiaMonster.h"
+#include "AbilitySystemComponent.h"
+#include "GAS/DiaAttributeSet.h"
 
 UBTTask_ChangeMovmentSpeed::UBTTask_ChangeMovmentSpeed()
 {
@@ -27,7 +29,14 @@ EBTNodeResult::Type UBTTask_ChangeMovmentSpeed::ExecuteTask(UBehaviorTreeCompone
 	ADiaMonster* DiaMonster = Cast<ADiaMonster>(aiController->GetPawn());
 	if (!IsValid(DiaMonster)) return EBTNodeResult::Failed;
 
-	DiaMonster->GetCharacterMovement()->MaxWalkSpeed = DefaultSpeed;
+	if (UAbilitySystemComponent* ASC = DiaMonster->GetAbilitySystemComponent())
+	{
+		ASC->SetNumericAttributeBase(UDiaAttributeSet::GetMovementSpeedAttribute(), DefaultSpeed);
+	}
+	else if (DiaMonster->GetCharacterMovement())
+	{
+		DiaMonster->GetCharacterMovement()->MaxWalkSpeed = DefaultSpeed;
+	}
 
 	return EBTNodeResult::Succeeded;
 }

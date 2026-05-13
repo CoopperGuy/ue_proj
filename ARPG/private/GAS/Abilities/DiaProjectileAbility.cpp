@@ -194,13 +194,19 @@ void UDiaProjectileAbility::InitializeWithSkillData(const FGASSkillData& InSkill
     if (P->SkillActorClass)
     {
         ProjectileClass = P->SkillActorClass;
-    }
+	}
+
     ProjectileOffset = P->ProjectileOffset;
     MinimumRange = P->MinimumRange;
     bUseOwnerRotation = P->bUseOwnerRotation;
     bFireMultipleProjectiles = P->bFireMultipleProjectiles;
     ProjectileCount = P->ProjectileCount;
     SpreadAngle = P->SpreadAngle;
+}
+
+TSubclassOf<ADiaSkillActor> UDiaProjectileAbility::GetSkillActorClassForSpawn() const
+{
+	return ProjectileClass ? ProjectileClass : Super::GetSkillActorClassForSpawn();
 }
 
 FVector UDiaProjectileAbility::CalculateLaunchDirection(ACharacter* Character) const

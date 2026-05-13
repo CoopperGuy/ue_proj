@@ -2,6 +2,7 @@
 
 
 #include "GAS/Effects/DiaGE_CoolDown_Generic.h"
+#include "GAS/Effects/DiaGameplayEffectCompat.h"
 #include "GAS/DiaAttributeSet.h"
 #include "GameplayEffectComponents/AssetTagsGameplayEffectComponent.h"
 
@@ -20,5 +21,5 @@ UDiaGE_CoolDown_Generic::UDiaGE_CoolDown_Generic()
 
     Modifiers.Reset();
 
-    StackingType = EGameplayEffectStackingType::None;
+    DiaGameplayEffectCompat::SetStackingType(this, EGameplayEffectStackingType::None);
 }

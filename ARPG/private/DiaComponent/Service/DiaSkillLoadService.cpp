@@ -70,6 +70,7 @@ void UDiaSkillLoadService::LoadJobSkillData(
 						FDiaSkillVariantSpec Spec;
 						Spec.ModifierValue = Data->ModifierValue;
 						Spec.SkillTag = Data->VariantTag;
+						Spec.VariantExtraData = Data->VariantExtraData;
 
 						UDiaSkillVariant* NewDiaSkillVariant = NewObject<UDiaSkillVariant>(OuterObject);
 						NewDiaSkillVariant->InitializeVariant(Spec);

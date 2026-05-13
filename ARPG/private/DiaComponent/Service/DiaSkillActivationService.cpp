@@ -46,6 +46,7 @@ bool UDiaSkillActivationService::TryActivateSkill(int32 SkillID, ADiaBaseCharact
 		if (AbilityInstance)
 		{
 			AbilityInstance->SetSkillObject(SkillObj);
+			AbilityInstance->ActiveModifierEffect(Character);
 		}
 		else
 		{

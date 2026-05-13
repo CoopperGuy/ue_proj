@@ -221,6 +221,48 @@ struct ARPG_API FJobSkillSet : public FTableRowBase
 };
 
 USTRUCT(BlueprintType)
+struct ARPG_API FSkillVariantExtraDataBase
+{
+	GENERATED_BODY()
+};
+
+USTRUCT(BlueprintType)
+struct ARPG_API FSkillVariantSetByCallerData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FGameplayTag DataTag;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Duration = 0.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ModifierValue = 0.0f;
+};
+
+USTRUCT(BlueprintType)
+struct FSkillVariantTargetEffectData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UGameplayEffect> EffectClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TMap<FGameplayTag, float> SetByCallerMagnitudes;
+};
+
+USTRUCT(BlueprintType)
+struct FSkillVariantGameplayEffectData : public FSkillVariantExtraDataBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FSkillVariantTargetEffectData> TargetEffects;
+};
+
+USTRUCT(BlueprintType)
 struct ARPG_API FSkillVariantData : public FTableRowBase
 {
 	GENERATED_BODY()
@@ -235,6 +277,8 @@ struct ARPG_API FSkillVariantData : public FTableRowBase
 	float ModifierValue;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FGameplayTag VariantTag;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variant", meta = (BaseStruct = "/Script/ARPG.SkillVariantExtraDataBase"))
+	FInstancedStruct VariantExtraData;
 
     FSkillVariantData()
     {
@@ -243,5 +287,13 @@ struct ARPG_API FSkillVariantData : public FTableRowBase
         Description = FText::FromString(TEXT("No Description"));
         ModifierValue = 1.0f;
         VariantTag = FGameplayTag();
+	}
+
+	template<typename T>
+	const T* GetVariantExtraPtr() const
+	{
+		static_assert(TIsDerivedFrom<T, FSkillVariantExtraDataBase>::IsDerived,
+			"T must derive from FSkillVariantExtraDataBase");
+		return VariantExtraData.GetPtr<T>();
 	}
 };

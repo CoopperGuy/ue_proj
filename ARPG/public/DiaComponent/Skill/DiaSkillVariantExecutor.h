@@ -20,14 +20,18 @@ public:
 	UDiaSkillVariantExecutor();
 	virtual void InitializeExecutor();
 
-	void ExecuteEffect(
+	virtual void ExecuteEffect(
 		const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, UDiaGameplayAbility* Ability);
+
+	virtual void ExecuteEffect(
+		const TArray<class UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, const UDiaGameplayAbility* Ability,
+		FSkillVariantRuntime& OutRuntime);
 
 protected:
 	UPROPERTY()
-	TMap<FGameplayTag, UDiaSkillVariantEffect*> EffectsByTag;
+	TArray<TObjectPtr<UDiaSkillVariantEffect>> RegisteredEffects;
 
 	// Strategy apply
-	virtual void ApplyEffects(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, FSkillSpawnRuntime& Runtime);
-	virtual void ApplyEffects(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, FSkillHitRuntime& Runtime);
+	virtual void ApplyEffects(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, FSkillVariantRuntime& Runtime);
+
 };

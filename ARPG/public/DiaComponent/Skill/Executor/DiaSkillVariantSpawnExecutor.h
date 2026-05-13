@@ -23,4 +23,8 @@ public:
 		class UDiaGameplayAbility* Ability
 	);
 	
+	void BeforeSpawn(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, UDiaGameplayAbility* Ability, FSkillSpawnRuntime& Runtime) const;
+	void AfterSpawn(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, UDiaGameplayAbility* Ability, FSkillSpawnRuntime& Runtime) const;
+
+private:
 };

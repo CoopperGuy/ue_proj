@@ -16,6 +16,7 @@ class ARPG_API UDiaGroundAbility : public UDiaGameplayAbility
 	GENERATED_BODY()
 public:
 	virtual void InitializeWithSkillData(const FGASSkillData& InSkillData) override;
+	virtual TSubclassOf<ADiaSkillActor> GetSkillActorClassForSpawn() const override;
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	UFUNCTION()
 	void OnSpawned(AActor* SpawnedSkillGround);

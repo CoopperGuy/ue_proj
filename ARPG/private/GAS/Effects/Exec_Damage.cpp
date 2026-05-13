@@ -48,6 +48,8 @@ void UExec_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionPa
         FGameplayTag::RequestGameplayTag(FName("GASData.DamageBase")), false, 0.f);
     const float CritMul = Spec.GetSetByCallerMagnitude(
         FGameplayTag::RequestGameplayTag(FName("GASData.CritMultiplier")), false, 1.f);
+	const float DamageMul = Spec.GetSetByCallerMagnitude(
+		FDiaGameplayTags::Get().GASData_Variant_DamageMultiplier, false, 1.f);
 
 	// 캡처된 속성 읽기
 	FAggregatorEvaluateParameters EvalParams;
@@ -56,9 +58,11 @@ void UExec_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionPa
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageCapture::Statics().DefenseDef, EvalParams, Defense);
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageCapture::Statics().DamageIncreaseOptionDef, EvalParams, WeaponDamageOption);
 
+	if (Defense <= 0.f) Defense = 1.f; // 방어력이 0이하인 경우 나누기 방지 위해 1로 보정
 	// 최종 공식(예시)
-	const float raw = FMath::Max(0.f, DamageBase + (AttackPower + AttackPower * WeaponDamageOption) - Defense);
+	const float raw = FMath::Max(0.f, (DamageBase * DamageMul + (AttackPower + AttackPower * WeaponDamageOption) - Defense) / Defense);
 	const float finalDamage = FMath::RoundToFloat(raw * CritMul);
+
 	if (finalDamage <= 0.f) return; // 가드
 
 	//UE_LOG(LogTemp, Warning, TEXT("Damage Exec: Base=%f, Atk=%f, Def=%f, Option=%f, CritMul=%f => Damage=%f"),

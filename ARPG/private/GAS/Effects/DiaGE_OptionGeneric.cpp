@@ -3,6 +3,7 @@
 
 #include "GAS/Effects/DiaGE_OptionGeneric.h"
 
+#include "GAS/Effects/DiaGameplayEffectCompat.h"
 #include "GAS/DiaAttributeSet.h"
 #include "GAS/DiaGameplayTags.h"
 
@@ -12,7 +13,7 @@ UDiaGE_OptionGeneric::UDiaGE_OptionGeneric()
 	
 	Modifiers.Empty();
 	
-	StackingType = EGameplayEffectStackingType::AggregateBySource;
+	DiaGameplayEffectCompat::SetStackingType(this, EGameplayEffectStackingType::AggregateBySource);
 	StackLimitCount = INT_LEAST32_MAX;
 	UE_LOG(LogTemp, Warning, TEXT("DiaGE_OptionGeneric::UDiaGE_OptionGeneric - Initializing Modifiers"));
 	//아이템 옵션 관련 태그들 적용. 만약 stat이면, attribute에서 가져와야한다.

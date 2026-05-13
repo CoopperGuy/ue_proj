@@ -2,6 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbility.h"
+
+#include "DiaComponent/Skill/Effect/DiaSkillVariantEffect.h"
+
 #include "Types/DiaGASSkillData.h"
 #include "GAS/Executor/DiaSkillStepExecutor.h"
 #include "DiaGameplayAbility.generated.h"
@@ -13,6 +16,8 @@ class UNiagaraComponent;
 class UAbilitySystemComponent;
 class UDiaSkillVariant;
 class USkillObject;
+class ADiaBaseCharacter;
+class ADiaSkillActor;
 
 UCLASS(Blueprintable)
 class ARPG_API UDiaGameplayAbility : public UGameplayAbility
@@ -50,9 +55,12 @@ public:
 	void ApplySkillObjectRemovalTimer(class ADiaSkillActor* SkillActor) const;
 
 	const TSubclassOf<UGameplayEffect> GetDamageEffectClass() const { return DamageEffectClass; }
+	virtual TSubclassOf<ADiaSkillActor> GetSkillActorClassForSpawn() const;
 
 	void MakeEffectSpecContextToTarget(TArray<FGameplayEffectSpecHandle>& OutContext) const;
+	void MakeEffectSpecContextToSelf(TArray<FGameplayEffectSpecHandle>& OutContext) const;
 
+	void ActiveModifierEffect(ADiaBaseCharacter* Owner);
 
 protected:
 	// Skill data from GAS system
@@ -175,4 +183,7 @@ protected:
 
 	UPROPERTY()
 	const USkillObject* SkillObject;
+
+	UPROPERTY()
+	FSkillModifierRuntime ModifierRuntime;
 };

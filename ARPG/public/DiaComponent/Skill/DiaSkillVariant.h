@@ -6,6 +6,8 @@
 #include "UObject/NoExportTypes.h"
 #include "GameplayTagContainer.h"
 #include "Abilities/GameplayAbilityTypes.h"
+#include "StructUtils/InstancedStruct.h"
+#include "Types/DiaGASSkillData.h"
 #include "DiaSkillVariant.generated.h"
 
 
@@ -27,8 +29,22 @@ struct ARPG_API FDiaSkillVariantSpec
 	FDiaSkillVariantSpec()
 	{ }
 
-	float ModifierValue;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ModifierValue = 1.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FGameplayTag SkillTag;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BaseStruct = "/Script/ARPG.SkillVariantExtraDataBase"))
+	FInstancedStruct VariantExtraData;
+
+	template<typename T>
+	const T* GetVariantExtraPtr() const
+	{
+		static_assert(TIsDerivedFrom<T, FSkillVariantExtraDataBase>::IsDerived,
+			"T must derive from FSkillVariantExtraDataBase");
+		return VariantExtraData.GetPtr<T>();
+	}
 };
 
 
@@ -43,8 +59,10 @@ struct ARPG_API FDiaSkillVariantContext
 	UPROPERTY(BlueprintReadOnly)
 	FHitResult HitResult;
 	UPROPERTY(BlueprintReadOnly)
-	TSubclassOf<class ADiaSkillActor> SkillActorClass;
+	TObjectPtr<AActor> HitActor = nullptr;	
 	UPROPERTY(BlueprintReadOnly)
+	TSubclassOf<class ADiaSkillActor> SkillActorClass;
+	UPROPERTY(BlueprintReadOnly)	
 	FGameplayAbilityTargetDataHandle TargetData;
 	UPROPERTY(BlueprintReadOnly)
 	class UAbilitySystemComponent* AbilityComp;
@@ -68,6 +86,7 @@ public:
 	const FDiaSkillVariantSpec GetVariantSpec() const { return VariantSpec; }
 
 protected:
+	UPROPERTY()
 	FDiaSkillVariantSpec VariantSpec;
 
 	int32 SkillID;

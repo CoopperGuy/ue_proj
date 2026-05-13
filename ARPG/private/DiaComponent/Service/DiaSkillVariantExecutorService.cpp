@@ -4,16 +4,43 @@
 #include "DiaComponent/Service/DiaSkillVariantExecutorService.h"
 #include "DiaComponent/Skill/Executor/DiaSkillVariantSpawnExecutor.h"
 #include "DiaComponent/Skill/Executor/DiaSkillHitVariantExecutor.h"
-#include "DiaComponent/Skill/Effect/DiaVariantEffect_MultipleShot.h"
+#include "DiaComponent/Skill/Executor/DiaSkillVariantExecutor_ActModi.h"
+#include "DiaComponent/Skill/Effect/DiaSkillVariantEffect.h"
 #include "GAS/DiaGameplayAbility.h"
 #include "GAS/DiaGameplayTags.h"
 #include "Skill/DiaSkillActor.h"
 
 void UDiaSkillVariantExecutorService::InitializeExecutorService()
 {
+	if (!SpawnExecutor)
+	{
+		SpawnExecutor = NewObject<UDiaSkillVariantSpawnExecutor>(this);
+		SpawnExecutor->InitializeExecutor();
+	}
+
+	if (!HitExecutor)
+	{
+		HitExecutor = NewObject<UDiaSkillHitVariantExecutor>(this);
+		HitExecutor->InitializeExecutor();
+	}
+
+	if(!ActModiExecutor)
+	{
+		ActModiExecutor = NewObject<UDiaSkillVariantExecutor_ActModi>(this);
+		ActModiExecutor->InitializeExecutor();
+	}
 }
 
-void UDiaSkillVariantExecutorService::ExecuteVariants(
+void UDiaSkillVariantExecutorService::ExecuteActiveModifierVariants(const TArray<UDiaSkillVariant*>& Variants,
+	FDiaSkillVariantContext& Context,
+	const UDiaGameplayAbility* Ability,
+	FSkillModifierRuntime& OutRuntime)
+{
+	InitializeExecutorService();
+	ActModiExecutor->ExecuteEffect(Variants, Context, Ability, OutRuntime);
+}
+
+void UDiaSkillVariantExecutorService::ExecuteSpawnVariants(
 	const TSet<int32>& VariantIDs,
 	const TMap<int32, UDiaSkillVariant*>& VariantCache,
 	FDiaSkillVariantContext& Context,
@@ -21,7 +48,7 @@ void UDiaSkillVariantExecutorService::ExecuteVariants(
 {
 	if (!Context.SkillActorClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDiaSkillVariantExecutorService::ExecuteVariants: SkillActorClass가 유효하지 않습니다."));
+		UE_LOG(LogTemp, Warning, TEXT("UDiaSkillVariantExecutorService::ExecuteSpawnVariants: SkillActorClass가 유효하지 않습니다."));
 		return;
 	}
 
@@ -37,9 +64,25 @@ void UDiaSkillVariantExecutorService::ExecuteVariants(
 		}
 	}
 
-	// Context의 SkillActor 타입에 따라 적절한 Executor 선택
-	// 현재는 SpawnExecutor만 사용 (추후 확장 가능)
-	UDiaSkillVariantSpawnExecutor* SpawnExecutor = NewObject<UDiaSkillVariantSpawnExecutor>(this);
-	SpawnExecutor->InitializeExecutor();
+	InitializeExecutorService();
 	SpawnExecutor->ExecuteEffect(VariantsToApply, Context, Ability);
+}
+
+void UDiaSkillVariantExecutorService::ExecuteHitVariants(
+	const TArray<UDiaSkillVariant*>& Variants,
+	FDiaSkillVariantContext& Context,
+	UDiaGameplayAbility* Ability)
+{
+	InitializeExecutorService();
+	HitExecutor->ExecuteEffect(Variants, Context, Ability);
+}
+
+void UDiaSkillVariantExecutorService::ExecuteHitVariants(
+	const TArray<UDiaSkillVariant*>& Variants,
+	FDiaSkillVariantContext& Context,
+	const UDiaGameplayAbility* Ability,
+	FSkillHitRuntime& OutRuntime)
+{
+	InitializeExecutorService();
+	HitExecutor->ExecuteEffect(Variants, Context, Ability, OutRuntime);
 }

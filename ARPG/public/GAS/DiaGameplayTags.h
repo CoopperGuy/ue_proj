@@ -83,8 +83,28 @@ public:
 	// ========================================
 	FGameplayTag Ability_Cost_Mana_NotEnough;
 	FGameplayTag GASData_Exp;
+	FGameplayTag GASData_Duration;
+	FGameplayTag GASData_StatusValue;
 	FGameplayTag GASData_MultipleShot;
 	FGameplayTag GASData_Pierce;
+	FGameplayTag GASData_Variant_DamageMultiplier;
+	FGameplayTag GASData_Variant_CooldownReduction;
+	FGameplayTag GASData_Variant_ManaCostMultiplier;
+	FGameplayTag GASData_Variant_SlowOnHit;
+	FGameplayTag GASData_Variant_ExplodeOnHit;
+	FGameplayTag GASData_Variant_Chain;
+	FGameplayTag GASData_Variant_Fork;
+	FGameplayTag GASData_Variant_AreaMultiplier;
+	FGameplayTag GASData_Variant_DurationMultiplier;
+	FGameplayTag GASData_Variant_RepeatCast;
+	FGameplayTag GASData_Variant_FreezeStack;
+	FGameplayTag GASData_Variant_BurningGround;
+	FGameplayTag GASData_Variant_LifeSteal;
+	FGameplayTag GASData_Variant_Knockback;
+	FGameplayTag GASData_Variant_BigProjectile;
+	FGameplayTag GASData_Variant_CloseRangeBonus;
+	FGameplayTag GASData_Variant_PullToCenter;
+	FGameplayTag GASData_Variant_Echo;
 
 
 	// ========================================
@@ -93,6 +113,7 @@ public:
 	FGameplayTag Damage_Base;
 	FGameplayTag Damage_Crit;
 	FGameplayTag Damage_Final;
+	FGameplayTag Damage_Multiplier;
 
 	// ========================================
 	// UI Tags

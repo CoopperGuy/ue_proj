@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "Types/DiaGASSkillData.h"
 #include "DiaComponent/Skill/DiaSkillVariant.h"
+#include "DiaComponent/Skill/Effect/DiaSkillVariantEffect.h"
 #include "DiaSkillManagerComponent.generated.h"
 
 
@@ -47,9 +48,11 @@ public:
 	// Get ability spec by skill ID (C++ only - not exposed to Blueprint)
 	FGameplayAbilitySpec* GetAbilitySpecBySkillID(int32 SkillID) const;
 
+	void ActiveModifierSkillUseVariants(const FDiaSkillVariantContext& context, const UDiaGameplayAbility* Ability, FSkillModifierRuntime& OutRuntime);
 	void SpawnSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability);
 	void HitSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability);
-
+	void HitSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability, FSkillHitRuntime& OutRuntime);
+	
 	void GetSkillVariantFromID(const int32 VariantID, OUT UDiaSkillVariant* OutVariants);
 	void GetSkillVariantsFromSkillID(const int32 SkillID, OUT TArray<UDiaSkillVariant*>& OutVariants);
 protected:

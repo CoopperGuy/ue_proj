@@ -41,6 +41,7 @@ public:
 	virtual void Initialize(float InDamage, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
     virtual void Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
 	void InitTargetEffectHandle(const TArray<FGameplayEffectSpecHandle>& InTargetEffectHandles);
+	void AddIgnoredHitActors(const TArray<AActor*>& InIgnoredActors);
 
     UFUNCTION()
     virtual void OnHit(UPrimitiveComponent* OverlappedComponent, 
@@ -49,6 +50,7 @@ public:
         const FHitResult& HitResult);
 
     void ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitResult, ADiaBaseCharacter* OnwerActor);
+	void ApplyAdditionalHit(AActor* OtherActor, const FHitResult& HitResult, ADiaBaseCharacter* OnwerActor);
 
 	UFUNCTION()
 	void OnHitDetect();
@@ -68,8 +70,8 @@ public:
 
 	/** LifeSpan 타이머를 끄고 지정 초 후 Destroy (스킬 데이터 기반 잔존 시간용). */
 	void ArmRemovalTimer(float Seconds);
-	int32 GetPierceCount() const { return PierceCount; }
-	void SetPierceCount(int32 InPierceCount) { PierceCount = InPierceCount; }
+
+	void ExplodeAdditioanlly(float Radius);
 protected:
     bool IsValidTarget(AActor* OtherActor);
 protected:    
@@ -137,5 +139,21 @@ protected:
 	// Pierce 관련 변수
 	int32 PierceCount = 0;
 	TSet<AActor*> HitActors; // 이미 히트한 적 추적 (중복 히트 방지)
+    float DamageMultiplier = 1.f;
+
+    //Fork 관련 변수
+	int32 ForkCount = 0;
+public:
+    int32 GetPierceCount() const { return PierceCount; }
+    void SetPierceCount(int32 InPierceCount) { PierceCount = InPierceCount; }
+	float GetDamageMultiplier() const { return DamageMultiplier; }
+	void SetDamageMultiplier(float InDamageMultiplier) { DamageMultiplier = InDamageMultiplier; }
+	int32 GetForkCount() const { return ForkCount; }
+	void SetForkCount(int32 InForkCount) { ForkCount = InForkCount; }
+	bool IsSpawnedByFork() const { return bSpawnedByFork; }
+	void SetSpawnedByFork(bool bInSpawnedByFork) { bSpawnedByFork = bInSpawnedByFork; }
+
+private:
+	bool bSpawnedByFork = false;
 };
 

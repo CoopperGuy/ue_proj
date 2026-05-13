@@ -10,6 +10,8 @@
 
 #include "GameplayEffectTypes.h"
 
+#include "DiaBaseCharacter.h"
+
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitDelay.h"
 #include "GameFramework/Character.h"
@@ -18,6 +20,8 @@
 #include "GAS/Effects/DiaGE_CoolDown_Generic.h"
 #include "GAS/Effects/DiaGE_ManaCost_Generic.h"
 #include "GAS/Effects/DiaGameplayEffect_Damage.h"
+
+#include "DiaComponent/DiaSkillManagerComponent.h"
 
 #include "Engine/World.h"
 #include "Skill/DiaSkillActor.h"
@@ -45,6 +49,9 @@ UDiaGameplayAbility::UDiaGameplayAbility()
 	ManaCostEffectClass = UDiaGE_ManaCost_Generic::StaticClass();
 	CooldownEffectClass = UDiaGE_CoolDown_Generic::StaticClass();
 	DamageEffectClass = UDiaGameplayEffect_Damage::StaticClass();
+
+	ModifierRuntime.CDRP = 1.f;
+	ModifierRuntime.MCRP = 1.f;
 }
 
 void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
@@ -270,6 +277,20 @@ void UDiaGameplayAbility::MakeEffectSpecContextToTarget(TArray<FGameplayEffectSp
 	}
 }
 
+void UDiaGameplayAbility::ActiveModifierEffect(ADiaBaseCharacter* Owner)
+{
+	if(!IsValid(Owner))
+		return;
+
+	UDiaSkillManagerComponent* DiaSkillManagerComp = Owner->FindComponentByClass<UDiaSkillManagerComponent>();
+	if (!IsValid(DiaSkillManagerComp))
+		return;
+
+	FDiaSkillVariantContext Context;
+	ModifierRuntime.CDRP = 1.f;
+	ModifierRuntime.MCRP = 1.f;
+	DiaSkillManagerComp->ActiveModifierSkillUseVariants(Context, this, ModifierRuntime);
+}
 
 bool UDiaGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, OUT FGameplayTagContainer* OptionalRelevantTags) const
 {
@@ -382,6 +403,35 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 void UDiaGameplayAbility::SetSkillObject(const USkillObject* InSkillObject)
 {
 	SkillObject = InSkillObject;
+}
+
+TSubclassOf<ADiaSkillActor> UDiaGameplayAbility::GetSkillActorClassForSpawn() const
+{
+	if (const FGASSkillActorSpawnData* SpawnData = SkillData.GetExtraPtr<FGASSkillActorSpawnData>())
+	{
+		return SpawnData->SkillActorClass;
+	}
+
+	for (const FInstancedStruct& Step : SkillData.Steps)
+	{
+		if (const FGASProjectileSpawnStepData* ProjectileStep = Step.GetPtr<FGASProjectileSpawnStepData>())
+		{
+			if (ProjectileStep->ProjectileData.SkillActorClass)
+			{
+				return ProjectileStep->ProjectileData.SkillActorClass;
+			}
+		}
+
+		if (const FGASGroundSpawnStepData* GroundStep = Step.GetPtr<FGASGroundSpawnStepData>())
+		{
+			if (GroundStep->GroundData.SkillActorClass)
+			{
+				return GroundStep->GroundData.SkillActorClass;
+			}
+		}
+	}
+
+	return nullptr;
 }
 
 void UDiaGameplayAbility::ApplySkillObjectRemovalTimer(ADiaSkillActor* SkillActor) const
@@ -518,7 +568,7 @@ void UDiaGameplayAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle, con
 	if (!ManaCostEffectClass) return;
 	if (!ActorInfo || !ActorInfo->AbilitySystemComponent.IsValid()) return;
 
-	const float manaCost = SkillData.ManaCost;
+	const float manaCost = FMath::Max(SkillData.ManaCost * ModifierRuntime.MCRP, 0.f);
 	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
 
 	FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(ManaCostEffectClass, GetAbilityLevel(), ASC->MakeEffectContext());
@@ -625,6 +675,12 @@ void UDiaGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
 		}
 	}
 	
+	UE_LOG(LogTemp, Log, TEXT("[ApplyCooldown] Found CooldownTag: %s, Base Duration: %.2f"), *CooldownTag.ToString(), cooldownDuration);
+
+	cooldownDuration = FMath::Max(cooldownDuration * ModifierRuntime.CDRP, 0.f); // Duration이 음수인 경우 0으로 보정
+
+	UE_LOG(LogTemp, Log, TEXT("[ApplyCooldown] SkillID: %d, CooldownTag: %s, Duration: %.2f"), 
+		AbilitySpec->InputID, *CooldownTag.ToString(), cooldownDuration);
 	if (!CooldownTag.IsValid())
 	{
 		UE_LOG(LogTemp, Error, TEXT("[ApplyCooldown] No cooldown tag found in Spec for SkillID: %d"), AbilitySpec->InputID);

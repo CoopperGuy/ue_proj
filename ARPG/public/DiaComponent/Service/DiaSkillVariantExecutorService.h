@@ -5,11 +5,15 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "DiaComponent/Skill/DiaSkillVariant.h"
+#include "DiaComponent/Skill/Effect/DiaSkillVariantEffect.h"
 #include "DiaSkillVariantExecutorService.generated.h"
 
 class UDiaGameplayAbility;
 class UDiaSkillVariant;
 class UDiaSkillVariantEffect;
+class UDiaSkillVariantSpawnExecutor;
+class UDiaSkillHitVariantExecutor;
+class UDiaSkillVariantExecutor_ActModi;
 /**
  * Variant 실행을 담당하는 Service
  */
@@ -28,11 +32,36 @@ public:
 	 * @param Context Variant 실행에 필요한 컨텍스트
 	 * @param Ability 스킬 어빌리티
 	 */
-	void ExecuteVariants(
+	void ExecuteActiveModifierVariants(
+		const TArray<UDiaSkillVariant*>& Variants,
+		FDiaSkillVariantContext& Context,
+		const UDiaGameplayAbility* Ability,
+		FSkillModifierRuntime& OutRuntime);
+
+	void ExecuteSpawnVariants(
 		const TSet<int32>& VariantIDs,
 		const TMap<int32, UDiaSkillVariant*>& VariantCache,
 		FDiaSkillVariantContext& Context,
 		UDiaGameplayAbility* Ability);
 
+	void ExecuteHitVariants(
+		const TArray<UDiaSkillVariant*>& Variants,
+		FDiaSkillVariantContext& Context,
+		UDiaGameplayAbility* Ability);
+
+	void ExecuteHitVariants(
+		const TArray<UDiaSkillVariant*>& Variants,
+		FDiaSkillVariantContext& Context,
+		const UDiaGameplayAbility* Ability,
+		FSkillHitRuntime& OutRuntime);
+
 protected:
+	UPROPERTY()
+	TObjectPtr<UDiaSkillVariantSpawnExecutor> SpawnExecutor;
+
+	UPROPERTY()
+	TObjectPtr<UDiaSkillHitVariantExecutor> HitExecutor;
+
+	UPROPERTY()
+	TObjectPtr<UDiaSkillVariantExecutor_ActModi> ActModiExecutor;
 };

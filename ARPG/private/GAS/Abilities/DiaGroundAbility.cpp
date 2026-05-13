@@ -27,6 +27,11 @@ void UDiaGroundAbility::InitializeWithSkillData(const FGASSkillData& InSkillData
     bUseOwnerRotation = G->bUseOwnerRotation;
 }
 
+TSubclassOf<ADiaSkillActor> UDiaGroundAbility::GetSkillActorClassForSpawn() const
+{
+    return SkillGroundClass ? SkillGroundClass : Super::GetSkillActorClassForSpawn();
+}
+
 void UDiaGroundAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);

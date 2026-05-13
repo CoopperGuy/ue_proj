@@ -16,20 +16,4 @@ class ARPG_API UDiaGE_StatusEffect : public UDiaGameplayEffect
 	
 public:
 	UDiaGE_StatusEffect();
-
-protected:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Status Effect Settings")
-	float DefaultDuration;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Status Effect Settings")
-	FGameplayTag StatusTag;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Status Effect Settings")
-	FGameplayTagContainer BlockedAbilityTags;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Status Effect Settings")
-	bool bAllowStacking;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Status Effect Settings", meta = (EditCondition = "bAllowStacking"))
-	int32 MaxStackCount;
 };

@@ -17,19 +17,19 @@ class ARPG_API UDiaSkillHitVariantExecutor : public UDiaSkillVariantExecutor
 {
 	GENERATED_BODY()
 public:
-	virtual void InitializeExecutor();
+	virtual void InitializeExecutor() override;
 
-	void ExecuteEffect(
+	virtual void ExecuteEffect(
 		const TArray<UDiaSkillVariant*>& Variants,
 		FDiaSkillVariantContext& Context,
-		const UDiaGameplayAbility* Ability);
+		UDiaGameplayAbility* Ability) override;
 
 	// Runtime을 반환하는 버전 (PierceCount 업데이트를 위해)
-	void ExecuteEffect(
+	virtual void ExecuteEffect(
 		const TArray<UDiaSkillVariant*>& Variants,
 		FDiaSkillVariantContext& Context,
 		const UDiaGameplayAbility* Ability,
-		FSkillHitRuntime& OutRuntime);
+		FSkillVariantRuntime& OutRuntime) override;
 
 
 };

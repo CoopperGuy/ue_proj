@@ -20,8 +20,27 @@ void FDiaGameplayTags::InitializeNativeTags()
 	RegisterAttributeSetTags();
 	RegisterItemOptionTags();
 
+	//스킬 태그하고 variant 태그 분리하는 이유는, 아이템에서도 태그를 사용할탠대 똑같은거 사용하면 불편할거기 떄문에 분리.
 	GameplayTags.AddTag(GameplayTags.GASData_MultipleShot, "GASData.Variant.MultipleSkill", "멀티플 샷 ");
 	GameplayTags.AddTag(GameplayTags.GASData_Pierce, "GASData.Variant.Pierce", "관통");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_DamageMultiplier, "GASData.Variant.DamageMultiplier", "스킬 피해 증가");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_CooldownReduction, "GASData.Variant.CooldownReduction", "쿨다운 감소");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_ManaCostMultiplier, "GASData.Variant.ManaCostMultiplier", "마나 소모량 감소");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_SlowOnHit, "GASData.Variant.SlowOnHit", "적중 시 둔화");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_ExplodeOnHit, "GASData.Variant.ExplodeOnHit", "적중 시 폭발");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_Chain, "GASData.Variant.Chain", "연쇄");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_Fork, "GASData.Variant.Fork", "분열");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_AreaMultiplier, "GASData.Variant.AreaMultiplier", "범위 증가");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_DurationMultiplier, "GASData.Variant.DurationMultiplier", "지속시간 증가");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_RepeatCast, "GASData.Variant.RepeatCast", "반복 시전");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_FreezeStack, "GASData.Variant.FreezeStack", "빙결 누적");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_BurningGround, "GASData.Variant.BurningGround", "화염 장판");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_LifeSteal, "GASData.Variant.LifeSteal", "생명력 흡수");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_Knockback, "GASData.Variant.Knockback", "넉백");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_BigProjectile, "GASData.Variant.BigProjectile", "거대 투사체");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_CloseRangeBonus, "GASData.Variant.CloseRangeBonus", "근거리 피해 증가");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_PullToCenter, "GASData.Variant.PullToCenter", "중심부 끌어당김");
+	GameplayTags.AddTag(GameplayTags.GASData_Variant_Echo, "GASData.Variant.Echo", "메아리 시전");
 
 
 	GameplayTags.AddTag(GameplayTags.Actor_Player, "Actor.Player", "몬스터");
@@ -87,6 +106,8 @@ void FDiaGameplayTags::RegisterAbilityTags()
 	// ========================================
 	GameplayTags.AddTag(GameplayTags.Ability_Cost_Mana_NotEnough, "Ability.Cost.Mana.NotEnough", "");
 	GameplayTags.AddTag(GameplayTags.GASData_Exp, "GASData.Exp", "");
+	GameplayTags.AddTag(GameplayTags.GASData_Duration, "GASData.Duration", "GameplayEffect 지속시간 SetByCaller 값");
+	GameplayTags.AddTag(GameplayTags.GASData_StatusValue, "GASData.StatusValue", "상태 효과 범용 SetByCaller 값");
 
 }
 
@@ -97,6 +118,7 @@ void FDiaGameplayTags::RegisterDamageTags()
 	GameplayTags.AddTag(GameplayTags.Damage_Base, "GASData.DamageBase", "");
 	GameplayTags.AddTag(GameplayTags.Damage_Crit, "GASData.CritMultiplier", "");
 	GameplayTags.AddTag(GameplayTags.Damage_Final, "GASData.Damage", "");
+	GameplayTags.AddTag(GameplayTags.Damage_Multiplier, "GASData.DamageMultiplier", "");
 
 }
 

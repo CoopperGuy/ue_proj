@@ -303,28 +303,9 @@ void ADiaBaseCharacter::OnStunTagChanged(const FGameplayTag CallbackTag, int32 N
 
 void ADiaBaseCharacter::OnSlowTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
 {
-	// 느려짐 상태 변화 처리
-	if (NewCount > 0)
+	if (AttributeSet && GetCharacterMovement())
 	{
-		FGameplayTagContainer SearchTags;
-		SearchTags.AddTag(FDiaGameplayTags::Get().State_Slowed);  // Effect에 붙인 태그
-		TArray<FActiveGameplayEffectHandle> Handles = AbilitySystemComponent->GetActiveEffectsWithAllTags(SearchTags);
-		float SlowMagnitude = 0.f;
-		for(const FActiveGameplayEffectHandle& Handle : Handles)
-		{
-			const FActiveGameplayEffect* ActiveGE = AbilitySystemComponent->GetActiveGameplayEffect(Handle);
-			if (ActiveGE)
-			{
-				// 느려짐 효과의 크기 가져오기
-				float Magnitude = ActiveGE->Spec.GetModifierMagnitude(0, true);
-				SlowMagnitude += Magnitude;
-			}
-		}
-		GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed * SlowMagnitude;
-	}
-	else
-	{
-		GetCharacterMovement()->MaxWalkSpeed = DefaultMovementSpeed; 
+		GetCharacterMovement()->MaxWalkSpeed = FMath::Max(AttributeSet->GetMovementSpeed(), 0.f);
 	}
 }
 
@@ -556,4 +537,3 @@ UAbilitySystemComponent* ADiaBaseCharacter::GetAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;
 }
-

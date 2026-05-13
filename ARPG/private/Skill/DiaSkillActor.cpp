@@ -5,6 +5,7 @@
 
 #include "AbilitySystemComponent.h"
 #include "AbilitySystemInterface.h"
+#include "Abilities/GameplayAbilityTypes.h"
 
 #include "Components/PrimitiveComponent.h"
 #include "Components/SphereComponent.h"
@@ -33,7 +34,8 @@
 #include "TimerManager.h"
 #include "Skill/DiaDamageType.h"
 
-#include "DiaComponent/Skill/Executor/DiaSkillHitVariantExecutor.h"
+#include "Engine/OverlapResult.h"
+
 #include "DiaComponent/DiaSkillManagerComponent.h"
 
 
@@ -115,6 +117,24 @@ void ADiaSkillActor::InitTargetEffectHandle(const TArray<FGameplayEffectSpecHand
 	TargetEffectHandles = InTargetEffectHandles;
 }
 
+void ADiaSkillActor::AddIgnoredHitActors(const TArray<AActor*>& InIgnoredActors)
+{
+    for (AActor* IgnoredActor : InIgnoredActors)
+    {
+        if (!IsValid(IgnoredActor))
+        {
+            continue;
+        }
+
+        HitActors.Add(IgnoredActor);
+
+        if (CollisionComp)
+        {
+            CollisionComp->IgnoreActorWhenMoving(IgnoredActor, true);
+        }
+    }
+}
+
 void ADiaSkillActor::ArmRemovalTimer(float Seconds)
 {
 	if (Seconds <= 0.f)
@@ -136,6 +156,47 @@ void ADiaSkillActor::ArmRemovalTimer(float Seconds)
 		&ADiaSkillActor::OnSkillObjectRemovalTimer,
 		Seconds,
 		false);
+}
+
+void ADiaSkillActor::ExplodeAdditioanlly(float Radius)
+{
+    if (Radius <= 0.f)
+    {
+        return;
+    }
+    TArray<FOverlapResult> Overlaps;
+    FCollisionShape CollisionShape = FCollisionShape::MakeSphere(Radius);
+    FCollisionQueryParams QueryParams;
+    QueryParams.AddIgnoredActor(this);
+    QueryParams.AddIgnoredActor(GetOwner());
+    UWorld* World = GetWorld();
+    if (!World)
+    {
+        return;
+    }
+    bool bHasOverlaps = World->OverlapMultiByChannel(
+        Overlaps,
+        GetActorLocation(),
+        FQuat::Identity,
+        ECollisionChannel::ECC_EngineTraceChannel2,
+        CollisionShape,
+        QueryParams);
+    if (bHasOverlaps)
+    {
+        for (const FOverlapResult& Overlap : Overlaps)
+        {
+            if (AActor* OverlappedActor = Overlap.GetActor())
+            {
+                if (IsValidTarget(OverlappedActor))
+                {
+                    FHitResult HitResult;
+                    HitResult.ImpactPoint = GetActorLocation();
+                    HitResult.ImpactNormal = FVector::UpVector; // 간단히 위쪽으로 설정
+                    ApplyAdditionalHit(OverlappedActor, HitResult, Cast<ADiaBaseCharacter>(GetOwner()));
+                }
+            }
+        }
+	}
 }
 
 void ADiaSkillActor::OnSkillObjectRemovalTimer()
@@ -230,7 +291,11 @@ void ADiaSkillActor::OnHit(UPrimitiveComponent* OverlappedComponent,
         return;
     }
 
-    ApplyGameplayHit(OtherActor, HitResult, OwnerActor);
+
+    if (IsSpawnedByFork())
+		ApplyAdditionalHit(OtherActor, HitResult, OwnerActor);
+    else
+        ApplyGameplayHit(OtherActor, HitResult, OwnerActor);
 }
 
 void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitResult, ADiaBaseCharacter* OwnerActor)
@@ -267,18 +332,26 @@ void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitR
             {
                 FDiaSkillVariantContext VariantContext;
                 VariantContext.HitResult = HitResult;
+                VariantContext.HitActor = OtherActor;
+                VariantContext.SkillActorClass = OwningAbilityPtr->GetSkillActorClassForSpawn();
 				VariantContext.SkillActors.Add(this);
                 VariantContext.AbilityComp = OwnerActor->GetAbilitySystemComponent();
+
+                const FVector HitLocation = HitResult.ImpactPoint.IsNearlyZero()
+                    ? OtherActor->GetActorLocation()
+                    : FVector(HitResult.ImpactPoint);
+                const FVector ForkDirection = GetActorForwardVector().GetSafeNormal();
+
+                FGameplayAbilityTargetData_LocationInfo* LocationData = new FGameplayAbilityTargetData_LocationInfo();
+                LocationData->SourceLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
+                LocationData->SourceLocation.LiteralTransform = FTransform(ForkDirection.Rotation(), HitLocation);
+                LocationData->TargetLocation.LocationType = EGameplayAbilityTargetingLocationType::LiteralTransform;
+                LocationData->TargetLocation.LiteralTransform = FTransform(ForkDirection.Rotation(), HitLocation + ForkDirection * 100.f);
+                VariantContext.TargetData.Add(LocationData);
                 
-                // Variants 배열 생성
-                TArray<UDiaSkillVariant*> VariantsToApply;
-                OwnerActor->GetSkillManagerComponent()->MakeSkillVariantsArray(OwningAbilityPtr, VariantsToApply);
-                
-                // HitExecutor 생성 및 실행 (Runtime 반환 버전)
-                UDiaSkillHitVariantExecutor* HitExecutor = NewObject<UDiaSkillHitVariantExecutor>(OwnerActor->GetSkillManagerComponent());
                 FSkillHitRuntime HitRuntime;
                 HitRuntime.PierceCount = PierceCount; // 현재 PierceCount 설정
-                HitExecutor->ExecuteEffect(VariantsToApply, VariantContext, OwningAbilityPtr, HitRuntime);
+                OwnerActor->GetSkillManagerComponent()->HitSkillActorUseVariants(VariantContext, OwningAbilityPtr, HitRuntime);
                 
                 // Runtime의 PierceCount를 SkillActor에 반영
                 PierceCount = HitRuntime.PierceCount;
@@ -295,6 +368,25 @@ void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitR
                 Destroy();
             }
         }
+    }
+}
+
+void ADiaSkillActor::ApplyAdditionalHit(AActor* OtherActor, const FHitResult& HitResult, ADiaBaseCharacter* OnwerActor)
+{
+    IAbilitySystemInterface* DiaOtherActor = Cast<IAbilitySystemInterface>(OtherActor);
+    if (DiaOtherActor)
+    {
+        // 이미 히트한 적 목록에 추가
+        HitActors.Add(OtherActor);
+
+        // 데미지 처리
+        ProcessDamage(DiaOtherActor, HitResult);
+
+        // 피격 이펙트 생성
+        SpawnHitEffect(HitResult.ImpactPoint, HitResult.ImpactNormal);
+
+        //피격시 효과 타겟에게 적용.
+        ProcessTargetEffects(DiaOtherActor);
     }
 }
 
@@ -334,7 +426,7 @@ void ADiaSkillActor::ProcessDamage(IAbilitySystemInterface* ASCInterface, const 
                 SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.DamageBase")), Damage);
 
                 // 필요 시 치명타 배수 등 추가 세팅 가능
-                // SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.CritMultiplier")), 1.0f);
+                SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.DamageMultiplier")), DamageMultiplier);
 
                 SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
             }
