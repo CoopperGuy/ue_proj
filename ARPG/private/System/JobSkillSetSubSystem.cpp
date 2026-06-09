@@ -2,6 +2,7 @@
 
 
 #include "System/JobSkillSetSubSystem.h"
+#include "Logging/ARPGLogChannels.h"
 
 void UJobSkillSetSubSystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -12,10 +13,10 @@ void UJobSkillSetSubSystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	if (JobSkillSetMap.Num() == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UJobSkillSetSubSystem: DataTable load failed, using default data"));
+		UE_LOG(LogARPG, Warning, TEXT("UJobSkillSetSubSystem: DataTable load failed, using default data"));
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("UJobSkillSetSubSystem: Initialized with %d skills"), JobSkillSetMap.Num());
+	UE_LOG(LogARPG, Log, TEXT("UJobSkillSetSubSystem: Initialized with %d skills"), JobSkillSetMap.Num());
 
 }
 

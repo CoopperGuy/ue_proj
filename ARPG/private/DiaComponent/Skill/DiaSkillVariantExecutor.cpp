@@ -4,16 +4,17 @@
 #include "DiaComponent/Skill/DiaSkillVariantExecutor.h"
 #include "GAS/DiaGameplayAbility.h"
 #include "GAS/DiaGameplayTags.h"
+#include "Logging/ARPGLogChannels.h"
 
 
 UDiaSkillVariantExecutor::UDiaSkillVariantExecutor()
 {
-	UE_LOG(LogTemp, Log, TEXT("UDiaSkillVariantExecutor::UDiaSkillVariantExecutor - Constructor Called"));
+	UE_LOG(LogARPG, Log, TEXT("UDiaSkillVariantExecutor::UDiaSkillVariantExecutor - Constructor Called"));
 }
 
 void UDiaSkillVariantExecutor::InitializeExecutor()
 {
-	UE_LOG(LogTemp, Log, TEXT("UDiaSkillVariantExecutor::InitializeExecutor - Initializing Executor"));
+	UE_LOG(LogARPG, Log, TEXT("UDiaSkillVariantExecutor::InitializeExecutor - Initializing Executor"));
 }
 
 //기본적인 형태
@@ -37,7 +38,7 @@ void UDiaSkillVariantExecutor::ApplyEffects(const TArray<UDiaSkillVariant*>& Var
 		if (Variant)
 		{
 			const FDiaSkillVariantSpec Spec = Variant->GetVariantSpec();
-			UE_LOG(LogTemp, Warning, TEXT("UDiaSkillVariantExecutor::ApplyEffects - Applying Effect with Tag: %s"), *Spec.SkillTag.ToString());
+			UE_LOG(LogARPG, Warning, TEXT("UDiaSkillVariantExecutor::ApplyEffects - Applying Effect with Tag: %s"), *Spec.SkillTag.ToString());
 			for (const TObjectPtr<UDiaSkillVariantEffect>& Effect : RegisteredEffects)
 			{
 				Effect->Apply(Spec, Context, Runtime);

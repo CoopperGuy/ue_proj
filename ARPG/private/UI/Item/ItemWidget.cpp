@@ -18,6 +18,7 @@
 #include "Blueprint/WidgetBlueprintLibrary.h"
 
 #include "Engine/Engine.h"
+#include "Logging/ARPGLogChannels.h"
 
 void UItemWidget::NativeConstruct()
 {
@@ -84,7 +85,7 @@ void UItemWidget::SetIconSize(const FVector2D& NewSize)
 	// 레이아웃 강제 업데이트
 	ForceLayoutUpdate();
 	
-	UE_LOG(LogTemp, Log, TEXT("SetIconSize completed: %s"), *NewSize.ToString());
+	UE_LOG(LogARPG, Log, TEXT("SetIconSize completed: %s"), *NewSize.ToString());
 }
 
 void UItemWidget::SetWidgetGridPos(int32 PositionX, int32 PositionY)
@@ -105,7 +106,7 @@ bool UItemWidget::MoveGridPosition(int32 DeltaX, int32 DeltaY)
 {
 	if (ItemInfo.IsEmpty())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("MoveGridPosition failed: ItemInfo is empty"));
+		UE_LOG(LogARPG, Warning, TEXT("MoveGridPosition failed: ItemInfo is empty"));
 		return false;
 	}
 	ItemInfo.GridX = DeltaX;
@@ -161,6 +162,7 @@ void UItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPoint
 	// 드래그 정보 설정
 	DragOperation->ItemData = ItemInfo;
 	DragOperation->SourceWidget = this;
+	DragOperation->SourceInventoryWidget = GetTypedOuter<UMainInventory>();
 	DragOperation->ItemWidth = ItemInfo.ItemInstance.GetWidth();
 	DragOperation->ItemHeight = ItemInfo.ItemInstance.GetHeight();
 	DragOperation->DragType = static_cast<EItemDragDropType>(ItemDragDropState);
@@ -200,7 +202,7 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	UItemDragDropOperation* ItemDragOp = Cast<UItemDragDropOperation>(InOperation);
 	if (!ItemDragOp)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ItemWidget::NativeOnDrop - Invalid drag operation type"));
+		UE_LOG(LogARPG, Warning, TEXT("ItemWidget::NativeOnDrop - Invalid drag operation type"));
 		return false;
 	}
 	
@@ -208,7 +210,7 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	if (ItemDragOp->SourceWidget == this)
 	{
 		// 자기 자신에게 드롭하는 것은 유효하지 않지만, 드래그를 취소하지 않음
-		UE_LOG(LogTemp, Log, TEXT("ItemWidget::NativeOnDrop - Dropped on self - ignoring"));
+		UE_LOG(LogARPG, Log, TEXT("ItemWidget::NativeOnDrop - Dropped on self - ignoring"));
 		return true; 
 	}
 	
@@ -216,7 +218,7 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	UMainInventory* ParentInventory = GetTypedOuter<UMainInventory>();
 	if (!IsValid(ParentInventory))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ItemWidget::NativeOnDrop - Parent inventory not found"));
+		UE_LOG(LogARPG, Warning, TEXT("ItemWidget::NativeOnDrop - Parent inventory not found"));
 		return false;
 	}
 
@@ -229,7 +231,7 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	int32 DropGridX = FMath::FloorToInt(GridPosition.X);
 	int32 DropGridY = FMath::FloorToInt(GridPosition.Y);
 	
-	UE_LOG(LogTemp, Log, TEXT("ItemWidget::NativeOnDrop - Item dropped at grid position: (%d, %d)"), DropGridX, DropGridY);
+	UE_LOG(LogARPG, Log, TEXT("ItemWidget::NativeOnDrop - Item dropped at grid position: (%d, %d)"), DropGridX, DropGridY);
 
 	// 소스 아이템과 타겟 아이템 정보
 	UItemWidget* SourceWidget = Cast<UItemWidget>(ItemDragOp->SourceWidget);
@@ -253,7 +255,7 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	//	SourceWidget->SetRenderOpacity(1.0f);
 	//}
 	
-	UE_LOG(LogTemp, Log, TEXT("Item swap completed successfully"));
+	UE_LOG(LogARPG, Log, TEXT("Item swap completed successfully"));
 	return true;
 }
 
@@ -279,13 +281,13 @@ bool UItemWidget::ValidateIconComponents() const
 {
 	if (!ItemIcon)
 	{
-		UE_LOG(LogTemp, Error, TEXT("ItemIcon is null!"));
+		UE_LOG(LogARPG, Error, TEXT("ItemIcon is null!"));
 		return false;
 	}
 	
 	if (!ItemSzBox)
 	{
-		UE_LOG(LogTemp, Error, TEXT("ItemSzBox is null! Check Blueprint binding."));
+		UE_LOG(LogARPG, Error, TEXT("ItemSzBox is null! Check Blueprint binding."));
 		return false;
 	}
 	

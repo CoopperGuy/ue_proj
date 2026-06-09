@@ -42,6 +42,12 @@ public:
 	void RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
 	void RegisteSkillPannelWidget(const TArray<USkillObject*>&);
 
+	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat")
+	void CheatDropItem(FName ItemID, int32 Count = 1, int32 Level = 1);
+
+	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat")
+	void CheatGiveItem(FName ItemID, int32 Count = 1, int32 Level = 1);
+
 	ESlateVisibility GetInventoryVisibility() const;
 	ESlateVisibility GetWidgetVisibility(const FName& FoundName) const;
 

@@ -8,6 +8,7 @@
 #include "GameplayTagContainer.h"
 #include "Widgets/CommonActivatableWidgetContainer.h"
 
+#include "Logging/ARPGLogChannels.h"
 #include "DiaPrimaryLayout.generated.h"
 
 /**
@@ -48,7 +49,7 @@ public:
 			this->AddToViewport();
 		}
 
-		UE_LOG(LogTemp, Warning, TEXT("PushToHudLayer called with tag: %s"), *InTag.ToString());
+		UE_LOG(LogARPG, Warning, TEXT("PushToHudLayer called with tag: %s"), *InTag.ToString());
 		if (!WidgetClass)
 		{
 			return nullptr;
@@ -57,14 +58,14 @@ public:
 		UCommonActivatableWidgetStack* Layer = GetLayerByTag(InTag);
 		if (!Layer)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("PushToHudLayer No layer found for tag: %s"), *InTag.ToString());
+			UE_LOG(LogARPG, Warning, TEXT("PushToHudLayer No layer found for tag: %s"), *InTag.ToString());
 			return nullptr;
 		}
 
 		T* Widget = Cast<T>(Layer->AddWidget(WidgetClass));
 		if(!Widget)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("PushToHudLayer Failed to create widget of class: %s"), *WidgetClass->GetName());
+			UE_LOG(LogARPG, Warning, TEXT("PushToHudLayer Failed to create widget of class: %s"), *WidgetClass->GetName());
 			return nullptr;
 		}
 
@@ -76,9 +77,9 @@ public:
 
 
 		UCommonActivatableWidget* Active = Layer->GetActiveWidget();
-		UE_LOG(LogTemp, Warning, TEXT("ActiveWidget after AddWidget: %s"),
+		UE_LOG(LogARPG, Warning, TEXT("ActiveWidget after AddWidget: %s"),
 			Active ? *Active->GetName() : TEXT("NULL"));
-		UE_LOG(LogTemp, Warning, TEXT("Widget valid: %s, InViewport: %s"),
+		UE_LOG(LogARPG, Warning, TEXT("Widget valid: %s, InViewport: %s"),
 			Widget ? TEXT("YES") : TEXT("NO"),
 			this->IsInViewport() ? TEXT("YES") : TEXT("NO"));
 
@@ -86,14 +87,14 @@ public:
 		// 이미 이 위젯이 레이어에 있는지 확인
 		if (Layer->GetActiveWidget() == Widget)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("PushToHudLayer Widget of class %s is already active in layer with tag: %s"), *WidgetClass->GetName(), *InTag.ToString());
+			UE_LOG(LogARPG, Warning, TEXT("PushToHudLayer Widget of class %s is already active in layer with tag: %s"), *WidgetClass->GetName(), *InTag.ToString());
 			return Widget;
 		}
 
 
 
 	
-		UE_LOG(LogTemp, Warning, TEXT("PushToHudLayer Widget of class %s pushed to layer with tag: %s"), *WidgetClass->GetName(), *InTag.ToString());
+		UE_LOG(LogARPG, Warning, TEXT("PushToHudLayer Widget of class %s pushed to layer with tag: %s"), *WidgetClass->GetName(), *InTag.ToString());
 		return Widget;
 	}
 };

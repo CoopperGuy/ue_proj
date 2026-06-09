@@ -2,244 +2,245 @@
 
 
 #include "DiaComponent/DiaStatusEffectComponent.h"
-#include "Skill/Effect/DiaStatusEffect.h"
+
 #include "DiaBaseCharacter.h"
+#include "AIController.h"
+#include "BrainComponent.h"
+#include "GAS/DiaAttributeSet.h"
+#include "GAS/DiaGameplayTags.h"
+#include "Engine/World.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Logging/ARPGLogChannels.h"
+#include "TimerManager.h"
 
-
-// Sets default values for this component's properties
 UDiaStatusEffectComponent::UDiaStatusEffectComponent()
 {
-	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
-	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
-
-	// ...
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
-
-// Called when the game starts
-void UDiaStatusEffectComponent::BeginPlay()
+void UDiaStatusEffectComponent::InitializeWithAbilitySystem(UAbilitySystemComponent* InAbilitySystemComponent, ADiaBaseCharacter* InOwnerCharacter)
 {
-	Super::BeginPlay();
+	if (!IsValid(InAbilitySystemComponent) || !IsValid(InOwnerCharacter))
+	{
+		return;
+	}
 
-	// ...
-	
+	UnregisterStateTags();
+
+	AbilitySystemComponent = InAbilitySystemComponent;
+	OwnerCharacter = InOwnerCharacter;
+
+	const FDiaGameplayTags& Tags = FDiaGameplayTags::Get();
+	RegisterStateTag(Tags.State_Stunned, EGameplayTagEventType::NewOrRemoved);
+	RegisterStateTag(Tags.State_Slowed, EGameplayTagEventType::AnyCountChange);
+	RegisterStateTag(Tags.State_Freeze, EGameplayTagEventType::AnyCountChange);
+	RegisterStateTag(Tags.State_KnockBack, EGameplayTagEventType::NewOrRemoved);
 }
 
-
-// Called every frame
-void UDiaStatusEffectComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UDiaStatusEffectComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// 활성화된 모든 상태 효과 틱 처리
-	for (int32 i = ActiveStatusEffects.Num() - 1; i >= 0; i--)
-	{
-		UDiaStatusEffect* StatusEffect = ActiveStatusEffects[i];
-		
-		if (IsValid(StatusEffect) && StatusEffect->IsActive())
-		{
-			StatusEffect->Tick(DeltaTime);
-		}
-		else
-		{
-			// 유효하지 않거나 비활성화된 효과 제거
-			ActiveStatusEffects.RemoveAt(i);
-		}
-	}
+	UnregisterStateTags();
+	Super::EndPlay(EndPlayReason);
 }
 
-UDiaStatusEffect* UDiaStatusEffectComponent::AddStatusEffect(TSubclassOf<UDiaStatusEffect> StatusEffectClass, float Duration, float Strength, AActor* Instigator)
+void UDiaStatusEffectComponent::RegisterStateTag(const FGameplayTag& StateTag, EGameplayTagEventType::Type EventType)
 {
-	if (!StatusEffectClass)
+	UAbilitySystemComponent* ASC = AbilitySystemComponent.Get();
+	if (!IsValid(ASC) || !StateTag.IsValid())
 	{
-		return nullptr;
+		return;
 	}
-	
-	// 소유자 가져오기
-	ADiaBaseCharacter* OwnerCharacter = Cast<ADiaBaseCharacter>(GetOwner());
-	if (!IsValid(OwnerCharacter))
+
+	FRegisteredStateTag RegisteredTag;
+	RegisteredTag.Tag = StateTag;
+	RegisteredTag.EventType = EventType;
+	RegisteredTag.DelegateHandle = ASC->RegisterGameplayTagEvent(StateTag, EventType)
+		.AddUObject(this, &ThisClass::OnStateTagChanged);
+
+	RegisteredStateTags.Add(RegisteredTag);
+}
+
+void UDiaStatusEffectComponent::UnregisterStateTags()
+{
+	UAbilitySystemComponent* ASC = AbilitySystemComponent.Get();
+	if (IsValid(ASC))
 	{
-		return nullptr;
-	}
-	
-	// 상태 효과 객체 생성
-	UDiaStatusEffect* NewStatusEffect = NewObject<UDiaStatusEffect>(this, StatusEffectClass);
-	if (!IsValid(NewStatusEffect))
-	{
-		return nullptr;
-	}
-	
-	// 상태 효과 초기화
-	NewStatusEffect->Initialize(OwnerCharacter, Duration, Strength);
-	
-	// 이미 같은 ID의 효과가 있는지 확인
-	UDiaStatusEffect* ExistingEffect = GetStatusEffectByID(NewStatusEffect->GetStatusEffectID());
-	if (ExistingEffect)
-	{
-		// 중첩 가능한 경우 기존 효과의 스택 증가
-		if (ExistingEffect->CanStack())
+		for (const FRegisteredStateTag& RegisteredTag : RegisteredStateTags)
 		{
-			ExistingEffect->Apply();
-			return ExistingEffect;
-		}
-		else
-		{
-			// 중첩 불가능한 경우 기존 효과 갱신
-			RemoveStatusEffect(ExistingEffect);
+			ASC->RegisterGameplayTagEvent(RegisteredTag.Tag, RegisteredTag.EventType).Remove(RegisteredTag.DelegateHandle);
 		}
 	}
-	
-	// 새 효과 추가 및 적용
-	ActiveStatusEffects.Add(NewStatusEffect);
-	NewStatusEffect->Apply();
-	
-	// 이벤트 발생
-	OnStatusEffectAdded.Broadcast(NewStatusEffect);
-	
-	return NewStatusEffect;
+
+	RegisteredStateTags.Reset();
 }
 
-UDiaStatusEffect* UDiaStatusEffectComponent::AddStatusEffectByID(const FString& StatusEffectID, float Duration, float Strength, AActor* Instigator)
+void UDiaStatusEffectComponent::OnStateTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
 {
-	TSubclassOf<UDiaStatusEffect> StatusEffectClass = StatusEffectClassMap.FindRef(StatusEffectID);
-	if (!StatusEffectClass)
+	const FDiaGameplayTags& Tags = FDiaGameplayTags::Get();
+
+	if (CallbackTag == Tags.State_Stunned)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Status effect class not found for ID: %s"), *StatusEffectID);
-		return nullptr;
+		HandleStunChanged(NewCount);
+		return;
 	}
-	
-	return AddStatusEffect(StatusEffectClass, Duration, Strength, Instigator);
+
+	if (CallbackTag == Tags.State_Slowed)
+	{
+		RefreshMovementSpeed();
+	}
+
+	if(CallbackTag == Tags.State_Freeze)
+	{
+		RefreshMovementSpeed();
+	}
+
+	if(CallbackTag == Tags.State_KnockBack)
+	{
+		HandleKnockBackChanged(NewCount);
+		return;
+	}
 }
 
-bool UDiaStatusEffectComponent::RemoveStatusEffect(UDiaStatusEffect* StatusEffect)
+void UDiaStatusEffectComponent::HandleStunChanged(int32 NewCount) const
 {
-	if (!IsValid(StatusEffect))
+	if (ADiaBaseCharacter* Character = OwnerCharacter.Get())
 	{
-		return false;
+		Character->ApplyStunState(NewCount > 0);
 	}
-	
-	int32 Index = ActiveStatusEffects.Find(StatusEffect);
-	if (Index == INDEX_NONE)
-	{
-		return false;
-	}
-	
-	// 효과 제거
-	StatusEffect->Remove();
-	
-	// 목록에서 제거
-	ActiveStatusEffects.RemoveAt(Index);
-	
-	// 이벤트 발생
-	OnStatusEffectRemoved.Broadcast(StatusEffect);
-	
-	return true;
 }
 
-bool UDiaStatusEffectComponent::RemoveStatusEffectByID(const FString& StatusEffectID)
+void UDiaStatusEffectComponent::RefreshMovementSpeed() const
 {
-	UDiaStatusEffect* StatusEffect = GetStatusEffectByID(StatusEffectID);
-	if (!StatusEffect)
+	ADiaBaseCharacter* Character = OwnerCharacter.Get();
+	if (!IsValid(Character) || !IsValid(Character->GetAttributeSet()) || !IsValid(Character->GetCharacterMovement()))
 	{
-		return false;
+		return;
 	}
-	
-	return RemoveStatusEffect(StatusEffect);
+
+	Character->GetCharacterMovement()->MaxWalkSpeed = FMath::Max(Character->GetAttributeSet()->GetMovementSpeed(), 0.f);
 }
 
-int32 UDiaStatusEffectComponent::RemoveStatusEffectsByTag(const FName& Tag)
+void UDiaStatusEffectComponent::HandleFreezeChanged(int32 NewCount) const
 {
-	TArray<UDiaStatusEffect*> EffectsWithTag = GetStatusEffectsByTag(Tag);
-	int32 RemovedCount = 0;
-	
-	for (UDiaStatusEffect* StatusEffect : EffectsWithTag)
+	ADiaBaseCharacter* Character = OwnerCharacter.Get();
+	if (!IsValid(Character) || !IsValid(Character->GetAttributeSet()) || !IsValid(Character->GetCharacterMovement()))
 	{
-		if (RemoveStatusEffect(StatusEffect))
+		return;
+	}
+	if (NewCount > 3)
+	{
+		Character->GetCharacterMovement()->MaxWalkSpeed = 0.f;
+	}
+	else if (NewCount > 0)
+	{
+		Character->GetCharacterMovement()->MaxWalkSpeed = Character->GetAttributeSet()->GetMovementSpeed() * 0.5f;
+	}
+	else
+	{
+		RefreshMovementSpeed();
+	}
+}
+
+void UDiaStatusEffectComponent::HandleKnockBackChanged(int32 NewCount)
+{
+	ADiaBaseCharacter* Character = OwnerCharacter.Get();
+	if (!IsValid(Character))
+	{
+		ARPG_LOG(LogARPG_Combat, Warning, TEXT("HandleKnockBackChanged skipped: OwnerCharacter is invalid. NewCount=%d, ASC=%s"),
+			NewCount,
+			*GetNameSafe(AbilitySystemComponent.Get()));
+		return;
+	}
+
+	UCharacterMovementComponent* MovementComponent = Character->GetCharacterMovement();
+	if (!IsValid(MovementComponent))
+	{
+		ARPG_LOG(LogARPG_Combat, Warning, TEXT("HandleKnockBackChanged skipped: MovementComponent is invalid. Character=%s, NewCount=%d"),
+			*GetNameSafe(Character),
+			NewCount);
+		return;
+	}
+
+	const FVector ForwardVector = Character->GetActorForwardVector();
+	const FVector Impulse = ForwardVector * -1000.f;
+	const FVector VelocityBefore = MovementComponent->Velocity;
+
+	ARPG_LOG(LogARPG_Combat, Warning, TEXT("HandleKnockBackChanged entered. Character=%s, NewCount=%d, Location=%s, Forward=%s, VelocityBefore=%s, MovementMode=%d"),
+		*GetNameSafe(Character),
+		NewCount,
+		*Character->GetActorLocation().ToString(),
+		*ForwardVector.ToString(),
+		*VelocityBefore.ToString(),
+		static_cast<int32>(MovementComponent->MovementMode));
+
+	if (NewCount > 0)
+	{
+		if (AAIController* AIController = Cast<AAIController>(Character->GetController()))
 		{
-			RemovedCount++;
+			AIController->StopMovement();
+			if (AIController->BrainComponent)
+			{
+				AIController->BrainComponent->StopLogic(TEXT("Knockback"));
+			}
+			ARPG_LOG(LogARPG_Combat, Warning, TEXT("HandleKnockBackChanged stopped AI movement. Character=%s, Controller=%s"),
+				*GetNameSafe(Character),
+				*GetNameSafe(AIController));
+		}
+
+		if (UWorld* World = Character->GetWorld())
+		{
+			World->GetTimerManager().ClearTimer(KnockBackAIRestartTimerHandle);
+		}
+
+		if (MovementComponent->MovementMode == MOVE_None)
+		{
+			MovementComponent->SetMovementMode(MOVE_Walking);
+			ARPG_LOG(LogARPG_Combat, Warning, TEXT("HandleKnockBackChanged restored movement mode before knockback. Character=%s, NewMovementMode=%d"),
+				*GetNameSafe(Character),
+				static_cast<int32>(MovementComponent->MovementMode));
+		}
+
+		MovementComponent->StopMovementImmediately();
+		MovementComponent->AddImpulse(Impulse, true);
+		MovementComponent->Velocity = Impulse;
+		MovementComponent->UpdateComponentVelocity();
+		Character->LaunchCharacter(Impulse, true, false);
+	}
+	else
+	{
+		if (UWorld* World = Character->GetWorld())
+		{
+			TWeakObjectPtr<ADiaBaseCharacter> CharacterPtr = Character;
+			World->GetTimerManager().ClearTimer(KnockBackAIRestartTimerHandle);
+			World->GetTimerManager().SetTimer(
+				KnockBackAIRestartTimerHandle,
+				FTimerDelegate::CreateLambda([CharacterPtr]()
+				{
+					ADiaBaseCharacter* RestartCharacter = CharacterPtr.Get();
+					if (!IsValid(RestartCharacter))
+					{
+						return;
+					}
+
+					AAIController* AIController = Cast<AAIController>(RestartCharacter->GetController());
+					if (!IsValid(AIController))
+					{
+						return;
+					}
+
+					if (AIController->BrainComponent)
+					{
+						AIController->BrainComponent->RestartLogic();
+					}
+
+					ARPG_LOG(LogARPG_Combat, Warning, TEXT("HandleKnockBackChanged restarted AI after knockback. Character=%s, Controller=%s, Velocity=%s"),
+						*GetNameSafe(RestartCharacter),
+						*GetNameSafe(AIController),
+						*RestartCharacter->GetCharacterMovement()->Velocity.ToString());
+				}),
+				KnockBackAIRestartDelay,
+				false);
 		}
 	}
-	
-	return RemovedCount;
-}
-
-void UDiaStatusEffectComponent::RemoveAllStatusEffects()
-{
-	for (int32 i = ActiveStatusEffects.Num() - 1; i >= 0; i--)
-	{
-		UDiaStatusEffect* StatusEffect = ActiveStatusEffects[i];
-		if (IsValid(StatusEffect))
-		{
-			StatusEffect->Remove();
-			OnStatusEffectRemoved.Broadcast(StatusEffect);
-		}
-	}
-	
-	ActiveStatusEffects.Empty();
-}
-
-bool UDiaStatusEffectComponent::HasStatusEffect(TSubclassOf<UDiaStatusEffect> StatusEffectClass) const
-{
-	for (UDiaStatusEffect* StatusEffect : ActiveStatusEffects)
-	{
-		if (IsValid(StatusEffect) && StatusEffect->IsA(StatusEffectClass) && StatusEffect->IsActive())
-		{
-			return true;
-		}
-	}
-	
-	return false;
-}
-
-bool UDiaStatusEffectComponent::HasStatusEffectByID(const FString& StatusEffectID) const
-{
-	return GetStatusEffectByID(StatusEffectID) != nullptr;
-}
-
-bool UDiaStatusEffectComponent::HasStatusEffectWithTag(const FName& Tag) const
-{
-	for (UDiaStatusEffect* StatusEffect : ActiveStatusEffects)
-	{
-		if (IsValid(StatusEffect) && StatusEffect->HasTag(Tag) && StatusEffect->IsActive())
-		{
-			return true;
-		}
-	}
-	
-	return false;
-}
-
-UDiaStatusEffect* UDiaStatusEffectComponent::GetStatusEffectByID(const FString& StatusEffectID) const
-{
-	for (UDiaStatusEffect* StatusEffect : ActiveStatusEffects)
-	{
-		if (IsValid(StatusEffect) && StatusEffect->GetStatusEffectID() == StatusEffectID && StatusEffect->IsActive())
-		{
-			return StatusEffect;
-		}
-	}
-	
-	return nullptr;
-}
-
-TArray<UDiaStatusEffect*> UDiaStatusEffectComponent::GetAllStatusEffects() const
-{
-	return ActiveStatusEffects;
-}
-
-TArray<UDiaStatusEffect*> UDiaStatusEffectComponent::GetStatusEffectsByTag(const FName& Tag) const
-{
-	TArray<UDiaStatusEffect*> Result;
-	
-	for (UDiaStatusEffect* StatusEffect : ActiveStatusEffects)
-	{
-		if (IsValid(StatusEffect) && StatusEffect->HasTag(Tag) && StatusEffect->IsActive())
-		{
-			Result.Add(StatusEffect);
-		}
-	}
-	
-	return Result;
 }
 

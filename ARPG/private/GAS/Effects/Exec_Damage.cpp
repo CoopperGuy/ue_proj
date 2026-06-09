@@ -6,6 +6,7 @@
 
 #include "GAS/DiaAttributeSet.h"
 #include "GAS/DiaGameplayTags.h"
+#include "Logging/ARPGLogChannels.h"
 
 namespace DamageCapture
 {
@@ -65,7 +66,7 @@ void UExec_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionPa
 
 	if (finalDamage <= 0.f) return; // 가드
 
-	//UE_LOG(LogTemp, Warning, TEXT("Damage Exec: Base=%f, Atk=%f, Def=%f, Option=%f, CritMul=%f => Damage=%f"),
+	//UE_LOG(LogARPG, Warning, TEXT("Damage Exec: Base=%f, Atk=%f, Def=%f, Option=%f, CritMul=%f => Damage=%f"),
 	//	DamageBase, AttackPower, Defense, WeaponDamageOption, CritMul, finalDamage);
 	UAbilitySystemComponent* SourceASC = ExecutionParams.GetSourceAbilitySystemComponent();
 	if (IsValid(SourceASC))

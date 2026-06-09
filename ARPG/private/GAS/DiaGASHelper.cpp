@@ -7,6 +7,7 @@
 #include "GAS/DiaGameplayTags.h"
 #include "AbilitySystemComponent.h"
 #include "DiaBaseCharacter.h"
+#include "Logging/ARPGLogChannels.h"
 
 
 //여기서 gameplayeffect를 통해 성질을 부여해야한다.
@@ -20,7 +21,7 @@ bool UDiaGASHelper::GrantAbilityFromSkillData(UAbilitySystemComponent* ASC, cons
 	// 태그 체크: AbilityTag가 유효하고 SkillData에 해당 태그가 없으면 경고만 출력
 	if (AbilityTag.IsValid() && !SkillData.AbilityTags.HasTag(AbilityTag))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GrantAbilityFromSkillData: SkillID %d doesn't have required tag %s, granting anyway"), 
+		UE_LOG(LogARPG, Warning, TEXT("GrantAbilityFromSkillData: SkillID %d doesn't have required tag %s, granting anyway"), 
 			SkillID, *AbilityTag.ToString());
 	}
 
@@ -28,7 +29,7 @@ bool UDiaGASHelper::GrantAbilityFromSkillData(UAbilitySystemComponent* ASC, cons
 	TSubclassOf<UDiaGameplayAbility> AbilityClass = GetAbilityClassFromSkillData(SkillData);
 	if (!AbilityClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No ability class found for skill type: %d"), (int32)SkillData.SkillType);
+		UE_LOG(LogARPG, Warning, TEXT("No ability class found for skill type: %d"), (int32)SkillData.SkillType);
 		return false;
 	}
 
@@ -40,7 +41,7 @@ bool UDiaGASHelper::GrantAbilityFromSkillData(UAbilitySystemComponent* ASC, cons
 	// Spec의 SetByCallerTagMagnitudes에 쿨다운 태그 저장 (나중에 참조용)
 	if (CooldownTag.IsValid())
 	{
-		UE_LOG(LogTemp, Log, TEXT("GrantAbilityFromSkillData: Adding cooldown tag %s with duration %.2f to AbilitySpec for SkillID %d"), 
+		UE_LOG(LogARPG, Log, TEXT("GrantAbilityFromSkillData: Adding cooldown tag %s with duration %.2f to AbilitySpec for SkillID %d"), 
 			*CooldownTag.ToString(), SkillData.CooldownDuration, SkillID);
 		AbilitySpec.SetByCallerTagMagnitudes.Add(CooldownTag, SkillData.CooldownDuration);
 	}
@@ -57,7 +58,7 @@ bool UDiaGASHelper::GrantAbilityFromSkillData(UAbilitySystemComponent* ASC, cons
 			AbilityInstance->InitializeWithSkillData(SkillData);
 		}
 
-		//UE_LOG(LogTemp, Log, TEXT("Granted ability for skill ID %d with cooldown tag: %s"), SkillID, *CooldownTagName);
+		//UE_LOG(LogARPG, Log, TEXT("Granted ability for skill ID %d with cooldown tag: %s"), SkillID, *CooldownTagName);
 		return true;
 	}
 
@@ -75,7 +76,7 @@ bool UDiaGASHelper::RevokeAbilityBySkillID(UAbilitySystemComponent* ASC, int32 S
 	if (AbilitySpec)
 	{
 		ASC->ClearAbility(AbilitySpec->Handle);
-		UE_LOG(LogTemp, Log, TEXT("Revoked ability for skill ID %d"), SkillID);
+		UE_LOG(LogARPG, Log, TEXT("Revoked ability for skill ID %d"), SkillID);
 		return true;
 	}
 
@@ -87,21 +88,21 @@ bool UDiaGASHelper::CanActivateAbilityBySkillID(UAbilitySystemComponent* ASC, in
 {
 	if (!ASC)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("[CanActivateAbility] ASC is null for SkillID: %d"), SkillID);
+		//UE_LOG(LogARPG, Warning, TEXT("[CanActivateAbility] ASC is null for SkillID: %d"), SkillID);
 		return false;
 	}
 
 	FGameplayAbilitySpec* AbilitySpec = GetAbilitySpecBySkillID(ASC, SkillID);
 	if (!AbilitySpec || !AbilitySpec->Ability)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("[CanActivateAbility] No ability spec found for SkillID: %d"), SkillID);
+		//UE_LOG(LogARPG, Warning, TEXT("[CanActivateAbility] No ability spec found for SkillID: %d"), SkillID);
 		return false;
 	}
 
 	const FGameplayAbilityActorInfo* ActorInfo = ASC->AbilityActorInfo.Get();
 	if (!ActorInfo)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("[CanActivateAbility] ActorInfo is null for SkillID: %d"), SkillID);
+		//UE_LOG(LogARPG, Warning, TEXT("[CanActivateAbility] ActorInfo is null for SkillID: %d"), SkillID);
 		return false;
 	}
 
@@ -112,7 +113,7 @@ bool UDiaGASHelper::CanActivateAbilityBySkillID(UAbilitySystemComponent* ASC, in
 	// 1. 이미 활성화 중이면 false
 	if (AbilitySpec->IsActive())
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - Already Active"), *OwnerName, SkillID, *AbilityName);
+		//UE_LOG(LogARPG, Warning, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - Already Active"), *OwnerName, SkillID, *AbilityName);
 		return false;
 	}
 
@@ -120,7 +121,7 @@ bool UDiaGASHelper::CanActivateAbilityBySkillID(UAbilitySystemComponent* ASC, in
 	bool bCanUseCooldown = AbilitySpec->Ability->CheckCooldown(AbilitySpec->Handle, ActorInfo);
 	if (!bCanUseCooldown)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - On Cooldown"), 
+		//UE_LOG(LogARPG, Warning, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - On Cooldown"), 
 		//	*OwnerName, SkillID, *AbilityName);
 		return false;
 	}
@@ -129,11 +130,11 @@ bool UDiaGASHelper::CanActivateAbilityBySkillID(UAbilitySystemComponent* ASC, in
 	bool bCanPayCost = AbilitySpec->Ability->CheckCost(AbilitySpec->Handle, ActorInfo);
 	if (!bCanPayCost)
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - Cannot Pay Cost"), *OwnerName, SkillID, *AbilityName);
+		//UE_LOG(LogARPG, Warning, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - Cannot Pay Cost"), *OwnerName, SkillID, *AbilityName);
 		return false;
 	}
 
-	//UE_LOG(LogTemp, Log, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - Can Activate"), *OwnerName, SkillID, *AbilityName);
+	//UE_LOG(LogARPG, Log, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - Can Activate"), *OwnerName, SkillID, *AbilityName);
 	return true;
 }
 

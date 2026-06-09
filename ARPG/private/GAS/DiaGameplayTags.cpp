@@ -60,6 +60,9 @@ void FDiaGameplayTags::RegisterStateTags()
 	GameplayTags.AddTag(GameplayTags.State_Stunned, "GASData.State.Stunned", "스턴 상태");
 	GameplayTags.AddTag(GameplayTags.State_Invincible, "GASData.State.Invincible", "무적 상태");
 	GameplayTags.AddTag(GameplayTags.State_Slowed, "GASData.State.Slowed", "느려짐 상태");
+	GameplayTags.AddTag(GameplayTags.State_Freeze, "GASData.State.Freeze", "프리즈");
+	GameplayTags.AddTag(GameplayTags.State_KnockBack, "GASData.State.KnockBack", "넉백");
+
 }
 
 void FDiaGameplayTags::RegisterCoolDownTags()

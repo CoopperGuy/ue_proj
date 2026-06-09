@@ -154,11 +154,15 @@ struct ARPG_API FItemInstance
 
 	float GetStatValue(const FGameplayTag& Stat) const
 	{
-		for (const FDiaItemStatOption& FoundValue : BaseItem.StatOptions)
-		{
-			return FoundValue.Values;
-		}
-		return 0.0f;
+    	for (const FDiaItemStatOption& FoundValue : BaseItem.StatOptions)
+    	{
+    	    if (FoundValue.StatTag == Stat)
+    	    {
+    	        return FoundValue.Values;
+    	    }
+    	}
+
+    	return 0.0f;
 	}
 
 	float MakeRandomStatValue(const FGameplayTag& Stat) const

@@ -19,7 +19,6 @@ enum class EDamageElementType : uint8
 	EDT_MAX
 };
 
-class UDiaStatusEffect;
 /**
  * 확장된 데미지 타입 클래스
  */
@@ -47,11 +46,4 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
 	float KnockbackForce;
 	
-	// 상태 이상 효과
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
-	TArray<TSubclassOf<UDiaStatusEffect>> StatusEffects;
-	
-	// 상태 이상 적용 확률 (0.0-1.0)
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Effects")
-	float StatusEffectChance;
 };

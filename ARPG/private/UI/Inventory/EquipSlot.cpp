@@ -3,6 +3,7 @@
 
 #include "UI/Inventory/EquipSlot.h"
 #include "UI/Inventory/EquipWidget.h"
+#include "UI/Inventory/MainInventory.h"
 #include "UI/Item/ItemWidget.h"
 #include "UI/DragDrop/ItemDragDropOperation.h"
 
@@ -19,6 +20,7 @@
 #include "System/GameViewPort/DiaCustomGameViewPort.h"
 
 #include "Utils/InventoryUtils.h"
+#include "Logging/ARPGLogChannels.h"
 
 void UEquipSlot::NativeConstruct()
 {
@@ -44,7 +46,7 @@ bool UEquipSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
 	UItemDragDropOperation* ItemDragOp = Cast<UItemDragDropOperation>(InOperation);
 	if (!IsValid(ItemDragOp))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("EquipSlot: Invalid drag operation dropped on equip slot."));
+		UE_LOG(LogARPG, Warning, TEXT("EquipSlot: Invalid drag operation dropped on equip slot."));
 		return false;
 	}
 
@@ -52,18 +54,33 @@ bool UEquipSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
 	EEquipmentSlot EquipSlot = ItemDragOp->ItemData.ItemInstance.BaseItem.EquipmentSlot;
 	if (EquipSlot != SlotType)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("EquipSlot: Dropped item does not match equip slot type. Expected: %s, Got: %s"), *UEnum::GetValueAsString(SlotType), *UEnum::GetValueAsString(EquipSlot));
+		UE_LOG(LogARPG, Warning, TEXT("EquipSlot: Dropped item does not match equip slot type. Expected: %s, Got: %s"), *UEnum::GetValueAsString(SlotType), *UEnum::GetValueAsString(EquipSlot));
 		return false;
 	}
 
 	//인벤토리에서 온 경우에만 가능.
 	if (ItemDragOp->DragType == EItemDragDropType::EIDT_Inventory)
 	{
-		UE_LOG(LogTemp, Log, TEXT("EquipSlot: Attempting to equip item from inventory. Item: %s"), *ItemDragOp->ItemData.ItemInstance.InstanceID.ToString());
-		return AddItem(ItemDragOp->ItemData, ItemDragOp->SourceWidget);
+		UMainInventory* SourceInventoryWidget = ItemDragOp->SourceInventoryWidget;
+		if (!IsValid(SourceInventoryWidget) && IsValid(ItemDragOp->SourceWidget))
+		{
+			SourceInventoryWidget = ItemDragOp->SourceWidget->GetTypedOuter<UMainInventory>();
+		}
+		if (!IsValid(SourceInventoryWidget))
+		{
+			UE_LOG(LogARPG, Warning, TEXT("EquipSlot: Source inventory widget not found."));
+			if (IsValid(ItemDragOp->SourceWidget))
+			{
+				ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
+			}
+			return false;
+		}
+
+		UE_LOG(LogARPG, Log, TEXT("EquipSlot: Attempting to equip item from inventory. Item: %s"), *ItemDragOp->ItemData.ItemInstance.InstanceID.ToString());
+		return AddItemFromInventory(ItemDragOp->ItemData, ItemDragOp->SourceWidget, SourceInventoryWidget);
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("EquipSlot: Unsupported drag type dropped on equip slot. Expected Inventory, Got: %d"), static_cast<int32>(ItemDragOp->DragType));
+	UE_LOG(LogARPG, Warning, TEXT("EquipSlot: Unsupported drag type dropped on equip slot. Expected Inventory, Got: %d"), static_cast<int32>(ItemDragOp->DragType));
 	return false;
 }
 
@@ -89,8 +106,67 @@ bool UEquipSlot::AddItem(const FInventorySlot& ItemInstance, UItemWidget* ItemWi
 	if (InventoryComponent.IsValid())
 	{
 		InventoryComponent.Get()->OnItemRemoved.Broadcast(ItemInstance.ItemInstance.InstanceID);
-		UE_LOG(LogTemp, Log, TEXT("EquipSlot: Item removed from inventory after equipping. InstanceID: %s"), *ItemInstance.ItemInstance.InstanceID.ToString());
+		UE_LOG(LogARPG, Log, TEXT("EquipSlot: Item removed from inventory after equipping. InstanceID: %s"), *ItemInstance.ItemInstance.InstanceID.ToString());
 	}	
+	return true;
+}
+
+bool UEquipSlot::AddItemFromInventory(const FInventorySlot& ItemInstance, UItemWidget* ItemWidget, UMainInventory* SourceInventoryWidget)
+{
+	if (!IsValid(ItemWidget) || !IsValid(SourceInventoryWidget))
+	{
+		return false;
+	}
+
+	if (!InventoryComponent.IsValid())
+	{
+		UE_LOG(LogARPG, Warning, TEXT("EquipSlot: InventoryComponent is not valid."));
+		ItemWidget->SetRenderOpacity(1.0f);
+		return false;
+	}
+
+	UItemWidget* CurrentItemWidget = GetItemWidget();
+	const bool bHasCurrentItem = IsValid(CurrentItemWidget) && !CurrentItemWidget->GetItemInfo().IsEmpty();
+	if (!bHasCurrentItem)
+	{
+		return AddItem(ItemInstance, ItemWidget);
+	}
+
+	const FInventorySlot PreviousItem = CurrentItemWidget->GetItemInfo();
+
+	// 새 아이템의 인벤토리 공간을 먼저 비워야 기존 장비가 되돌아갈 수 있다.
+	if (!InventoryComponent->RemoveItem(ItemInstance.ItemInstance.InstanceID, SourceInventoryWidget))
+	{
+		UE_LOG(LogARPG, Warning, TEXT("EquipSlot: Failed to remove new item from inventory. InstanceID: %s"),
+			*ItemInstance.ItemInstance.InstanceID.ToString());
+		ItemWidget->SetRenderOpacity(1.0f);
+		return false;
+	}
+
+	if (!InventoryComponent->TryAddItem(PreviousItem, SourceInventoryWidget))
+	{
+		UE_LOG(LogARPG, Warning, TEXT("EquipSlot: Failed to return previous item to inventory. Rollback new item. PreviousID: %s"),
+			*PreviousItem.ItemInstance.InstanceID.ToString());
+		InventoryComponent->TryAddItem(ItemInstance, SourceInventoryWidget);
+		return false;
+	}
+
+	if (EquippementComponent.IsValid())
+	{
+		EquippementComponent->UnEquipItem(SlotType);
+	}
+	else
+	{
+		ClearItemWidget();
+	}
+
+	SetItemWidget(ItemInstance);
+	HandleItemEquipped(FEquippedItem::FromInventorySlot(ItemInstance));
+
+	UE_LOG(LogARPG, Log, TEXT("EquipSlot: Replaced equipped item. NewID: %s, PreviousID: %s"),
+		*ItemInstance.ItemInstance.InstanceID.ToString(),
+		*PreviousItem.ItemInstance.InstanceID.ToString());
+
 	return true;
 }
 
@@ -101,7 +177,7 @@ bool UEquipSlot::RemoveContainItem(const FGuid& ItemInstanceID)
 
 void UEquipSlot::UnEquipItem()
 {
-	UE_LOG(LogTemp, Log, TEXT("Unequipping item frwarom slot: %s"), *UEnum::GetValueAsString(SlotType));
+	UE_LOG(LogARPG, Log, TEXT("Unequipping item frwarom slot: %s"), *UEnum::GetValueAsString(SlotType));
 	ClearItemWidget();
 }
 

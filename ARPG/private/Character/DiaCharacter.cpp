@@ -31,6 +31,7 @@
 #include "GAS/Abilities/DiaBasicAttackAbility.h"
 #include "AbilitySystemComponent.h"
 #include "System/GASSkillManager.h"
+#include "Logging/ARPGLogChannels.h"
 
 // Sets default values
 ADiaCharacter::ADiaCharacter()
@@ -85,11 +86,11 @@ void ADiaCharacter::BeginPlay()
 			FName DefaultCharacterID = CharacterManager->DefaultCharacterID;
             AttributeSet->InitializeCharacterAttributes(DefaultCharacterID, 1);
 
-			UE_LOG(LogTemp, Log, TEXT("DiaCharacter: 캐릭터 초기화 완료 - %s"), *DefaultCharacterID.ToString());
+			UE_LOG(LogARPG, Log, TEXT("DiaCharacter: 캐릭터 초기화 완료 - %s"), *DefaultCharacterID.ToString());
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("DiaCharacter: CharacterManager를 찾을 수 없음"));
+			UE_LOG(LogARPG, Warning, TEXT("DiaCharacter: CharacterManager를 찾을 수 없음"));
 		}
 	}
 	
@@ -173,7 +174,7 @@ void ADiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
                 EnhancedInputComponent->BindAction(SkillActions[i], ETriggerEvent::Started, this,
                     &ADiaCharacter::ExecuteSkillByIndex, i);
                 #if WITH_EDITOR || UE_BUILD_DEVELOPMENT
-                    UE_LOG(LogTemp, Log, TEXT("스킬 바인딩 완료 - 인덱스: %d, 액션: %s"), 
+                    UE_LOG(LogARPG, Log, TEXT("스킬 바인딩 완료 - 인덱스: %d, 액션: %s"), 
                         i, *SkillActions[i]->GetName());
                 #endif
             }
@@ -202,25 +203,25 @@ void ADiaCharacter::GrantInitialGASAbilities()
     UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
     if (!ASC)
     {
-        UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No ASC"));
+        UE_LOG(LogARPG, Warning, TEXT("GrantInitialGASAbilities: No ASC"));
         return;
     }
 
     UGASSkillManager* GasSkillMgr = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGASSkillManager>() : nullptr;
     if (!GasSkillMgr)
     {
-        UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
+        UE_LOG(LogARPG, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
     }
 
     //Dodge 스킬 부여
     bool isSuccsess = SetUpSkillID(DodgeSkillID);
     if(isSuccsess)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Dodge 스킬 부여 성공"));
+        UE_LOG(LogARPG, Warning, TEXT("Dodge 스킬 부여 성공"));
 	}
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("Dodge 스킬 부여 실패"));
+        UE_LOG(LogARPG, Warning, TEXT("Dodge 스킬 부여 실패"));
     }
 }
 
@@ -326,7 +327,7 @@ void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
 
     if (int32 skillID = SkillManagerComponent->GetMappedSkillID(ActionIndex))
     {        
-		UE_LOG(LogTemp, Log, TEXT("ExecuteSkillByIndex: 스킬 인덱스 %d에 매핑된 스킬 ID %d 실행 시도"), ActionIndex, skillID);
+		UE_LOG(LogARPG, Log, TEXT("ExecuteSkillByIndex: 스킬 인덱스 %d에 매핑된 스킬 ID %d 실행 시도"), ActionIndex, skillID);
         // GAS 스킬 먼저 시도 (ID 1000 이상은 GAS 스킬로 간주)
         if (skillID >= 1000)
         {
@@ -348,7 +349,7 @@ void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
     else
     {
         #if WITH_EDITOR || UE_BUILD_DEVELOPMENT
-            UE_LOG(LogTemp, Warning, TEXT("유효하지 않은 스킬 인덱스: %d"), ActionIndex);
+            UE_LOG(LogARPG, Warning, TEXT("유효하지 않은 스킬 인덱스: %d"), ActionIndex);
         #endif
     }
 }
@@ -372,7 +373,7 @@ void ADiaCharacter::ToggleInventory()
         ESlateVisibility eVisibility =  PlayerController->GetInventoryVisibility();
 		//보이는 상태면 false로 안보이게 끔, 아니면 true로 보이게끔
 #if WITH_EDITOR || UE_BUILD_DEVELOPMENT
-        UE_LOG(LogTemp, Warning, TEXT("인벤토리 토글"));
+        UE_LOG(LogARPG, Warning, TEXT("인벤토리 토글"));
 #endif
         PlayerController->ToggleInventoryVisibility(eVisibility == ESlateVisibility::Visible ? false : true);
     }
@@ -385,7 +386,7 @@ void ADiaCharacter::ToggleCharacterStatus()
         ESlateVisibility eVisibility = PlayerController->GetWidgetVisibility("CharacterStatus");
         //보이는 상태면 false로 안보이게 끔, 아니면 true로 보이게끔
 #if WITH_EDITOR || UE_BUILD_DEVELOPMENT
-        UE_LOG(LogTemp, Warning, TEXT("캐릭터 위젯 토글"));
+        UE_LOG(LogARPG, Warning, TEXT("캐릭터 위젯 토글"));
 #endif
         PlayerController->ToggleChracterStatusVisibility(eVisibility == ESlateVisibility::Visible ? false : true);
     }

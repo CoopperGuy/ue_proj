@@ -2,7 +2,6 @@
 
 
 #include "DiaComponent/DiaCombatComponent.h"
-#include "DiaComponent/DiaStatusEffectComponent.h"
 #include "DiaComponent/DiaStatComponent.h"
 
 #include "DiaInstance.h"
@@ -10,12 +9,12 @@
 #include "Skill/Active/DiaProjectileSkill.h"
 #include "Skill/DiaSkillManager.h"
 #include "Skill/DiaDamageCalculator.h"
-#include "Skill/Effect/DiaStatusEffect.h"
 #include "Skill/DiaSkillType.h"
 
 #include "GameFramework/PlayerController.h"
 #include "EngineUtils.h"
 #include "DiaBaseCharacter.h"
+#include "Logging/ARPGLogChannels.h"
 //
 //UDiaCombatComponent::UDiaCombatComponent()
 //{
@@ -121,7 +120,7 @@
 //    }
 //    
 //    // 전투 시작 로그
-//    UE_LOG(LogTemp, Log, TEXT("%s entered combat with %s"), 
+//    UE_LOG(LogARPG, Log, TEXT("%s entered combat with %s"), 
 //           *GetOwner()->GetName(), 
 //           IsValid(CombatTarget) ? *CombatTarget->GetName() : TEXT("unknown"));
 //}
@@ -179,7 +178,7 @@
 //    
 //    GiveExperienceToKiller();
 //    // 사망 로그
-//    UE_LOG(LogTemp, Log, TEXT("%s has died"), *GetOwner()->GetName());
+//    UE_LOG(LogARPG, Log, TEXT("%s has died"), *GetOwner()->GetName());
 //}
 //
 //void UDiaCombatComponent::SetCurrentTarget(AActor* NewTarget)
@@ -192,7 +191,7 @@
 //    CurrentTarget = NewTarget;
 //    
 //    // 타겟 변경 로그
-//    UE_LOG(LogTemp, Log, TEXT("%s changed target to %s"), 
+//    UE_LOG(LogARPG, Log, TEXT("%s changed target to %s"), 
 //           *GetOwner()->GetName(), 
 //           IsValid(NewTarget) ? *NewTarget->GetName() : TEXT("none"));
 //}
@@ -205,7 +204,7 @@
 //    ADiaBaseCharacter* DiaOwner = Cast<ADiaBaseCharacter>(GetOwner());
 //    if (!IsValid(DiaOwner)) return;
 //
-//    UE_LOG(LogTemp, Log, TEXT("Update HP %f/%f"), CurHP, MaxHP);
+//    UE_LOG(LogARPG, Log, TEXT("Update HP %f/%f"), CurHP, MaxHP);
 //
 //    DiaOwner->UpdateHPGauge(CurHP, MaxHP);
 //}
@@ -284,7 +283,7 @@
 //    // 스킬 매니저 유효성 검사
 //    if (!IsValid(SkillManager))
 //    {
-//        UE_LOG(LogTemp, Error, TEXT("SkillManager is not valid"));
+//        UE_LOG(LogARPG, Error, TEXT("SkillManager is not valid"));
 //        return false;
 //    }
 //    
@@ -292,7 +291,7 @@
 //    const FSkillData* SkillData = SkillManager->GetSkillData(SkillID);
 //    if (SkillData == nullptr || !IsValid(SkillData->SkillClass))
 //    {
-//        UE_LOG(LogTemp, Error, TEXT("Failed to get skill data for ID: %d"), SkillID);
+//        UE_LOG(LogARPG, Error, TEXT("Failed to get skill data for ID: %d"), SkillID);
 //        return false;
 //    }
 //    
@@ -314,12 +313,12 @@
 //        NewSkill->InitializeSkill(GetOwner());
 //        ActiveSkills.Add(SkillID, NewSkill);
 //        
-//        UE_LOG(LogTemp, Log, TEXT("Successfully registered skill ID: %d (%s)"), 
+//        UE_LOG(LogARPG, Log, TEXT("Successfully registered skill ID: %d (%s)"), 
 //            SkillID, *SkillData->SkillName.ToString());
 //        return true;
 //    }
 //    
-//    UE_LOG(LogTemp, Error, TEXT("Failed to spawn skill for ID: %d"), SkillID);
+//    UE_LOG(LogARPG, Error, TEXT("Failed to spawn skill for ID: %d"), SkillID);
 //    return false;
 //}
 //
@@ -396,7 +395,7 @@
 //    // 전투 종료 시간이 지나면 전투 상태 종료
 //    if (CurrentCombatState == ECombatState::InCombat)
 //    {
-//        UE_LOG(LogTemp, Log, TEXT("%s combat timed out"), *GetOwner()->GetName());
+//        UE_LOG(LogARPG, Log, TEXT("%s combat timed out"), *GetOwner()->GetName());
 //        ExitCombat();
 //    }
 //}
@@ -413,42 +412,7 @@
 //    {
 //		float ExpReward = CalculateExpReward();
 //        Killer->AddExp(ExpReward);
-//        UE_LOG(LogTemp, Log, TEXT("get exp : %f"), ExpReward);
-//    }
-//}
-//
-//// 이벤트 핸들러 추가
-//void UDiaCombatComponent::OnStatusEffectAdded(UDiaStatusEffect* StatusEffect)
-//{
-//    if (!IsValid(StatusEffect))
-//    {
-//        return;
-//    }
-//    
-//    UE_LOG(LogTemp, Log, TEXT("%s gained status effect"), *GetOwner()->GetName());
-//    
-//    // 임시로 FName으로 직접 비교
-//    FName EffectTag = TEXT("Stun");
-//    if (StatusEffect->Tags.Contains(EffectTag))  // Tags는 UDiaStatusEffect에 추가해야 할 속성입니다
-//    {
-//        bCanAttack = false;
-//    }
-//}
-//
-//void UDiaCombatComponent::OnStatusEffectRemoved(UDiaStatusEffect* StatusEffect)
-//{
-//    if (!IsValid(StatusEffect))
-//    {
-//        return;
-//    }
-//    
-//    UE_LOG(LogTemp, Log, TEXT("%s lost status effect"), *GetOwner()->GetName());
-//    
-//    // 임시로 FName으로 직접 비교
-//    FName EffectTag = TEXT("Stun");
-//    if (StatusEffect->Tags.Contains(EffectTag))  // Tags는 UDiaStatusEffect에 추가해야 할 속성입니다
-//    {
-//        bCanAttack = true;
+//        UE_LOG(LogARPG, Log, TEXT("get exp : %f"), ExpReward);
 //    }
 //}
 //
@@ -510,5 +474,5 @@
 //    CombatTimer = 0.0f;
 //    
 //    // 로그 출력
-//    UE_LOG(LogTemp, Log, TEXT("%s exited combat"), *GetOwner()->GetName());
+//    UE_LOG(LogARPG, Log, TEXT("%s exited combat"), *GetOwner()->GetName());
 //}

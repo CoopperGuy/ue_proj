@@ -9,6 +9,7 @@
 #include "ItemDragDropOperation.generated.h"
 
 class UItemWidget;
+class UMainInventory;
 class IItemContainer;
 
 UENUM(BlueprintType)
@@ -33,7 +34,10 @@ public:
 	
 	// 원본 위젯 참조
 	UPROPERTY(BlueprintReadOnly)
-	UItemWidget* SourceWidget;
+	UItemWidget* SourceWidget = nullptr;
+
+	UPROPERTY(BlueprintReadOnly)
+	UMainInventory* SourceInventoryWidget = nullptr;
 	
 	// 원본 슬롯 인덱스
 	UPROPERTY(BlueprintReadOnly)

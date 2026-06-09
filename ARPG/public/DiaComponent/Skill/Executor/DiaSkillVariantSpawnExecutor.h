@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DiaComponent/Skill/DiaSkillDelegates.h"
 #include "DiaComponent/Skill/DiaSkillVariantExecutor.h"
 #include "DiaSkillVariantSpawnExecutor.generated.h"
 
@@ -15,6 +16,8 @@ class ARPG_API UDiaSkillVariantSpawnExecutor : public UDiaSkillVariantExecutor
 	GENERATED_BODY()
 	
 public:
+	using UDiaSkillVariantExecutor::ExecuteEffect;
+
 	virtual void InitializeExecutor() override;
 
 	virtual void ExecuteEffect(
@@ -22,9 +25,18 @@ public:
 		FDiaSkillVariantContext& Context,
 		class UDiaGameplayAbility* Ability
 	);
+
+	void ExecuteEffect(
+		const TArray<class UDiaSkillVariant*>& Variants,
+		FDiaSkillVariantContext& Context,
+		class UDiaGameplayAbility* Ability,
+		FDiaSkillSpawnFinishedDelegate OnFinished
+	);
 	
-	void BeforeSpawn(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, UDiaGameplayAbility* Ability, FSkillSpawnRuntime& Runtime) const;
-	void AfterSpawn(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, UDiaGameplayAbility* Ability, FSkillSpawnRuntime& Runtime) const;
+	void SpawnCast(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, UDiaGameplayAbility* Ability, FSkillSpawnRuntime& Runtime) const;
+	bool AfterSpawn(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, UDiaGameplayAbility* Ability, FSkillSpawnRuntime& Runtime, FDiaSkillSpawnFinishedDelegate OnFinished);
 
 private:
+	UPROPERTY()
+	FTimerHandle RepeatTimerHandle;
 };

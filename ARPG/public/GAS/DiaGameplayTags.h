@@ -47,6 +47,8 @@ public:
 	FGameplayTag State_Stunned;			// 스턴 상태 (향후 확장용)
 	FGameplayTag State_Invincible;		// 무적 상태 (향후 확장용)
 	FGameplayTag State_Slowed;			// 느려짐 상태 (향후 확장용)
+	FGameplayTag State_Freeze;			// 프리즈 상태 
+	FGameplayTag State_KnockBack; 		// 넉백 상태
 	// ========================================
 	// Cooldown Tags - 쿨다운
 	// ========================================

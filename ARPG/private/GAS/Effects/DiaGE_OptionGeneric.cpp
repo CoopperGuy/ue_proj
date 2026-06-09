@@ -6,6 +6,7 @@
 #include "GAS/Effects/DiaGameplayEffectCompat.h"
 #include "GAS/DiaAttributeSet.h"
 #include "GAS/DiaGameplayTags.h"
+#include "Logging/ARPGLogChannels.h"
 
 UDiaGE_OptionGeneric::UDiaGE_OptionGeneric()
 {
@@ -15,7 +16,7 @@ UDiaGE_OptionGeneric::UDiaGE_OptionGeneric()
 	
 	DiaGameplayEffectCompat::SetStackingType(this, EGameplayEffectStackingType::AggregateBySource);
 	StackLimitCount = INT_LEAST32_MAX;
-	UE_LOG(LogTemp, Warning, TEXT("DiaGE_OptionGeneric::UDiaGE_OptionGeneric - Initializing Modifiers"));
+	UE_LOG(LogARPG, Warning, TEXT("DiaGE_OptionGeneric::UDiaGE_OptionGeneric - Initializing Modifiers"));
 	//아이템 옵션 관련 태그들 적용. 만약 stat이면, attribute에서 가져와야한다.
 	for (const FGameplayTag& ItemOptionTag : FDiaGameplayTags::Get().GetItemOptionList())
 	{
@@ -44,7 +45,7 @@ UDiaGE_OptionGeneric::UDiaGE_OptionGeneric()
 		{
 			Modifier.Attribute = TargetAttribute;
 			Modifiers.Add(Modifier);
-			UE_LOG(LogTemp, Log, TEXT("DiaGE_OptionGeneric - Modifier 추가: Tag=%s, Attr=%s"),
+			UE_LOG(LogARPG, Log, TEXT("DiaGE_OptionGeneric - Modifier 추가: Tag=%s, Attr=%s"),
 				*ItemOptionTag.ToString(), *TargetAttribute.GetName());
 		}
 	}

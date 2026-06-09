@@ -3,6 +3,9 @@
 
 #include "Monster/Controller/AI/BTTask_MoveToForward.h"
 #include "Monster/Controller/DiaAIController.h"
+#include "AbilitySystemComponent.h"
+#include "DiaBaseCharacter.h"
+#include "GAS/DiaGameplayTags.h"
 UBTTask_MoveToForward::UBTTask_MoveToForward()
 {
 	NodeName = TEXT("Move To Forward");
@@ -23,6 +26,17 @@ EBTNodeResult::Type UBTTask_MoveToForward::ExecuteTask(UBehaviorTreeComponent& O
 	APawn* Pawn = aiController->GetPawn();
 	if (!IsValid(Pawn))
 		return EBTNodeResult::Failed;
+
+	if (ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(Pawn))
+	{
+		if (UAbilitySystemComponent* ASC = Character->GetAbilitySystemComponent())
+		{
+			if (ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_KnockBack))
+			{
+				return EBTNodeResult::Failed;
+			}
+		}
+	}
 
 	FVector ForwardVector = Pawn->GetActorForwardVector();
 	TaskMemory->LastPos = Pawn->GetActorLocation() + ForwardVector * MoveDistance;
@@ -56,6 +70,19 @@ void UBTTask_MoveToForward::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* N
 	}
 
 	float DistanceToTarget = FVector::Dist(aiController->GetPawn()->GetActorLocation(), TaskMemory->LastPos);
+	if (ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(aiController->GetPawn()))
+	{
+		if (UAbilitySystemComponent* ASC = Character->GetAbilitySystemComponent())
+		{
+			if (ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_KnockBack))
+			{
+				aiController->StopMovement();
+				FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
+				return;
+			}
+		}
+	}
+
 	if (DistanceToTarget <= AcceptableRadius)
 	{
 		FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);

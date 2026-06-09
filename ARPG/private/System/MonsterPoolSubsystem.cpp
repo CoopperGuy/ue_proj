@@ -7,9 +7,10 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Types/DiaMonsterTable.h"
+#include "Logging/ARPGLogChannels.h"
 
 // 로그 매크로 정의 - 코드 일관성 유지
-#define MONSTER_POOL_LOG(Verbosity, Format, ...) UE_LOG(LogTemp, Verbosity, TEXT("MonsterPool: " Format), ##__VA_ARGS__)
+#define MONSTER_POOL_LOG(Verbosity, Format, ...) UE_LOG(LogARPG, Verbosity, TEXT("MonsterPool: " Format), ##__VA_ARGS__)
 
 void UMonsterPoolSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {

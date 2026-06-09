@@ -3,6 +3,7 @@
 
 #include "DiaAssetManager.h"
 #include "GAS/DiaGameplayTags.h"
+#include "Logging/ARPGLogChannels.h"
 
 UDiaAssetManager& UDiaAssetManager::Get()
 {
@@ -17,5 +18,5 @@ void UDiaAssetManager::StartInitialLoading()
 
 	FDiaGameplayTags::InitializeNativeTags();
 
-	UE_LOG(LogTemp, Log, TEXT("DiaAssetManager: Native Gameplay Tags have been initialized."));
+	UE_LOG(LogARPG, Log, TEXT("DiaAssetManager: Native Gameplay Tags have been initialized."));
 }

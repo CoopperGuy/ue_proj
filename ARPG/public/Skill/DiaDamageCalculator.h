@@ -14,7 +14,6 @@
 //	bool bIsBlocked;
 //	bool bIsEvaded;
 //	EDamageElementType ElementType;
-//	TArray<UDiaStatusEffect*> AppliedStatusEffects;
 //	
 //	FDamageResult()
 //		: FinalDamage(0.0f)
@@ -71,6 +70,4 @@ class ARPG_API UDiaDamageCalculator : public UObject
 //	// 블록 여부 확인
 //	static bool RollForBlock(float BlockChance);
 //	
-//	// 상태 이상 적용 여부 확인
-//	static bool RollForStatusEffect(float StatusEffectChance);
 };

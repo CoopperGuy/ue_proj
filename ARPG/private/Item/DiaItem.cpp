@@ -17,6 +17,7 @@
 #include "System/ItemSubsystem.h"
 
 #include "Controller/DiaController.h"
+#include "Logging/ARPGLogChannels.h"
 
 // Sets default values
 ADiaItem::ADiaItem()
@@ -81,12 +82,12 @@ void ADiaItem::Tick(float DeltaTime)
 
 }
 
-void ADiaItem::SetItemProperty(const FItemBase& _ItemData)
+void ADiaItem::SetItemProperty(const FItemBase& _ItemData, int32 Level)
 {
 
 	//CreateInventoryInstanceByItemBase 를 통해 아이템 생성
 	UItemSubsystem* ItemSubsystem = GetGameInstance()->GetSubsystem<UItemSubsystem>();
-	ItemSubsystem->CreateInventoryInstanceByItemBase(InventoryItem, _ItemData);
+	ItemSubsystem->CreateInventoryInstanceByItemBase(InventoryItem, _ItemData, FMath::Max(Level, 1));
 
 	//아이템 스태틱 매시 로딩
 	//현재 아이템 스태틱 매시 첫 로딩 이후 아이템 메시가 보이지 않는 현상 존재
@@ -100,12 +101,12 @@ void ADiaItem::SetItemProperty(const FItemBase& _ItemData)
 
 		// 중요: 메시 설정 후 강제 업데이트
 		ItemMeshComp->RecreateRenderState_Concurrent();
-		UE_LOG(LogTemp, Warning, TEXT("아이템 [%s] 메시 로드 성공: %s"), *GetName(), *_ItemData.ItemMesh.ToString());
+		UE_LOG(LogARPG, Warning, TEXT("아이템 [%s] 메시 로드 성공: %s"), *GetName(), *_ItemData.ItemMesh.ToString());
 
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("아이템 [%s] 메시 로드 실패: %s"), *GetName(), *_ItemData.ItemMesh.ToString());
+		UE_LOG(LogARPG, Warning, TEXT("아이템 [%s] 메시 로드 실패: %s"), *GetName(), *_ItemData.ItemMesh.ToString());
 	}
 	
 	//아이템 아이콘 및 기타 등등 변경
@@ -116,12 +117,12 @@ void ADiaItem::SetItemProperty(const FItemBase& _ItemData)
 		if (IsValid(Texture))
 		{
 			ItemIcon = Texture;
-			UE_LOG(LogTemp, Warning,
+			UE_LOG(LogARPG, Warning,
 				TEXT("아이템 [%s] 아이콘 로드 성공: %s"), *GetName(), *_ItemData.IconPath.ToString());
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, 
+			UE_LOG(LogARPG, Warning, 
 				TEXT("아이템 [%s] 아이콘 로드 실패: %s"), *GetName(), *_ItemData.IconPath.ToString());
 		}
 	}
@@ -142,7 +143,7 @@ void ADiaItem::RollingItem()
     // Activate 먼저, Velocity는 그 이후
     ProjectileMovementComp->Activate(false);
     ProjectileMovementComp->Velocity = FVector::UpVector * 1000.f;
-	UE_LOG(LogTemp, Warning, TEXT("아이템 [%s] 드롭 시작: LaunchVelocity = %s"), *GetName(), *ProjectileMovementComp->Velocity.ToString());
+	UE_LOG(LogARPG, Warning, TEXT("아이템 [%s] 드롭 시작: LaunchVelocity = %s"), *GetName(), *ProjectileMovementComp->Velocity.ToString());
 	//// ★ 2. 랜덤한 초기 회전 적용
 	//FRotator RandomInitialRotation(FMath::FRandRange(0.f, 360.f), FMath::FRandRange(0.f, 360.f), FMath::FRandRange(0.f, 360.f));
 	//SetRelativeRotation(RandomInitialRotation);
@@ -176,7 +177,7 @@ void ADiaItem::LoadItemNameAsync()
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("아이템 위젯 클래스 비동기 로드 실패"));
+			UE_LOG(LogARPG, Warning, TEXT("아이템 위젯 클래스 비동기 로드 실패"));
 		}
 	}
 }
@@ -186,7 +187,7 @@ void ADiaItem::BindItemName(TSoftClassPtr<UUserWidget>& WidgetAssetPtr)
 	UClass* WidgetClass = WidgetAssetPtr.Get();
 	if (!WidgetClass)
 	{
-		UE_LOG(LogTemp, Error, TEXT("BindItemName: WidgetClass is NULL! 경로 확인 필요"));
+		UE_LOG(LogARPG, Error, TEXT("BindItemName: WidgetClass is NULL! 경로 확인 필요"));
 		return;
 	}
 
@@ -198,7 +199,7 @@ void ADiaItem::BindItemName(TSoftClassPtr<UUserWidget>& WidgetAssetPtr)
 	UUserWidget* UserWidget = ItemWidgetComp->GetUserWidgetObject();
 	if (!UserWidget)
 	{
-		UE_LOG(LogTemp, Error, TEXT("BindItemName: GetUserWidgetObject() returned NULL!"));
+		UE_LOG(LogARPG, Error, TEXT("BindItemName: GetUserWidgetObject() returned NULL!"));
 		return;
 	}
 
@@ -264,14 +265,14 @@ void ADiaItem::OnItemNameClicked()
 	if (ADiaController* PlayerController = FindBestPlayerForPickup())
 	{
 		FInventorySlot ItemToAdd = InventoryItem;
-		UE_LOG(LogTemp, Log, TEXT("아이템 클릭됨: %s"), *InventoryItem.ItemInstance.BaseItem.ItemID.ToString());
+		UE_LOG(LogARPG, Log, TEXT("아이템 클릭됨: %s"), *InventoryItem.ItemInstance.BaseItem.ItemID.ToString());
 
 		// DiaItem에서 가장 적절한 플레이어 찾기
 
 		bool bSuccess = PlayerController->ItemAddedToInventory(ItemToAdd);
 		if (bSuccess)
 		{
-			UE_LOG(LogTemp, Log, TEXT("아이템이 %s의 인벤토리에 추가됨"),
+			UE_LOG(LogARPG, Log, TEXT("아이템이 %s의 인벤토리에 추가됨"),
 				*PlayerController->GetName());
 
 			// 아이템 제거
@@ -291,7 +292,7 @@ void ADiaItem::OnItemNameClicked()
 
 void ADiaItem::OnItemLanded(const FHitResult& Hit)
 {
-	UE_LOG(LogTemp, Error, TEXT("아이템 [%s] 바닥(또는 무언가)에 부딪혀 정지됨! 부딪힌 객체: %s"),
+	UE_LOG(LogARPG, Error, TEXT("아이템 [%s] 바닥(또는 무언가)에 부딪혀 정지됨! 부딪힌 객체: %s"),
 		*GetName(), Hit.GetActor() ? *Hit.GetActor()->GetName() : TEXT("None"));
 	ProjectileMovementComp->Deactivate(); 
 }
@@ -327,7 +328,7 @@ ADiaController* ADiaItem::FindBestPlayerForPickup()
 	
 	if (!BestController)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("픽업 가능한 거리에 플레이어가 없습니다 (최대 거리: %.1f)"), MaxPickupDistance);
+		UE_LOG(LogARPG, Warning, TEXT("픽업 가능한 거리에 플레이어가 없습니다 (최대 거리: %.1f)"), MaxPickupDistance);
 	}
 	
 	return BestController;

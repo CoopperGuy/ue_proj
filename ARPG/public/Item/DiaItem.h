@@ -22,7 +22,7 @@ public:
 	// Sets default values for this actor's properties
 	ADiaItem();
 
-	void SetItemProperty(const FItemBase& _ItemData);
+	void SetItemProperty(const FItemBase& _ItemData, int32 Level = 1);
 	void DropItem(const FItemBase& ItemData);
 
 	void RollingItem();

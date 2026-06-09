@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "GAS/DiaGameplayAbility.h"
 #include "Skill/DiaSkillActor.h"
+#include "Logging/ARPGLogChannels.h"
 
 FSpawnLocationData FDiaSkillActorSpawnHelper::CalculateSpawnLocationData(
 	const FDiaSkillVariantContext& Context,
@@ -129,13 +130,48 @@ void FDiaSkillActorSpawnHelper::ApplyVariantEffects(
 
 ADiaSkillActor* FDiaSkillActorSpawnHelper::SpawnSkillActor(const FDiaSkillActorSpawnRequest& Request)
 {
+	ARPG_SKILL_VLOG(TEXT("SpawnSkillActor request. World=%s, Class=%s, Owner=%s, Instigator=%s, SkillData=%s, SourceASC=%s, DamageEffect=%s, OwningAbility=%s, Location=%s, Rotation=%s, TargetEffects=%d, IgnoredActors=%d, bSpawnedByFork=%s, bLaunch=%s, bApplyRemovalTimer=%s"),
+		Request.World ? TEXT("Valid") : TEXT("None"),
+		*GetNameSafe(Request.SkillActorClass),
+		*GetNameSafe(Request.OwnerActor),
+		*GetNameSafe(Request.Instigator),
+		Request.SkillData ? TEXT("Valid") : TEXT("None"),
+		*GetNameSafe(Request.SourceASC),
+		*GetNameSafe(Request.DamageEffectClass),
+		*GetNameSafe(Request.OwningAbility),
+		*Request.SpawnTransform.GetLocation().ToString(),
+		*Request.SpawnTransform.GetRotation().Rotator().ToString(),
+		Request.TargetEffectSpecs.Num(),
+		Request.IgnoredActors.Num(),
+		Request.bSpawnedByFork ? TEXT("true") : TEXT("false"),
+		Request.bLaunch ? TEXT("true") : TEXT("false"),
+		Request.bApplyAbilityRemovalTimer ? TEXT("true") : TEXT("false"));
+
 	if (!Request.World || !Request.SkillActorClass || !Request.SkillData)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("FDiaSkillActorSpawnHelper::SpawnSkillActor - Invalid request. World: %s, Class: %s, SkillData: %s"),
+		ARPG_SKILL_LOG(Warning, TEXT("SpawnSkillActor failed: invalid request. World=%s, Class=%s, SkillData=%s, Owner=%s, SourceASC=%s, Location=%s"),
 			Request.World ? TEXT("Valid") : TEXT("None"),
 			*GetNameSafe(Request.SkillActorClass),
-			Request.SkillData ? TEXT("Valid") : TEXT("None"));
+			Request.SkillData ? TEXT("Valid") : TEXT("None"),
+			*GetNameSafe(Request.OwnerActor),
+			*GetNameSafe(Request.SourceASC),
+			*Request.SpawnTransform.GetLocation().ToString());
 		return nullptr;
+	}
+
+	if (!Request.OwnerActor)
+	{
+		ARPG_SKILL_LOG(Warning, TEXT("SpawnSkillActor warning: OwnerActor is null. Class=%s, SkillID=%d"),
+			*GetNameSafe(Request.SkillActorClass),
+			Request.SkillData->SkillID);
+	}
+
+	if (!Request.SourceASC)
+	{
+		ARPG_SKILL_LOG(Warning, TEXT("SpawnSkillActor warning: SourceASC is null. Class=%s, SkillID=%d, Owner=%s"),
+			*GetNameSafe(Request.SkillActorClass),
+			Request.SkillData->SkillID,
+			*GetNameSafe(Request.OwnerActor));
 	}
 
 	ADiaSkillActor* SpawnedActor = Request.World->SpawnActorDeferred<ADiaSkillActor>(
@@ -148,31 +184,75 @@ ADiaSkillActor* FDiaSkillActorSpawnHelper::SpawnSkillActor(const FDiaSkillActorS
 
 	if (!SpawnedActor)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("FDiaSkillActorSpawnHelper::SpawnSkillActor - Spawn failed. Class: %s"),
-			*GetNameSafe(Request.SkillActorClass));
+		ARPG_SKILL_LOG(Warning, TEXT("SpawnSkillActor failed: SpawnActorDeferred returned null. Class=%s, SkillID=%d, Owner=%s, Instigator=%s, Location=%s, Rotation=%s"),
+			*GetNameSafe(Request.SkillActorClass),
+			Request.SkillData->SkillID,
+			*GetNameSafe(Request.OwnerActor),
+			*GetNameSafe(Request.Instigator),
+			*Request.SpawnTransform.GetLocation().ToString(),
+			*Request.SpawnTransform.GetRotation().Rotator().ToString());
 		return nullptr;
 	}
 
+	ARPG_SKILL_VLOG(TEXT("SpawnSkillActor deferred spawn success. Actor=%s, Class=%s, SkillID=%d"),
+		*GetNameSafe(SpawnedActor),
+		*GetNameSafe(Request.SkillActorClass),
+		Request.SkillData->SkillID);
+
+	ARPG_SKILL_VLOG(TEXT("SpawnSkillActor step: InitTargetEffectHandle. Actor=%s, TargetEffects=%d"),
+		*GetNameSafe(SpawnedActor),
+		Request.TargetEffectSpecs.Num());
 	SpawnedActor->InitTargetEffectHandle(Request.TargetEffectSpecs);
+
+	ARPG_SKILL_VLOG(TEXT("SpawnSkillActor step: Initialize. Actor=%s, SkillID=%d, Owner=%s, SourceASC=%s, DamageEffect=%s"),
+		*GetNameSafe(SpawnedActor),
+		Request.SkillData->SkillID,
+		*GetNameSafe(Request.OwnerActor),
+		*GetNameSafe(Request.SourceASC),
+		*GetNameSafe(Request.DamageEffectClass));
 	SpawnedActor->Initialize(*Request.SkillData, Request.OwnerActor, Request.SourceASC, Request.DamageEffectClass);
+
+	ARPG_SKILL_VLOG(TEXT("SpawnSkillActor step: AddIgnoredHitActors. Actor=%s, IgnoredActors=%d"),
+		*GetNameSafe(SpawnedActor),
+		Request.IgnoredActors.Num());
 	SpawnedActor->AddIgnoredHitActors(Request.IgnoredActors);
+
+	ARPG_SKILL_VLOG(TEXT("SpawnSkillActor step: SetOwner/Ability/Runtime/Fork. Actor=%s, Owner=%s, OwningAbility=%s, bSpawnedByFork=%s"),
+		*GetNameSafe(SpawnedActor),
+		*GetNameSafe(Request.OwnerActor),
+		*GetNameSafe(Request.OwningAbility),
+		Request.bSpawnedByFork ? TEXT("true") : TEXT("false"));
 	SpawnedActor->SetOwner(Request.OwnerActor);
 	SpawnedActor->SetOwningAbility(Request.OwningAbility);
-	SpawnedActor->SetDamageMultiplier(Request.DamageMultiplier);
-	SpawnedActor->SetPierceCount(FMath::Max(1, Request.PierceCount));
+	SpawnedActor->ApplySpawnRuntimeParams(Request.RuntimeParams);
 	SpawnedActor->SetSpawnedByFork(Request.bSpawnedByFork);
 
+	ARPG_SKILL_VLOG(TEXT("SpawnSkillActor step: FinishSpawning. Actor=%s, Location=%s, Rotation=%s"),
+		*GetNameSafe(SpawnedActor),
+		*Request.SpawnTransform.GetLocation().ToString(),
+		*Request.SpawnTransform.GetRotation().Rotator().ToString());
 	SpawnedActor->FinishSpawning(Request.SpawnTransform);
 
 	if (Request.bLaunch)
 	{
+		ARPG_SKILL_VLOG(TEXT("SpawnSkillActor step: Launch. Actor=%s, Direction=%s"),
+			*GetNameSafe(SpawnedActor),
+			*Request.SpawnTransform.GetRotation().GetForwardVector().ToString());
 		SpawnedActor->Launch(Request.SpawnTransform.GetRotation().GetForwardVector());
 	}
 
 	if (Request.bApplyAbilityRemovalTimer && Request.OwningAbility)
 	{
+		ARPG_SKILL_VLOG(TEXT("SpawnSkillActor step: ApplySkillObjectRemovalTimer. Actor=%s, OwningAbility=%s"),
+			*GetNameSafe(SpawnedActor),
+			*GetNameSafe(Request.OwningAbility));
 		Request.OwningAbility->ApplySkillObjectRemovalTimer(SpawnedActor);
 	}
+
+	ARPG_SKILL_VLOG(TEXT("SpawnSkillActor success. Actor=%s, SkillID=%d, Class=%s"),
+		*GetNameSafe(SpawnedActor),
+		Request.SkillData->SkillID,
+		*GetNameSafe(Request.SkillActorClass));
 
 	return SpawnedActor;
 }

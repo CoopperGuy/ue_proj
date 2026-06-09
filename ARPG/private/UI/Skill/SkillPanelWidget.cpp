@@ -14,12 +14,13 @@
 
 #include "DiaInstance.h"
 #include "Skill/DiaSkillManager.h"
+#include "Logging/ARPGLogChannels.h"
 
 void USkillPanelWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	UE_LOG(LogTemp, Log, TEXT("USkillPanelWidget::NativeConstruct - SkillPanelWidget constructed"));
+	UE_LOG(LogARPG, Log, TEXT("USkillPanelWidget::NativeConstruct - SkillPanelWidget constructed"));
 
 	InitializeSkillPanel();
 
@@ -68,11 +69,11 @@ void USkillPanelWidget::InitializeSkillPanel()
 	UDiaInstance* DiaInstance = (GetWorld()->GetGameInstance<UDiaInstance>());
 	if (!IsValid(DiaInstance))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("USkillPanelWidget::InitializeSkillPanel - DiaInstance is invalid"));
+		UE_LOG(LogARPG, Warning, TEXT("USkillPanelWidget::InitializeSkillPanel - DiaInstance is invalid"));
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("USkillPanelWidget::InitializeSkillPanel - DiaInstance is valid"));
+	UE_LOG(LogARPG, Log, TEXT("USkillPanelWidget::InitializeSkillPanel - DiaInstance is valid"));
 }
 
 void USkillPanelWidget::ToggleSkillPanel()
@@ -91,7 +92,7 @@ void USkillPanelWidget::AddSkillToPanel(const FGASSkillData& SkillData, int32 Sk
 {
 	if (!IsValid(SkillSlotWidgetClass))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("USkillPanelWidget::AddSkillToPanel - SkillSlotWidgetClass is invalid, SkillID: %d"), SkillID);
+		UE_LOG(LogARPG, Warning, TEXT("USkillPanelWidget::AddSkillToPanel - SkillSlotWidgetClass is invalid, SkillID: %d"), SkillID);
 		return;
 	}
 
@@ -99,19 +100,19 @@ void USkillPanelWidget::AddSkillToPanel(const FGASSkillData& SkillData, int32 Sk
 	if (SkillData.Icon.IsValid())
 	{
 		IconTexture = SkillData.Icon.LoadSynchronous();
-		UE_LOG(LogTemp, Log, TEXT("USkillPanelWidget::AddSkillToPanel - Icon loaded for SkillID: %d, SkillName: %s"),
+		UE_LOG(LogARPG, Log, TEXT("USkillPanelWidget::AddSkillToPanel - Icon loaded for SkillID: %d, SkillName: %s"),
 			SkillID, *SkillData.SkillName.ToString());
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("USkillPanelWidget::AddSkillToPanel - Icon is invalid for SkillID: %d, SkillName: %s"),
+		UE_LOG(LogARPG, Warning, TEXT("USkillPanelWidget::AddSkillToPanel - Icon is invalid for SkillID: %d, SkillName: %s"),
 			SkillID, *SkillData.SkillName.ToString());
 	}
 
 	USkillInfoObject* NewSkillInfoObject = NewObject<USkillInfoObject>(this);
 	if (!IsValid(NewSkillInfoObject))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("USkillPanelWidget::AddSkillToPanel - Failed to create USkillInfoObject for SkillID: %d"), SkillID);
+		UE_LOG(LogARPG, Warning, TEXT("USkillPanelWidget::AddSkillToPanel - Failed to create USkillInfoObject for SkillID: %d"), SkillID);
 		return;
 	}
 
@@ -135,7 +136,7 @@ void USkillPanelWidget::RegisterSkillList(const TArray<USkillObject*>& Skills)
 	{
 		if (!IsValid(SkillObject))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("USkillPanelWidget::RegisterSkillList - SkillObject[%d] is invalid"), Index);
+			UE_LOG(LogARPG, Warning, TEXT("USkillPanelWidget::RegisterSkillList - SkillObject[%d] is invalid"), Index);
 			++Index;
 			continue;
 		}
@@ -145,7 +146,7 @@ void USkillPanelWidget::RegisterSkillList(const TArray<USkillObject*>& Skills)
 
 		if (!SkillData)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("USkillPanelWidget::RegisterSkillList - SkillData is null for SkillObject[%d], SkillID: %d"),
+			UE_LOG(LogARPG, Warning, TEXT("USkillPanelWidget::RegisterSkillList - SkillData is null for SkillObject[%d], SkillID: %d"),
 				Index, SkillID);
 			++Index;
 			continue;

@@ -4,8 +4,7 @@
 #include "GAS/Abilities/DiaProjectileAbility.h"
 #include "Engine/Engine.h"
 #include "Engine/DataTable.h"
-
-DEFINE_LOG_CATEGORY_STATIC(LogARPG_GAS, Log, All);
+#include "Logging/ARPGLogChannels.h"
 
 void UGASSkillManager::Initialize(FSubsystemCollectionBase& Collection)
 {

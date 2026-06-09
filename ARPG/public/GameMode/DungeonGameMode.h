@@ -22,7 +22,7 @@ public:
 
     UFUNCTION()
 	void OnRoomCleared(FGuid RoomID);
-	void SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData);
+	void SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData, int32 Level = 1);
 
 	void WarpOtherLevel(const FName& LevelName);
 protected:

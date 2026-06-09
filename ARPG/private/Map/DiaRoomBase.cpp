@@ -13,9 +13,8 @@
 #include "Monster/DiaMonster.h"
 
 #include "DiaGameState.h"
+#include "Logging/ARPGLogChannels.h"
 //문은 blueprint에서 만들어놓고 붙인다.
-
-DEFINE_LOG_CATEGORY_STATIC(LogARPG_Room, Log, All);
 
 ADiaRoomBase::ADiaRoomBase()
 {

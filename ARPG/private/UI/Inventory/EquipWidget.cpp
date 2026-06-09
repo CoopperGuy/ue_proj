@@ -14,6 +14,7 @@
 #include "DiaComponent/UI/DiaEquipmentComponent.h"
 
 #include "UI/DragDrop/ItemDragDropOperation.h"
+#include "Logging/ARPGLogChannels.h"
 
 void UEquipWidget::NativeConstruct()
 {
@@ -56,7 +57,7 @@ void UEquipWidget::EquipItemToSlot(EEquipmentSlot SlotType, const FEquippedItem&
 	UEquipSlot* TargetSlot = GetEquipSlot(SlotType);
 	if (!IsValid(TargetSlot))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Invalid Slot Type: %s"), *UEnum::GetValueAsString(SlotType));
+		UE_LOG(LogARPG, Warning, TEXT("Invalid Slot Type: %s"), *UEnum::GetValueAsString(SlotType));
 		return;
 	}
 
@@ -79,13 +80,13 @@ void UEquipWidget::UnequipItemFromSlot(EEquipmentSlot SlotType)
 {
 	if (SlotType == EEquipmentSlot::EES_None)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Invalid Slot Type: %s"), *UEnum::GetValueAsString(SlotType));
+		UE_LOG(LogARPG, Warning, TEXT("Invalid Slot Type: %s"), *UEnum::GetValueAsString(SlotType));
 		return ;
 	}
 	UEquipSlot* TargetSlot = GetEquipSlot(SlotType);
 	if (IsValid(TargetSlot))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Invalid Slot Type: %s"), *UEnum::GetValueAsString(SlotType));
+		UE_LOG(LogARPG, Warning, TEXT("Invalid Slot Type: %s"), *UEnum::GetValueAsString(SlotType));
 	}
 	TargetSlot->UnEquipItem();
 

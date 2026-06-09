@@ -25,6 +25,7 @@
 
 #include "NavigationSystem.h"
 #include "Navigation/PathFollowingComponent.h"
+#include "Logging/ARPGLogChannels.h"
 
 ADiaAIController::ADiaAIController()
 {
@@ -104,7 +105,7 @@ void ADiaAIController::InitBlackBoardData(APawn* InPawn, UBlackboardData* _black
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("BlackboardData or BehaviorTree is not valid!"));
+			UE_LOG(LogARPG, Warning, TEXT("BlackboardData or BehaviorTree is not valid!"));
 		}
 	}
 }
@@ -119,7 +120,7 @@ void ADiaAIController::InitializeAI()
 		BehaviorTreeComp->StartTree(*behaviorTree, EBTExecutionMode::Looped);
 	}
 
-	UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s]의 AI 활성화"), *GetName());
+	UE_LOG(LogARPG, Verbose, TEXT("몬스터 [%s]의 AI 활성화"), *GetName());
 }
 
 void ADiaAIController::UpdateCombatState()

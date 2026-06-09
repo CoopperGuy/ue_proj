@@ -9,7 +9,6 @@ UDiaDamageType::UDiaDamageType()
     ArmorPenetration = 0.0f;
     CriticalDamageMultiplier = 1.5f;
     KnockbackForce = 0.0f;
-    StatusEffectChance = 0.0f;
 }
 
 

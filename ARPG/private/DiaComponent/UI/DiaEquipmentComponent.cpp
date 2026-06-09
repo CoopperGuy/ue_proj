@@ -14,6 +14,7 @@
 #include "GameplayEffect.h"
 #include "GameplayEffectTypes.h"
 #include "GameplayTagContainer.h"
+#include "Logging/ARPGLogChannels.h"
 
 UDiaEquipmentComponent::UDiaEquipmentComponent()
 {
@@ -38,7 +39,7 @@ void UDiaEquipmentComponent::EquipItem(const FEquippedItem& Item, EEquipmentSlot
 {
 	//아이템 추가
 	EquipmentMap.Add(Slot, Item);
-	UE_LOG(LogTemp, Log, TEXT("EquipItem: Slot %s에 아이템 장착됨."), *UEnum::GetValueAsString(Slot));
+	UE_LOG(LogARPG, Log, TEXT("EquipItem: Slot %s에 아이템 장착됨."), *UEnum::GetValueAsString(Slot));
 }
 
 void UDiaEquipmentComponent::UnEquipItem(EEquipmentSlot Slot)
@@ -48,7 +49,7 @@ void UDiaEquipmentComponent::UnEquipItem(EEquipmentSlot Slot)
 	{
 		//스텟에서 제거
 		OnItemUnEquipped.Broadcast(Slot);
-		UE_LOG(LogTemp, Log, TEXT("UnEquipItem: Slot %s에서 아이템 제거됨."), *UEnum::GetValueAsString(Slot));
+		UE_LOG(LogARPG, Log, TEXT("UnEquipItem: Slot %s에서 아이템 제거됨."), *UEnum::GetValueAsString(Slot));
 	}
 }
 
@@ -58,7 +59,7 @@ void UDiaEquipmentComponent::UnEquipItemFinish(EEquipmentSlot Slot)
 	{
 		//스텟에서 제거
 		EquipmentMap.Remove(Slot);
-		UE_LOG(LogTemp, Log, TEXT("UnEquipItem: Slot %s에서 아이템 제거됨."), *UEnum::GetValueAsString(Slot));
+		UE_LOG(LogARPG, Log, TEXT("UnEquipItem: Slot %s에서 아이템 제거됨."), *UEnum::GetValueAsString(Slot));
 	}
 
 }

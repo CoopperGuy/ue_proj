@@ -263,6 +263,30 @@ struct FSkillVariantGameplayEffectData : public FSkillVariantExtraDataBase
 };
 
 USTRUCT(BlueprintType)
+struct FSkillVariantGroundSpawnData : public FSkillVariantExtraDataBase
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TSubclassOf<ADiaSkillActor> SkillActorClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Radius = 250.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float Duration = 3.f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float TickInterval = 0.5f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TSubclassOf<UGameplayEffect> DamageEffectClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    TArray<FSkillVariantTargetEffectData> TargetEffects;
+};
+
+USTRUCT(BlueprintType)
 struct ARPG_API FSkillVariantData : public FTableRowBase
 {
 	GENERATED_BODY()

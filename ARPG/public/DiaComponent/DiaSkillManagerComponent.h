@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "DiaComponent/Skill/DiaSkillDelegates.h"
 #include "Types/DiaGASSkillData.h"
 #include "DiaComponent/Skill/DiaSkillVariant.h"
 #include "DiaComponent/Skill/Effect/DiaSkillVariantEffect.h"
@@ -49,7 +50,7 @@ public:
 	FGameplayAbilitySpec* GetAbilitySpecBySkillID(int32 SkillID) const;
 
 	void ActiveModifierSkillUseVariants(const FDiaSkillVariantContext& context, const UDiaGameplayAbility* Ability, FSkillModifierRuntime& OutRuntime);
-	void SpawnSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability);
+	void SpawnSkillActorUseVariants(FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability, FDiaSkillSpawnFinishedDelegate OnFinished = FDiaSkillSpawnFinishedDelegate());
 	void HitSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability);
 	void HitSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability, FSkillHitRuntime& OutRuntime);
 	

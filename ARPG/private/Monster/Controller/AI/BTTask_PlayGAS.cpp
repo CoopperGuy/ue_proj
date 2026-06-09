@@ -16,6 +16,7 @@
 
 #include "Monster/Controller/DiaAIController.h"
 #include "Monster/DiaMonster.h"
+#include "Logging/ARPGLogChannels.h"
 
 
 UBTTask_PlayGAS::UBTTask_PlayGAS()
@@ -61,7 +62,7 @@ EBTNodeResult::Type UBTTask_PlayGAS::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 		const bool bCan = UDiaGASHelper::CanActivateAbilityBySkillID(ASC, SkillID);
 		if (!bCan)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("BTTask_PlayGAS: Cannot activate ability for SkillID %d"), SkillID);
+			UE_LOG(LogARPG, Warning, TEXT("BTTask_PlayGAS: Cannot activate ability for SkillID %d"), SkillID);
 			return EBTNodeResult::Failed;
 		}
 #endif
@@ -72,11 +73,11 @@ EBTNodeResult::Type UBTTask_PlayGAS::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 		TaskMemory->AbilityEndedHandle = ASC->AbilityEndedCallbacks.AddLambda([TaskMemory](UGameplayAbility* AbilityEndedData) {
 			if (AbilityEndedData && AbilityEndedData->GetCurrentAbilitySpecHandle() == TaskMemory->CurrentAbilityHandle)
 			{
-				UE_LOG(LogTemp, Log, TEXT("BTTask_PlayGAS: Ability handle matches current ability. Marking as ended."));
+				UE_LOG(LogARPG, Log, TEXT("BTTask_PlayGAS: Ability handle matches current ability. Marking as ended."));
 				// 콜백 제거
 				if (TaskMemory->AbilityEndedHandle.IsValid())
 				{
-					UE_LOG(LogTemp, Log, TEXT("BTTask_PlayGAS: Removing AbilityEnded callback"));
+					UE_LOG(LogARPG, Log, TEXT("BTTask_PlayGAS: Removing AbilityEnded callback"));
 					if (UAbilitySystemComponent* ASC = AbilityEndedData->GetAbilitySystemComponentFromActorInfo())
 					{
 						ASC->AbilityEndedCallbacks.Remove(TaskMemory->AbilityEndedHandle);
@@ -123,7 +124,7 @@ void UBTTask_PlayGAS::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMem
 	ADiaAIController* AIController = Cast<ADiaAIController>(OwnerComp.GetAIOwner());
 	if (!IsValid(AIController))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("BTTask_PlayGAS: Invalid AIController during TickTask"));
+		UE_LOG(LogARPG, Warning, TEXT("BTTask_PlayGAS: Invalid AIController during TickTask"));
 		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 		return;
 	}
@@ -131,7 +132,7 @@ void UBTTask_PlayGAS::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMem
 	ADiaMonster* DiaMonster = Cast<ADiaMonster>(AIController->GetPawn());
 	if (!IsValid(DiaMonster))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("BTTask_PlayGAS: Invalid Pawn during TickTask"));
+		UE_LOG(LogARPG, Warning, TEXT("BTTask_PlayGAS: Invalid Pawn during TickTask"));
 		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 		return;
 	}
@@ -139,7 +140,7 @@ void UBTTask_PlayGAS::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMem
 	UAbilitySystemComponent* ASC = DiaMonster->GetAbilitySystemComponent();
 	if (!ASC)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("BTTask_PlayGAS: Invalid AbilitySystemComponent during TickTask"));
+		UE_LOG(LogARPG, Warning, TEXT("BTTask_PlayGAS: Invalid AbilitySystemComponent during TickTask"));
 		FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 		return;
 	}
@@ -147,7 +148,7 @@ void UBTTask_PlayGAS::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMem
 	// 어빌리티 종료 플래그 확인
 	if (TaskMemory->bAbilityEnded)
 	{
-		UE_LOG(LogTemp, Log, TEXT("BTTask_PlayGAS: Ability ended detected in TickTask"));
+		UE_LOG(LogARPG, Log, TEXT("BTTask_PlayGAS: Ability ended detected in TickTask"));
 		// 어빌리티가 완료됨 - SkillID 초기화하고 태스크 완료
 		int32 CompletedSkillID = OwnerComp.GetBlackboardComponent()->GetValueAsInt(BlackboardKey.SelectedKeyName);
 		OwnerComp.GetBlackboardComponent()->SetValueAsInt(BlackboardKey.SelectedKeyName, 0);

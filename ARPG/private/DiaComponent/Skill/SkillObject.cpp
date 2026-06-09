@@ -10,6 +10,7 @@
 
 #include "Engine/GameInstance.h"
 #include "System/GASSkillManager.h"
+#include "Logging/ARPGLogChannels.h"
 
 void USkillObject::InitializeSkillObject(int32 _SkillID)
 {
@@ -24,7 +25,7 @@ void USkillObject::SetVariantApplyIDs(int32 _AddVariantID)
 const TSet<int32>& USkillObject::GetVariantApplyIDs() const
 {
     // TODO: 여기에 return 문을 삽입합니다.
-	UE_LOG(LogTemp, Warning, TEXT("USkillObject::GetVariantApplyIDs - Returning VariantApplyIDs, ID Size : %d"), VariantApplyIDs.Num());
+	UE_LOG(LogARPG, Warning, TEXT("USkillObject::GetVariantApplyIDs - Returning VariantApplyIDs, ID Size : %d"), VariantApplyIDs.Num());
     return VariantApplyIDs;
 }
 
@@ -33,7 +34,7 @@ const FGASSkillData* USkillObject::GetSkillData() const
     UGASSkillManager* GasSkillMgr = GetWorld()->GetGameInstance() ? GetWorld()->GetGameInstance()->GetSubsystem<UGASSkillManager>() : nullptr;
     if (!GasSkillMgr)
     {
-        UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
+        UE_LOG(LogARPG, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
     }
 
     return GasSkillMgr->GetSkillDataPtr(SkillID);

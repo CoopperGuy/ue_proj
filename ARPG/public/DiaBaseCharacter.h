@@ -10,7 +10,6 @@
 #include "AbilitySystemInterface.h"
 #include "Interface/Damageable.h"
 
-#include "DiaComponent/DiaStatusEffectComponent.h"
 #include "GameplayTagContainer.h"
 
 #include "DiaBaseCharacter.generated.h"
@@ -105,6 +104,8 @@ public:
 	virtual void OnRecieveDamage(const float Damage);
 	
 	bool CheckBossMonsterByAbilityTag() const;
+
+	void ApplyStunState(bool bStunned);
 protected:
 	// 기본적인 함수
 	virtual void BeginPlay() override;
@@ -126,22 +127,15 @@ protected:
 
 	virtual bool SetUpSkillID(int32 SkillID);
 
-/// <summary>
-/// 상태 이상
-/// </summary>
-	UFUNCTION()
-	virtual void OnStunTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
-
-	UFUNCTION()
-	virtual void OnSlowTagChanged(const FGameplayTag CallbackTag, int32 NewCount);
-
 	UFUNCTION()
 	void OnHitFlashUpdate(float Value); 
 
 protected:
-	// 상태 이상 효과 관리 컴포넌트
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatusEffects")
 	UDiaLevelComponent* LevelComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatusEffects")
+	UDiaStatusEffectComponent* StatusEffectComponent;
 
 	// GAS Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "GAS")

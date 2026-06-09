@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagContainer.h"
 #include "UObject/NoExportTypes.h"
 #include "DiaComponent/Skill/DiaSkillVariant.h"
 #include "DiaSkillVariantEffect.generated.h"
@@ -14,6 +15,51 @@ enum class ESkillVariantRuntimeType : uint8
 	Spawn,
 	Hit,
 	Modi
+};
+
+USTRUCT()
+struct FDiaSkillRuntimeParams
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TMap<FGameplayTag, float> Magnitudes;
+
+	float GetMagnitude(const FGameplayTag& Tag, float DefaultValue = 0.f) const
+	{
+		if (const float* Value = Magnitudes.Find(Tag))
+		{
+			return *Value;
+		}
+
+		return DefaultValue;
+	}
+
+	int32 GetInt(const FGameplayTag& Tag, int32 DefaultValue = 0) const
+	{
+		return FMath::RoundToInt(GetMagnitude(Tag, static_cast<float>(DefaultValue)));
+	}
+
+	void SetMagnitude(const FGameplayTag& Tag, float Value)
+	{
+		Magnitudes.FindOrAdd(Tag) = Value;
+	}
+
+	void AddMagnitude(const FGameplayTag& Tag, float Value)
+	{
+		Magnitudes.FindOrAdd(Tag) += Value;
+	}
+
+	void MultiplyMagnitude(const FGameplayTag& Tag, float Value, float DefaultValue = 1.f)
+	{
+		if (float* Magnitude = Magnitudes.Find(Tag))
+		{
+			*Magnitude *= Value;
+			return;
+		}
+
+		Magnitudes.Add(Tag, DefaultValue * Value);
+	}
 };
 
 USTRUCT()
@@ -45,8 +91,9 @@ struct FSkillSpawnRuntime : public FSkillVariantRuntime
 
 	int32 ExtraSpawnCount = 0;
 	float AngleOffset = 0.f;
-	float DamageMultiplier = 1.f;
-	int32 PierceCount = 0;
+	float BigSpawnChance = 0.f;
+	FVector CloseRangeBonus = FVector::ZeroVector;
+	FDiaSkillRuntimeParams ActorParams;
 	// 필요한 런타임 상태 확장 가능
 };
 
@@ -63,6 +110,11 @@ struct FSkillHitRuntime : public FSkillVariantRuntime
 	int32 PierceCount = 0;
 	float ExplosionRadius = 0;
 	int32 ForkCount = 0;
+	float FreezeBuildUpAmount = 0.f;
+	float LifestealPercent = 0.f;
+	float KnockbackStrength = 0.f;
+	float VortexStrength = 0.f;
+	FDiaSkillRuntimeParams ActorParams;
 	// 히트 시 필요한 런타임 상태 확장 가능
 };
 

@@ -26,3 +26,13 @@ class ARPG_API UDiaSkillVariantEffect_Explosion : public UDiaSkillVariantEffect
 public:
 	virtual void Apply(const FDiaSkillVariantSpec& Spec, FDiaSkillVariantContext& Context, FSkillVariantRuntime& Runtime) const override;
 };
+
+
+UCLASS()
+class ARPG_API UDiaSkillVariantEffect_SpawnGround : public UDiaSkillVariantEffect
+{
+	GENERATED_BODY()
+	
+public:
+	virtual void Apply(const FDiaSkillVariantSpec& Spec, FDiaSkillVariantContext& Context, FSkillVariantRuntime& Runtime) const override;
+};

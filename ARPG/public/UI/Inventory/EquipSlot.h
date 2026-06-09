@@ -11,6 +11,7 @@
 class UImage;
 class UItemWidget;
 class USizeBox;
+class UMainInventory;
 class UDiaInventoryComponent;
 class UDiaEquipmentComponent;
 
@@ -36,6 +37,7 @@ public:
 	void HandleItemEquipped(const FEquippedItem& Item);
 
 	virtual bool AddItem(const FInventorySlot& ItemInstance, UItemWidget* ItemWidget, int32 PosY = -1, int32 PosX = -1) override;
+	bool AddItemFromInventory(const FInventorySlot& ItemInstance, UItemWidget* ItemWidget, UMainInventory* SourceInventoryWidget);
 	bool RemoveContainItem(const FGuid& ItemInstanceID);
 
 	void UnEquipItem();

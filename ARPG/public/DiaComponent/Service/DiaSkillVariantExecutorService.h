@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "DiaComponent/Skill/DiaSkillDelegates.h"
 #include "UObject/NoExportTypes.h"
 #include "DiaComponent/Skill/DiaSkillVariant.h"
 #include "DiaComponent/Skill/Effect/DiaSkillVariantEffect.h"
@@ -42,7 +43,8 @@ public:
 		const TSet<int32>& VariantIDs,
 		const TMap<int32, UDiaSkillVariant*>& VariantCache,
 		FDiaSkillVariantContext& Context,
-		UDiaGameplayAbility* Ability);
+		UDiaGameplayAbility* Ability,
+		FDiaSkillSpawnFinishedDelegate OnFinished = FDiaSkillSpawnFinishedDelegate());
 
 	void ExecuteHitVariants(
 		const TArray<UDiaSkillVariant*>& Variants,

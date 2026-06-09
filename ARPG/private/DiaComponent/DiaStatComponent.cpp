@@ -3,6 +3,7 @@
 #include "DiaComponent/DiaStatComponent.h"
 #include "DiaBaseCharacter.h"
 #include "System/CharacterManager.h"
+#include "Logging/ARPGLogChannels.h"
 
 UDiaStatComponent::UDiaStatComponent()
 {
@@ -39,21 +40,21 @@ UDiaStatComponent::UDiaStatComponent()
 //	UGameInstance* GI = GetWorld()->GetGameInstance();
 //	if (!GI)
 //	{
-//		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: GameInstance을 찾을 수 없음"));
+//		UE_LOG(LogARPG, Error, TEXT("DiaStatComponent: GameInstance을 찾을 수 없음"));
 //		return;
 //	}
 //
 //	UCharacterManager* CharacterManager = GI->GetSubsystem<UCharacterManager>();
 //	if (!CharacterManager)
 //	{
-//		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: CharacterManager를 찾을 수 없음"));
+//		UE_LOG(LogARPG, Error, TEXT("DiaStatComponent: CharacterManager를 찾을 수 없음"));
 //		return;
 //	}
 //
 //	const FCharacterInfo* CharacterInfo = CharacterManager->GetCharacterInfo(CharacterID);
 //	if (!CharacterInfo)
 //	{
-//		UE_LOG(LogTemp, Error, TEXT("DiaStatComponent: 캐릭터 정보를 찾을 수 없음 - ID: %s"), *CharacterID.ToString());
+//		UE_LOG(LogARPG, Error, TEXT("DiaStatComponent: 캐릭터 정보를 찾을 수 없음 - ID: %s"), *CharacterID.ToString());
 //		return;
 //	}
 //
@@ -90,7 +91,7 @@ UDiaStatComponent::UDiaStatComponent()
 //	bIsInitialized = true;
 //	OnStatComponentInitialized.Broadcast(this);
 //
-//	UE_LOG(LogTemp, Log, TEXT("DiaStatComponent: 플레이어 캐릭터 스탯 초기화 완료 - ID: %s, 레벨: %d"), 
+//	UE_LOG(LogARPG, Log, TEXT("DiaStatComponent: 플레이어 캐릭터 스탯 초기화 완료 - ID: %s, 레벨: %d"), 
 //		*CharacterID.ToString(), Level);
 //}
 //
@@ -109,7 +110,7 @@ UDiaStatComponent::UDiaStatComponent()
 //	{
 //		OnHealthChanged.Broadcast(CharacterData.Health, CharacterData.MaxHealth);
 //		
-//		UE_LOG(LogTemp, Log, TEXT("%s took %f damage, Health: %f/%f"), 
+//		UE_LOG(LogARPG, Log, TEXT("%s took %f damage, Health: %f/%f"), 
 //			*GetOwner()->GetName(), DamageAmount, CharacterData.Health, CharacterData.MaxHealth);
 //	}
 //}
@@ -129,7 +130,7 @@ UDiaStatComponent::UDiaStatComponent()
 //	{
 //		OnHealthChanged.Broadcast(CharacterData.Health, CharacterData.MaxHealth);
 //		
-//		UE_LOG(LogTemp, Log, TEXT("%s restored %f health, Health: %f/%f"), 
+//		UE_LOG(LogARPG, Log, TEXT("%s restored %f health, Health: %f/%f"), 
 //			*GetOwner()->GetName(), HealthAmount, CharacterData.Health, CharacterData.MaxHealth);
 //	}
 //}
@@ -138,7 +139,7 @@ UDiaStatComponent::UDiaStatComponent()
 //{
 //	if (NewMaxHealth <= 0.0f)
 //	{
-//		UE_LOG(LogTemp, Warning, TEXT("Invalid MaxHealth value: %f"), NewMaxHealth);
+//		UE_LOG(LogARPG, Warning, TEXT("Invalid MaxHealth value: %f"), NewMaxHealth);
 //		return;
 //	}
 //	
@@ -172,7 +173,7 @@ UDiaStatComponent::UDiaStatComponent()
 //	{
 //		OnManaChanged.Broadcast(CharacterData.Mana, CharacterData.MaxMana);
 //		
-//		UE_LOG(LogTemp, Log, TEXT("%s consumed %f mana, Mana: %f/%f"), 
+//		UE_LOG(LogARPG, Log, TEXT("%s consumed %f mana, Mana: %f/%f"), 
 //			*GetOwner()->GetName(), ManaAmount, CharacterData.Mana, CharacterData.MaxMana);
 //	}
 //}
@@ -192,7 +193,7 @@ UDiaStatComponent::UDiaStatComponent()
 //	{
 //		OnManaChanged.Broadcast(CharacterData.Mana, CharacterData.MaxMana);
 //		
-//		UE_LOG(LogTemp, Log, TEXT("%s restored %f mana, Mana: %f/%f"), 
+//		UE_LOG(LogARPG, Log, TEXT("%s restored %f mana, Mana: %f/%f"), 
 //			*GetOwner()->GetName(), ManaAmount, CharacterData.Mana, CharacterData.MaxMana);
 //	}
 //}
@@ -201,7 +202,7 @@ UDiaStatComponent::UDiaStatComponent()
 //{
 //	if (NewMaxMana <= 0.0f)
 //	{
-//		UE_LOG(LogTemp, Warning, TEXT("Invalid MaxMana value: %f"), NewMaxMana);
+//		UE_LOG(LogARPG, Warning, TEXT("Invalid MaxMana value: %f"), NewMaxMana);
 //		return;
 //	}
 //	
@@ -250,7 +251,7 @@ UDiaStatComponent::UDiaStatComponent()
 //		// 레벨업 이벤트 발생
 //		OnLevelUp.Broadcast(LevelData.CurrentLevel);
 //		
-//		UE_LOG(LogTemp, Log, TEXT("%s leveled up to %d!"), *GetOwner()->GetName(), LevelData.CurrentLevel);
+//		UE_LOG(LogARPG, Log, TEXT("%s leveled up to %d!"), *GetOwner()->GetName(), LevelData.CurrentLevel);
 //	}
 //	
 //	// 경험치 변경 이벤트 발생
@@ -259,7 +260,7 @@ UDiaStatComponent::UDiaStatComponent()
 //		bool isBound = OnExpChanged.IsBound();
 //		OnExpChanged.Broadcast(LevelData.CurrentExp, LevelData.MaxExp);
 //
-//		UE_LOG(LogTemp, Warning, TEXT("Bound Count : %d"), isBound);
+//		UE_LOG(LogARPG, Warning, TEXT("Bound Count : %d"), isBound);
 //	}
 //}
 //
@@ -267,7 +268,7 @@ UDiaStatComponent::UDiaStatComponent()
 //{
 //	if (NewLevel <= 0)
 //	{
-//		UE_LOG(LogTemp, Warning, TEXT("Invalid level value: %d"), NewLevel);
+//		UE_LOG(LogARPG, Warning, TEXT("Invalid level value: %d"), NewLevel);
 //		return;
 //	}
 //	
@@ -285,7 +286,7 @@ UDiaStatComponent::UDiaStatComponent()
 //		
 //		OnLevelUp.Broadcast(LevelData.CurrentLevel);
 //		
-//		UE_LOG(LogTemp, Log, TEXT("%s level changed from %d to %d"), 
+//		UE_LOG(LogARPG, Log, TEXT("%s level changed from %d to %d"), 
 //			*GetOwner()->GetName(), OldLevel, NewLevel);
 //	}
 //}
@@ -310,7 +311,7 @@ UDiaStatComponent::UDiaStatComponent()
 //	CharacterData.Health = CharacterData.MaxHealth;
 //	CharacterData.Mana = CharacterData.MaxMana;
 //	
-//	UE_LOG(LogTemp, Log, TEXT("%s gained stats: HP+%.1f, MP+%.1f, ATK+%.1f"), 
+//	UE_LOG(LogARPG, Log, TEXT("%s gained stats: HP+%.1f, MP+%.1f, ATK+%.1f"), 
 //		*GetOwner()->GetName(), HealthIncrease, ManaIncrease, AttackIncrease);
 //}
 //
@@ -354,7 +355,7 @@ UDiaStatComponent::UDiaStatComponent()
 //	// 델리게이트 호출
 //	OnBaseStatChanged.Broadcast(StatType, NewValue, OldValue);
 //	
-//	UE_LOG(LogTemp, Log, TEXT("%s: %s 스탯 변경 %.1f -> %.1f"), 
+//	UE_LOG(LogARPG, Log, TEXT("%s: %s 스탯 변경 %.1f -> %.1f"), 
 //		*GetOwner()->GetName(), 
 //		*UEnum::GetValueAsString(StatType), 
 //		OldValue, NewValue);
@@ -375,7 +376,7 @@ UDiaStatComponent::UDiaStatComponent()
 //	// 델리게이트 호출
 //	OnAttackPowerChanged.Broadcast(NewAttackPower, OldAttackPower);
 //	
-//	UE_LOG(LogTemp, Log, TEXT("%s: 공격력 변경 %.1f -> %.1f"), 
+//	UE_LOG(LogARPG, Log, TEXT("%s: 공격력 변경 %.1f -> %.1f"), 
 //		*GetOwner()->GetName(), OldAttackPower, NewAttackPower);
 //}
 //
@@ -394,6 +395,6 @@ UDiaStatComponent::UDiaStatComponent()
 //	// 델리게이트 호출
 //	OnDefenseChanged.Broadcast(NewDefense, OldDefense);
 //	
-//	UE_LOG(LogTemp, Log, TEXT("%s: 방어력 변경 %.1f -> %.1f"), 
+//	UE_LOG(LogARPG, Log, TEXT("%s: 방어력 변경 %.1f -> %.1f"), 
 //		*GetOwner()->GetName(), OldDefense, NewDefense);
 //} 

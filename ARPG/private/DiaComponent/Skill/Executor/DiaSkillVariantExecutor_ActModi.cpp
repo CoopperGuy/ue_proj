@@ -5,11 +5,12 @@
 #include "DiaComponent/Skill/Effect/DiaVariantEffect_ActiveModifier.h"
 #include "GAS/DiaGameplayAbility.h"
 #include "GAS/DiaGameplayTags.h"
+#include "Logging/ARPGLogChannels.h"
 
 
 void UDiaSkillVariantExecutor_ActModi::InitializeExecutor()
 {
-	UE_LOG(LogTemp, Log, TEXT("UDiaSkillHitVariantExecutor::InitializeExecutor - Initializing Hit Variant Executor"));
+	UE_LOG(LogARPG, Log, TEXT("UDiaSkillHitVariantExecutor::InitializeExecutor - Initializing Hit Variant Executor"));
 	RegisteredEffects.Add(NewObject<UDiaVariantEffect_ActiveModifier>(this));
 }
 

@@ -4,6 +4,7 @@
 #include "DiaBaseCharacter.h"
 #include "DiaComponent/DiaLevelComponent.h"
 #include "DiaComponent/DiaSkillManagerComponent.h"
+#include "DiaComponent/DiaStatusEffectComponent.h"
 #include "DiaComponent/Skill/SkillObject.h"
 
 #include "UI/HUDWidget.h"
@@ -22,6 +23,7 @@
 #include "System/GASSkillManager.h"
 #include "GAS/DiaAttributeSet.h"
 #include "GAS/DiaGameplayTags.h"
+#include "Logging/ARPGLogChannels.h"
 
 
 ADiaBaseCharacter::ADiaBaseCharacter()
@@ -41,6 +43,8 @@ ADiaBaseCharacter::ADiaBaseCharacter()
 	//SkillManagerComponent 생성
 	SkillManagerComponent = CreateDefaultSubobject<UDiaSkillManagerComponent>(TEXT("SkillManagerComponent"));
 
+	StatusEffectComponent = CreateDefaultSubobject<UDiaStatusEffectComponent>(TEXT("StatusEffectComponent"));
+
 	Tags.Add(FName(TEXT("Character")));
 
 	OnAddSkillVariantDelegate.AddUObject(this, &ThisClass::HandleAddSkillVariant);
@@ -51,15 +55,10 @@ void ADiaBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AbilitySystemComponent->RegisterGameplayTagEvent(
-		FDiaGameplayTags::Get().State_Stunned,
-		EGameplayTagEventType::NewOrRemoved
-	).AddUObject(this, &ADiaBaseCharacter::OnStunTagChanged);
-
-	AbilitySystemComponent->RegisterGameplayTagEvent(
-		FDiaGameplayTags::Get().State_Slowed,
-		EGameplayTagEventType::AnyCountChange
-	).AddUObject(this, &ADiaBaseCharacter::OnSlowTagChanged);
+	if (IsValid(StatusEffectComponent))
+	{
+		StatusEffectComponent->InitializeWithAbilitySystem(AbilitySystemComponent, this);
+	}
 
 	FOnTimelineFloat TimerHandle;
 	TimerHandle.BindUFunction(this, FName("OnHitFlashUpdate"));
@@ -133,14 +132,14 @@ void ADiaBaseCharacter::GrantInitialGASAbilities()
 	UAbilitySystemComponent* ASC = GetAbilitySystemComponent();
 	if (!ASC)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No ASC"));
+		UE_LOG(LogARPG, Warning, TEXT("GrantInitialGASAbilities: No ASC"));
 		return;
 	}
 
 	UGASSkillManager* GasSkillMgr = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGASSkillManager>() : nullptr;
 	if (!GasSkillMgr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
+		UE_LOG(LogARPG, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
 	}
 
 	const TArray<USkillObject*>& SkillIDMapping = SkillManagerComponent->GetSkillIDMapping();
@@ -154,7 +153,7 @@ void ADiaBaseCharacter::GrantInitialGASAbilities()
 				bool bGranted = SetUpSkillID(SkillID);
 				if (!bGranted)
 				{
-					UE_LOG(LogTemp, Warning, TEXT("GrantInitialGASAbilities: Failed to grant SkillID %d"), SkillID);
+					UE_LOG(LogARPG, Warning, TEXT("GrantInitialGASAbilities: Failed to grant SkillID %d"), SkillID);
 				}
 			}
 		}
@@ -165,7 +164,7 @@ void ADiaBaseCharacter::GrantInitialGASAbilities()
 	// 임시 주석 - 불필요한 로그
 	//for (const FGameplayAbilitySpec& S : ASC->GetActivatableAbilities())
 	//{
-	//	UE_LOG(LogTemp, Log, TEXT("[GAS] Granted: Ability=%s, InputID(SkillID)=%d, IsActive=%s"),
+	//	UE_LOG(LogARPG, Log, TEXT("[GAS] Granted: Ability=%s, InputID(SkillID)=%d, IsActive=%s"),
 	//		*GetNameSafe(S.Ability), S.InputID, S.IsActive() ? TEXT("true") : TEXT("false"));
 	//}
 }
@@ -218,13 +217,13 @@ bool ADiaBaseCharacter::SetUpSkillID(int32 SkillID)
 		if (TagToUse.IsValid())
 		{
 			bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID, TagToUse);
-			UE_LOG(LogTemp, Log, TEXT("Granted Ability %s with Tag %s for SkillID %d"), *AbilityClass->GetName(), *TagToUse.ToString(), SkillID);
+			UE_LOG(LogARPG, Log, TEXT("Granted Ability %s with Tag %s for SkillID %d"), *AbilityClass->GetName(), *TagToUse.ToString(), SkillID);
 		}
 		else
 		{
 			// 태그 없어도 부여할 수 있도록 빈 태그로 시도
 			bGranted = UDiaGASHelper::GrantAbilityFromSkillData(ASC, *FoundData, SkillID, FGameplayTag());
-			UE_LOG(LogTemp, Log, TEXT("Granted Ability %s with No Tag for SkillID %d"), *AbilityClass->GetName(), SkillID);
+			UE_LOG(LogARPG, Log, TEXT("Granted Ability %s with No Tag for SkillID %d"), *AbilityClass->GetName(), SkillID);
 		}
 	}
 
@@ -285,27 +284,17 @@ bool ADiaBaseCharacter::CheckBossMonsterByAbilityTag() const
 	return false;
 }
 
-void ADiaBaseCharacter::OnStunTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
+void ADiaBaseCharacter::ApplyStunState(bool bStunned)
 {
-	if (NewCount > 0)
+	if (bStunned)
 	{
-		// 스턴 상태 시작
-		UE_LOG(LogTemp, Log, TEXT("Character %s is Stunned."), *GetName());
+		UE_LOG(LogARPG, Log, TEXT("Character %s is Stunned."), *GetName());
 		PlayCharacterMontage(StunMontage);
 	}
 	else
 	{
-		// 스턴 상태 종료
-		UE_LOG(LogTemp, Log, TEXT("Character %s is No Longer Stunned."), *GetName());
+		UE_LOG(LogARPG, Log, TEXT("Character %s is No Longer Stunned."), *GetName());
 		StopCharacterMontage(0.2f);
-	}
-}
-
-void ADiaBaseCharacter::OnSlowTagChanged(const FGameplayTag CallbackTag, int32 NewCount)
-{
-	if (AttributeSet && GetCharacterMovement())
-	{
-		GetCharacterMovement()->MaxWalkSpeed = FMath::Max(AttributeSet->GetMovementSpeed(), 0.f);
 	}
 }
 
@@ -435,20 +424,20 @@ void ADiaBaseCharacter::SetGravity(bool bEnableGravityAndCollision)
    UCharacterMovementComponent* MoveComp = GetCharacterMovement();
 	if (!MoveComp)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("%s: CharacterMovementComponent not found!"), *FString(__FUNCTION__));
+		UE_LOG(LogARPG, Warning, TEXT("%s: CharacterMovementComponent not found!"), *FString(__FUNCTION__));
 		return;
 	}
 
 	UCapsuleComponent* Capsule = GetCapsuleComponent();
 	if (!Capsule)
 	{
-		 UE_LOG(LogTemp, Warning, TEXT("%s: CapsuleComponent not found!"), *FString(__FUNCTION__));
+		 UE_LOG(LogARPG, Warning, TEXT("%s: CapsuleComponent not found!"), *FString(__FUNCTION__));
 		 return;
 	}
 
 	if (bEnableGravityAndCollision)
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s: Enabling Gravity and Default Collision/Movement"), *FString(__FUNCTION__));
+		UE_LOG(LogARPG, Log, TEXT("%s: Enabling Gravity and Default Collision/Movement"), *FString(__FUNCTION__));
 		MoveComp->SetMovementMode(MOVE_Walking);
 		MoveComp->GravityScale = 1.0f; 
 		Capsule->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
@@ -456,7 +445,7 @@ void ADiaBaseCharacter::SetGravity(bool bEnableGravityAndCollision)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Log, TEXT("%s: Disabling Gravity and Collision Effects"), *FString(__FUNCTION__));
+		UE_LOG(LogARPG, Log, TEXT("%s: Disabling Gravity and Collision Effects"), *FString(__FUNCTION__));
 
 		MoveComp->SetMovementMode(MOVE_Flying);
 		MoveComp->GravityScale = 0.0f;

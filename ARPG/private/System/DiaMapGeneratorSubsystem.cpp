@@ -13,8 +13,7 @@
 
 #include "System/MonsterSpawnSubSystem.h"
 #include "System/MapInfoSubsystem.h"
-
-DEFINE_LOG_CATEGORY_STATIC(LogARPG_Map, Log, All);
+#include "Logging/ARPGLogChannels.h"
 
 void UDiaMapGeneratorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {

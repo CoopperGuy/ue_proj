@@ -11,8 +11,7 @@
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
 #include "GAS/DiaAttributeSet.h"
-
-DEFINE_LOG_CATEGORY_STATIC(LogARPG_UI, Log, All);
+#include "Logging/ARPGLogChannels.h"
 
 void UStatusWidget::NativeConstruct()
 {

@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Skill/DiaSkillType.h"
-#include "Skill/Effect/DiaStatusEffect.h"
 #include "DiaSkillBase.generated.h"
 
 class UNiagaraSystem;
@@ -75,14 +74,6 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Skill State")
 	bool bIsOnCooldown;
 
-	// 스킬 사용 시 적용할 상태 이상 효과
-	UPROPERTY(EditDefaultsOnly, Category = "Status Effects")
-	TArray<TSubclassOf<UDiaStatusEffect>> StatusEffects;
-	
-	// 상태 이상 효과 적용 확률 (0.0-1.0)
-	UPROPERTY(EditDefaultsOnly, Category = "Status Effects")
-	float StatusEffectChance = 1.0f;
-
 public:
 	FORCEINLINE float GetDamage() const { return SkillData.Damage; }
 	FORCEINLINE float GetCooldown() const { return SkillData.Cooldown; }
@@ -91,8 +82,4 @@ public:
 	FORCEINLINE FText GetSkillDescription() const { return SkillData.SkillDescription; }
 	FORCEINLINE UTexture2D* GetSkillIcon() const { return SkillData.SkillIcon; }
 	const FSkillData& GetSkillData() const { return SkillData; }
-
-	// 대상에게 상태 이상 효과 적용
-	UFUNCTION(BlueprintCallable, Category = "Status Effects")
-	void ApplyStatusEffectsToTarget(AActor* Target);
 };

@@ -20,6 +20,7 @@
 #include "Blueprint/WidgetTree.h"
 #include "Blueprint/UserWidget.h"
 #include "Utils/InventoryUtils.h"
+#include "Logging/ARPGLogChannels.h"
 
 void UMainInventory::NativeConstruct()
 {
@@ -102,7 +103,7 @@ bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 It
 			ItemSlot->SetPosition(SlotPosition);
 			ItemSlot->SetSize(SlotSize);   // 명시적 크기 설정
 						
-			UE_LOG(LogTemp, Log, TEXT("MainInventory: Canvas Panel Slot configured - Position: %s, Size: %s"), 
+			UE_LOG(LogARPG, Log, TEXT("MainInventory: Canvas Panel Slot configured - Position: %s, Size: %s"), 
 				*SlotPosition.ToString(), *SlotSize.ToString());
 			
 			// 아이템 위젯을 맵에 저장
@@ -112,7 +113,7 @@ bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 It
 			//결과에 대한 로그 작성
 			//fguid, name, gridx ,gridy 표현
 			FString guid = ItemData.ItemInstance.InstanceID.ToString();
-			UE_LOG(LogTemp, Log, TEXT("Added item to inventory: %s (guid : %s) at Slot (%f, %f)"), *ItemData.ItemInstance.BaseItem.ItemID.ToString(), *guid, SlotPosition.X, SlotPosition.Y);
+			UE_LOG(LogARPG, Log, TEXT("Added item to inventory: %s (guid : %s) at Slot (%f, %f)"), *ItemData.ItemInstance.BaseItem.ItemID.ToString(), *guid, SlotPosition.X, SlotPosition.Y);
 		}
 	}
 
@@ -197,7 +198,7 @@ void UMainInventory::CreateInventory()
 
 	if (!ItemWidgetClass)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to load ItemWidget class"));
+		UE_LOG(LogARPG, Error, TEXT("Failed to load ItemWidget class"));
 		return;
 	}
 	
@@ -274,7 +275,7 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	{
 	case EItemDragDropType::EIDT_Inventory:
 		// 인벤토리 내 이동 처리
-		UE_LOG(LogTemp, Log, TEXT("Item moved within inventory to (%d,% d)"), NewGridX, NewGridY);
+		UE_LOG(LogARPG, Log, TEXT("Item moved within inventory to (%d,% d)"), NewGridX, NewGridY);
 
 		// 아이템 위치 업데이트
 		if (InventoryComponent.IsValid())
@@ -285,7 +286,7 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 		break;
 	case EItemDragDropType::EIDT_Equipment:
 		// 장비에서 인벤토리로 이동 처리
-		UE_LOG(LogTemp, Log, TEXT("Item moved from equipment to inventory at (%d, % d)"), NewGridX, NewGridY);
+		UE_LOG(LogARPG, Log, TEXT("Item moved from equipment to inventory at (%d, % d)"), NewGridX, NewGridY);
 		//step.1 장비 컴포넌트에서 아이템 제거 요청
 		//step.2 인벤토리 컴포넌트에 아이템 추가 요청
 		//문제 -> EquipSlot에서 어떻게 지울 것인가??? 상식적으로만 EquipppmentComponent에서 지우는게 맞는데 관리하지 않고 있음.
@@ -306,7 +307,7 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 bool UMainInventory::CheckInventoryDrop(UItemDragDropOperation* ItemDragOp, int32 NewGridX, int32 NewGridY, FVector2D& ScreenPosition, bool& retFlag)
 {
 	retFlag = true;
-	//UE_LOG(LogTemp, Log, TEXT("MainInventory::NativeOnDrop - Screen: (%f, %f), CanvasLocal: (%f, %f), Grid: (%d, %d)"),
+	//UE_LOG(LogARPG, Log, TEXT("MainInventory::NativeOnDrop - Screen: (%f, %f), CanvasLocal: (%f, %f), Grid: (%d, %d)"),
 	//	ScreenPosition.X, ScreenPosition.Y, CanvasLocalPosition.X, CanvasLocalPosition.Y, NewGridX, NewGridY);
 
 	// 인벤토리 슬롯 내의 유효한 위치인지 확인
@@ -323,11 +324,11 @@ bool UMainInventory::CheckInventoryDrop(UItemDragDropOperation* ItemDragOp, int3
 		// 드롭된 위치가 인벤토리와 장착 위젯 모두의 바깥인지 체크
 		if (IsDropOutsideAllWidgets(ScreenPosition))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Item dropped completely outside all widgets - cancelling drop"));
+			UE_LOG(LogARPG, Warning, TEXT("Item dropped completely outside all widgets - cancelling drop"));
 			return false;
 		}
 
-		//UE_LOG(LogTemp, Warning, TEXT("Invalid drop position - failed validation"));
+		//UE_LOG(LogARPG, Warning, TEXT("Invalid drop position - failed validation"));
 		return false;
 	}
 
@@ -336,7 +337,7 @@ bool UMainInventory::CheckInventoryDrop(UItemDragDropOperation* ItemDragOp, int3
 	if (ExistingItem && ExistingItem != ItemDragOp->SourceWidget)
 	{
 		// 다른 아이템 위에 드롭하는 경우 - ItemWidget으로 이벤트 전파
-		UE_LOG(LogTemp, Log, TEXT("Dropping on existing item - letting ItemWidget handle it"));
+		UE_LOG(LogARPG, Log, TEXT("Dropping on existing item - letting ItemWidget handle it"));
 		return false;
 	}
 
@@ -354,7 +355,7 @@ bool UMainInventory::CheckInventoryDrop(UItemDragDropOperation* ItemDragOp, int3
 				{
 					ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
 				}
-				UE_LOG(LogTemp, Warning, TEXT("Item collision detected at (%d, %d)"), CheckX, CheckY);
+				UE_LOG(LogARPG, Warning, TEXT("Item collision detected at (%d, %d)"), CheckX, CheckY);
 				return false;
 			}
 		}
@@ -394,7 +395,7 @@ FVector2D UMainInventory::GetCanvasLocalPositionFromScreenPosition(const FGeomet
 	// InventoryCanvas가 문제 있으면 return 0;
 	if (!IsValid(InventoryCanvas))
 	{
-		UE_LOG(LogTemp, Error, TEXT("InventoryCanvas is not valid"));
+		UE_LOG(LogARPG, Error, TEXT("InventoryCanvas is not valid"));
 		return FVector2D::ZeroVector;
 	}
 		
@@ -403,7 +404,7 @@ FVector2D UMainInventory::GetCanvasLocalPositionFromScreenPosition(const FGeomet
 	FVector2D CanvasOffset = MainWidgetGeometry.AbsoluteToLocal(InventoryCanvas->GetCachedGeometry().GetAbsolutePosition());
 	FVector2D CanvasLocalPosition = MainLocalPosition - CanvasOffset;
 	
-	UE_LOG(LogTemp, VeryVerbose, TEXT("MainLocal: (%f, %f), CanvasOffset: (%f, %f), CanvasLocal: (%f, %f)"), 
+	UE_LOG(LogARPG, VeryVerbose, TEXT("MainLocal: (%f, %f), CanvasOffset: (%f, %f), CanvasLocal: (%f, %f)"), 
 		MainLocalPosition.X, MainLocalPosition.Y, 
 		CanvasOffset.X, CanvasOffset.Y,
 		CanvasLocalPosition.X, CanvasLocalPosition.Y);

@@ -8,8 +8,7 @@
 #include "TimerManager.h"
 #include "Monster/DiaMonster.h"
 #include "System/MonsterManager.h"
-
-DEFINE_LOG_CATEGORY_STATIC(LogARPG_Spawn, Log, All);
+#include "Logging/ARPGLogChannels.h"
 
 namespace
 {

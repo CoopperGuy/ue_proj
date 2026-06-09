@@ -19,6 +19,7 @@
 #include "Types/DiaGASSkillData.h"
 
 #include "DiaBaseCharacter.h"
+#include "Logging/ARPGLogChannels.h"
 
 void UDiaSkillVariantSpawnExecutor::InitializeExecutor()
 {
@@ -27,21 +28,45 @@ void UDiaSkillVariantSpawnExecutor::InitializeExecutor()
 
 void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, UDiaGameplayAbility* Ability)
 {
+	ExecuteEffect(Variants, Context, Ability, FDiaSkillSpawnFinishedDelegate());
+}
+
+void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, UDiaGameplayAbility* Ability, FDiaSkillSpawnFinishedDelegate OnFinished)
+{
+	if (!IsValid(Ability))
+	{
+		UE_LOG(LogARPG, Warning, TEXT("UDiaSkillVariantSpawnExecutor::ExecuteEffect - Ability is invalid"));
+		OnFinished.ExecuteIfBound();
+		return;
+	}
+
 	if(Context.SkillActorClass == nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDiaSkillVariantSpawnExecutor::ExecuteEffect - SkillActorClass is null"));
+		UE_LOG(LogARPG, Warning, TEXT("UDiaSkillVariantSpawnExecutor::ExecuteEffect - SkillActorClass is null"));
+		OnFinished.ExecuteIfBound();
 		return;
 	}
 
 	FSkillSpawnRuntime Runtime;
 	Runtime.ExtraSpawnCount = 1;
 	ApplyEffects(Variants, Context, Runtime);	
-	BeforeSpawn(Variants, Context, Ability, Runtime);
-	AfterSpawn(Variants, Context, Ability, Runtime);
+	SpawnCast(Variants, Context, Ability, Runtime);
+	if (AfterSpawn(Variants, Context, Ability, Runtime, OnFinished))
+	{
+		return;
+	}
+
+	OnFinished.ExecuteIfBound();
 }
 
-void UDiaSkillVariantSpawnExecutor::BeforeSpawn(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, UDiaGameplayAbility* Ability, FSkillSpawnRuntime& Runtime) const
+void UDiaSkillVariantSpawnExecutor::SpawnCast(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, UDiaGameplayAbility* Ability, FSkillSpawnRuntime& Runtime) const
 {
+	if (!IsValid(Ability))
+	{
+		UE_LOG(LogARPG, Warning, TEXT("UDiaSkillVariantSpawnExecutor::SpawnCast - Ability is invalid"));
+		return;
+	}
+
 	const FGameplayAbilityActorInfo& ActorInfo = Ability->GetActorInfo();
 	AActor* Character = (ActorInfo.AvatarActor.Get());
 	APawn* Pawn = Cast<APawn>(Character);
@@ -51,7 +76,7 @@ void UDiaSkillVariantSpawnExecutor::BeforeSpawn(const TArray<UDiaSkillVariant*>&
 	UWorld* World = Ability ? Ability->GetWorld() : nullptr;
 	if (!World)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDiaSkillVariantSpawnExecutor::ExecuteEffect - World가 유효하지 않습니다."));
+		UE_LOG(LogARPG, Warning, TEXT("UDiaSkillVariantSpawnExecutor::ExecuteEffect - World가 유효하지 않습니다."));
 		return;
 	}
 
@@ -59,7 +84,7 @@ void UDiaSkillVariantSpawnExecutor::BeforeSpawn(const TArray<UDiaSkillVariant*>&
 	{
 		const FTransform SpawnTransform = FDiaSkillActorSpawnHelper::MakeSpawnTransform(SpawnLocationData, Direction);
 
-		UE_LOG(LogTemp, Log, TEXT("UDiaSkillVariantSpawnExecutor::ExecuteEffect - SkillID: %d, Class: %s, SpawnLocation: %s, Direction: %s"),
+		UE_LOG(LogARPG, Log, TEXT("UDiaSkillVariantSpawnExecutor::ExecuteEffect - SkillID: %d, Class: %s, SpawnLocation: %s, Direction: %s"),
 			Ability ? Ability->GetSkillData().SkillID : -1,
 			*GetNameSafe(Context.SkillActorClass),
 			*SpawnTransform.GetLocation().ToString(),
@@ -80,8 +105,7 @@ void UDiaSkillVariantSpawnExecutor::BeforeSpawn(const TArray<UDiaSkillVariant*>&
 		SpawnRequest.DamageEffectClass = Ability->GetDamageEffectClass();
 		SpawnRequest.OwningAbility = Ability;
 		SpawnRequest.TargetEffectSpecs = MoveTemp(TargetEffectSpecs);
-		SpawnRequest.DamageMultiplier = Runtime.DamageMultiplier;
-		SpawnRequest.PierceCount = Runtime.PierceCount;
+		SpawnRequest.RuntimeParams = Runtime.ActorParams;
 
 		if (ADiaSkillActor* SpawnedActor = FDiaSkillActorSpawnHelper::SpawnSkillActor(SpawnRequest))
 		{
@@ -92,9 +116,64 @@ void UDiaSkillVariantSpawnExecutor::BeforeSpawn(const TArray<UDiaSkillVariant*>&
 	}
 }
 
-void UDiaSkillVariantSpawnExecutor::AfterSpawn(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, UDiaGameplayAbility* Ability, FSkillSpawnRuntime& Runtime) const
+bool UDiaSkillVariantSpawnExecutor::AfterSpawn(const TArray<UDiaSkillVariant*>& Variants, FDiaSkillVariantContext& Context, UDiaGameplayAbility* Ability, FSkillSpawnRuntime& Runtime, FDiaSkillSpawnFinishedDelegate OnFinished)
 {
+	UWorld* World = Ability ? Ability->GetWorld() : nullptr;
+	if (!World)
+	{
+		return false;
+	}
 
+	int32 RemainingRepeatCount = 0;
+	float RepeatDelay = 0.f;
+	for(const UDiaSkillVariant* Variant : Variants)
+	{
+		if (Variant == nullptr)
+			continue;
+		const FDiaSkillVariantSpec& Spec = Variant->GetVariantSpec();
+		if(Spec.SkillTag.MatchesTagExact(FDiaGameplayTags::Get().GASData_Variant_RepeatCast))
+		{
+			RemainingRepeatCount = 1;
+			RepeatDelay = FMath::Max(0.01f, Spec.ModifierValue);
+		}
+	}
 
+	World->GetTimerManager().ClearTimer(RepeatTimerHandle);
 
+	if(RemainingRepeatCount > 0)
+	{
+		TWeakObjectPtr<UDiaGameplayAbility> AbilityPtr = Ability;
+		TWeakObjectPtr<UWorld> WorldPtr = World;
+		TArray<UDiaSkillVariant*> RepeatVariants = Variants;
+		FSkillSpawnRuntime RepeatRuntime = Runtime;
+
+		FTimerDelegate RepeatDelegate;
+		RepeatDelegate.BindLambda([this, AbilityPtr, WorldPtr, RepeatVariants, &Context, RepeatRuntime, OnFinished, RemainingRepeatCount]() mutable
+			{
+				UDiaGameplayAbility* RepeatAbility = AbilityPtr.Get();
+				UWorld* RepeatWorld = WorldPtr.Get();
+				if (!IsValid(RepeatAbility) || !RepeatWorld)
+				{
+					OnFinished.ExecuteIfBound();
+					return;
+				}
+
+				SpawnCast(RepeatVariants, Context, RepeatAbility, RepeatRuntime);
+				--RemainingRepeatCount;
+
+				if (RemainingRepeatCount <= 0)
+				{
+					RepeatWorld->GetTimerManager().ClearTimer(RepeatTimerHandle);
+					OnFinished.ExecuteIfBound();
+				}
+			});
+
+		World->GetTimerManager().SetTimer(
+			RepeatTimerHandle,
+			RepeatDelegate,
+			FMath::Max(RepeatDelay, 0.01f),
+			false);
+	}
+
+	return true;
 }

@@ -24,6 +24,7 @@
 #include "Engine/World.h"
 
 #include "GameplayAbilitySpec.h"
+#include "Logging/ARPGLogChannels.h"
 
 
 UDiaSkillManagerComponent::UDiaSkillManagerComponent()
@@ -50,21 +51,21 @@ void UDiaSkillManagerComponent::MakeSkillVariantsArray(IN const UDiaGameplayAbil
 {
 	if (!IsValid(Ability))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: Ability가 유효하지 않습니다."));
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: Ability가 유효하지 않습니다."));
 		return;
 	}
 
 	UWorld* World = GetWorld();
 	if (!World)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: World가 유효하지 않습니다."));
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: World가 유효하지 않습니다."));
 		return;
 	}
 
 	const USkillObject* SkillObj = Ability->GetSkillObject();
 	if (!IsValid(SkillObj))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: SkillObject가 유효하지 않습니다."));
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: SkillObject가 유효하지 않습니다."));
 		return;
 	}
 
@@ -141,13 +142,13 @@ void UDiaSkillManagerComponent::SetSkillIDMapping(const TArray<int32>& NewMappin
 
 void UDiaSkillManagerComponent::SetSkillIDIndex(int32 SkillID , int32 Index)
 {
-	UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::SetSkillIDIndex: Index %d, SkillID %d"), Index, SkillID);
+	UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::SetSkillIDIndex: Index %d, SkillID %d"), Index, SkillID);
 	if (SkillIDMapping.IsValidIndex(Index))
 	{
 		USkillObject* NewSkillObject = NewObject<USkillObject>(this);
 		NewSkillObject->SetSkillID(SkillID);
 		SkillIDMapping[Index] = NewSkillObject;
-		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::SetSkillIDIndex: SkillIDMapping[%d] set to SkillID %d"), Index, SkillID);
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::SetSkillIDIndex: SkillIDMapping[%d] set to SkillID %d"), Index, SkillID);
 	}
 }
 
@@ -164,7 +165,7 @@ void UDiaSkillManagerComponent::AddVariantBySkillId(int32 SkillID, int32 Variant
 	}
 	if (!SkillObj)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::AddVariantBySkillId: SkillObject가 유효하지 않습니다."));
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::AddVariantBySkillId: SkillObject가 유효하지 않습니다."));
 		return;
 	}
 
@@ -206,18 +207,25 @@ void UDiaSkillManagerComponent::ActiveModifierSkillUseVariants(const FDiaSkillVa
 	VariantExecutor->ExecuteActiveModifierVariants(VariantsToApply, MutableContext, Ability, OutRuntime);
 }
 
-void UDiaSkillManagerComponent::SpawnSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability)
+void UDiaSkillManagerComponent::SpawnSkillActorUseVariants(FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability, FDiaSkillSpawnFinishedDelegate OnFinished)
 {
+	if (!IsValid(Ability))
+	{
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: Ability가 유효하지 않습니다."));
+		OnFinished.ExecuteIfBound();
+		return;
+	}
+
 	const USkillObject* SkillObj = Ability->GetSkillObject();
 	if (!SkillObj)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: SkillObject가 유효하지 않습니다."));
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::SpawnSkillActorUseVariants: SkillObject가 유효하지 않습니다."));
+		OnFinished.ExecuteIfBound();
 		return;
 	}
 
 	//여기서는 적용된 variants만 넘겨준다.
-	FDiaSkillVariantContext& MutableContext = const_cast<FDiaSkillVariantContext&>(context);
-	VariantExecutor->ExecuteSpawnVariants(SkillObj->GetVariantApplyIDs(), SkillVariants, MutableContext, Ability);
+	VariantExecutor->ExecuteSpawnVariants(SkillObj->GetVariantApplyIDs(), SkillVariants, context, Ability, OnFinished);
 }
 
 void UDiaSkillManagerComponent::HitSkillActorUseVariants(const FDiaSkillVariantContext& context, UDiaGameplayAbility* Ability)
@@ -252,7 +260,7 @@ void UDiaSkillManagerComponent::GetSkillVariantsFromSkillID(const int32 SkillID,
 	const USkillObject* SkillObj = GetSkillObjectBySkillID(SkillID);
 	if (!SkillObj)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaSkillManagerComponent::GetSkillVariantFromSkillID: SkillObject가 유효하지 않습니다."));
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::GetSkillVariantFromSkillID: SkillObject가 유효하지 않습니다."));
 		return;
 	}
 	TArray<int32> VariantIDs = SkillObj->GetSkillVariantIDs();

@@ -16,6 +16,7 @@
 
 #include "Components/AudioComponent.h"
 #include <AbilitySystemBlueprintLibrary.h>
+#include "Logging/ARPGLogChannels.h"
 
 UDiaMeleeAbility::UDiaMeleeAbility()
 {
@@ -58,7 +59,7 @@ void UDiaMeleeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 {
 	if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaMeleeAbility: Invalid ActorInfo or AvatarActor"));
+		ARPG_SKILL_LOG(Warning, TEXT("Invalid ActorInfo or AvatarActor"));
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
@@ -180,7 +181,7 @@ void UDiaMeleeAbility::PerformHitDetection()
 
 			if (AngleToTarget <= HalfAngleRad)
 			{
-				UE_LOG(LogTemp, Log, TEXT("DiaMeleeAbility: Hit Actor: %s"), *HitActor->GetName());
+				ARPG_SKILL_VLOG(TEXT("Hit Actor=%s"), *HitActor->GetName());
 				HitActors.Add(HitActor);
 
 				ApplyDamageToTarget(HitActor);
@@ -206,11 +207,11 @@ void UDiaMeleeAbility::ApplyDamageToTarget(AActor* Target)
 		return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Target Class: %s"), *Target->GetClass()->GetName());
+	ARPG_SKILL_VVLOG(TEXT("Target Class=%s"), *Target->GetClass()->GetName());
     
     // ADiaBaseCharacter인지 확인
     ADiaBaseCharacter* DiaChar = Cast<ADiaBaseCharacter>(Target);
-    UE_LOG(LogTemp, Warning, TEXT("Cast to ADiaBaseCharacter: %s"), DiaChar ? TEXT("Success") : TEXT("Failed"));
+    ARPG_SKILL_VVLOG(TEXT("Cast to ADiaBaseCharacter=%s"), DiaChar ? TEXT("Success") : TEXT("Failed"));
 
 	
 	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Target);
@@ -220,7 +221,9 @@ void UDiaMeleeAbility::ApplyDamageToTarget(AActor* Target)
 	const float AttackPower = MyAttr ? MyAttr->GetAttackPower() : 0.f;
 	const float BaseDamage = SkillData.BaseDamage + AttackPower;
 
-	UE_LOG(LogTemp, Log, TEXT("DiaMeleeAbility: Applying Damage - BaseDamage: %.2f"), BaseDamage);
+	ARPG_SKILL_VLOG(TEXT("Applying Damage. Target=%s, BaseDamage=%.2f"),
+		*GetNameSafe(Target),
+		BaseDamage);
 	ApplyDamageToASC(TargetASC, BaseDamage , 1.0f);
 }
 
@@ -228,7 +231,7 @@ void UDiaMeleeAbility::StartMultiHit()
 {
 	CurrentHitCount = 0;
 
-	UE_LOG(LogTemp, Log, TEXT("DiaMeleeAbility: Starting Multi Hit - TotalHits: %d, Interval: %.2f"), TotalHitCount, HitInterval);
+	ARPG_SKILL_VLOG(TEXT("Starting Multi Hit. TotalHits=%d, Interval=%.2f"), TotalHitCount, HitInterval);
 
 	ProcessNextHit();
 }
@@ -258,7 +261,7 @@ void UDiaMeleeAbility::ProcessNextHit()
 	// 모든 히트 완료 시 종료
 	if (CurrentHitCount > TotalHitCount)
 	{
-		UE_LOG(LogTemp, Log, TEXT("DiaMeleeAbility: All hits completed"));
+		ARPG_SKILL_VLOG(TEXT("All hits completed"));
 		return;
 	}
 

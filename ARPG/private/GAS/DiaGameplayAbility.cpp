@@ -29,6 +29,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystem.h"
 #include "GameplayTagContainer.h"
+#include "Logging/ARPGLogChannels.h"
 
 UDiaGameplayAbility::UDiaGameplayAbility()
 {
@@ -59,7 +60,7 @@ void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 	// 안전 가드: ActorInfo가 없으면 종료
 	if (!ActorInfo)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ActivateAbility: Missing ActorInfo"));
+		UE_LOG(LogARPG, Warning, TEXT("ActivateAbility: Missing ActorInfo"));
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
@@ -71,7 +72,7 @@ void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 	// 필요한 포인터 null 방어
 	if (!ASC || !Avatar || !Owner)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ActivateAbility Failed: Invalid ASC/Avatar/Owner"));
+		UE_LOG(LogARPG, Warning, TEXT("ActivateAbility Failed: Invalid ASC/Avatar/Owner"));
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
@@ -173,7 +174,7 @@ void UDiaGameplayAbility::ApplyGameplayEffectToTarget(UAbilitySystemComponent* T
 		EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
 			CurrentActorInfo ? Cast<APawn>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
 
-		UE_LOG(LogTemp, Log, TEXT("Applying Effect: %s"), *EffectClass->GetName());
+		UE_LOG(LogARPG, Log, TEXT("Applying Effect: %s"), *EffectClass->GetName());
 		FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(EffectClass, GetAbilityLevel(), EffectContext);
 		if (!SpecHandle.IsValid())
 			continue;
@@ -217,7 +218,7 @@ void UDiaGameplayAbility::ApplyGameplayEffectToSelf() const
 
 			if(ActiveHandle.IsValid())
 			{
-				UE_LOG(LogTemp, Log, TEXT("Applied effect to self: %s"), *EffectClass->GetName());
+				UE_LOG(LogARPG, Log, TEXT("Applied effect to self: %s"), *EffectClass->GetName());
 			}
 		}
 	}
@@ -233,30 +234,32 @@ void UDiaGameplayAbility::ExecuteAbilityLogic(const FGameplayAbilitySpecHandle H
 
 void UDiaGameplayAbility::RunNextStep()
 {
-	UE_LOG(LogTemp, Log, TEXT("Running step %d"), CurrentStepIndex);
+	UE_LOG(LogARPG, Log, TEXT("Running step %d"), CurrentStepIndex);
 	if (CurrentStepIndex >= SkillData.Steps.Num())
 	{
 		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("Current step type: %s"), *SkillData.Steps[CurrentStepIndex].GetScriptStruct()->GetName());
+	UE_LOG(LogARPG, Log, TEXT("Current step type: %s"), *SkillData.Steps[CurrentStepIndex].GetScriptStruct()->GetName());
 	FInstancedStruct& CurrentStep = SkillData.Steps[CurrentStepIndex];
 	for (UDiaSkillStepExecutor* Executor : StepExecutors)
 	{
 		if (Executor && Executor->CanExecute(CurrentStep))
 		{
-			// 한 번 실행된 후에는 다음 스텝으로 넘어가지 않도록 반환
-			Executor->Execute(CurrentStep, this, ExecutionContext, [this]()
-			{
-				CurrentStepIndex++;
-				RunNextStep();
-			});
+			FDiaSkillStepFinishedDelegate StepFinished;
+			StepFinished.BindUObject(this, &ThisClass::HandleCurrentStepFinished);
+			Executor->Execute(CurrentStep, this, ExecutionContext, StepFinished);
 			return; 
 		}
 	}
 
 	// 실행할 수 있는 Executor가 없는 경우에도 다음 스텝으로 넘어감
+	HandleCurrentStepFinished();
+}
+
+void UDiaGameplayAbility::HandleCurrentStepFinished()
+{
 	CurrentStepIndex++;
 	RunNextStep();
 }
@@ -376,11 +379,11 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 #if WITH_EDITOR
 		if (AbilityMontage)
 		{
-			UE_LOG(LogTemp, Log, TEXT("Loaded AbilityMontage: %s"), *AbilityMontage->GetName());
+			UE_LOG(LogARPG, Log, TEXT("Loaded AbilityMontage: %s"), *AbilityMontage->GetName());
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("SkillData.CastAnimation is not valid"));
+			UE_LOG(LogARPG, Warning, TEXT("SkillData.CastAnimation is not valid"));
 		}
 
 #endif
@@ -581,7 +584,7 @@ void UDiaGameplayAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle, con
 
 		ASC->ApplyGameplayEffectSpecToSelf(*Spec);
 
-		//UE_LOG(LogTemp, Log, TEXT("Applied Mana Cost: -%f (Current Mana: %f)"), manaCost, 
+		//UE_LOG(LogARPG, Log, TEXT("Applied Mana Cost: -%f (Current Mana: %f)"), manaCost, 
 		//	ASC->GetNumericAttribute(UDiaAttributeSet::GetManaAttribute()));
 	}
 }
@@ -665,7 +668,7 @@ void UDiaGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
 		// SetByCallerTagMagnitudes에서 쿨다운 태그와 Duration 가져오기
 		for (const auto& Pair : AbilitySpec->SetByCallerTagMagnitudes)
 		{
-			UE_LOG(LogTemp, Log, TEXT("Checking SetByCallerTag: %s, GetTag : %s"), *Pair.Key.ToString(), *FDiaGameplayTags::Get().CoolDown_GetTag(SkillData.SkillID).ToString());
+			UE_LOG(LogARPG, Log, TEXT("Checking SetByCallerTag: %s, GetTag : %s"), *Pair.Key.ToString(), *FDiaGameplayTags::Get().CoolDown_GetTag(SkillData.SkillID).ToString());
 			if (Pair.Key.MatchesTagExact(FDiaGameplayTags::Get().CoolDown_GetTag(SkillData.SkillID)))
 			{
 				CooldownTag = Pair.Key;
@@ -675,15 +678,15 @@ void UDiaGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
 		}
 	}
 	
-	UE_LOG(LogTemp, Log, TEXT("[ApplyCooldown] Found CooldownTag: %s, Base Duration: %.2f"), *CooldownTag.ToString(), cooldownDuration);
+	UE_LOG(LogARPG, Log, TEXT("[ApplyCooldown] Found CooldownTag: %s, Base Duration: %.2f"), *CooldownTag.ToString(), cooldownDuration);
 
 	cooldownDuration = FMath::Max(cooldownDuration * ModifierRuntime.CDRP, 0.f); // Duration이 음수인 경우 0으로 보정
 
-	UE_LOG(LogTemp, Log, TEXT("[ApplyCooldown] SkillID: %d, CooldownTag: %s, Duration: %.2f"), 
+	UE_LOG(LogARPG, Log, TEXT("[ApplyCooldown] SkillID: %d, CooldownTag: %s, Duration: %.2f"), 
 		AbilitySpec->InputID, *CooldownTag.ToString(), cooldownDuration);
 	if (!CooldownTag.IsValid())
 	{
-		UE_LOG(LogTemp, Error, TEXT("[ApplyCooldown] No cooldown tag found in Spec for SkillID: %d"), AbilitySpec->InputID);
+		UE_LOG(LogARPG, Error, TEXT("[ApplyCooldown] No cooldown tag found in Spec for SkillID: %d"), AbilitySpec->InputID);
 		return;
 	}
 
@@ -700,7 +703,7 @@ void UDiaGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
 		// 적용
 		ASC->ApplyGameplayEffectSpecToSelf(*Spec);
 		
-		//UE_LOG(LogTemp, Log, TEXT("[ApplyCooldown] Applied cooldown for SkillID: %d, Duration: %.2f, Tag: %s"), 
+		//UE_LOG(LogARPG, Log, TEXT("[ApplyCooldown] Applied cooldown for SkillID: %d, Duration: %.2f, Tag: %s"), 
 		//	AbilitySpec->InputID, cooldownDuration, *CooldownTag.ToString());
 	}
 }

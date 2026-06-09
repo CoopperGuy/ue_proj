@@ -15,9 +15,6 @@
 	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
 	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
 
-DECLARE_LOG_CATEGORY_EXTERN(LogARPGAttribute, Log, All);
-
-
 UCLASS()
 class ARPG_API UDiaAttributeSet : public UAttributeSet
 {

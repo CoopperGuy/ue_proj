@@ -6,9 +6,7 @@
 #include "AbilitySystemComponent.h"
 #include "DiaBaseCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
-
-DEFINE_LOG_CATEGORY(LogARPGAttribute);
+#include "Logging/ARPGLogChannels.h"
 
 
 TMap<FGameplayTag, FGameplayAttribute> UDiaAttributeSet::AttributeTagMap;
@@ -112,7 +110,7 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 		}
 	}else    if (Data.EvaluatedData.Attribute == GetAttackPowerAttribute())
 	{
-		UE_LOG(LogTemp, Warning,
+		UE_LOG(LogARPGAttribute, Verbose,
 			TEXT("PostGameplayEffectExecute AttackPower: Delta=%f, NewValue=%f"),
 			DeltaValue, GetAttackPower());
 	}

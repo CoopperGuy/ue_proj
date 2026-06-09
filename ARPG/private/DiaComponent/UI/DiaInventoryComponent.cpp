@@ -8,6 +8,7 @@
 #include "UI/Item/ItemWidget.h"
 #include "UI/Inventory/MainInventory.h"
 #include "Utils/InventoryUtils.h"
+#include "Logging/ARPGLogChannels.h"
 
 UDiaInventoryComponent::UDiaInventoryComponent()
 	:InventoryGrid(GridWidth, GridHeight)
@@ -66,7 +67,7 @@ bool UDiaInventoryComponent::RequestMoveItem(const FGuid& InstanceID, int32 Dest
 	if (!ItemInfo)
 	{
 #ifdef UE_EDITOR
-		UE_LOG(LogTemp, Warning, TEXT("MoveItem: Item with InstanceID %s not found."), *InstanceID.ToString());
+		UE_LOG(LogARPG, Warning, TEXT("MoveItem: Item with InstanceID %s not found."), *InstanceID.ToString());
 #endif // UE_EDITOR
 		return false;
 	}
@@ -80,7 +81,7 @@ bool UDiaInventoryComponent::RequestMoveItem(const FGuid& InstanceID, int32 Dest
 		ItemWidget->SetRenderOpacity(1.0f);
 		InventoryWidget->UpdateItemPosition(ItemWidget, DestX, DestY);
 #ifdef UE_EDITOR
-		UE_LOG(LogTemp, Log, TEXT("Item moved to new position: (%d, %d)"), DestX, DestY);
+		UE_LOG(LogARPG, Log, TEXT("Item moved to new position: (%d, %d)"), DestX, DestY);
 #endif
 		return true;
 	}
@@ -100,7 +101,7 @@ bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID, UMainInventory*
 	{
 		if (InvenWidget->RemoveContainItem(InstanceID))
 		{
-			UE_LOG(LogTemp, Log, TEXT("Item successfully removed from inventory: %s"), *InstanceID.ToString());
+			UE_LOG(LogARPG, Log, TEXT("Item successfully removed from inventory: %s"), *InstanceID.ToString());
 			return true;
 		}
 	}
@@ -127,7 +128,7 @@ bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, i
 		PosY + ItemHeight > GetGridHeight())
 	{
 #ifdef UE_EDITOR
-		UE_LOG(LogTemp, Warning, TEXT("Cannot place item at (%d, %d): Out of bounds."), PosX, PosY);
+		UE_LOG(LogARPG, Warning, TEXT("Cannot place item at (%d, %d): Out of bounds."), PosX, PosY);
 #endif // UE_EDITOR
 		return false;
 	}
@@ -143,7 +144,7 @@ bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, i
 				if (InventoryGrid.Cells[CellIndex]) // 셀이 이미 점유됨
 				{
 #ifdef UE_EDITOR
-					UE_LOG(LogTemp, Warning, TEXT("Cannot place item at (%d, %d) : Cell(% d, % d) is already occupied."), PosX, PosY, X, Y);
+					UE_LOG(LogARPG, Warning, TEXT("Cannot place item at (%d, %d) : Cell(% d, % d) is already occupied."), PosX, PosY, X, Y);
 #endif // UE_EDITOR
 					return false;
 				}
@@ -187,7 +188,7 @@ bool UDiaInventoryComponent::ClearGrid(int32 ItemWidth, int32 ItemHeight, int32 
 			else
 			{
 #ifdef UE_EDITOR
-				UE_LOG(LogTemp, Warning, TEXT("ClearGrid: CellIndex %d outof bounds."), CellIndex);
+				UE_LOG(LogARPG, Warning, TEXT("ClearGrid: CellIndex %d outof bounds."), CellIndex);
 #endif // UE_EDITOR
 					return false;
 			}

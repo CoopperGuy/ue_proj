@@ -9,6 +9,7 @@
 #include "DiaComponent/Skill/DiaSkillVariant.h"
 #include "DiaComponent/DiaSkillManagerComponent.h"
 #include "GAS/DiaGASHelper.h"
+#include "Logging/ARPGLogChannels.h"
 
 UDiaProjectileAbility::UDiaProjectileAbility()
 {
@@ -45,10 +46,10 @@ void UDiaProjectileAbility::ActivateAbility(const FGameplayAbilitySpecHandle Han
 void UDiaProjectileAbility::OnSpawned(AActor* SpawnedProjectile)
 {
 	ADiaProjectile* Projectile = Cast<ADiaProjectile>(SpawnedProjectile);
-	UE_LOG(LogTemp, Log, TEXT("DiaProjectileAbility::OnSpawned - Projectile spawned"));
+	ARPG_SKILL_VLOG(TEXT("SpawnedActor=%s"), *GetNameSafe(SpawnedProjectile));
 	if (Projectile)
 	{
-		UE_LOG(LogTemp, Log, TEXT("DiaProjectileAbility::OnSpawned - Projectile spawned successfully"));
+		ARPG_SKILL_VLOG(TEXT("Projectile initialized. Projectile=%s, SkillID=%d"), *GetNameSafe(Projectile), SkillData.SkillID);
 		const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
 		ACharacter* Character = Cast<ACharacter>(ActorInfo.AvatarActor.Get());
 		if (Character)
@@ -81,7 +82,7 @@ void UDiaProjectileAbility::OnSpawned(AActor* SpawnedProjectile)
 
 void UDiaProjectileAbility::OnDidNotSpawn(AActor* SpawnedProjectile)
 {
-	UE_LOG(LogTemp, Warning, TEXT("DiaProjectileAbility::OnDidNotSpawn - Projectile failed to spawn"));
+	ARPG_SKILL_LOG(Warning, TEXT("Projectile failed to spawn"));
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
 
@@ -90,7 +91,7 @@ void UDiaProjectileAbility::SpawnProjectile()
 	const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
 	if (!ProjectileClass || !ActorInfo.AvatarActor.IsValid())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaProjectileAbility::SpawnProjectile - Cannot spawn projectile. SkillID: %d, ProjectileClass: %s, AvatarValid: %s"),
+		ARPG_SKILL_LOG(Warning, TEXT("Cannot spawn projectile. SkillID=%d, ProjectileClass=%s, AvatarValid=%s"),
 			SkillData.SkillID,
 			*GetNameSafe(ProjectileClass),
 			ActorInfo.AvatarActor.IsValid() ? TEXT("true") : TEXT("false"));
@@ -102,7 +103,7 @@ void UDiaProjectileAbility::SpawnProjectile()
 	ACharacter* Character = Cast<ACharacter>(ActorInfo.AvatarActor.Get());
 	if (!Character)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("DiaProjectileAbility::SpawnProjectile - Cannot spawn projectile: not a character"));
+		ARPG_SKILL_LOG(Warning, TEXT("Cannot spawn projectile: not a character"));
 		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 
 		return;
@@ -131,7 +132,7 @@ void UDiaProjectileAbility::SpawnProjectile()
 	const float SpawnDistance = FMath::Max(ProjectileOffset.Size(), MinimumRange);
 	FVector SpawnLocation = CharacterLocation + LaunchDirection * SpawnDistance;
 
-	UE_LOG(LogTemp, Log, TEXT("DiaProjectileAbility::SpawnProjectile - SkillID: %d, Class: %s, Location: %s, Direction: %s"),
+	ARPG_SKILL_VLOG(TEXT("Spawn projectile. SkillID=%d, Class=%s, Location=%s, Direction=%s"),
 		SkillData.SkillID,
 		*GetNameSafe(ProjectileClass),
 		*SpawnLocation.ToString(),
@@ -170,7 +171,7 @@ void UDiaProjectileAbility::ProcessSkillDelayEvents()
 {
 	Super::ProcessSkillDelayEvents();
 
-	UE_LOG(LogTemp, Log, TEXT("DiaProjectileAbility::ProcessSkillDelayEvents - SkillID: %d"), SkillData.SkillID);
+	ARPG_SKILL_VLOG(TEXT("ProcessSkillDelayEvents. SkillID=%d"), SkillData.SkillID);
 
 	// Spawn projectile(s) immediately after ability activation
 	SpawnProjectile();

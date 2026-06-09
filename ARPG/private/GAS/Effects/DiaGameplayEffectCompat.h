@@ -26,4 +26,4 @@ namespace DiaGameplayEffectCompat
 				static_cast<uint64>(StackingType));
 		}
 	}
-}
+}  

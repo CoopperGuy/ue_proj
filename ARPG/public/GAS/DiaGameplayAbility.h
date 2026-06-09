@@ -156,6 +156,7 @@ protected:
 
 	int32 CurrentStepIndex = 0;
 	void RunNextStep();
+	void HandleCurrentStepFinished();
 
 protected:
 	// Current playing montage (renamed to avoid shadowing)

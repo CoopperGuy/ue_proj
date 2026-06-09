@@ -159,8 +159,6 @@ void ADiaMeleeSkill::ApplyDamage(AActor* Target)
         );
     }
     
-    // 상태 이상 효과 적용
-    ApplyStatusEffectsToTarget(Target);
 }
 
 

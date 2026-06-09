@@ -3,6 +3,7 @@
 #include "Engine/Engine.h"
 #include "System/ItemSubsystem.h"
 #include "UI/Item/ItemWidget.h"
+#include "Logging/ARPGLogChannels.h"
 
 bool FInventoryUtils::CanPlaceItemAt(UDiaInventoryComponent* InventoryComponent, int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
 {
@@ -107,28 +108,28 @@ UItemWidget* FInventoryUtils::CreateItemWidget(UWorld* WorldContext, const FInve
 {
     if (!IsValid(WorldContext))
     {
-        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - WorldContext is null"));
+        UE_LOG(LogARPG, Warning, TEXT("FInventoryUtils::CreateItemWidget - WorldContext is null"));
         return nullptr;
     }
 
     UWorld* World = WorldContext->GetWorld();
     if (!IsValid(World))
     {
-        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - World is null"));
+        UE_LOG(LogARPG, Warning, TEXT("FInventoryUtils::CreateItemWidget - World is null"));
         return nullptr;
     }
 
     UGameInstance* GameInstance = World->GetGameInstance();
     if (!IsValid(GameInstance))
     {
-        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - GameInstance is null"));
+        UE_LOG(LogARPG, Warning, TEXT("FInventoryUtils::CreateItemWidget - GameInstance is null"));
         return nullptr;
     }
 
     UItemSubsystem* ItemSubsystem = GameInstance->GetSubsystem<UItemSubsystem>();
     if (!IsValid(ItemSubsystem))
     {
-        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - ItemSubsystem is null"));
+        UE_LOG(LogARPG, Warning, TEXT("FInventoryUtils::CreateItemWidget - ItemSubsystem is null"));
         return nullptr;
     }
 
@@ -146,12 +147,12 @@ UItemWidget* FInventoryUtils::CreateItemWidget(UWorld* WorldContext, const FInve
 
     if (!IsValid(ItemWidget))
     {
-        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - Failed to create ItemWidget for item: %s"),
+        UE_LOG(LogARPG, Warning, TEXT("FInventoryUtils::CreateItemWidget - Failed to create ItemWidget for item: %s"),
             *ItemData->ItemInstance.BaseItem.ItemID.ToString());
         return nullptr;
     }
 
-    UE_LOG(LogTemp, Log, TEXT("FInventoryUtils::CreateItemWidget - Successfully created ItemWidget for item: %s"), 
+    UE_LOG(LogARPG, Log, TEXT("FInventoryUtils::CreateItemWidget - Successfully created ItemWidget for item: %s"), 
            *ItemData->ItemInstance.BaseItem.ItemID.ToString());
 
     return ItemWidget;
@@ -160,28 +161,28 @@ UItemWidget* FInventoryUtils::CreateItemWidget(UUserWidget* WidgetContext, const
 {
     if (!IsValid(WidgetContext))
     {
-        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - WidgetContext is null"));
+        UE_LOG(LogARPG, Warning, TEXT("FInventoryUtils::CreateItemWidget - WidgetContext is null"));
         return nullptr;
     }
 
     UWorld* World = WidgetContext->GetWorld();
     if (!IsValid(World))
     {
-        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - World is null"));
+        UE_LOG(LogARPG, Warning, TEXT("FInventoryUtils::CreateItemWidget - World is null"));
         return nullptr;
     }
 
     UGameInstance* GameInstance = World->GetGameInstance();
     if (!IsValid(GameInstance))
     {
-        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - GameInstance is null"));
+        UE_LOG(LogARPG, Warning, TEXT("FInventoryUtils::CreateItemWidget - GameInstance is null"));
         return nullptr;
     }
 
     UItemSubsystem* ItemSubsystem = GameInstance->GetSubsystem<UItemSubsystem>();
     if (!IsValid(ItemSubsystem))
     {
-        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - ItemSubsystem is null"));
+        UE_LOG(LogARPG, Warning, TEXT("FInventoryUtils::CreateItemWidget - ItemSubsystem is null"));
         return nullptr;
     }
 
@@ -199,12 +200,12 @@ UItemWidget* FInventoryUtils::CreateItemWidget(UUserWidget* WidgetContext, const
 
     if (!IsValid(ItemWidget))
     {
-        UE_LOG(LogTemp, Warning, TEXT("FInventoryUtils::CreateItemWidget - Failed to create ItemWidget for item: %s"),
+        UE_LOG(LogARPG, Warning, TEXT("FInventoryUtils::CreateItemWidget - Failed to create ItemWidget for item: %s"),
             *ItemData->ItemInstance.BaseItem.ItemID.ToString());
         return nullptr;
     }
 
-    UE_LOG(LogTemp, Log, TEXT("FInventoryUtils::CreateItemWidget - Successfully created ItemWidget for item: %s"),
+    UE_LOG(LogARPG, Log, TEXT("FInventoryUtils::CreateItemWidget - Successfully created ItemWidget for item: %s"),
         *ItemData->ItemInstance.BaseItem.ItemID.ToString());
 
     return ItemWidget;

@@ -10,6 +10,7 @@
 #include "GAS/DiaAttributeSet.h"
 #include "Abilities/Tasks/AbilityTask_ApplyRootMotionMoveToForce.h"
 #include <AbilitySystemBlueprintLibrary.h>
+#include "Logging/ARPGLogChannels.h"
 
 UDiaChargeAbility::UDiaChargeAbility()
 {
@@ -184,7 +185,7 @@ void UDiaChargeAbility::OnDashFinished()
 		{
 			if (AActor* HitActor = Hit.GetActor())
 			{
-				UE_LOG(LogTemp, Log, TEXT("[ChargeAbility] Hit: %s at %s"),
+				ARPG_SKILL_VLOG(TEXT("Charge hit. Target=%s, ImpactPoint=%s"),
 					*HitActor->GetName(), *Hit.ImpactPoint.ToString());
 
 				ApplyHitToActorsInPath(HitActor);

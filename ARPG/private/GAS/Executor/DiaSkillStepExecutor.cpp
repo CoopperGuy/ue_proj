@@ -13,6 +13,7 @@
 #include "Abilities/Tasks/AbilityTask_ApplyRootMotionMoveToForce.h"
 
 #include "Skill/DiaSkillActor.h"
+#include "Logging/ARPGLogChannels.h"
 
 bool UDiaChargeStepExecutor::CanExecute(const FInstancedStruct& StepData) const
 {
@@ -23,26 +24,26 @@ bool UDiaChargeStepExecutor::CanExecute(const FInstancedStruct& StepData) const
     return false;
 }
 
-void UDiaChargeStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGameplayAbility* Ability, FDiaSkillExecutionContext& Context, TFunction<void()> OnFinished)
+void UDiaChargeStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGameplayAbility* Ability, FDiaSkillExecutionContext& Context, FDiaSkillStepFinishedDelegate OnFinished)
 {
 	const FGASChargeStepData* CharStep = StepData.GetPtr<FGASChargeStepData>();
 	if (!CharStep || !Ability)
 	{
-		OnFinished();
+		OnFinished.ExecuteIfBound();
 		return;
 	}
 
 	const FGASChargeData& ChargeData = CharStep->ChargeData;
 	if (!ChargeData.PathOffsetCurve)
 	{
-		OnFinished();
+		OnFinished.ExecuteIfBound();
 		return;
 	}
 
 	CachedAbility = Ability;
 	const FGameplayAbilityActorInfo& CurrentActorInfo = CachedAbility->GetActorInfo();
 
-	CacheOnFinished = MoveTemp(OnFinished);
+	CacheOnFinished = OnFinished;
 
 
 	EndLoc = CalcSweepPosition(CurrentActorInfo);
@@ -68,7 +69,7 @@ void UDiaChargeStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGamep
 	}
 	else
 	{
-		CacheOnFinished();
+		CacheOnFinished.ExecuteIfBound();
 	}
 	Context.LastStepLocation = EndLoc;
 }
@@ -158,7 +159,7 @@ void UDiaChargeStepExecutor::OnDashFinished()
 		{
 			if (AActor* HitActor = Hit.GetActor())
 			{
-				UE_LOG(LogTemp, Log, TEXT("[ChargeAbility] Hit: %s at %s"),
+				UE_LOG(LogARPG, Log, TEXT("[ChargeAbility] Hit: %s at %s"),
 					*HitActor->GetName(), *Hit.ImpactPoint.ToString());
 
 				//ApplyHitToActorsInPath(HitActor);
@@ -166,9 +167,10 @@ void UDiaChargeStepExecutor::OnDashFinished()
 		}
 	}
 
-	if(CacheOnFinished)
+	if(CacheOnFinished.IsBound())
 	{
-		CacheOnFinished();
+		CacheOnFinished.ExecuteIfBound();
+		CacheOnFinished.Unbind();
 	}
 }
 
@@ -183,26 +185,26 @@ bool UDiaGroundSpawnStepExecutor::CanExecute(const FInstancedStruct& StepData) c
     return false;
 }
 
-void UDiaGroundSpawnStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGameplayAbility* Ability, FDiaSkillExecutionContext& Context, TFunction<void()> OnFinished)
+void UDiaGroundSpawnStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGameplayAbility* Ability, FDiaSkillExecutionContext& Context, FDiaSkillStepFinishedDelegate OnFinished)
 {
 	const FGASGroundSpawnStepData* GroundStep = StepData.GetPtr<FGASGroundSpawnStepData>();
 	if (!GroundStep || !Ability)
 	{
-		OnFinished();
+		OnFinished.ExecuteIfBound();
 		return;
 	}
 
 	const FGASGroundData& GroundData = GroundStep->GroundData;
 	if (!GroundData.SkillActorClass)
 	{
-		OnFinished();
+		OnFinished.ExecuteIfBound();
 		return;
 	}
 
 	ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(Ability->GetAvatarActorFromActorInfo());
 	if (!Character)
 	{
-		OnFinished();
+		OnFinished.ExecuteIfBound();
 		return;
 	}
 
@@ -236,19 +238,38 @@ void UDiaGroundSpawnStepExecutor::Execute(const FInstancedStruct& StepData, UDia
     UDiaSkillManagerComponent* DiaSkillManagerComp = Character->FindComponentByClass<UDiaSkillManagerComponent>();
 	if (DiaSkillManagerComp)
 	{
-		DiaSkillManagerComp->SpawnSkillActorUseVariants(VariantContext, Ability);
+		CachedExecutionContext = &Context;
+		CachedVariantContext = VariantContext;
+		CachedOnFinished = OnFinished;
 
-		for (ADiaSkillActor* SpawnedActor : VariantContext.SkillActors)
+		FDiaSkillSpawnFinishedDelegate SpawnFinished;
+		SpawnFinished.BindUObject(this, &ThisClass::OnVariantSpawnFinished);
+		DiaSkillManagerComp->SpawnSkillActorUseVariants(CachedVariantContext, Ability, SpawnFinished);
+		return;
+	}
+
+	OnFinished.ExecuteIfBound();
+}
+
+void UDiaGroundSpawnStepExecutor::OnVariantSpawnFinished()
+{
+	if (CachedExecutionContext)
+	{
+		for (ADiaSkillActor* SpawnedActor : CachedVariantContext.SkillActors)
 		{
 			if (SpawnedActor)
 			{
-				Context.SpawnedActors.Add(SpawnedActor);
-				Context.LastStepLocation = SpawnedActor->GetActorLocation();
+				CachedExecutionContext->SpawnedActors.Add(SpawnedActor);
+				CachedExecutionContext->LastStepLocation = SpawnedActor->GetActorLocation();
 			}
 		}
 	}
 
-	OnFinished();
+	CachedExecutionContext = nullptr;
+	CachedVariantContext = FDiaSkillVariantContext();
+	FDiaSkillStepFinishedDelegate Finished = CachedOnFinished;
+	CachedOnFinished.Unbind();
+	Finished.ExecuteIfBound();
 }
 
 bool UDiaMeleeSpawnStepExecutor::CanExecute(const FInstancedStruct& StepData) const
@@ -261,8 +282,9 @@ bool UDiaMeleeSpawnStepExecutor::CanExecute(const FInstancedStruct& StepData) co
 	return false;
 }
 
-void UDiaMeleeSpawnStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGameplayAbility* Ability, FDiaSkillExecutionContext& Context, TFunction<void()> OnFinished)
+void UDiaMeleeSpawnStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGameplayAbility* Ability, FDiaSkillExecutionContext& Context, FDiaSkillStepFinishedDelegate OnFinished)
 {
+	OnFinished.ExecuteIfBound();
 }
 
 bool UDiaProjectileSpawnStepExecutor::CanExecute(const FInstancedStruct& StepData) const
@@ -275,18 +297,18 @@ bool UDiaProjectileSpawnStepExecutor::CanExecute(const FInstancedStruct& StepDat
 	return false;
 }
 
-void UDiaProjectileSpawnStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGameplayAbility* Ability, FDiaSkillExecutionContext& Context, TFunction<void()> OnFinished)
+void UDiaProjectileSpawnStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGameplayAbility* Ability, FDiaSkillExecutionContext& Context, FDiaSkillStepFinishedDelegate OnFinished)
 {
 	if (!Ability)
 	{
-		OnFinished();
+		OnFinished.ExecuteIfBound();
 		return;
 	}
 
 	const FGASProjectileSpawnStepData* ProjectileStep = StepData.GetPtr<FGASProjectileSpawnStepData>();
 	if (!ProjectileStep)
 	{
-		OnFinished();
+		OnFinished.ExecuteIfBound();
 		return;
 	}
 
@@ -295,21 +317,21 @@ void UDiaProjectileSpawnStepExecutor::Execute(const FInstancedStruct& StepData, 
 
 	if (!ActorInfo.AvatarActor.IsValid() || !ProjectileData->SkillActorClass)
 	{
-		OnFinished();
+		OnFinished.ExecuteIfBound();
 		return;
 	}
 
 	ACharacter* Character = Cast<ACharacter>(ActorInfo.AvatarActor.Get());
 	if (!Character)
 	{
-		OnFinished();
+		OnFinished.ExecuteIfBound();
 		return;
 	}
 
 	UWorld* World = Character->GetWorld();
 	if (!World)
 	{
-		OnFinished();
+		OnFinished.ExecuteIfBound();
 		return;
 	}
 
@@ -351,25 +373,44 @@ void UDiaProjectileSpawnStepExecutor::Execute(const FInstancedStruct& StepData, 
 		UDiaSkillManagerComponent* DiaSkillManagerComp = Character->FindComponentByClass<UDiaSkillManagerComponent>();
 		if (!DiaSkillManagerComp)
 		{
-			OnFinished();
+			OnFinished.ExecuteIfBound();
 			return;
 		}
 
-		DiaSkillManagerComp->SpawnSkillActorUseVariants(VariantContext, Ability);
+		CachedExecutionContext = &Context;
+		CachedVariantContext = VariantContext;
+		CachedOnFinished = OnFinished;
 
-		for (ADiaSkillActor* SpawnedActor : VariantContext.SkillActors)
+		FDiaSkillSpawnFinishedDelegate SpawnFinished;
+		SpawnFinished.BindUObject(this, &ThisClass::OnVariantSpawnFinished);
+		DiaSkillManagerComp->SpawnSkillActorUseVariants(CachedVariantContext, Ability, SpawnFinished);
+
+		DrawDebugLine(World, CharacterLocation, CharacterLocation + LaunchDirection * 500.0f, FColor::Red, false, 1.5f, 0, 2.0f); // 캐릭터→LaunchDirection
+		return;
+	}
+
+	OnFinished.ExecuteIfBound();
+}
+
+void UDiaProjectileSpawnStepExecutor::OnVariantSpawnFinished()
+{
+	if (CachedExecutionContext)
+	{
+		for (ADiaSkillActor* SpawnedActor : CachedVariantContext.SkillActors)
 		{
 			if (SpawnedActor)
 			{
-				Context.SpawnedActors.Add(SpawnedActor);
-				Context.LastStepLocation = SpawnedActor->GetActorLocation();
+				CachedExecutionContext->SpawnedActors.Add(SpawnedActor);
+				CachedExecutionContext->LastStepLocation = SpawnedActor->GetActorLocation();
 			}
 		}
-
-		DrawDebugLine(World, CharacterLocation, CharacterLocation + LaunchDirection * 500.0f, FColor::Red, false, 1.5f, 0, 2.0f); // 캐릭터→LaunchDirection
 	}
 
-	OnFinished();
+	CachedExecutionContext = nullptr;
+	CachedVariantContext = FDiaSkillVariantContext();
+	FDiaSkillStepFinishedDelegate Finished = CachedOnFinished;
+	CachedOnFinished.Unbind();
+	Finished.ExecuteIfBound();
 }
 
 FVector UDiaProjectileSpawnStepExecutor::CalcSpawnLocation(const FGameplayAbilityActorInfo& ActorInfo, const FGASProjectileData* ProjectileData)

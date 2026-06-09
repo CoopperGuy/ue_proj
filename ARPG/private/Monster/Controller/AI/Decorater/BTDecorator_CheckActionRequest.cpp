@@ -12,6 +12,7 @@
 
 #include "Monster/Controller/DiaAIController.h"
 #include "Monster/DiaMonster.h"
+#include "Logging/ARPGLogChannels.h"
 
 UBTDecorator_CheckActionRequest::UBTDecorator_CheckActionRequest()
 {
@@ -67,7 +68,7 @@ bool UBTDecorator_CheckActionRequest::CalculateRawConditionValue(UBehaviorTreeCo
 	
 	if (!bCanActivate)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[CheckActionRequest] SkillID %d is requested but cannot be activated (cooldown or other reason)"), ActionRequest);
+		UE_LOG(LogARPG, Warning, TEXT("[CheckActionRequest] SkillID %d is requested but cannot be activated (cooldown or other reason)"), ActionRequest);
 	}
 	
 	return bCanActivate;

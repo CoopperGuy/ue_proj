@@ -34,6 +34,7 @@
 #include "GAS/DiaGameplayTags.h"
 
 #include "UI/HUDWidget.h"
+#include "Logging/ARPGLogChannels.h"
 
 ADiaMonster::ADiaMonster()
 {
@@ -71,7 +72,7 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 
 		if (!MonsterInfo.MonsterMesh.IsNull())
 		{
-			//UE_LOG(LogTemp, Log, TEXT("몬스터 [%s] 메시 로드 시도: %s"), *GetName(), *MonsterInfo.MonsterMesh.ToString());
+			//UE_LOG(LogARPG, Log, TEXT("몬스터 [%s] 메시 로드 시도: %s"), *GetName(), *MonsterInfo.MonsterMesh.ToString());
 			USkeletalMesh* MonsterMeshAsset = MonsterInfo.MonsterMesh.LoadSynchronous();
 			if (MonsterMeshAsset)
 			{
@@ -81,17 +82,17 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 				// 중요: 메시 설정 후 강제 업데이트
 				MeshComp->RecreateRenderState_Concurrent();
 
-				//UE_LOG(LogTemp, Log, TEXT("몬스터 [%s] 메시 설정 완료: %s"), *GetName(), *MonsterMeshAsset->GetName());
+				//UE_LOG(LogARPG, Log, TEXT("몬스터 [%s] 메시 설정 완료: %s"), *GetName(), *MonsterMeshAsset->GetName());
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s] 메시 로드 실패: %s"), *GetName(), *MonsterInfo.MonsterMesh.ToString());
+				UE_LOG(LogARPG, Warning, TEXT("몬스터 [%s] 메시 로드 실패: %s"), *GetName(), *MonsterInfo.MonsterMesh.ToString());
 			}
 
 			if (MonsterInfo.AnimationInstance)
 			{
 				MeshComp->SetAnimInstanceClass(MonsterInfo.AnimationInstance);
-				UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s] 애니메이션 클래스 설정 완료"), *GetName());
+				UE_LOG(LogARPG, Verbose, TEXT("몬스터 [%s] 애니메이션 클래스 설정 완료"), *GetName());
 			}
 		}
 	}
@@ -107,7 +108,7 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 			if (BlackboardData)
 			{
 				AIController->InitBlackBoardData(this, BlackboardData);
-				UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s] 블랙보드 설정 완료"), *GetName());
+				UE_LOG(LogARPG, Verbose, TEXT("몬스터 [%s] 블랙보드 설정 완료"), *GetName());
 			}
 		}
 		
@@ -118,7 +119,7 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 			if (BehaviorTreeAsset)
 			{
 				AIController->InitBehaviorTree(BehaviorTreeAsset);
-				UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s] 비헤이비어 트리 실행 시작"), *GetName());
+				UE_LOG(LogARPG, Verbose, TEXT("몬스터 [%s] 비헤이비어 트리 실행 시작"), *GetName());
 			}
 		}
 		
@@ -127,7 +128,7 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s]에 유효한 AI 컨트롤러가 없습니다"), *GetName());
+		UE_LOG(LogARPG, Warning, TEXT("몬스터 [%s]에 유효한 AI 컨트롤러가 없습니다"), *GetName());
 	}
 	
 	// 기본 AI 활성화
@@ -213,7 +214,7 @@ void ADiaMonster::ResetMonster()
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECR_Ignore);
 
-	UE_LOG(LogTemp, Verbose, TEXT("몬스터 [%s] 상태 리셋 완료"), *GetName());
+	UE_LOG(LogARPG, Verbose, TEXT("몬스터 [%s] 상태 리셋 완료"), *GetName());
 }
 
 void ADiaMonster::BeginPlay()
@@ -237,7 +238,7 @@ void ADiaMonster::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 float ADiaMonster::TakeDamage(float DamageAmount, const FDamageEvent& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	UE_LOG(LogTemp, Log, TEXT("몬스터 [%s]가 %.2f의 피해를 입었습니다."), *GetName(), ActualDamage);
+	UE_LOG(LogARPG, Log, TEXT("몬스터 [%s]가 %.2f의 피해를 입었습니다."), *GetName(), ActualDamage);
 	return ActualDamage;
 }
 
@@ -261,7 +262,7 @@ void ADiaMonster::DropItem(FName DieMonsterID)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("몬스터 [%s] 아이템 드랍 실패: 던전 게임 모드가 유효하지 않음"), *GetName());
+		UE_LOG(LogARPG, Warning, TEXT("몬스터 [%s] 아이템 드랍 실패: 던전 게임 모드가 유효하지 않음"), *GetName());
 	}
 }
 
@@ -305,7 +306,7 @@ void ADiaMonster::UpdateHPGauge(float CurHealth, float MaxHelath)
     // 로그 추가 (디버깅용)
     if (!DungeonGameMode)
     {
-        UE_LOG(LogTemp, Warning, TEXT("UpdateHPGauge: DungeonGameMode is null"));
+        UE_LOG(LogARPG, Warning, TEXT("UpdateHPGauge: DungeonGameMode is null"));
         return;
     }
     
@@ -318,7 +319,7 @@ void ADiaMonster::UpdateHPGauge(float CurHealth, float MaxHelath)
     }
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("UpdateHPGauge: HUD Widget is null"));
+        UE_LOG(LogARPG, Warning, TEXT("UpdateHPGauge: HUD Widget is null"));
     }
 }
 

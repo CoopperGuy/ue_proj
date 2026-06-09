@@ -7,6 +7,7 @@
 #include "Components/Button.h"
 
 #include "Character/DiaCharacter.h"
+#include "Logging/ARPGLogChannels.h"
 
 void USkillSlotWidget::NativeConstruct()
 {
@@ -63,7 +64,7 @@ void USkillSlotWidget::OnApplyButtonClicked()
 	if (!Character)
 		return;
 
-	UE_LOG(LogTemp, Log, TEXT("USkillSlotWidget::OnApplyButtonClicked - Applying SkillID: %d"), SkillID);
+	UE_LOG(LogARPG, Log, TEXT("USkillSlotWidget::OnApplyButtonClicked - Applying SkillID: %d"), SkillID);
 
 	if (SkillInfoObjectPtr->isMainSkill)
 	{
@@ -84,7 +85,7 @@ void USkillSlotWidget::OnCancelButton()
 	if (!Character)
 		return;
 
-	UE_LOG(LogTemp, Log, TEXT("USkillSlotWidget::OnApplyButtonClicked - Applying SkillID: %d"), SkillID);
+	UE_LOG(LogARPG, Log, TEXT("USkillSlotWidget::OnApplyButtonClicked - Applying SkillID: %d"), SkillID);
 
 	if (SkillInfoObjectPtr->isMainSkill)
 	{

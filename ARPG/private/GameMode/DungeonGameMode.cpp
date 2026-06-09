@@ -21,6 +21,7 @@
 #include "System/DiaMapGeneratorSubsystem.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "Logging/ARPGLogChannels.h"
 
 ADungeonGameMode::ADungeonGameMode()
 {
@@ -86,23 +87,25 @@ void ADungeonGameMode::OnRoomCleared(FGuid RoomID)
 }
 
 
-void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData)
+void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData, int32 Level)
 {
 	if (IsValid(SpawnActor))
 	{
 		// 아이템 스폰
 		FVector SpawnLocation = SpawnActor->GetActorLocation();
 		SpawnLocation.Z += 100.f;
+		FTransform SpawnTransform = SpawnActor->GetTransform();
+		SpawnTransform.SetLocation(SpawnLocation);
 
 		ADiaItem* SpawnedItem = GetWorld()->SpawnActorDeferred<ADiaItem>(ADiaItem::StaticClass(),
-			 SpawnActor->GetTransform(), SpawnActor);
+			 SpawnTransform, SpawnActor);
 
-		UE_LOG(LogTemp, Warning, TEXT("Spawned Item at Location: %s"), *SpawnLocation.ToString());
+		UE_LOG(LogARPG, Warning, TEXT("Spawned Item at Location: %s"), *SpawnLocation.ToString());
 
 		if (SpawnedItem)
 		{
-			SpawnedItem->SetItemProperty(ItemData);
-			SpawnedItem->FinishSpawning(SpawnActor->GetTransform());
+			SpawnedItem->SetItemProperty(ItemData, Level);
+			SpawnedItem->FinishSpawning(SpawnTransform);
 			SpawnedItem->DropItem(ItemData);
 		}
 	}
@@ -120,7 +123,7 @@ UHUDWidget* const ADungeonGameMode::GetHUDWidget() const
 	ADiaController* DiaPC = Cast<ADiaController>(PC);
 	if (!DiaPC)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ADungeonGameMode::GetHUDWidget - DiaController is null"));
+		UE_LOG(LogARPG, Warning, TEXT("ADungeonGameMode::GetHUDWidget - DiaController is null"));
 		return nullptr;
 	}
 

@@ -35,8 +35,7 @@ struct ARPG_API FDiaSkillActorSpawnRequest
 	UDiaGameplayAbility* OwningAbility = nullptr;
 	TArray<FGameplayEffectSpecHandle> TargetEffectSpecs;
 	TArray<AActor*> IgnoredActors;
-	float DamageMultiplier = 1.f;
-	int32 PierceCount = 1;
+	FDiaSkillRuntimeParams RuntimeParams;
 	bool bSpawnedByFork = false;
 	bool bLaunch = true;
 	bool bApplyAbilityRemovalTimer = true;

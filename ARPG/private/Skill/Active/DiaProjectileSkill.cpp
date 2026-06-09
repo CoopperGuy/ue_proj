@@ -5,6 +5,7 @@
 #include "Skill/DiaProjectile.h"
 #include "Character/DiaCharacter.h"
 #include "Kismet/GameplayStatics.h"
+#include "Logging/ARPGLogChannels.h"
 
 ADiaProjectileSkill::ADiaProjectileSkill()
 {
@@ -43,7 +44,7 @@ void ADiaProjectileSkill::SpawnProjectile()
 {
 	if (!IsValid(SkillOwner) || !IsValid(ProjectileClass))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("SpawnProjectile Failed: Invalid SkillOwner or ProjectileClass"));
+		ARPG_SKILL_LOG(Warning, TEXT("SpawnProjectile Failed: Invalid SkillOwner or ProjectileClass"));
 		return;
 	}
 
@@ -96,18 +97,18 @@ void ADiaProjectileSkill::SpawnProjectile()
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Failed to cast spawned actor to ADiaProjectile"));
+				ARPG_SKILL_LOG(Warning, TEXT("Failed to cast spawned actor to ADiaProjectile"));
 				NewActor->Destroy();
 			}
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("Failed to begin deferred actor spawn"));
+			ARPG_SKILL_LOG(Warning, TEXT("Failed to begin deferred actor spawn"));
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Failed to get UClass from TSubclassOf"));
+		ARPG_SKILL_LOG(Warning, TEXT("Failed to get UClass from TSubclassOf"));
 	}
 }
 

@@ -3,6 +3,7 @@
 
 #include "UI/CharacterStatus/StatusSet.h"
 #include "Components/TextBlock.h"
+#include "Logging/ARPGLogChannels.h"
 void UStatusSet::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
 	//const UStatusSet* StatusSet = Cast<UStatusSet>(ListItemObject);
@@ -35,7 +36,7 @@ void UStatusSet::SetStatusValue(const FText& NewValue, const FText& NewMaxValue)
 	{
 		StatusValue->SetText(FText::Format(
 			FText::FromString(TEXT("{0}/{1}")),NewValue, NewMaxValue));
-		UE_LOG(LogTemp, Warning, TEXT("SetStatusValue called with MaxValue: %s"), *NewMaxValue.ToString());
+		UE_LOG(LogARPG, Warning, TEXT("SetStatusValue called with MaxValue: %s"), *NewMaxValue.ToString());
 	}
 	else if(StatusItemObjectPtr->bIsPercent)
 	{
@@ -44,7 +45,7 @@ void UStatusSet::SetStatusValue(const FText& NewValue, const FText& NewMaxValue)
 	else
 	{
 		StatusValue->SetText(NewValue);
-		UE_LOG(LogTemp, Warning, TEXT("SetStatusValue called without Value: %s"), *NewValue.ToString());
+		UE_LOG(LogARPG, Warning, TEXT("SetStatusValue called without Value: %s"), *NewValue.ToString());
 	}
 }
 	

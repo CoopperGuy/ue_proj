@@ -8,6 +8,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/DamageEvents.h"
 #include "GameFramework/Controller.h"
+#include "Logging/ARPGLogChannels.h"
 //
 //FDamageResult UDiaDamageCalculator::CalculateDamage(
 //    float BaseDamage,
@@ -90,25 +91,6 @@
 //    // 최종 데미지 설정
 //    Result.FinalDamage = FMath::Max(1.0f, Damage); // 최소 1 데미지 보장
 //    
-//    // 상태 이상 효과 적용
-//    if (RollForStatusEffect(DamageType->StatusEffectChance))
-//    {
-//        UDiaStatusEffectComponent* StatusEffectComp = 
-//            DefenderCharacter->FindComponentByClass<UDiaStatusEffectComponent>();
-//        
-//        if (IsValid(StatusEffectComp))
-//        {
-//            for (TSubclassOf<UDiaStatusEffect> EffectClass : DamageType->StatusEffects)
-//            {
-//                UDiaStatusEffect* NewEffect = StatusEffectComp->AddStatusEffect(EffectClass, -1.0f, -1.0f, DamageDealer);
-//                if (IsValid(NewEffect))
-//                {
-//                    Result.AppliedStatusEffects.Add(NewEffect);
-//                }
-//            }
-//        }
-//    }
-//    
 //    return Result;
 //}
 //
@@ -155,7 +137,7 @@
 //    );
 //    
 //    // 디버그 로그
-//    UE_LOG(LogTemp, Log, TEXT("Damage Applied: %.2f (Base: %.2f, Critical: %s, Blocked: %s)"),
+//    UE_LOG(LogARPG, Log, TEXT("Damage Applied: %.2f (Base: %.2f, Critical: %s, Blocked: %s)"),
 //           ActualDamage, BaseDamage, 
 //           DamageResult.bIsCritical ? TEXT("Yes") : TEXT("No"),
 //           DamageResult.bIsBlocked ? TEXT("Yes") : TEXT("No"));
@@ -245,11 +227,3 @@
 //    return FMath::FRand() < BlockChance;
 //}
 //
-//bool UDiaDamageCalculator::RollForStatusEffect(float StatusEffectChance)
-//{
-//    return FMath::FRand() < StatusEffectChance;
-//}
-//
-//
-
-

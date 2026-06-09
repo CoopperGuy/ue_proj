@@ -11,7 +11,6 @@
 
 class ADiaSkillBase;
 class ADiaProjectileSkill;
-class UDiaStatusEffect;
 class UDiaDamageType;
 class ADiaBaseCharacter;
 
@@ -101,17 +100,6 @@ class ARPG_API UDiaCombatComponent : public UActorComponent
 //	//스킬 소모값 사용
 //	UFUNCTION()
 //	bool ProcessSkillCost(ADiaSkillBase* Skill);
-//
-//	/// <summary>
-//	/// 델리게이트 함수들
-//	/// ->아직 미사용
-//	/// </summary>
-//	/// <param name="StatusEffect"></param>
-//	UFUNCTION()
-//	void OnStatusEffectAdded(UDiaStatusEffect* StatusEffect);
-//
-//	UFUNCTION()
-//	void OnStatusEffectRemoved(UDiaStatusEffect* StatusEffect);
 //
 //	//ui관련 
 //	UFUNCTION()

@@ -9,6 +9,7 @@
 #include "GAS/DiaGameplayAbility.h"
 #include "GAS/DiaGameplayTags.h"
 #include "Skill/DiaSkillActor.h"
+#include "Logging/ARPGLogChannels.h"
 
 void UDiaSkillVariantExecutorService::InitializeExecutorService()
 {
@@ -44,11 +45,13 @@ void UDiaSkillVariantExecutorService::ExecuteSpawnVariants(
 	const TSet<int32>& VariantIDs,
 	const TMap<int32, UDiaSkillVariant*>& VariantCache,
 	FDiaSkillVariantContext& Context,
-	UDiaGameplayAbility* Ability)
+	UDiaGameplayAbility* Ability,
+	FDiaSkillSpawnFinishedDelegate OnFinished)
 {
 	if (!Context.SkillActorClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDiaSkillVariantExecutorService::ExecuteSpawnVariants: SkillActorClass가 유효하지 않습니다."));
+		UE_LOG(LogARPG, Warning, TEXT("UDiaSkillVariantExecutorService::ExecuteSpawnVariants: SkillActorClass가 유효하지 않습니다."));
+		OnFinished.ExecuteIfBound();
 		return;
 	}
 
@@ -65,7 +68,7 @@ void UDiaSkillVariantExecutorService::ExecuteSpawnVariants(
 	}
 
 	InitializeExecutorService();
-	SpawnExecutor->ExecuteEffect(VariantsToApply, Context, Ability);
+	SpawnExecutor->ExecuteEffect(VariantsToApply, Context, Ability, OnFinished);
 }
 
 void UDiaSkillVariantExecutorService::ExecuteHitVariants(

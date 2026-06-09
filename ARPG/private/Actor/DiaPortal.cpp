@@ -13,6 +13,7 @@
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
 #include "InputCoreTypes.h"
+#include "Logging/ARPGLogChannels.h"
 
 ADiaPortal::ADiaPortal()
 {
@@ -96,11 +97,11 @@ void ADiaPortal::OnPortalCursorOut()
 void ADiaPortal::OnPortalClicked(AActor* TouchedActor, FKey ButtonPressed)
 {
 	ADungeonGameMode* GameMode = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());
-	UE_LOG(LogTemp, Log, TEXT("Portal clicked, attempting to warp to TestRoom"));
+	UE_LOG(LogARPG, Log, TEXT("Portal clicked, attempting to warp to TestRoom"));
 	if (!IsValid(GameMode))
 	{
 		return;
 	}
-	UE_LOG(LogTemp, Log, TEXT("Portal clicked, attempting to warp to TestRoom"));
+	UE_LOG(LogARPG, Log, TEXT("Portal clicked, attempting to warp to TestRoom"));
 	GameMode->WarpOtherLevel("TestRoom");
 }

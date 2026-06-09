@@ -10,6 +10,8 @@
 #include "DiaComponent/DiaSkillManagerComponent.h"
 #include "Skill/DiaSkillActor.h"
 #include "DiaComponent/Skill/DiaSkillVariant.h"
+#include "Logging/ARPGLogChannels.h"
+
 void UDiaGroundAbility::InitializeWithSkillData(const FGASSkillData& InSkillData)
 {
     Super::InitializeWithSkillData(InSkillData);
@@ -46,7 +48,7 @@ void UDiaGroundAbility::SpawnSkillGround()
 {
     if (!SkillGroundClass)
     {
-        UE_LOG(LogTemp, Warning, TEXT("DiaGroundAbility: SkillGroundClass is not set."));
+        ARPG_SKILL_LOG(Warning, TEXT("SkillGroundClass is not set"));
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
         return;
     }
@@ -54,7 +56,7 @@ void UDiaGroundAbility::SpawnSkillGround()
     ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(ActorInfo.AvatarActor.Get());
     if (!Character)
     {
-        UE_LOG(LogTemp, Warning, TEXT("DiaGroundAbility: Invalid AvatarActor."));
+        ARPG_SKILL_LOG(Warning, TEXT("Invalid AvatarActor"));
         EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
         return;
     }
@@ -111,7 +113,7 @@ void UDiaGroundAbility::SpawnSkillGround()
     //ClassName 확인 디버그
     if (SkillGroundClass)
     {
-		UE_LOG(LogTemp, Log, TEXT("DiaGroundAbility: SkillGroundClass is set to %s."), *SkillGroundClass->GetName());
+		ARPG_SKILL_VLOG(TEXT("SkillGroundClass=%s"), *SkillGroundClass->GetName());
     }
 
 	//ADiaGroundObj* SkillGround = GetWorld()->SpawnActorDeferred<ADiaGroundObj>(
@@ -128,11 +130,11 @@ void UDiaGroundAbility::SpawnSkillGround()
 	//	UAbilitySystemComponent* SourceASC = Info.AbilitySystemComponent.Get();
 	//	SkillGround->Initialize(SkillData, Character, SourceASC, DamageEffectClass);
 	//	SkillGround->FinishSpawning(SpawnTransform);
-	//	UE_LOG(LogTemp, Log, TEXT("DiaGroundAbility: Spawned SkillGround at location %s."), *SpawnTransform.GetLocation().ToString());
+	//	UE_LOG(LogARPG, Log, TEXT("DiaGroundAbility: Spawned SkillGround at location %s."), *SpawnTransform.GetLocation().ToString());
 	//}
 	//else
 	//{
-	//	UE_LOG(LogTemp, Warning, TEXT("DiaGroundAbility: Failed to spawn SkillGround."));
+	//	UE_LOG(LogARPG, Warning, TEXT("DiaGroundAbility: Failed to spawn SkillGround."));
 	//}
 
     EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
@@ -152,7 +154,7 @@ bool UDiaGroundAbility::ShouldEndAbilityOnMontageCompleted() const
 
 void UDiaGroundAbility::OnSpawned(AActor* SpawnedSkillGround)
 {
-	UE_LOG(LogTemp, Log, TEXT("DiaGroundAbility::OnSpawned - Skill ground spawned successfully: %s"), *SpawnedSkillGround->GetName());
+	ARPG_SKILL_VLOG(TEXT("Skill ground spawned successfully: %s"), *GetNameSafe(SpawnedSkillGround));
     ADiaGroundObj* SkillGround = Cast<ADiaGroundObj>(SpawnedSkillGround);
     if (SkillGround)
     {

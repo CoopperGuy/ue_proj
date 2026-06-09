@@ -20,9 +20,9 @@
 
 #include "GameMode/DungeonGameMode.h"
 #include "DiaBaseCharacter.h"
+#include "System/ItemSubsystem.h"
+#include "Logging/ARPGLogChannels.h"
 
-
-DEFINE_LOG_CATEGORY_STATIC(LogARPG_Inventory, Log, All);
 
 namespace
 {
@@ -407,6 +407,110 @@ void ADiaController::RegisteSkillPannelWidget(const TArray<USkillObject*>& Skill
 	HUDWidget->RegisteSkillPannelWidget(SkillDataList);
 }
 
+void ADiaController::CheatDropItem(FName ItemID, int32 Count, int32 Level)
+{
+#if UE_BUILD_SHIPPING
+	UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatDropItem is disabled in shipping builds."));
+	return;
+#else
+	if (ItemID.IsNone())
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatDropItem failed: ItemID is None."));
+		return;
+	}
+
+	ADungeonGameMode* GameMode = Cast<ADungeonGameMode>(GetWorld() ? GetWorld()->GetAuthGameMode() : nullptr);
+	if (!IsValid(GameMode))
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatDropItem failed: DungeonGameMode is null."));
+		return;
+	}
+
+	UItemSubsystem* ItemSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<UItemSubsystem>() : nullptr;
+	if (!IsValid(ItemSubsystem))
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatDropItem failed: ItemSubsystem is null."));
+		return;
+	}
+
+	AActor* SpawnActor = GetPawn();
+	if (!IsValid(SpawnActor))
+	{
+		SpawnActor = this;
+	}
+
+	const FItemBase& ItemData = ItemSubsystem->GetItemData(ItemID);
+	if (ItemData.ItemID.IsNone())
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatDropItem failed: invalid ItemID or row name '%s'."), *ItemID.ToString());
+		return;
+	}
+
+	const int32 SpawnCount = FMath::Clamp(Count, 1, 50);
+	const int32 ItemLevel = FMath::Max(Level, 1);
+	for (int32 Index = 0; Index < SpawnCount; ++Index)
+	{
+		GameMode->SpawnItemAtLocation(SpawnActor, ItemData, ItemLevel);
+	}
+
+	UE_LOG(LogARPG_Inventory, Display, TEXT("CheatDropItem: Dropped %d x %s near %s at level %d."),
+		SpawnCount,
+		*ItemData.ItemID.ToString(),
+		*GetNameSafe(SpawnActor),
+		ItemLevel);
+#endif
+}
+
+void ADiaController::CheatGiveItem(FName ItemID, int32 Count, int32 Level)
+{
+#if UE_BUILD_SHIPPING
+	UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatGiveItem is disabled in shipping builds."));
+	return;
+#else
+	if (ItemID.IsNone())
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatGiveItem failed: ItemID is None."));
+		return;
+	}
+
+	UItemSubsystem* ItemSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<UItemSubsystem>() : nullptr;
+	if (!IsValid(ItemSubsystem))
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatGiveItem failed: ItemSubsystem is null."));
+		return;
+	}
+
+	FName ItemIDCopy = ItemID;
+	const int32 GiveCount = FMath::Clamp(Count, 1, 50);
+	const int32 ItemLevel = FMath::Max(Level, 1);
+
+	int32 AddedCount = 0;
+	for (int32 Index = 0; Index < GiveCount; ++Index)
+	{
+		FInventorySlot InventoryItem;
+		ItemSubsystem->CreateInventoryInstance(InventoryItem, ItemIDCopy, ItemLevel, true);
+		if (!InventoryItem.ItemInstance.IsValid())
+		{
+			UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatGiveItem failed: invalid ItemID or row name '%s'."), *ItemID.ToString());
+			return;
+		}
+
+		if (!ItemAddedToInventory(InventoryItem))
+		{
+			UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatGiveItem stopped: inventory is full or item could not be added. AddedCount=%d"), AddedCount);
+			return;
+		}
+
+		++AddedCount;
+	}
+
+	UE_LOG(LogARPG_Inventory, Display, TEXT("CheatGiveItem: Added %d x %s at level %d."),
+		AddedCount,
+		*ItemID.ToString(),
+		ItemLevel);
+#endif
+}
+
 ESlateVisibility ADiaController::GetInventoryVisibility() const
 {
 	const UHUDWidget* const HUDWidget = GetHUDWidget();
@@ -454,5 +558,3 @@ ESlateVisibility ADiaController::GetWidgetVisibility(const FName& FoundName) con
 	}
 	return FoundWidget->GetVisibility();
 }
-
-

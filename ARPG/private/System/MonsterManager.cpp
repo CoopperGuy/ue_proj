@@ -8,6 +8,7 @@
 #include "Map/DiaRoomBase.h"
 
 #include "Monster/DiaMonster.h"
+#include "Logging/ARPGLogChannels.h"
 
 void UMonsterManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -42,7 +43,7 @@ void UMonsterManager::LoadMonsterData()
 #ifdef UE_BUILD_DEBUG
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("UMonsterManager: Failed to load item data table from path: %s"), *MonDataTablePath);
+        UE_LOG(LogARPG, Warning, TEXT("UMonsterManager: Failed to load item data table from path: %s"), *MonDataTablePath);
     }
 #endif
 }

@@ -83,7 +83,7 @@ public:
 
 	void InitializeVariant(const FDiaSkillVariantSpec& spec);
 
-	const FDiaSkillVariantSpec GetVariantSpec() const { return VariantSpec; }
+	const FDiaSkillVariantSpec& GetVariantSpec() const { return VariantSpec; }
 
 protected:
 	UPROPERTY()
@@ -101,4 +101,57 @@ public:
 	int32 GetSkillID() const { return SkillID; }
 	FText GetSkillVariantName() const { return SkillVariantName; }
 	FText GetSkillVariantDescription() const { return SkillVariantDescription; }
+};
+
+struct FDiaSkillVariantUtils
+{
+	static UDiaSkillVariant* FindFirstByTag(
+		const TArray<UDiaSkillVariant*>& Variants,
+		const FGameplayTag& Tag)
+	{
+		for (UDiaSkillVariant* Variant : Variants)
+		{
+			if (!IsValid(Variant))
+			{
+				continue;
+			}
+
+			const FDiaSkillVariantSpec Spec = Variant->GetVariantSpec();
+			if (Spec.SkillTag.MatchesTagExact(Tag))
+			{
+				return Variant;
+			}
+		}
+
+		return nullptr;
+	}
+
+	static void FindAllByTag(
+		const TArray<UDiaSkillVariant*>& Variants,
+		const FGameplayTag& Tag,
+		TArray<UDiaSkillVariant*>& OutVariants)
+	{
+		OutVariants.Reset();
+
+		for (UDiaSkillVariant* Variant : Variants)
+		{
+			if (!IsValid(Variant))
+			{
+				continue;
+			}
+
+			const FDiaSkillVariantSpec Spec = Variant->GetVariantSpec();
+			if (Spec.SkillTag.MatchesTagExact(Tag))
+			{
+				OutVariants.Add(Variant);
+			}
+		}
+	}
+
+	static bool HasTag(
+		const TArray<UDiaSkillVariant*>& Variants,
+		const FGameplayTag& Tag)
+	{
+		return FindFirstByTag(Variants, Tag) != nullptr;
+	}
 };

@@ -5,6 +5,7 @@
 #include "UI/Item/ItemWidget.h"
 #include "UI/Item/ItemToolTipWidget.h"
 #include "Types/ItemBase.h"
+#include "Logging/ARPGLogChannels.h"
 
 void UItemSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -13,7 +14,7 @@ void UItemSubsystem::Initialize(FSubsystemCollectionBase& Collection)
     LoadOptionData();
     LoadDropData();
 
-    UE_LOG(LogTemp, Warning, TEXT("ItemSubsystem: LoadComplete! "));
+    UE_LOG(LogARPG, Warning, TEXT("ItemSubsystem: LoadComplete! "));
 }
 
 void UItemSubsystem::Deinitialize()
@@ -43,7 +44,7 @@ void UItemSubsystem::LoadItemData()
 #ifdef UE_EDITOR
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("ItemSubsystem: Failed to load item data table from path: %s"), *ItemDataTablePath);
+		UE_LOG(LogARPG, Warning, TEXT("ItemSubsystem: Failed to load item data table from path: %s"), *ItemDataTablePath);
 	}
 #endif
 }
@@ -68,7 +69,7 @@ void UItemSubsystem::LoadOptionData()
 #ifdef UE_EDITOR
     else
     {
-        UE_LOG(LogTemp, Warning, TEXT("ItemSubsystem: Failed to load item data table from path: %s"), *OptionDataTablePath);
+        UE_LOG(LogARPG, Warning, TEXT("ItemSubsystem: Failed to load item data table from path: %s"), *OptionDataTablePath);
     }
 #endif
 
@@ -168,9 +169,9 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
 	int32 NumSuffixOptionsToAdd = 3;
 
 #if UE_EDITOR
-    UE_LOG(LogTemp, Warning, TEXT("GenerateItemOptions: Start | ItemID: %s, Level: %d"),
+    UE_LOG(LogARPG, Warning, TEXT("GenerateItemOptions: Start | ItemID: %s, Level: %d"),
         *Item.BaseItem.ItemID.ToString(), Level);
-    UE_LOG(LogTemp, Warning, TEXT("GenerateItemOptions: OptionCache Num: %d"), OptionCache.Num());
+    UE_LOG(LogARPG, Warning, TEXT("GenerateItemOptions: OptionCache Num: %d"), OptionCache.Num());
 #endif
 
 	TArray<FDiaItemOptionRow> AvailablePrefixOptions;
@@ -238,7 +239,7 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
                 AvailableSuffixOptions.Add(OptionRow);
 			}
 #if UE_EDITOR
-            UE_LOG(LogTemp, Warning, TEXT("OptionID: %s"), *OptionRow.OptionID.ToString());
+            UE_LOG(LogARPG, Warning, TEXT("OptionID: %s"), *OptionRow.OptionID.ToString());
 #endif // UE_EDITOR
 
         }
@@ -267,30 +268,30 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
 	}
 
     //로그 남기기
-	//UE_LOG(LogTemp, Warning, TEXT("Generated Prefix Options:"));
+	//UE_LOG(LogARPG, Warning, TEXT("Generated Prefix Options:"));
  //   for (const FDiaItemOptionRow& Option : ResultPrefixOptions)
  //   {
- //       UE_LOG(LogTemp, Warning, TEXT(" - %s (Tier %d)"), *Option.DisplayName.ToString(), Option.TierIndex);
+ //       UE_LOG(LogARPG, Warning, TEXT(" - %s (Tier %d)"), *Option.DisplayName.ToString(), Option.TierIndex);
  //       if (Option.OptionType != EItemOptionType::IOT_Prefix)
  //       {
- //           UE_LOG(LogTemp, Warning, TEXT("Error: Generated option is not Prefix type! OptionID: %s"), *Option.OptionID.ToString());
+ //           UE_LOG(LogARPG, Warning, TEXT("Error: Generated option is not Prefix type! OptionID: %s"), *Option.OptionID.ToString());
 	//	}
  //       if (Option.GrantedTag.IsValid() == false)
  //       {
- //           UE_LOG(LogTemp, Warning, TEXT("Error: Generated option has invalid GrantedTag! OptionID: %s"), *Option.OptionID.ToString());
+ //           UE_LOG(LogARPG, Warning, TEXT("Error: Generated option has invalid GrantedTag! OptionID: %s"), *Option.OptionID.ToString());
  //       }
  //   }
- //   UE_LOG(LogTemp, Warning, TEXT("Generated Suffix Options:"));
+ //   UE_LOG(LogARPG, Warning, TEXT("Generated Suffix Options:"));
  //   for (const FDiaItemOptionRow& Option : ResultSuffixOptions)
  //   {
- //       UE_LOG(LogTemp, Warning, TEXT(" - %s (Tier %d)"), *Option.DisplayName.ToString(), Option.TierIndex);
+ //       UE_LOG(LogARPG, Warning, TEXT(" - %s (Tier %d)"), *Option.DisplayName.ToString(), Option.TierIndex);
  //       if (Option.OptionType != EItemOptionType::IOT_Prefix)
  //       {
- //           UE_LOG(LogTemp, Warning, TEXT("Error: Generated option is not Suffix type! OptionID: %s"), *Option.OptionID.ToString());
+ //           UE_LOG(LogARPG, Warning, TEXT("Error: Generated option is not Suffix type! OptionID: %s"), *Option.OptionID.ToString());
  //       }
  //       if (Option.GrantedTag.IsValid() == false)
  //       {
- //           UE_LOG(LogTemp, Warning, TEXT("Error: Generated option has invalid GrantedTag! OptionID: %s"), *Option.OptionID.ToString());
+ //           UE_LOG(LogARPG, Warning, TEXT("Error: Generated option has invalid GrantedTag! OptionID: %s"), *Option.OptionID.ToString());
  //       }
 	//}
 }
@@ -311,7 +312,7 @@ const FItemBase& UItemSubsystem::GetItemData(const FName& ItemID) const
             }
         }
 #ifdef UE_EDITOR
-        UE_LOG(LogTemp, Warning, TEXT("ItemSubsystem: Item not found with ID: %s"), *ItemID.ToString());
+        UE_LOG(LogARPG, Warning, TEXT("ItemSubsystem: Item not found with ID: %s"), *ItemID.ToString());
 #endif
         static const FItemBase DefaultItem;
         return DefaultItem;

@@ -7,19 +7,20 @@
 #include "GameplayAbilitySpec.h"
 #include "GAS/DiaGameplayAbility.h"
 #include "DiaComponent/Skill/SkillObject.h"
+#include "Logging/ARPGLogChannels.h"
 
 bool UDiaSkillActivationService::TryActivateSkill(int32 SkillID, ADiaBaseCharacter* Character, const USkillObject* SkillObj)
 {
 	if (!IsValid(Character))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDiaSkillActivationService::TryActivateSkill: Invalid Character"));
+		UE_LOG(LogARPG, Warning, TEXT("UDiaSkillActivationService::TryActivateSkill: Invalid Character"));
 		return false;
 	}
 
 	UAbilitySystemComponent* ASC = Character->GetAbilitySystemComponent();
 	if (!IsValid(ASC))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDiaSkillActivationService::TryActivateSkill: Invalid ASC"));
+		UE_LOG(LogARPG, Warning, TEXT("UDiaSkillActivationService::TryActivateSkill: Invalid ASC"));
 		return false;
 	}
 
@@ -50,7 +51,7 @@ bool UDiaSkillActivationService::TryActivateSkill(int32 SkillID, ADiaBaseCharact
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("UDiaSkillActivationService::TryActivateSkill: AbilityInstance를 가져올 수 없습니다. SkillID: %d"), SkillID);
+			UE_LOG(LogARPG, Warning, TEXT("UDiaSkillActivationService::TryActivateSkill: AbilityInstance를 가져올 수 없습니다. SkillID: %d"), SkillID);
 		}
 	}
 

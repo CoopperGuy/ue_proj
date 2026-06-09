@@ -13,6 +13,7 @@
 #include "GameFramework/DamageType.h"
 #include "Engine/EngineTypes.h"
 #include "Engine/DamageEvents.h"
+#include "Logging/ARPGLogChannels.h"
 
 UDiaBasicAttackAbility::UDiaBasicAttackAbility()
 {
@@ -38,7 +39,7 @@ void UDiaBasicAttackAbility::ActivateAbility(const FGameplayAbilitySpecHandle Ha
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("DiaBasicAttackAbility: Activating Basic Attack"));
+	ARPG_SKILL_VLOG(TEXT("Activating Basic Attack"));
 	
 	if (GEngine)
 	{
@@ -78,7 +79,7 @@ void UDiaBasicAttackAbility::PerformAttack()
 		return;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("DiaBasicAttackAbility: Performing Attack"));
+	ARPG_SKILL_VLOG(TEXT("Performing Attack"));
 	
 	if (GEngine)
 	{
@@ -154,7 +155,7 @@ void UDiaBasicAttackAbility::PerformAttack()
 								// 대미지 적용
 								GetAbilitySystemComponentFromActorInfo()->ApplyGameplayEffectSpecToTarget(*DamageSpecHandle.Data.Get(), TargetASC);
 								
-								UE_LOG(LogTemp, Log, TEXT("DiaBasicAttackAbility: Applied GAS damage to %s for %.1f"), *HitActor->GetName(), FinalDamage);
+								ARPG_SKILL_VLOG(TEXT("Applied GAS damage. Target=%s, Damage=%.1f"), *HitActor->GetName(), FinalDamage);
 								
 								if (GEngine)
 								{
@@ -182,7 +183,7 @@ void UDiaBasicAttackAbility::PerformAttack()
 						
 						HitActor->TakeDamage(FinalDamage, static_cast<const FDamageEvent&>(PointEvent), Character->GetController(), Character);
 						
-						UE_LOG(LogTemp, Log, TEXT("DiaBasicAttackAbility: Legacy damage to %s for %.1f"), *HitActor->GetName(), FinalDamage);
+						ARPG_SKILL_VLOG(TEXT("Applied legacy damage. Target=%s, Damage=%.1f"), *HitActor->GetName(), FinalDamage);
 						
 						if (GEngine)
 						{
@@ -196,7 +197,7 @@ void UDiaBasicAttackAbility::PerformAttack()
 	}
 	else
 	{
-		UE_LOG(LogTemp, Log, TEXT("DiaBasicAttackAbility: No targets hit"));
+		ARPG_SKILL_VLOG(TEXT("No targets hit"));
 		if (GEngine)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Orange, TEXT("No targets hit"));
@@ -215,7 +216,7 @@ void UDiaBasicAttackAbility::EndAbility(const FGameplayAbilitySpecHandle Handle,
 		GetWorld()->GetTimerManager().ClearTimer(AttackTimer);
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("DiaBasicAttackAbility: Ability Ended"));
+	ARPG_SKILL_VLOG(TEXT("Ability ended"));
 	
 	if (GEngine)
 	{

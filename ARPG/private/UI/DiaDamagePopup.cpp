@@ -4,6 +4,7 @@
 #include "UI/DiaDamagePopup.h"
 #include "Components/TextBlock.h"
 #include "Animation/WidgetAnimation.h"
+#include "Logging/ARPGLogChannels.h"
 
 void UDiaDamagePopup::InitializeDamagePopup(float DamageAmount)
 {
@@ -14,7 +15,7 @@ void UDiaDamagePopup::InitializeDamagePopup(float DamageAmount)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDiaDamagePopup::InitializeDamagePopup - DamageText is null"));
+		UE_LOG(LogARPG, Warning, TEXT("UDiaDamagePopup::InitializeDamagePopup - DamageText is null"));
 	}
 	if (DamagePopupAnimation)
 	{
@@ -22,6 +23,6 @@ void UDiaDamagePopup::InitializeDamagePopup(float DamageAmount)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UDiaDamagePopup::InitializeDamagePopup - DamagePopupAnimation is null"));
+		UE_LOG(LogARPG, Warning, TEXT("UDiaDamagePopup::InitializeDamagePopup - DamagePopupAnimation is null"));
 	}
 }

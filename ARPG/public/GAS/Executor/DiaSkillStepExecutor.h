@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
+#include "DiaComponent/Skill/DiaSkillDelegates.h"
+#include "DiaComponent/Skill/DiaSkillVariant.h"
 #include "Types/DiaGASSkillData.h"
 #include "DiaSkillStepExecutor.generated.h"
 
@@ -38,7 +40,7 @@ public:
         const FInstancedStruct& StepData,
         UDiaGameplayAbility* Ability,
         FDiaSkillExecutionContext& Context,
-        TFunction<void()> OnFinished) {}
+        FDiaSkillStepFinishedDelegate OnFinished) {}
 };
 
 UCLASS()
@@ -52,7 +54,7 @@ public:
         const FInstancedStruct& StepData,
         UDiaGameplayAbility* Ability,
         FDiaSkillExecutionContext& Context,
-		TFunction<void()> OnFinished) override;
+		FDiaSkillStepFinishedDelegate OnFinished) override;
 
     FVector CalcSweepPosition(const FGameplayAbilityActorInfo& ActorInfo);
 
@@ -68,7 +70,7 @@ private:
     UPROPERTY()
 	UDiaGameplayAbility* CachedAbility = nullptr;
 
-	TFunction<void()> CacheOnFinished;
+	FDiaSkillStepFinishedDelegate CacheOnFinished;
 };
 
 UCLASS()
@@ -81,7 +83,14 @@ public:
         const FInstancedStruct& StepData,
         UDiaGameplayAbility* Ability,
         FDiaSkillExecutionContext& Context,
-		TFunction<void()> OnFinished) override;
+		FDiaSkillStepFinishedDelegate OnFinished) override;
+
+private:
+	void OnVariantSpawnFinished();
+
+	FDiaSkillStepFinishedDelegate CachedOnFinished;
+	FDiaSkillExecutionContext* CachedExecutionContext = nullptr;
+	FDiaSkillVariantContext CachedVariantContext;
 };
 
 UCLASS()
@@ -94,7 +103,7 @@ public:
         const FInstancedStruct& StepData,
         UDiaGameplayAbility* Ability,
         FDiaSkillExecutionContext& Context,
-		TFunction<void()> OnFinished) override;
+		FDiaSkillStepFinishedDelegate OnFinished) override;
 };
 
 UCLASS()
@@ -107,7 +116,14 @@ public:
         const FInstancedStruct& StepData,
         UDiaGameplayAbility* Ability,
         FDiaSkillExecutionContext& Context,
-		TFunction<void()> OnFinished) override;
+		FDiaSkillStepFinishedDelegate OnFinished) override;
 
 	FVector CalcSpawnLocation(const FGameplayAbilityActorInfo& ActorInfo, const FGASProjectileData* ProjectileData);
+
+private:
+	void OnVariantSpawnFinished();
+
+	FDiaSkillStepFinishedDelegate CachedOnFinished;
+	FDiaSkillExecutionContext* CachedExecutionContext = nullptr;
+	FDiaSkillVariantContext CachedVariantContext;
 };

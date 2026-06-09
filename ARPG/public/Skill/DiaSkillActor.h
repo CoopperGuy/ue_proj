@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Engine/EngineTypes.h" 
+#include "DiaComponent/Skill/Effect/DiaSkillVariantEffect.h"
 #include "Types/DiaGASSkillData.h"
 #include "GAS/DiaGameplayAbility.h"
 #include "DiaSkillActor.generated.h"
@@ -25,6 +26,15 @@ class UParticleSystemComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDiaSkillActorHitSignature, AActor*, HitActor, const FHitResult&, HitResult);
 
+struct FDiaSkillActorConfigureData
+{
+	FDiaSkillRuntimeParams RuntimeParams;
+	float Duration = -1.f;
+	float HitInterval = -1.f;
+	int32 MaxHitCount = INDEX_NONE;
+	float AreaRadius = -1.f;
+};
+
 UCLASS()
 class ARPG_API ADiaSkillActor : public AActor
 {
@@ -40,6 +50,8 @@ public:
 	// Called every frame
 	virtual void Initialize(float InDamage, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
     virtual void Initialize(const FGASSkillData& SkillData, AActor* InOwner, UAbilitySystemComponent* InSourceASC = nullptr, TSubclassOf<UGameplayEffect> InDamageEffect = nullptr);
+    virtual void ApplySpawnRuntimeParams(const FDiaSkillRuntimeParams& InParams);
+	virtual void ConfigureSkillActor(const FDiaSkillActorConfigureData& Config);
 	void InitTargetEffectHandle(const TArray<FGameplayEffectSpecHandle>& InTargetEffectHandles);
 	void AddIgnoredHitActors(const TArray<AActor*>& InIgnoredActors);
 
@@ -74,6 +86,8 @@ public:
 	void ExplodeAdditioanlly(float Radius);
 protected:
     bool IsValidTarget(AActor* OtherActor);
+	FString GetDebugString() const;
+	void LogHitState(AActor* TargetActor, const TCHAR* Reason) const;
 protected:    
     // 발사체 메시 컴포넌트
     UPROPERTY(VisibleAnywhere)
@@ -136,6 +150,9 @@ protected:
 	int32 MaxHitCount = 1;
 	double IntervalBetweenHits = 0.;
 
+	UPROPERTY()
+	FDiaSkillRuntimeParams RuntimeParams;
+
 	// Pierce 관련 변수
 	int32 PierceCount = 0;
 	TSet<AActor*> HitActors; // 이미 히트한 적 추적 (중복 히트 방지)
@@ -148,11 +165,12 @@ public:
     void SetPierceCount(int32 InPierceCount) { PierceCount = InPierceCount; }
 	float GetDamageMultiplier() const { return DamageMultiplier; }
 	void SetDamageMultiplier(float InDamageMultiplier) { DamageMultiplier = InDamageMultiplier; }
+	void SetRuntimeParams(const FDiaSkillRuntimeParams& InRuntimeParams);
+	const FDiaSkillRuntimeParams& GetRuntimeParams() const { return RuntimeParams; }
 	int32 GetForkCount() const { return ForkCount; }
 	void SetForkCount(int32 InForkCount) { ForkCount = InForkCount; }
 	bool IsSpawnedByFork() const { return bSpawnedByFork; }
 	void SetSpawnedByFork(bool bInSpawnedByFork) { bSpawnedByFork = bInSpawnedByFork; }
-
 private:
 	bool bSpawnedByFork = false;
 };

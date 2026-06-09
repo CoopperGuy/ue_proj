@@ -30,6 +30,7 @@
 #include "System/GameViewPort/DiaCustomGameViewPort.h"
 
 #include "Blueprint/WidgetTree.h"
+#include "Logging/ARPGLogChannels.h"
 
 
 void UHUDWidget::NativeConstruct()
@@ -165,7 +166,7 @@ void UHUDWidget::HandleManaChanged(const FOnAttributeChangeData& Data)
 	const float OldMana = Data.OldValue;
 	const float NewMana = Data.NewValue;
 
-	//UE_LOG(LogTemp, Warning, TEXT("Mana Changed from %f to %f"), (NewMana), NewMana);
+	//UE_LOG(LogARPG, Warning, TEXT("Mana Changed from %f to %f"), (NewMana), NewMana);
 
 	ADiaBaseCharacter* OwningActor = Cast<ADiaBaseCharacter>(GetOwningPlayerPawn());
 	if(!IsValid(OwningActor))
@@ -179,7 +180,7 @@ void UHUDWidget::HandleManaChanged(const FOnAttributeChangeData& Data)
 	}
 	const float MaxMana = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxManaAttribute());
 
-	//UE_LOG(LogTemp, Warning, TEXT("Mana Changed: %f / %f"), NewMana, MaxMana);
+	//UE_LOG(LogARPG, Warning, TEXT("Mana Changed: %f / %f"), NewMana, MaxMana);
 	UpdateOrbPercentage(OrbType::OT_MP, (NewMana) / MaxMana);
 }
 
@@ -197,7 +198,7 @@ void UHUDWidget::HandlExpChanged(const FOnAttributeChangeData& Data)
 		return;
 	}
 	const float MaxExp = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxExpAttribute());
-	//UE_LOG(LogTemp, Warning, TEXT("Exp Changed: %f / %f"), NewExp, MaxExp);
+	//UE_LOG(LogARPG, Warning, TEXT("Exp Changed: %f / %f"), NewExp, MaxExp);
 
 	UpdateExpPercentage(NewExp / MaxExp);
 }
@@ -208,7 +209,7 @@ void UHUDWidget::UpdateTagetMonster(ADiaBaseCharacter* NewTarget)
 	if (IsValid(TargetMonster))
 	{
 		bool IsBoss = TargetMonster->CheckBossMonsterByAbilityTag();
-		UE_LOG(LogTemp, Warning, TEXT("Target Changed: %s, IsBoss: %s"), *TargetMonster->GetName(), IsBoss ? TEXT("True") : TEXT("False"));
+		UE_LOG(LogARPG, Warning, TEXT("Target Changed: %s, IsBoss: %s"), *TargetMonster->GetName(), IsBoss ? TEXT("True") : TEXT("False"));
 		UAbilitySystemComponent* AbilitySystem = TargetMonster->GetAbilitySystemComponent();
 
 		const float CurHP = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute());
@@ -222,7 +223,7 @@ void UHUDWidget::UpdateTagetMonster(ADiaBaseCharacter* NewTarget)
 	}
 	else
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("Target Cleared"));
+		//UE_LOG(LogARPG, Warning, TEXT("Target Cleared"));
 		SetMonsterHPVisibility(ESlateVisibility::Collapsed);
 	}
 
@@ -230,11 +231,11 @@ void UHUDWidget::UpdateTagetMonster(ADiaBaseCharacter* NewTarget)
 #if defined(WITH_EDITOR) || UE_BUILD_DEVELOPMENT
 	if (TargetMonster)
 	{
-		//UE_LOG(LogTemp, Log, TEXT("Target Changed: %s"), *TargetMonster->GetName());
+		//UE_LOG(LogARPG, Log, TEXT("Target Changed: %s"), *TargetMonster->GetName());
 	}
 	else
 	{
-		//UE_LOG(LogTemp, Log, TEXT("Target Cleared"));
+		//UE_LOG(LogARPG, Log, TEXT("Target Cleared"));
 	}
 #endif
 }
@@ -249,14 +250,14 @@ void UHUDWidget::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
 
 void UHUDWidget::RegisteSkillPannelWidget(const TArray<USkillObject*>& Skills)
 {
-	UE_LOG(LogTemp, Warning, TEXT("UHUDWidget::RegisteSkillPannelWidget called with %d skills"), Skills.Num());
+	UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::RegisteSkillPannelWidget called with %d skills"), Skills.Num());
 	if (SkillPanelWidget)
 	{
 		SkillPanelWidget->RegisterSkillList(Skills);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UHUDWidget::RegisteSkillPannelWidget - SkillPanelWidget is null"));
+		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::RegisteSkillPannelWidget - SkillPanelWidget is null"));
 	}
 }
 
@@ -265,12 +266,12 @@ void UHUDWidget::ShowClearAlret(FGuid RoomGuid)
 	UDiaPrimaryLayout* Layout = DiaPrimaryLayout;
 	if (!Layout)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UHUDWidget::ShowClearAlret - DiaPrimaryLayout is null"));
+		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::ShowClearAlret - DiaPrimaryLayout is null"));
 		return;
 	}
 	if (!ClearAlertWidgetClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UHUDWidget::ShowClearAlret - ClearAlertWidgetClass is null"));
+		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::ShowClearAlret - ClearAlertWidgetClass is null"));
 		return;
 	}
 	UClearAlret* ClearAlretWidget = Layout->PushToHudLayer<UClearAlret>(FDiaGameplayTags::Get().UI_Layer_HUD, ClearAlertWidgetClass);
@@ -290,7 +291,7 @@ void UHUDWidget::ShowDamagePopup(float DamageAmount, const FVector2D& ScreenPos,
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UHUDWidget::ShowDamagePopup - DamagePopupWidgetClass is null"));
+		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::ShowDamagePopup - DamagePopupWidgetClass is null"));
 	}
 }
 
@@ -304,7 +305,7 @@ UUserWidget* UHUDWidget::FindWidgetByName(const FName& WidgetName)
 {
 	if (!WidgetTree)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("WidgetTree is null in UHUDWidget::FindWidgetByName"));
+		UE_LOG(LogARPG, Warning, TEXT("WidgetTree is null in UHUDWidget::FindWidgetByName"));
 		return nullptr;
 	}
 	UWidget* FoundWidget = WidgetTree->FindWidget(WidgetName);

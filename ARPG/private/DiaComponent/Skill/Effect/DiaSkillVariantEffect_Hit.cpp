@@ -5,6 +5,7 @@
 
 #include "Skill/DiaSkillActor.h"
 #include "GAS/DiaGameplayTags.h"
+#include "Logging/ARPGLogChannels.h"
 
 void UDiaSkillVariantEffect_Pierce::Apply(const FDiaSkillVariantSpec& Spec, FDiaSkillVariantContext& Context, FSkillVariantRuntime& Runtime) const
 {
@@ -34,7 +35,7 @@ void UDiaSkillVariantEffect_Pierce::Apply(const FDiaSkillVariantSpec& Spec, FDia
 			if(SkillActor && !SkillActor->IsSpawnedByFork())
 			{
 				HitRuntime.ForkCount += static_cast<int32>(Spec.ModifierValue);
-				UE_LOG(LogTemp, Log, TEXT("UDiaSkillVariantEffect_Pierce::Apply - Applying Fork Effect, ForkCount: %d"), HitRuntime.ForkCount);
+				UE_LOG(LogARPG, Log, TEXT("UDiaSkillVariantEffect_Pierce::Apply - Applying Fork Effect, ForkCount: %d"), HitRuntime.ForkCount);
 			}
 		}
 	}
@@ -60,5 +61,18 @@ void UDiaSkillVariantEffect_Explosion::Apply(const FDiaSkillVariantSpec& Spec, F
 				SkillActor->ExplodeAdditioanlly(HitRuntime.ExplosionRadius);
 			}
 		}
+	}
+}
+
+void UDiaSkillVariantEffect_SpawnGround::Apply(const FDiaSkillVariantSpec& Spec, FDiaSkillVariantContext& Context, FSkillVariantRuntime& Runtime) const
+{
+	if (Runtime.GetType() != ESkillVariantRuntimeType::Hit)
+	{
+		return;
+	}
+	FSkillHitRuntime& HitRuntime = static_cast<FSkillHitRuntime&>(Runtime);
+	if (Spec.SkillTag.MatchesTagExact(FDiaGameplayTags::Get().GASData_Variant_BurningGround))
+	{
+		HitRuntime.ActorParams.SetMagnitude(FDiaGameplayTags::Get().GASData_Variant_BurningGround, Spec.ModifierValue);
 	}
 }

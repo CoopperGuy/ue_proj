@@ -122,3 +122,4 @@ struct ARPG_API FGASDodgeData : public FGASSkillExtraDataBase
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Dodge", meta = (ClampMin = "0.0"))
     float DodgeDuration = 0.5f;
 };
+

@@ -5,6 +5,7 @@
 #include "GameplayEffectTypes.h"
 #include "GAS/DiaAttributeSet.h"
 #include "GAS/DiaGameplayTags.h"
+#include "Logging/ARPGLogChannels.h"
 
 
 //스탯 적용이기 때문에 무한하게 적용한다.
@@ -47,7 +48,7 @@ UDiaGE_StatApply::UDiaGE_StatApply()
 
 		}
 		
-		UE_LOG(LogTemp, Warning,
+		UE_LOG(LogARPG, Warning,
 			TEXT("StatApply Tag: %s, Translate: %s"),
 			*AttributeTag.ToString(),
 			bTranslated ? TEXT("OK") : TEXT("FAIL"));
@@ -55,7 +56,7 @@ UDiaGE_StatApply::UDiaGE_StatApply()
 		
 	}
 #ifdef WITH_EDITOR
-	UE_LOG(LogTemp, Warning, TEXT("UDiaGE_StatApply::Constructor - Added %d Modifiers, Total: %d"), AddedCount, Modifiers.Num());
+	UE_LOG(LogARPG, Warning, TEXT("UDiaGE_StatApply::Constructor - Added %d Modifiers, Total: %d"), AddedCount, Modifiers.Num());
 #endif // WITH_EDITOR
 
 }

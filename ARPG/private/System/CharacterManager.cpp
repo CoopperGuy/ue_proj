@@ -9,6 +9,7 @@
 #include "HAL/PlatformFilemanager.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Logging/ARPGLogChannels.h"
 
 void UCharacterManager::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -43,17 +44,17 @@ void UCharacterManager::LoadCharacterData()
 				if (CharacterRow)
 				{
 					CharacterCache.Emplace(CharacterRow->CharacterID, *CharacterRow);
-					UE_LOG(LogTemp, Log, TEXT("CharacterManager: 캐릭터 데이터 로드됨 - ID: %s, 클래스: %s"), 
+					UE_LOG(LogARPG, Log, TEXT("CharacterManager: 캐릭터 데이터 로드됨 - ID: %s, 클래스: %s"), 
 						*CharacterRow->CharacterID.ToString(), 
 						*UEnum::GetValueAsString(CharacterRow->CharacterClass));
 				}
 			}
 			
-			UE_LOG(LogTemp, Log, TEXT("CharacterManager: 총 %d개 캐릭터 데이터 로드 완료 (DataTable)"), CharacterCache.Num());
+			UE_LOG(LogARPG, Log, TEXT("CharacterManager: 총 %d개 캐릭터 데이터 로드 완료 (DataTable)"), CharacterCache.Num());
 		}
 		else
 		{
-			UE_LOG(LogTemp, Error, TEXT("CharacterManager: 캐릭터 데이터 테이블 로드 실패 - 경로: %s"), *CharacterDataTablePath);
+			UE_LOG(LogARPG, Error, TEXT("CharacterManager: 캐릭터 데이터 테이블 로드 실패 - 경로: %s"), *CharacterDataTablePath);
 		}
 	}
 }
@@ -65,7 +66,7 @@ const FCharacterInfo* UCharacterManager::GetCharacterInfo(FName CharacterID) con
 		return CharacterInfo;
 	}
 	
-	UE_LOG(LogTemp, Warning, TEXT("CharacterManager: 캐릭터 정보를 찾을 수 없음 - ID: %s"), *CharacterID.ToString());
+	UE_LOG(LogARPG, Warning, TEXT("CharacterManager: 캐릭터 정보를 찾을 수 없음 - ID: %s"), *CharacterID.ToString());
 	return nullptr;
 }
 
@@ -79,7 +80,7 @@ const FCharacterInfo* UCharacterManager::GetCharacterInfoByClass(ECharacterClass
 		}
 	}
 	
-	UE_LOG(LogTemp, Warning, TEXT("CharacterManager: 해당 클래스의 캐릭터 정보를 찾을 수 없음 - 클래스: %s"), 
+	UE_LOG(LogARPG, Warning, TEXT("CharacterManager: 해당 클래스의 캐릭터 정보를 찾을 수 없음 - 클래스: %s"), 
 		*UEnum::GetValueAsString(CharacterClass));
 	return nullptr;
 }
@@ -88,7 +89,7 @@ void UCharacterManager::InitializePlayerCharacter(ADiaCharacter* Character, cons
 {
 	if (!IsValid(Character))
 	{
-		UE_LOG(LogTemp, Error, TEXT("CharacterManager: 유효하지 않은 캐릭터"));
+		UE_LOG(LogARPG, Error, TEXT("CharacterManager: 유효하지 않은 캐릭터"));
 		return;
 	}
 
@@ -99,14 +100,14 @@ void UCharacterManager::InitializePlayerCharacter(ADiaCharacter* Character, cons
 		CharacterInfo = GetCharacterInfoByClass(ECharacterClass::Warrior);
 		if (!CharacterInfo)
 		{
-			UE_LOG(LogTemp, Error, TEXT("CharacterManager: 기본 캐릭터 정보도 찾을 수 없음"));
+			UE_LOG(LogARPG, Error, TEXT("CharacterManager: 기본 캐릭터 정보도 찾을 수 없음"));
 			return;
 		}
 	}
 
 	InitializePlayerCharacter(Character, CharacterInfo->CharacterID, CreationInfo.StartLevel);
 	
-	UE_LOG(LogTemp, Log, TEXT("CharacterManager: 플레이어 캐릭터 초기화 완료 - %s (레벨 %d)"), 
+	UE_LOG(LogARPG, Log, TEXT("CharacterManager: 플레이어 캐릭터 초기화 완료 - %s (레벨 %d)"), 
 		*CreationInfo.PlayerName, CreationInfo.StartLevel);
 }
 
@@ -115,14 +116,14 @@ void UCharacterManager::InitializePlayerCharacter(ADiaCharacter* Character, FNam
 {
 	if (!IsValid(Character))
 	{
-		UE_LOG(LogTemp, Error, TEXT("CharacterManager: 유효하지 않은 캐릭터"));
+		UE_LOG(LogARPG, Error, TEXT("CharacterManager: 유효하지 않은 캐릭터"));
 		return;
 	}
 
 	const FCharacterInfo* CharacterInfo = GetCharacterInfo(CharacterID);
 	if (!CharacterInfo)
 	{
-		UE_LOG(LogTemp, Error, TEXT("CharacterManager: 캐릭터 정보를 찾을 수 없음 - ID: %s"), *CharacterID.ToString());
+		UE_LOG(LogARPG, Error, TEXT("CharacterManager: 캐릭터 정보를 찾을 수 없음 - ID: %s"), *CharacterID.ToString());
 		return;
 	}
 
@@ -146,7 +147,7 @@ void UCharacterManager::InitializePlayerCharacter(ADiaCharacter* Character, FNam
 		Character->GetMesh()->SetAnimInstanceClass(CharacterInfo->AnimationBlueprint);
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("CharacterManager: 캐릭터 초기화 완료 - ID: %s, 레벨: %d"), 
+	UE_LOG(LogARPG, Log, TEXT("CharacterManager: 캐릭터 초기화 완료 - ID: %s, 레벨: %d"), 
 		*CharacterID.ToString(), Level);
 }
 
@@ -222,7 +223,7 @@ void UCharacterManager::LoadCharacterDataFromJson()
 	
 	if (JsonFiles.Num() == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("CharacterManager: JSON 파일이 없습니다. 기본 캐릭터 생성"));
+		UE_LOG(LogARPG, Warning, TEXT("CharacterManager: JSON 파일이 없습니다. 기본 캐릭터 생성"));
 		// 기본 캐릭터 생성 및 저장
 		CreateDefaultCharacters();
 		return;
@@ -234,13 +235,13 @@ void UCharacterManager::LoadCharacterDataFromJson()
 		if (LoadSingleCharacterFromJson(FilePath, CharacterInfo))
 		{
 			CharacterCache.Emplace(CharacterInfo.CharacterID, CharacterInfo);
-			UE_LOG(LogTemp, Log, TEXT("CharacterManager: JSON에서 캐릭터 데이터 로드됨 - ID: %s, 클래스: %s"), 
+			UE_LOG(LogARPG, Log, TEXT("CharacterManager: JSON에서 캐릭터 데이터 로드됨 - ID: %s, 클래스: %s"), 
 				*CharacterInfo.CharacterID.ToString(), 
 				*UEnum::GetValueAsString(CharacterInfo.CharacterClass));
 		}
 	}
 	
-	UE_LOG(LogTemp, Log, TEXT("CharacterManager: 총 %d개 캐릭터 데이터 로드 완료 (JSON)"), CharacterCache.Num());
+	UE_LOG(LogARPG, Log, TEXT("CharacterManager: 총 %d개 캐릭터 데이터 로드 완료 (JSON)"), CharacterCache.Num());
 }
 
 void UCharacterManager::SaveCharacterDataToJson()
@@ -251,7 +252,7 @@ void UCharacterManager::SaveCharacterDataToJson()
 		SaveSingleCharacterToJson(FilePath, Pair.Value);
 	}
 	
-	UE_LOG(LogTemp, Log, TEXT("CharacterManager: 모든 캐릭터 데이터를 JSON으로 저장 완료"));
+	UE_LOG(LogARPG, Log, TEXT("CharacterManager: 모든 캐릭터 데이터를 JSON으로 저장 완료"));
 }
 
 bool UCharacterManager::LoadSingleCharacterFromJson(const FString& FilePath, FCharacterInfo& OutCharacterInfo)
@@ -259,7 +260,7 @@ bool UCharacterManager::LoadSingleCharacterFromJson(const FString& FilePath, FCh
 	FString JsonString;
 	if (!FFileHelper::LoadFileToString(JsonString, *FilePath))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("CharacterManager: JSON 파일 로드 실패 - %s"), *FilePath);
+		UE_LOG(LogARPG, Warning, TEXT("CharacterManager: JSON 파일 로드 실패 - %s"), *FilePath);
 		return false;
 	}
 
@@ -268,7 +269,7 @@ bool UCharacterManager::LoadSingleCharacterFromJson(const FString& FilePath, FCh
 
 	if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
 	{
-		UE_LOG(LogTemp, Error, TEXT("CharacterManager: JSON 파싱 실패 - %s"), *FilePath);
+		UE_LOG(LogARPG, Error, TEXT("CharacterManager: JSON 파싱 실패 - %s"), *FilePath);
 		return false;
 	}
 
@@ -280,7 +281,7 @@ bool UCharacterManager::SaveSingleCharacterToJson(const FString& FilePath, const
 	TSharedPtr<FJsonObject> JsonObject = CharacterInfoToJson(CharacterInfo);
 	if (!JsonObject.IsValid())
 	{
-		UE_LOG(LogTemp, Error, TEXT("CharacterManager: JSON 변환 실패"));
+		UE_LOG(LogARPG, Error, TEXT("CharacterManager: JSON 변환 실패"));
 		return false;
 	}
 
@@ -288,7 +289,7 @@ bool UCharacterManager::SaveSingleCharacterToJson(const FString& FilePath, const
 	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
 	if (!FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer))
 	{
-		UE_LOG(LogTemp, Error, TEXT("CharacterManager: JSON 직렬화 실패"));
+		UE_LOG(LogARPG, Error, TEXT("CharacterManager: JSON 직렬화 실패"));
 		return false;
 	}
 
@@ -302,11 +303,11 @@ bool UCharacterManager::SaveSingleCharacterToJson(const FString& FilePath, const
 
 	if (!FFileHelper::SaveStringToFile(OutputString, *FilePath))
 	{
-		UE_LOG(LogTemp, Error, TEXT("CharacterManager: JSON 파일 저장 실패 - %s"), *FilePath);
+		UE_LOG(LogARPG, Error, TEXT("CharacterManager: JSON 파일 저장 실패 - %s"), *FilePath);
 		return false;
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("CharacterManager: JSON 파일 저장 성공 - %s"), *FilePath);
+	UE_LOG(LogARPG, Log, TEXT("CharacterManager: JSON 파일 저장 성공 - %s"), *FilePath);
 	return true;
 }
 
@@ -479,15 +480,15 @@ TArray<FString> UCharacterManager::GetAllCharacterJsonFiles() const
 		// FindFilesRecursively는 전체 경로를 반환하므로 그대로 사용
 		JsonFiles = FoundFiles;
 		
-		UE_LOG(LogTemp, Log, TEXT("CharacterManager: JSON 파일 검색 경로: %s"), *SearchPath);
+		UE_LOG(LogARPG, Log, TEXT("CharacterManager: JSON 파일 검색 경로: %s"), *SearchPath);
 		for (const FString& FilePath : JsonFiles)
 		{
-			UE_LOG(LogTemp, Log, TEXT("CharacterManager: 발견된 JSON 파일: %s"), *FilePath);
+			UE_LOG(LogARPG, Log, TEXT("CharacterManager: 발견된 JSON 파일: %s"), *FilePath);
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("CharacterManager: JSON 디렉토리가 존재하지 않음: %s"), *SearchPath);
+		UE_LOG(LogARPG, Warning, TEXT("CharacterManager: JSON 디렉토리가 존재하지 않음: %s"), *SearchPath);
 	}
 	
 	return JsonFiles;
@@ -587,5 +588,5 @@ void UCharacterManager::CreateDefaultCharacters()
 	// JSON 파일로 저장
 	SaveCharacterDataToJson();
 
-	UE_LOG(LogTemp, Log, TEXT("CharacterManager: 기본 캐릭터 3개 생성 및 저장 완료"));
+	UE_LOG(LogARPG, Log, TEXT("CharacterManager: 기본 캐릭터 3개 생성 및 저장 완료"));
 } 

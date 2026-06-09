@@ -37,6 +37,7 @@
 #include "Engine/OverlapResult.h"
 
 #include "DiaComponent/DiaSkillManagerComponent.h"
+#include "Logging/ARPGLogChannels.h"
 
 
 // Sets default values
@@ -135,6 +136,42 @@ void ADiaSkillActor::AddIgnoredHitActors(const TArray<AActor*>& InIgnoredActors)
     }
 }
 
+void ADiaSkillActor::ApplySpawnRuntimeParams(const FDiaSkillRuntimeParams& InParams)
+{
+    RuntimeParams = InParams;
+    
+    const FDiaGameplayTags& GameplayTags = FDiaGameplayTags::Get();
+    DamageMultiplier = RuntimeParams.GetMagnitude(GameplayTags.GASData_Variant_DamageMultiplier, 1.f);
+    PierceCount = FMath::Max(1, RuntimeParams.GetInt(GameplayTags.GASData_Pierce, 1));
+    
+    float SpawnDamageMultiplier = InParams.GetMagnitude(FDiaGameplayTags::Get().GASData_Variant_DamageMultiplier, 1.f);
+    Damage *= SpawnDamageMultiplier;
+
+    float DurationMultiplier = InParams.GetMagnitude(FDiaGameplayTags::Get().GASData_Variant_DurationMultiplier, 1.f);
+    LifeSpan *= DurationMultiplier;
+}
+
+void ADiaSkillActor::ConfigureSkillActor(const FDiaSkillActorConfigureData& Config)
+{
+	RuntimeParams = Config.RuntimeParams;
+
+	if (Config.Duration >= 0.f)
+	{
+		const float DurationMultiplier = RuntimeParams.GetMagnitude(FDiaGameplayTags::Get().GASData_Variant_DurationMultiplier, 1.f);
+		LifeSpan = Config.Duration * DurationMultiplier;
+	}
+
+	if (Config.HitInterval >= 0.f)
+	{
+		IntervalBetweenHits = FMath::Max(0.01f, Config.HitInterval);
+	}
+
+	if (Config.MaxHitCount > 0)
+	{
+		MaxHitCount = Config.MaxHitCount;
+	}
+}
+
 void ADiaSkillActor::ArmRemovalTimer(float Seconds)
 {
 	if (Seconds <= 0.f)
@@ -222,13 +259,14 @@ void ADiaSkillActor::BeginPlay()
         SkillAbilityEffectComp->SetAsset(SkillEffect);
         SkillAbilityEffectComp->SetVariableFloat(FName(TEXT("EffectScale")), 1.0f);
         SkillAbilityEffectComp->Activate(true);
-		UE_LOG(LogTemp, Warning, TEXT("DiaSkillActor::BeginPlay - SkillEffect activated."));
+		ARPG_SKILL_VLOG(TEXT("SkillEffect activated. Actor=%s, Effect=%s"), *GetNameSafe(this), *GetNameSafe(SkillEffect));
     }
     else
     {
         bool isSkillEffectValid = IsValid(SkillEffect);
 		FString NameString = isSkillEffectValid ? SkillEffect->GetName() : TEXT("None");
-		UE_LOG(LogTemp, Warning, TEXT("DiaSkillActor::BeginPlay - SkillEffect or SkillAbilityEffectComp is not valid. effect : %s"), *NameString);
+		ARPG_SKILL_VLOG(TEXT("SkillEffect or SkillAbilityEffectComp is not valid. Actor=%s, Effect=%s"),
+			*GetNameSafe(this), *NameString);
     }
 
     // 액터의 수명 설정
@@ -303,6 +341,8 @@ void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitR
     IAbilitySystemInterface* DiaOtherActor = Cast<IAbilitySystemInterface>(OtherActor);
     if (DiaOtherActor)
     {
+		LogHitState(OtherActor, TEXT("ApplyGameplayHit"));
+
         // 이미 히트한 적 목록에 추가
         HitActors.Add(OtherActor);
 
@@ -364,6 +404,7 @@ void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitR
             FName SkillActorTag = FDiaGameplayTags::Get().SkillActor_Ground.GetTagName();
             if (!Tags.Contains(SkillActorTag))
             {
+				ARPG_SKILL_VVLOG(TEXT("Destroying projectile after pierce exhausted. %s"), *GetDebugString());
                 // 땅에 닿는 스킬 액터는 파괴 안함
                 Destroy();
             }
@@ -376,6 +417,8 @@ void ADiaSkillActor::ApplyAdditionalHit(AActor* OtherActor, const FHitResult& Hi
     IAbilitySystemInterface* DiaOtherActor = Cast<IAbilitySystemInterface>(OtherActor);
     if (DiaOtherActor)
     {
+		LogHitState(OtherActor, TEXT("ApplyAdditionalHit"));
+
         // 이미 히트한 적 목록에 추가
         HitActors.Add(OtherActor);
 
@@ -394,6 +437,25 @@ void ADiaSkillActor::OnHitDetect()
 {
 }
 
+FString ADiaSkillActor::GetDebugString() const
+{
+	return FString::Printf(
+		TEXT("SkillActor=%s Owner=%s Damage=%.2f Multiplier=%.2f Pierce=%d Fork=%d HitCount=%d/%d"),
+		*GetNameSafe(this),
+		*GetNameSafe(GetOwner()),
+		Damage,
+		DamageMultiplier,
+		PierceCount,
+		ForkCount,
+		HitCount,
+		MaxHitCount);
+}
+
+void ADiaSkillActor::LogHitState(AActor* TargetActor, const TCHAR* Reason) const
+{
+	ARPG_SKILL_VVLOG(TEXT("%s Target=%s %s"), Reason, *GetNameSafe(TargetActor), *GetDebugString());
+}
+
 void ADiaSkillActor::OnSkillHit(IAbilitySystemInterface* HitActor, const FHitResult& HitResult)
 {
 }
@@ -402,6 +464,10 @@ void ADiaSkillActor::ProcessDamage(IAbilitySystemInterface* ASCInterface, const 
 {
     if (!(ASCInterface) || !IsValid(Owner))
     {
+		ARPG_SKILL_LOG(Warning, TEXT("ProcessDamage skipped: invalid target interface or owner. Actor=%s, TargetInterface=%s, Owner=%s"),
+			*GetNameSafe(this),
+			ASCInterface ? TEXT("Valid") : TEXT("None"),
+			*GetNameSafe(Owner));
         return;
     }
 
@@ -414,7 +480,13 @@ void ADiaSkillActor::ProcessDamage(IAbilitySystemInterface* ASCInterface, const 
         if (TargetASC)
         {
             // 무적 상태 체크
-            if (TargetASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Invincible)) return;
+            if (TargetASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Invincible))
+            {
+				ARPG_SKILL_LOG(Warning, TEXT("ProcessDamage skipped: target is invincible. Actor=%s, TargetASC=%s"),
+					*GetNameSafe(this),
+					*GetNameSafe(TargetASC));
+				return;
+            }
 
             FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
             EffectContext.AddInstigator(GetOwner(), Cast<APawn>(GetOwner()));
@@ -429,8 +501,32 @@ void ADiaSkillActor::ProcessDamage(IAbilitySystemInterface* ASCInterface, const 
                 SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.DamageMultiplier")), DamageMultiplier);
 
                 SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+
+				ARPG_SKILL_VLOG(TEXT("Applied damage effect. TargetASC=%s, DamageEffect=%s %s"),
+					*GetNameSafe(TargetASC),
+					*GetNameSafe(DamageGameplayEffect),
+					*GetDebugString());
+            }
+            else
+            {
+				ARPG_SKILL_LOG(Warning, TEXT("ProcessDamage skipped: failed to make outgoing spec. Actor=%s, DamageEffect=%s, SourceASC=%s"),
+					*GetNameSafe(this),
+					*GetNameSafe(DamageGameplayEffect),
+					*GetNameSafe(SourceASC.Get()));
             }
         }
+        else
+        {
+			ARPG_SKILL_LOG(Warning, TEXT("ProcessDamage skipped: target ASC is null. Actor=%s"), *GetNameSafe(this));
+        }
+    }
+    else
+    {
+		ARPG_SKILL_LOG(Warning, TEXT("ProcessDamage skipped: SourceASC or DamageGameplayEffect is invalid. Actor=%s, SourceASC=%s, DamageEffect=%s, Damage=%.2f"),
+			*GetNameSafe(this),
+			*GetNameSafe(SourceASC.Get()),
+			*GetNameSafe(DamageGameplayEffect),
+			Damage);
     }
     
     // 피격 사운드 재생

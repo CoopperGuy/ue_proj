@@ -41,7 +41,8 @@ EBTNodeResult::Type UBTTask_MoveToTarget::ExecuteTask(UBehaviorTreeComponent& Ow
     if (UAbilitySystemComponent* ASC = diaMonster->GetAbilitySystemComponent())
     {
         // 이동 불가 상태 체크
-        if (ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Charging))
+        if (ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Charging)
+            || ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_KnockBack))
         {
             return EBTNodeResult::Failed; // 또는 Succeeded
         }
