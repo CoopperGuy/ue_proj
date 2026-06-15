@@ -118,13 +118,6 @@ void UDiaOptionManagerComponent::ApplyEquipmentStats(const FEquippedItem& Item, 
 void UDiaOptionManagerComponent::RemoveEqipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot)
 {
 	const FGuid& ItemID = Item.ItemInstance.InstanceID;
-	if (!AppliedStatHandles.Contains(ItemID))
-	{
-		UE_LOG(LogARPG, Warning, TEXT("RemoveEqipmentStats: 해당 아이템의 스탯이 적용되어 있지 않습니다. ItemID = %s"), *ItemID.ToString());
-		return;
-	}
-
-	FActiveGameplayEffectHandle& EffectHandle = AppliedStatHandles[ItemID];
 
 	//gameplayeffect를 이용해 스탯 제거
 	ADiaController* Controller = Cast<ADiaController>(GetOwner());
@@ -148,9 +141,14 @@ void UDiaOptionManagerComponent::RemoveEqipmentStats(const FEquippedItem& Item, 
 		return;
 	}
 
-	ASC->RemoveActiveGameplayEffect(EffectHandle);
-	AppliedStatHandles.Remove(ItemID);
-	UE_LOG(LogARPG, Warning, TEXT("스탯 제거: ItemID = %s"), *ItemID.ToString());
+	//스탯 제거
+    if (FActiveGameplayEffectHandle* StatHandle = AppliedStatHandles.Find(ItemID))
+    {
+        ASC->RemoveActiveGameplayEffect(*StatHandle);
+        AppliedStatHandles.Remove(ItemID);
+		UE_LOG(LogARPG, Warning, TEXT("스탯 제거: ItemID = %s"), *ItemID.ToString());
+    }
+
 	//옵션도 동시에 제거
 	if (FActiveGameplayEffectHandle* PrefixHandle = AppliedPrefixHandles.Find(Item.ItemInstance.InstanceID))
 	{
@@ -210,6 +208,12 @@ FActiveGameplayEffectHandle UDiaOptionManagerComponent::MakeGameplayEffectOption
 		return FActiveGameplayEffectHandle();
 	}
 
+	if (ItemOptions.Num() == 0)
+	{
+		UE_LOG(LogARPG, Warning, TEXT("MakeGameplayEffectOptions: ItemOptions가 비어있습니다."));
+		return FActiveGameplayEffectHandle();
+	}
+
 	FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
 	check(Spec)
 	//UE_LOG(LogARPG, Warning, TEXT("옵션 개수: %d"), ItemOptions.Num());
@@ -249,47 +253,18 @@ void UDiaOptionManagerComponent::ApplyitemOptionsToSpec(const TArray<FDiaActualI
 	}	
 }
 
-void UDiaOptionManagerComponent::ApplyEquipmentAllOptions()
+float UDiaOptionManagerComponent::GetTotalOptionMagnitudeByTag(const FGameplayTag& OptionTag) const
 {
-	//gameplayeffect를 이용해 스탯 적용
-	ADiaController* Controller = Cast<ADiaController>(GetOwner());
-	if (!IsValid(Controller))
+	//현재는 단순히 해당 태그를 가진 옵션들의 값을 모두 더하는 형태로 구현
+	float TotalMagnitude = 0.0f;
+	for (const auto& OptionPair : ActiveOptions)
 	{
-		UE_LOG(LogARPG, Warning, TEXT("ApplyEquipmentStats: Controller가 유효하지 않습니다."));
-		return;
+		const FDiaActualItemOption& Option = OptionPair.Value;
+		if (Option.GrantedTag == OptionTag)
+		{
+			TotalMagnitude += Option.Value;
+		}
 	}
 
-	ADiaBaseCharacter* OwnerCharacter = Controller->GetPawn<ADiaBaseCharacter>();
-	if (!IsValid(OwnerCharacter))
-	{
-		UE_LOG(LogARPG, Warning, TEXT("ApplyEquipmentStats: OwnerCharacter가 유효하지 않습니다."));
-		return;
-	}
-
-	UAbilitySystemComponent* ASC = OwnerCharacter->GetAbilitySystemComponent();
-	if (!IsValid(ASC))
-	{
-		UE_LOG(LogARPG, Warning, TEXT("ApplyEquipmentStats: AbilitySystemComponent가 유효하지 않습니다."));
-		return;
-	}
-
-	FGameplayEffectSpecHandle SpecHandle
-		= ASC->MakeOutgoingSpec(UDiaGE_OptionGeneric::StaticClass(), 1.0f, ASC->MakeEffectContext());
-	if (!SpecHandle.IsValid())
-	{
-		UE_LOG(LogARPG, Error, TEXT("ApplyEquipmentStats: SpecHandle 생성 실패"));
-		return;
-	}
-
-	FGameplayEffectSpec* Spec = SpecHandle.Data.Get();
-	check(Spec)
-
-	for(const auto& OptionPair : ActiveOptions)
-	{
-		const FDiaActualItemOption& OptionRow = OptionPair.Value;
-		ApplyitemOptionsToSpec(TArray<FDiaActualItemOption>{ OptionRow }, Spec);
-	}
-
-	FActiveGameplayEffectHandle EffectHandle = ASC->ApplyGameplayEffectSpecToSelf(*Spec);
+	return TotalMagnitude;
 }
-

@@ -140,7 +140,10 @@ public:
 	FGameplayTag AttributeSet_MovementSpeed;		// 이동 속도
 	FGameplayTag AttributeSet_IncomingDamage;	// 받는 피해 - 메타 스탯
 	FGameplayTag AttributeSet_IncomingHealing;	// 받는 회복 - 메타 스탯
-	
+	FGameplayTag AttributeSet_CritChance;		// 치명타 확률 - 전투 스탯
+	FGameplayTag AttributeSet_CritDamage;		// 치명타 피해 - 전투 스탯
+	FGameplayTag AttributeSet_CooldownReduction;	// 쿨다운 감소 - 전투 스탯
+
 	FGameplayTag ItemOptionLifeSteal;			// 생명력 흡수
 	FGameplayTag ItemOptionCooldownReduction;	// 쿨다운 감소
 	FGameplayTag ItemOptionGoldFind;			// 골드 획득량 증가

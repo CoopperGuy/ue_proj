@@ -165,8 +165,13 @@ void UItemSubsystem::GenerateRandomStats(FItemInstance& Item, int32 Level)
 
 void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
 {
-	int32 NumPrefixOptionsToAdd = 3;
-	int32 NumSuffixOptionsToAdd = 3;
+    const int32 NumPrefixOptionsToAdd = MAX_PREFIX_OPTIONS - Item.PrefixOptions.Num();
+    const int32 NumSuffixOptionsToAdd = MAX_SUFFIX_OPTIONS - Item.SuffixOptions.Num();  
+
+    if (NumPrefixOptionsToAdd <= 0 && NumSuffixOptionsToAdd <= 0)
+    {
+        return;
+    }
 
 #if UE_EDITOR
     UE_LOG(LogARPG, Warning, TEXT("GenerateItemOptions: Start | ItemID: %s, Level: %d"),
@@ -185,12 +190,6 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
 		bool bCanApplyOption = true;
         const FDiaItemOptionRow& OptionRow = OptionRows.Value;
         {
-            //추가할 수 없는 상태
-            if (!Item.CheckPrefixOptionsSize() || !Item.CheckSuffixOptionsSize())
-            {
-                return;
-            }
-
             //가능 태그 검사
             for (const auto& RequireTag : OptionRow.RequiredTags)
             {
@@ -211,13 +210,18 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
             }
 
 			//레벨 조건 검사(아이템) HACK. 디버그 용으로 최소 레벨을 0으로 둠
-			if (Level < /*OptionRow.RequiredItemLevelMin*/ 0 || Level > OptionRow.RequiredItemLevelMax)
+			if (Level < OptionRow.RequiredItemLevelMin || Level > OptionRow.RequiredItemLevelMax)
 			{
 				bCanApplyOption = false;
 			}
 
             //추가할 수 없는 옵션 슬롯이라면 거름
-            if (Item.GetEquipmentSlot() != EEquipmentSlot::EES_None && !OptionRow.SlotTypes.Contains(Item.GetEquipmentSlot()))
+            if(Item.GetEquipmentSlot() == EEquipmentSlot::EES_None )
+            {
+                bCanApplyOption = false;
+            }
+
+            if (!OptionRow.SlotTypes.Contains(Item.GetEquipmentSlot()))
             {
                 bCanApplyOption = false;
             }
@@ -250,7 +254,7 @@ void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
         NumPrefixOptionsToAdd,
         ResultPrefixOptions);
     PickupRandomValuesByWeight<FDiaItemOptionRow>(AvailableSuffixOptions,
-        [](const FDiaItemOptionRow& Row) { return static_cast<float>(Row.Weight); },
+        [](const FDiaItemOptionRow& Row) { return static_cast<float>(Row.Weight); },    
         NumSuffixOptionsToAdd,
         ResultSuffixOptions);
 

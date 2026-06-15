@@ -20,7 +20,7 @@ enum class EEquipmentSlot : uint8
 	EES_None UMETA(DisplayName = "None"),
 	EES_Head UMETA(DisplayName = "Head"),
 	EES_Chest UMETA(DisplayName = "Chest"),
-	EES_Legs UMETA(DisplayName = "Legs"),
+	EES_Belt UMETA(DisplayName = "Belt"),
 	EES_Feet UMETA(DisplayName = "Feet"),
 	EES_Hands UMETA(DisplayName = "Hands"),
 	EES_Weapon UMETA(DisplayName = "Weapon"),

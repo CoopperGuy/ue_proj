@@ -10,6 +10,7 @@
 
 class UCanvasPanelSlot;
 class UCanvasPanel;
+class UTextBlock;
 class UItemWidget;
 class UDiaInventoryComponent;
 class UDiaEquipmentComponent;
@@ -59,12 +60,19 @@ public:
 protected:
 	void CreateInventory();
 	void ConfigInventorySlot(int32 SlotIndex, UCanvasPanelSlot* CanvasSlot);	
+
+	UFUNCTION()
+	void HandleGoldChanged(int32 NewGoldAmount, int32 DeltaAmount);
+
 protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	int32 szSlot= 52;
 
 	UPROPERTY(meta = (BindWidget))
 	UCanvasPanel* InventoryCanvas;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UTextBlock* GoldText;
 
 	UPROPERTY()
 	TArray<UCanvasPanelSlot*> InventorySlots;
@@ -87,4 +95,5 @@ public:
 private:
 	// 드롭된 위치가 인벤토리와 장착 위젯 모두의 바깥인지 체크
 	bool IsDropOutsideAllWidgets(const FVector2D& ScreenPosition) const;
+	void UpdateGoldText(int32 NewGoldAmount);
 };

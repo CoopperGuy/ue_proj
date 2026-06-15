@@ -23,6 +23,7 @@ UDiaAttributeSet::UDiaAttributeSet()
 	InitMovementSpeed(600.0f);
 	InitExp(0.0f);
 	InitMaxExp(100.0f);
+	InitCooldownReduction(0.0f);
 }
 
 
@@ -48,7 +49,8 @@ void UDiaAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 	}
 	else if (Attribute == GetAttackPowerAttribute()
 		|| Attribute == GetManaAttribute()
-		|| Attribute == GetExpAttribute())
+		|| Attribute == GetExpAttribute()
+		|| Attribute == GetCooldownReductionAttribute())
 	{
 		NewValue = FMath::Max(NewValue, 0.f);
 	}	

@@ -41,12 +41,15 @@ public:
 	bool RemoveContainItem(const FGuid& ItemInstanceID);
 
 	void UnEquipItem();
+
+protected:
+	bool CheckEquipSlot(EEquipmentSlot InEquipSlot);
 public:
 	FOnItemEquipped OnItemEquipped;
 
 protected:
 	UPROPERTY(meta = (BindWidget))
-	UImage* SlotFrame;
+	UImage* Image_Frame;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equip" , meta = (AllowPrivateAccess = "true"))
 	EEquipmentSlot SlotType;

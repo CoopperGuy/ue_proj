@@ -680,7 +680,9 @@ void UDiaGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
 	
 	UE_LOG(LogARPG, Log, TEXT("[ApplyCooldown] Found CooldownTag: %s, Base Duration: %.2f"), *CooldownTag.ToString(), cooldownDuration);
 
-	cooldownDuration = FMath::Max(cooldownDuration * ModifierRuntime.CDRP, 0.f); // Duration이 음수인 경우 0으로 보정
+	const float CooldownReduction = ASC->GetNumericAttribute(UDiaAttributeSet::GetCooldownReductionAttribute());
+	const float CooldownReductionMultiplier = FMath::Clamp(1.0f - CooldownReduction * 0.01f, 0.0f, 1.0f);
+	cooldownDuration = FMath::Max(cooldownDuration * ModifierRuntime.CDRP * CooldownReductionMultiplier, 0.f); // Duration이 음수인 경우 0으로 보정
 
 	UE_LOG(LogARPG, Log, TEXT("[ApplyCooldown] SkillID: %d, CooldownTag: %s, Duration: %.2f"), 
 		AbilitySpec->InputID, *CooldownTag.ToString(), cooldownDuration);

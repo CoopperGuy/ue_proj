@@ -52,7 +52,7 @@ bool UEquipSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
 
 	//같은 슬롯 타입이면 가능하다. (장비인지도 판별 가능)
 	EEquipmentSlot EquipSlot = ItemDragOp->ItemData.ItemInstance.BaseItem.EquipmentSlot;
-	if (EquipSlot != SlotType)
+	if (!CheckEquipSlot(EquipSlot))
 	{
 		UE_LOG(LogARPG, Warning, TEXT("EquipSlot: Dropped item does not match equip slot type. Expected: %s, Got: %s"), *UEnum::GetValueAsString(SlotType), *UEnum::GetValueAsString(EquipSlot));
 		return false;
@@ -179,6 +179,24 @@ void UEquipSlot::UnEquipItem()
 {
 	UE_LOG(LogARPG, Log, TEXT("Unequipping item frwarom slot: %s"), *UEnum::GetValueAsString(SlotType));
 	ClearItemWidget();
+}
+
+bool UEquipSlot::CheckEquipSlot(EEquipmentSlot InEquipSlot)
+{
+	if(InEquipSlot == SlotType)
+	{
+		return true;
+	}
+
+	if(SlotType == EEquipmentSlot::EES_RingL || SlotType == EEquipmentSlot::EES_RingR)
+	{
+		if (InEquipSlot == EEquipmentSlot::EES_RingL || InEquipSlot == EEquipmentSlot::EES_RingR)
+		{
+			return true;
+		}
+	}
+	
+	return false;
 }
 
 void UEquipSlot::SetInventoryComponent(UDiaInventoryComponent* InComponent)

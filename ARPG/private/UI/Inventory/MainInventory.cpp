@@ -11,6 +11,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/PanelWidget.h"
 #include "Components/Image.h"
+#include "Components/TextBlock.h"
 
 #include "System/ItemSubsystem.h"
 
@@ -38,6 +39,7 @@ void UMainInventory::InitializeInventory()
 	GridHeight = InventoryComponent->GetGridHeight();
 
 	CreateInventory();
+	UpdateGoldText(InventoryComponent->GetGold());
 }
 
 bool UMainInventory::IsSlotEmpty(int32 SlotIndex) const
@@ -79,7 +81,6 @@ bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 It
 
 	// 첫 번째 슬롯에만 아이템 위젯 생성하고 크기 조정
 	int32 LeftTopSlot = PosY * GridWidth + PosX;
-	int32 RightBottomSlot = (PosY + ItemHeight) * GridWidth + (PosX + ItemWidth);
 
 	//아이템 위젯 생성
 	//근데 그냥 만들면 안되나??;
@@ -98,7 +99,7 @@ bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 It
 		{
 			// 해당 슬롯과 같은 위치와 크기로 설정
 			FVector2D SlotSize = FVector2D(szSlot * ItemWidth, szSlot * ItemHeight);
-			FVector2D SlotPosition = (InventorySlots[LeftTopSlot]->GetPosition() + InventorySlots[RightBottomSlot]->GetPosition()) * 0.5f - (SlotSize * 0.5f);
+			FVector2D SlotPosition = InventorySlots[LeftTopSlot]->GetPosition();
 
 			ItemSlot->SetPosition(SlotPosition);
 			ItemSlot->SetSize(SlotSize);   // 명시적 크기 설정
@@ -510,9 +511,28 @@ bool UMainInventory::IsDropOutsideAllWidgets(const FVector2D& ScreenPosition) co
 void UMainInventory::SetInventoryComponent(UDiaInventoryComponent* InComponent)
 {
 	InventoryComponent = InComponent;
+
+	if (InventoryComponent.IsValid())
+	{
+		InventoryComponent->OnGoldChanged.AddUniqueDynamic(this, &UMainInventory::HandleGoldChanged);
+		UpdateGoldText(InventoryComponent->GetGold());
+	}
 }
 
 void UMainInventory::SetEquipmentComponent(UDiaEquipmentComponent* InComponent)
 {
 	EquippementComponent = InComponent;
+}
+
+void UMainInventory::HandleGoldChanged(int32 NewGoldAmount, int32 DeltaAmount)
+{
+	UpdateGoldText(NewGoldAmount);
+}
+
+void UMainInventory::UpdateGoldText(int32 NewGoldAmount)
+{
+	if (GoldText)
+	{
+		GoldText->SetText(FText::AsNumber(NewGoldAmount));
+	}
 }

@@ -2,6 +2,12 @@
 
 
 #include "DiaComponent/UI/DiaInventoryComponent.h"
+#include "DiaComponent/DiaOptionManagerComponent.h"
+
+#include "GAS/DiaGameplayTags.h"
+
+#include "Controller/DiaController.h"
+
 #include "GameMode/DungeonGameMode.h"
 
 #include "UI/HUDWidget.h"
@@ -174,6 +180,14 @@ bool UDiaInventoryComponent::FindPlaceForItem(int32 ItemWidth, int32 ItemHeight,
 	return false; // 배치할 수 있는 공간이 없음
 }
 
+void UDiaInventoryComponent::AddGoldInventoryWithCheckOption(int32 Amount, UDiaOptionManagerComponent* OptionManager)
+{
+	float GoldFind = OptionManager->GetTotalOptionMagnitudeByTag(FDiaGameplayTags::Get().ItemOptionGoldFind);
+
+	int32 FinalAmount = FMath::RoundToInt(Amount * (1.0f + GoldFind));
+	AddGold(FinalAmount);
+}
+
 bool UDiaInventoryComponent::ClearGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
 {
 	for( int32 y = PosY; y < PosY + ItemHeight; ++y)
@@ -196,4 +210,30 @@ bool UDiaInventoryComponent::ClearGrid(int32 ItemWidth, int32 ItemHeight, int32 
 	}
 
 	return true;
+}
+
+void UDiaInventoryComponent::SetGold(int32 NewGold)
+{
+	NewGold = FMath::Max(0, NewGold);
+
+	const int32 OldGold = Gold;
+	if (OldGold == NewGold)
+	{
+		return;
+	}
+
+	Gold = NewGold;
+
+	const int32 Delta = Gold - OldGold;
+
+	OnGoldChanged.Broadcast(Gold, Delta);
+}
+
+void UDiaInventoryComponent::AddGold(int32 Amount)
+{
+	if (Amount == 0)
+	{
+		return;
+	}
+	SetGold(Gold + Amount);
 }

@@ -39,8 +39,9 @@ public:
 	void ApplyEquipmentSlotOption(const FEquippedItem& Item);
 	void RemoveEqipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot);
 	FActiveGameplayEffectHandle MakeGameplayEffectOptions(UAbilitySystemComponent* ASC, const TArray<FDiaActualItemOption>& ItemOptions);
-	void ApplyitemOptionsToSpec(const TArray<FDiaActualItemOption>& Options, FGameplayEffectSpec* Spec);
-	void ApplyEquipmentAllOptions();
+	void ApplyitemOptionsToSpec(const TArray<FDiaActualItemOption>& Options, FGameplayEffectSpec * Spec);
+
+	float GetTotalOptionMagnitudeByTag(const FGameplayTag& OptionTag) const;
 private:
 	//옵션을 통합적으로 포괄한 형태의 struct가 필요할 수 있을듯.
 	//우선은, 옵션 데이터 테이블의 row struct를 그대로 사용

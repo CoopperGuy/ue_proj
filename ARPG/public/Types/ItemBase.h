@@ -149,8 +149,8 @@ struct ARPG_API FItemInstance
 	EEquipmentSlot GetEquipmentSlot() const { return BaseItem.EquipmentSlot; }
 	FSoftObjectPath GetIconPath() const { return BaseItem.IconPath; }
 
-	bool CheckPrefixOptionsSize() const { return PrefixOptions.Num() <= MAX_PREFIX_OPTIONS; }
-	bool CheckSuffixOptionsSize() const { return SuffixOptions.Num() <= MAX_SUFFIX_OPTIONS; }
+	bool CheckPrefixOptionsSize() const { return PrefixOptions.Num() < MAX_PREFIX_OPTIONS; }
+	bool CheckSuffixOptionsSize() const { return SuffixOptions.Num() < MAX_SUFFIX_OPTIONS; }
 
 	float GetStatValue(const FGameplayTag& Stat) const
 	{

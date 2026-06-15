@@ -150,6 +150,11 @@ void FDiaGameplayTags::RegisterAttributeSetTags()
 	GameplayTags.AddTag(GameplayTags.AttributeSet_AttackPower, "AttributeSet.AttackPower", "공격력 - 전투 스탯");
 	GameplayTags.AddTag(GameplayTags.AttributeSet_Defense, "AttributeSet.Defense", "방어력 - 전투 스탯");
 	GameplayTags.AddTag(GameplayTags.AttributeSet_MovementSpeed, "AttributeSet.MovementSpeed", "이동 속도");
+	GameplayTags.AddTag(GameplayTags.AttributeSet_CritChance, "AttributeSet.CritChance", "치명타 확률");
+	GameplayTags.AddTag(GameplayTags.AttributeSet_CritDamage, "AttributeSet.CritDamage", "치명타 대미지");
+	GameplayTags.AddTag(GameplayTags.AttributeSet_CooldownReduction, "AttributeSet.CooldownReduction", "쿨다운 감소");
+
+
 }
 
 void FDiaGameplayTags::RegisterItemOptionTags()
@@ -159,12 +164,13 @@ void FDiaGameplayTags::RegisterItemOptionTags()
 	// ========================================
 	
 	GameplayTags.AddTag(GameplayTags.ItemOptionLifeSteal, "Item.Option.MultiplyAdditive.LifeSteal", "생명력 흡수");
-	GameplayTags.AddTag(GameplayTags.ItemOptionCooldownReduction, "Item.Option.MultiplyAdditive.CooldownReduction", "쿨다운 감소");
+	GameplayTags.AddTag(GameplayTags.ItemOptionCooldownReduction, "Item.Option.Additive.CooldownReduction", "쿨다운 감소");
 	GameplayTags.AddTag(GameplayTags.ItemOptionGoldFind, "Item.Option.MultiplyAdditive.GoldFind", "골드 획득량 증가");
-	GameplayTags.AddTag(GameplayTags.ItemOptionStatDamage, "Item.Option.Additive.Health", "공격력 증가");
-	GameplayTags.AddTag(GameplayTags.ItemOptionstatHealth, "Item.Option.MultiplyAdditive.Speed", "체력 증가");
-	GameplayTags.AddTag(GameplayTags.ItemOptionStatSpeed, "Item.Option.Additive.CriticalChance", "이동 속도 증가");
-	GameplayTags.AddTag(GameplayTags.ItemOptionStatCriticalChance, "Item.Option.MultiplyAdditive.DamageIncreaseOption", "치명타 확률 증가");
+	GameplayTags.AddTag(GameplayTags.ItemOptionstatHealth, "Item.Option.Additive.MaxHealth", "체력 증가");
+	GameplayTags.AddTag(GameplayTags.ItemOptionStatSpeed, "Item.Option.MultiplyAdditive.MovementSpeed", "이동 속도 증가");
+	GameplayTags.AddTag(GameplayTags.ItemOptionStatCriticalChance, "Item.Option.Additive.CriticalChance", "치명타 확률 증가");
+	GameplayTags.AddTag(GameplayTags.ItemOptionStatDamage, "Item.Option.MultiplyAdditive.DamageIncreaseOption", "공격력 증가");
+
 }
 
 const TArray<FGameplayTag>& FDiaGameplayTags::GetAttributeStats()
@@ -188,6 +194,9 @@ const TArray<FGameplayTag>& FDiaGameplayTags::GetAttributeStats()
 	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.AttackPower")));
 	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Defense")));
 	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MovementSpeed")));
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.CritChance")));
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.CritDamage")));
+	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.CooldownReduction")));
 
 
 	return CacheStats;
@@ -203,10 +212,10 @@ const TArray<FGameplayTag>& FDiaGameplayTags::GetItemOptionList()
 	}
 
 	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.LifeSteal")));
-	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.CooldownReduction")));
+	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.Additive.CooldownReduction")));
 	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.GoldFind")));
-	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.Additive.Health")));
-	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.Speed")));
+	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.Additive.MaxHealth")));
+	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.MovementSpeed")));
 	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.Additive.CriticalChance")));
 	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.DamageIncreaseOption")));
 

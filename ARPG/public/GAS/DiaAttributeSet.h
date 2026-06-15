@@ -88,6 +88,18 @@ public:
 	FGameplayAttributeData MovementSpeed;
 	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, MovementSpeed)
 	
+	UPROPERTY(BlueprintReadOnly, Category = "CritChance")
+	FGameplayAttributeData CritChance;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, CritChance)
+
+	UPROPERTY(BlueprintReadOnly, Category = "CritDamage")
+	FGameplayAttributeData CritDamage;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, CritDamage)
+
+	UPROPERTY(BlueprintReadOnly, Category = "Combat")
+	FGameplayAttributeData CooldownReduction;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, CooldownReduction)
+
 	static bool TranslateAttributeTagToAttribute(const FGameplayTag& AttributeTag, FGameplayAttribute& OutAttribute);
 	static TMap<FGameplayTag, FGameplayAttribute> AttributeTagMap;
 protected:

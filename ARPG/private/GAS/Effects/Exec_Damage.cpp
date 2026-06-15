@@ -16,12 +16,16 @@ namespace DamageCapture
 		DECLARE_ATTRIBUTE_CAPTUREDEF(AttackPower);
 		DECLARE_ATTRIBUTE_CAPTUREDEF(Defense);
 		DECLARE_ATTRIBUTE_CAPTUREDEF(DamageIncreaseOption);
+		DECLARE_ATTRIBUTE_CAPTUREDEF(CritChance);
+		DECLARE_ATTRIBUTE_CAPTUREDEF(CritDamage);
 
 		FStatics()
 		{
 			DEFINE_ATTRIBUTE_CAPTUREDEF(UDiaAttributeSet, AttackPower, Source, true);
 			DEFINE_ATTRIBUTE_CAPTUREDEF(UDiaAttributeSet, Defense, Target, true);
 			DEFINE_ATTRIBUTE_CAPTUREDEF(UDiaAttributeSet, DamageIncreaseOption, Source, true);
+			DEFINE_ATTRIBUTE_CAPTUREDEF(UDiaAttributeSet, CritChance, Source, true);
+			DEFINE_ATTRIBUTE_CAPTUREDEF(UDiaAttributeSet, CritDamage, Source, true);
 		}
 	};
 	static const FStatics& Statics()
@@ -36,6 +40,8 @@ UExec_Damage::UExec_Damage()
 	RelevantAttributesToCapture.Add(DamageCapture::Statics().AttackPowerDef);
 	RelevantAttributesToCapture.Add(DamageCapture::Statics().DefenseDef);
 	RelevantAttributesToCapture.Add(DamageCapture::Statics().DamageIncreaseOptionDef);
+	RelevantAttributesToCapture.Add(DamageCapture::Statics().CritChanceDef);
+	RelevantAttributesToCapture.Add(DamageCapture::Statics().CritDamageDef);
 }
 
 void UExec_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionParameters& ExecutionParams, 
@@ -54,15 +60,23 @@ void UExec_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionPa
 
 	// 캡처된 속성 읽기
 	FAggregatorEvaluateParameters EvalParams;
-	float AttackPower = 0.f, Defense = 0.f, WeaponDamageOption = 0.f;
+	float AttackPower = 0.f, Defense = 0.f, WeaponDamageOption = 0.f, CritChance = 0.f, CritDamage = 0.f;
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageCapture::Statics().AttackPowerDef, EvalParams, AttackPower);
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageCapture::Statics().DefenseDef, EvalParams, Defense);
 	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageCapture::Statics().DamageIncreaseOptionDef, EvalParams, WeaponDamageOption);
+	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageCapture::Statics().CritChanceDef, EvalParams, CritChance);
+	ExecutionParams.AttemptCalculateCapturedAttributeMagnitude(DamageCapture::Statics().CritDamageDef, EvalParams, CritDamage);
+
 
 	if (Defense <= 0.f) Defense = 1.f; // 방어력이 0이하인 경우 나누기 방지 위해 1로 보정
+	CritChance = FMath::Clamp(CritChance, 0.f, 100.f);
+	CritDamage = FMath::Max(CritDamage, 100.f);
+
+	const bool bCritical = FMath::FRandRange(0.f, 100.f) < CritChance;
+	const float FinalCritMul = bCritical ? (CritDamage + CritMul) * 0.01f : 1.0f;
 	// 최종 공식(예시)
 	const float raw = FMath::Max(0.f, (DamageBase * DamageMul + (AttackPower + AttackPower * WeaponDamageOption) - Defense) / Defense);
-	const float finalDamage = FMath::RoundToFloat(raw * CritMul);
+	const float finalDamage = FMath::RoundToFloat(raw * FinalCritMul);
 
 	if (finalDamage <= 0.f) return; // 가드
 

@@ -290,6 +290,12 @@ bool ADiaController::ItemAddedToInventory(const FInventorySlot& Item)
 		return false;
 	}
 
+    if (Item.ItemInstance.BaseItem.ItemID == "Gold")
+    {
+        DiaInventoryComponent->AddGoldInventoryWithCheckOption(Item.ItemInstance.Quantity, DiaOptionManagerComponent);
+        return true;
+    }
+
 	//검증은 tryadditem에서 한다.
 	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
 
