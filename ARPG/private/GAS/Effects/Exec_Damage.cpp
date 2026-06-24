@@ -75,7 +75,8 @@ void UExec_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionPa
 	const bool bCritical = FMath::FRandRange(0.f, 100.f) < CritChance;
 	const float FinalCritMul = bCritical ? (CritDamage + CritMul) * 0.01f : 1.0f;
 	// 최종 공식(예시)
-	const float raw = FMath::Max(0.f, (DamageBase * DamageMul + (AttackPower + AttackPower * WeaponDamageOption) - Defense) / Defense);
+	const float WeaponDamageMultiplier = WeaponDamageOption * 0.01f;
+	const float raw = FMath::Max(0.f, (DamageBase * DamageMul + (AttackPower + AttackPower * WeaponDamageMultiplier) - Defense) / Defense);
 	const float finalDamage = FMath::RoundToFloat(raw * FinalCritMul);
 
 	if (finalDamage <= 0.f) return; // 가드

@@ -17,12 +17,14 @@
 #include "UI/Skill/SkillPanelWidget.h"
 
 #include "UI/CharacterStatus/StatusWidget.h"
+#include "UI/DiaItemDebugWidget.h"
 
 #include "GameMode/DungeonGameMode.h"
 #include "DiaBaseCharacter.h"
 #include "System/ItemSubsystem.h"
 #include "Logging/ARPGLogChannels.h"
 
+#include <AbilitySystemBlueprintLibrary.h>
 
 namespace
 {
@@ -48,6 +50,24 @@ namespace
 
 		LastLogTime = Now;
 		return true;
+	}
+
+	TArray<FName> ParseCheatOptionKeys(const FString& OptionKeys)
+	{
+		TArray<FName> ParsedKeys;
+		TArray<FString> Tokens;
+		OptionKeys.ParseIntoArray(Tokens, TEXT(","), true);
+
+		for (FString& Token : Tokens)
+		{
+			Token.TrimStartAndEndInline();
+			if (!Token.IsEmpty() && !Token.Equals(TEXT("None"), ESearchCase::IgnoreCase))
+			{
+				ParsedKeys.Add(FName(*Token));
+			}
+		}
+
+		return ParsedKeys;
 	}
 }
 
@@ -215,6 +235,34 @@ void ADiaController::OnUnequipItemProgress(EEquipmentSlot SlotType)
 	DiaEquipmentComponent->UnEquipItemFinish(SlotType);
 }
 
+void ADiaController::ToggleItemDebugUI()
+{
+	if (IsValid(ItemDebugWidget) && ItemDebugWidget->IsInViewport())
+	{
+		ItemDebugWidget->RemoveFromParent();
+		UE_LOG(LogTemp, Warning, TEXT("Item Debug UI Hidden"));
+		return;
+	}
+
+	if (!ItemDebugWidgetClass)
+	{
+		ItemDebugWidgetClass = LoadClass<UDiaItemDebugWidget>(nullptr, TEXT("/Game/UI/Debug/WBP_ItemDebug.WBP_ItemDebug_C"));
+	}
+
+	ItemDebugWidget = CreateWidget<UDiaItemDebugWidget>(this, ItemDebugWidgetClass);
+	if (!IsValid(ItemDebugWidget))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to create ItemDebugWidget"));
+		return;
+	}
+
+	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetCharacter());
+
+	ItemDebugWidget->AddToViewport(1000);
+	ItemDebugWidget->SetDebugSource(DiaEquipmentComponent, DiaOptionManagerComponent, TargetASC);
+	UE_LOG(LogTemp, Warning, TEXT("Item Debug UI Shown"));
+}
+
 void ADiaController::SetTarget(ADiaBaseCharacter* NewTarget)
 {
 	//nullptr이 가능하다.
@@ -290,7 +338,7 @@ bool ADiaController::ItemAddedToInventory(const FInventorySlot& Item)
 		return false;
 	}
 
-    if (Item.ItemInstance.BaseItem.ItemID == "Gold")
+    if (Item.ItemInstance.ItemID == "Gold")
     {
         DiaInventoryComponent->AddGoldInventoryWithCheckOption(Item.ItemInstance.Quantity, DiaOptionManagerComponent);
         return true;
@@ -302,7 +350,7 @@ bool ADiaController::ItemAddedToInventory(const FInventorySlot& Item)
 	bool bResult = DiaInventoryComponent->TryAddItem(Item, InventoryWidget);
 	if (bResult)
 	{
-		UE_LOG(LogARPG_Inventory, Verbose, TEXT("Item successfully added to inventory: %s"), *Item.ItemInstance.BaseItem.ItemID.ToString());
+		UE_LOG(LogARPG_Inventory, Verbose, TEXT("Item successfully added to inventory: %s"), *Item.ItemInstance.ItemID.ToString());
 	}
 
 	return bResult;
@@ -514,6 +562,147 @@ void ADiaController::CheatGiveItem(FName ItemID, int32 Count, int32 Level)
 		AddedCount,
 		*ItemID.ToString(),
 		ItemLevel);
+#endif
+}
+
+void ADiaController::CheatDropItemWithOptions(FName ItemID, const FString& PrefixOptionKeys, const FString& SuffixOptionKeys, int32 Count, int32 Level)
+{
+#if UE_BUILD_SHIPPING
+	UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatDropItemWithOptions is disabled in shipping builds."));
+	return;
+#else
+	if (ItemID.IsNone())
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatDropItemWithOptions failed: ItemID is None."));
+		return;
+	}
+
+	ADungeonGameMode* GameMode = Cast<ADungeonGameMode>(GetWorld() ? GetWorld()->GetAuthGameMode() : nullptr);
+	if (!IsValid(GameMode))
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatDropItemWithOptions failed: DungeonGameMode is null."));
+		return;
+	}
+
+	UItemSubsystem* ItemSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<UItemSubsystem>() : nullptr;
+	if (!IsValid(ItemSubsystem))
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatDropItemWithOptions failed: ItemSubsystem is null."));
+		return;
+	}
+
+	AActor* SpawnActor = GetPawn();
+	if (!IsValid(SpawnActor))
+	{
+		SpawnActor = this;
+	}
+
+	const int32 SpawnCount = FMath::Clamp(Count, 1, 50);
+	const int32 ItemLevel = FMath::Max(Level, 1);
+	const TArray<FName> PrefixKeys = ParseCheatOptionKeys(PrefixOptionKeys);
+	const TArray<FName> SuffixKeys = ParseCheatOptionKeys(SuffixOptionKeys);
+
+	for (int32 Index = 0; Index < SpawnCount; ++Index)
+	{
+		FInventorySlot InventoryItem;
+		FName ItemIDCopy = ItemID;
+		ItemSubsystem->CreateInventoryInstanceWithOptions(InventoryItem, ItemIDCopy, ItemLevel, PrefixKeys, SuffixKeys);
+		if (!InventoryItem.ItemInstance.IsValid())
+		{
+			UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatDropItemWithOptions failed: invalid ItemID or row name '%s'."), *ItemID.ToString());
+			return;
+		}
+
+		GameMode->SpawnInventoryItemAtLocation(SpawnActor, InventoryItem);
+	}
+
+	UE_LOG(LogARPG_Inventory, Display, TEXT("CheatDropItemWithOptions: Dropped %d x %s at level %d. Prefix=[%s], Suffix=[%s]"),
+		SpawnCount,
+		*ItemID.ToString(),
+		ItemLevel,
+		*PrefixOptionKeys,
+		*SuffixOptionKeys);
+#endif
+}
+
+void ADiaController::CheatGiveItemWithOptions(FName ItemID, const FString& PrefixOptionKeys, const FString& SuffixOptionKeys, int32 Count, int32 Level)
+{
+#if UE_BUILD_SHIPPING
+	UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatGiveItemWithOptions is disabled in shipping builds."));
+	return;
+#else
+	if (ItemID.IsNone())
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatGiveItemWithOptions failed: ItemID is None."));
+		return;
+	}
+
+	UItemSubsystem* ItemSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<UItemSubsystem>() : nullptr;
+	if (!IsValid(ItemSubsystem))
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatGiveItemWithOptions failed: ItemSubsystem is null."));
+		return;
+	}
+
+	const int32 GiveCount = FMath::Clamp(Count, 1, 50);
+	const int32 ItemLevel = FMath::Max(Level, 1);
+	const TArray<FName> PrefixKeys = ParseCheatOptionKeys(PrefixOptionKeys);
+	const TArray<FName> SuffixKeys = ParseCheatOptionKeys(SuffixOptionKeys);
+
+	int32 AddedCount = 0;
+	for (int32 Index = 0; Index < GiveCount; ++Index)
+	{
+		FInventorySlot InventoryItem;
+		FName ItemIDCopy = ItemID;
+		ItemSubsystem->CreateInventoryInstanceWithOptions(InventoryItem, ItemIDCopy, ItemLevel, PrefixKeys, SuffixKeys);
+		if (!InventoryItem.ItemInstance.IsValid())
+		{
+			UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatGiveItemWithOptions failed: invalid ItemID or row name '%s'."), *ItemID.ToString());
+			return;
+		}
+
+		if (!ItemAddedToInventory(InventoryItem))
+		{
+			UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatGiveItemWithOptions stopped: inventory is full or item could not be added. AddedCount=%d"), AddedCount);
+			return;
+		}
+
+		++AddedCount;
+	}
+
+	UE_LOG(LogARPG_Inventory, Display, TEXT("CheatGiveItemWithOptions: Added %d x %s at level %d. Prefix=[%s], Suffix=[%s]"),
+		AddedCount,
+		*ItemID.ToString(),
+		ItemLevel,
+		*PrefixOptionKeys,
+		*SuffixOptionKeys);
+#endif
+}
+
+void ADiaController::CheatValidateOptionRolls(FName ItemID, int32 Count, int32 Level)
+{
+#if UE_BUILD_SHIPPING
+	UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatValidateOptionRolls is disabled in shipping builds."));
+	return;
+#else
+	if (ItemID.IsNone())
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatValidateOptionRolls failed: ItemID is None."));
+		return;
+	}
+
+	UItemSubsystem* ItemSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<UItemSubsystem>() : nullptr;
+	if (!IsValid(ItemSubsystem))
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("CheatValidateOptionRolls failed: ItemSubsystem is null."));
+		return;
+	}
+
+	ItemSubsystem->RunOptionRollStressTest(ItemID, Count, Level);
+	if (IsValid(ItemDebugWidget))
+	{
+		ItemDebugWidget->RefreshDebugText();
+	}
 #endif
 }
 

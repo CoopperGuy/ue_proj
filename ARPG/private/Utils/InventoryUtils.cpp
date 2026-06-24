@@ -20,7 +20,7 @@ bool FInventoryUtils::CanPlaceItemAt(UDiaInventoryComponent* InventoryComponent,
     }
 
     // 인벤토리 컴포넌트의 그리드에서 셀 점유 상태 확인
-    const FGrid& Grid = InventoryComponent->GetInventoryGrid();
+    const FInventoryGrid& Grid = InventoryComponent->GetInventoryGrid();
     
     for (int32 Y = PosY; Y < PosY + ItemHeight; ++Y)
     {
@@ -29,7 +29,7 @@ bool FInventoryUtils::CanPlaceItemAt(UDiaInventoryComponent* InventoryComponent,
             int32 CellIndex = Y * InventoryComponent->GetGridWidth() + X;
             if (CellIndex >= 0 && CellIndex < Grid.Cells.Num())
             {
-                if (Grid.Cells[CellIndex]) // 셀이 이미 점유됨
+                if (Grid.Cells[CellIndex].bOccupied) // 셀이 이미 점유됨
                 {
                     return false;
                 }
@@ -148,12 +148,9 @@ UItemWidget* FInventoryUtils::CreateItemWidget(UWorld* WorldContext, const FInve
     if (!IsValid(ItemWidget))
     {
         UE_LOG(LogARPG, Warning, TEXT("FInventoryUtils::CreateItemWidget - Failed to create ItemWidget for item: %s"),
-            *ItemData->ItemInstance.BaseItem.ItemID.ToString());
+            *ItemData->ItemInstance.ItemID.ToString());
         return nullptr;
     }
-
-    UE_LOG(LogARPG, Log, TEXT("FInventoryUtils::CreateItemWidget - Successfully created ItemWidget for item: %s"), 
-           *ItemData->ItemInstance.BaseItem.ItemID.ToString());
 
     return ItemWidget;
 }
@@ -201,12 +198,9 @@ UItemWidget* FInventoryUtils::CreateItemWidget(UUserWidget* WidgetContext, const
     if (!IsValid(ItemWidget))
     {
         UE_LOG(LogARPG, Warning, TEXT("FInventoryUtils::CreateItemWidget - Failed to create ItemWidget for item: %s"),
-            *ItemData->ItemInstance.BaseItem.ItemID.ToString());
+            *ItemData->ItemInstance.ItemID.ToString());
         return nullptr;
     }
-
-    UE_LOG(LogARPG, Log, TEXT("FInventoryUtils::CreateItemWidget - Successfully created ItemWidget for item: %s"),
-        *ItemData->ItemInstance.BaseItem.ItemID.ToString());
 
     return ItemWidget;
 }

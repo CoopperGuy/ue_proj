@@ -13,6 +13,8 @@
 #include "UI/HUDWidget.h"
 #include "UI/Item/ItemWidget.h"
 #include "UI/Inventory/MainInventory.h"
+#include "System/ItemSubsystem.h"
+#include "System/DiaSaveGame.h"
 #include "Utils/InventoryUtils.h"
 #include "Logging/ARPGLogChannels.h"
 
@@ -47,21 +49,31 @@ void UDiaInventoryComponent::HandleItemRemoved(const FGuid& ItemID)
 bool UDiaInventoryComponent::TryAddItem(const FInventorySlot& ItemData, UMainInventory* InvenWidget)
 {
 	if (!InvenWidget) return false;
+	UItemSubsystem* ItemSubsystem = GetWorld() && GetWorld()->GetGameInstance()
+		? GetWorld()->GetGameInstance()->GetSubsystem<UItemSubsystem>()
+		: nullptr;
+	if (!ItemSubsystem) return false;
 
 	int32 InvenIdx = 0;
 	int32 OutPosX = 0;
 	int32 OutPosY = 0;
+	const int32 ItemWidth = ItemSubsystem->GetItemWidth(ItemData.ItemInstance);
+	const int32 ItemHeight = ItemSubsystem->GetItemHeight(ItemData.ItemInstance);
 
 	//자동으로 찾는 함수 호출
-	if (!FInventoryUtils::FindPlaceForItem(this, ItemData.ItemInstance.GetWidth(),
-		ItemData.ItemInstance.GetHeight(), OutPosX, OutPosY)) 
+	if (!FInventoryUtils::FindPlaceForItem(this, ItemWidth, ItemHeight, OutPosX, OutPosY)) 
 		return false;
 
-	bool res = InvenWidget->AddItem(ItemData, nullptr, OutPosY, OutPosX);
+	FInventorySlot NewItem = ItemData;
+	NewItem.GridX = OutPosX;
+	NewItem.GridY = OutPosY;
+
+	bool res = InvenWidget->AddItem(NewItem, nullptr, OutPosY, OutPosX);
 
 	if (res)
 	{
-		FillGrid(ItemData.ItemInstance.GetWidth(), ItemData.ItemInstance.GetHeight(), OutPosX, OutPosY);
+		FillGrid(ItemWidth, ItemHeight, OutPosX, OutPosY, NewItem.ItemInstance);
+		InventoryItems.Add(NewItem.ItemInstance.InstanceID, NewItem);
 	}
 
 	return res;
@@ -69,8 +81,9 @@ bool UDiaInventoryComponent::TryAddItem(const FInventorySlot& ItemData, UMainInv
 
 bool UDiaInventoryComponent::RequestMoveItem(const FGuid& InstanceID, int32 DestX, int32 DestY, UMainInventory* InventoryWidget)
 {
-	const FInventorySlot* ItemInfo = InventoryWidget->GetItemDataAtGuid(InstanceID);
-	if (!ItemInfo)
+	// const FInventorySlot* ItemInfo = InventoryWidget->GetItemDataAtGuid(InstanceID);
+	FInventorySlot* InventoryItem = InventoryItems.Find(InstanceID);
+	if (!InventoryItem)
 	{
 #ifdef UE_EDITOR
 		UE_LOG(LogARPG, Warning, TEXT("MoveItem: Item with InstanceID %s not found."), *InstanceID.ToString());
@@ -78,14 +91,31 @@ bool UDiaInventoryComponent::RequestMoveItem(const FGuid& InstanceID, int32 Dest
 		return false;
 	}
 
-	ClearGrid(ItemInfo->ItemInstance.GetWidth(), ItemInfo->ItemInstance.GetHeight(), ItemInfo->GridX, ItemInfo->GridY);
-	FillGrid(ItemInfo->ItemInstance.GetWidth(), ItemInfo->ItemInstance.GetHeight(), DestX, DestY);
+	UItemSubsystem* ItemSubsystem = GetWorld() && GetWorld()->GetGameInstance()
+		? GetWorld()->GetGameInstance()->GetSubsystem<UItemSubsystem>()
+		: nullptr;
+	if (!ItemSubsystem) return false;
 
+	
 	if (UItemWidget* ItemWidget = InventoryWidget->GetItemWidgetAtGuid(InstanceID))
 	{
+		const int32 ItemWidth = ItemSubsystem->GetItemWidth(InventoryItem->ItemInstance);
+		const int32 ItemHeight = ItemSubsystem->GetItemHeight(InventoryItem->ItemInstance);
+		
+		if (!ClearGrid(ItemWidth, ItemHeight, InventoryItem->GridX, InventoryItem->GridY))
+		{
+			ItemWidget->SetRenderOpacity(1.0f);
+			return false;
+		}
+
+		FillGrid(ItemWidth, ItemHeight, DestX, DestY, InventoryItem->ItemInstance);
+		InventoryItem->GridX = DestX;
+		InventoryItem->GridY = DestY;
+
 		InventoryWidget->MoveContainItem(InstanceID, DestX, DestY);
 		ItemWidget->SetRenderOpacity(1.0f);
 		InventoryWidget->UpdateItemPosition(ItemWidget, DestX, DestY);
+
 #ifdef UE_EDITOR
 		UE_LOG(LogARPG, Log, TEXT("Item moved to new position: (%d, %d)"), DestX, DestY);
 #endif
@@ -97,16 +127,24 @@ bool UDiaInventoryComponent::RequestMoveItem(const FGuid& InstanceID, int32 Dest
 
 bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID, UMainInventory* InvenWidget)
 {
-	const FInventorySlot* ItemInfo = InvenWidget->GetItemDataAtGuid(InstanceID);
-	int32 ItemWidth = ItemInfo->ItemInstance.GetWidth();
-	int32 ItemHeight = ItemInfo->ItemInstance.GetHeight();
-	int32 PosX = ItemInfo->GridX;
-	int32 PosY = ItemInfo->GridY;
+	// const FInventorySlot* ItemInfo = InvenWidget->GetItemDataAtGuid(InstanceID);
+	const FInventorySlot* InventoryItem = InventoryItems.Find(InstanceID);
+	if (!InventoryItem) return false;
+	UItemSubsystem* ItemSubsystem = GetWorld() && GetWorld()->GetGameInstance()
+		? GetWorld()->GetGameInstance()->GetSubsystem<UItemSubsystem>()
+		: nullptr;
+	if (!ItemSubsystem) return false;
+
+	int32 ItemWidth = ItemSubsystem->GetItemWidth(InventoryItem->ItemInstance);
+	int32 ItemHeight = ItemSubsystem->GetItemHeight(InventoryItem->ItemInstance);
+	int32 PosX = InventoryItem->GridX;
+	int32 PosY = InventoryItem->GridY;
 
 	if (ClearGrid(ItemWidth, ItemHeight, PosX, PosY))
 	{
 		if (InvenWidget->RemoveContainItem(InstanceID))
 		{
+			InventoryItems.Remove(InstanceID);
 			UE_LOG(LogARPG, Log, TEXT("Item successfully removed from inventory: %s"), *InstanceID.ToString());
 			return true;
 		}
@@ -114,14 +152,15 @@ bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID, UMainInventory*
 	return false;
 }
 
-void UDiaInventoryComponent::FillGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
+void UDiaInventoryComponent::FillGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY, const FItemInstance& InstanceInfo)
 {
 	// 아이템이 차지하는 그리드 공간을 채움
 	for (int32 y = PosY; y < PosY + ItemHeight; ++y)
 	{
 		for (int32 x = PosX; x < PosX + ItemWidth; ++x)
 		{
-			InventoryGrid[y * GridWidth + x] = true;
+			InventoryGrid[y * GridWidth + x].bOccupied = true;
+			InventoryGrid[y * GridWidth + x].ItemInstanceID = InstanceInfo.InstanceID;
 		}
 	}
 }
@@ -147,7 +186,7 @@ bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, i
 			int32 CellIndex = Y * GetGridWidth() + X;
 			if (CellIndex >= 0 && CellIndex < InventoryGrid.Cells.Num())
 			{
-				if (InventoryGrid.Cells[CellIndex]) // 셀이 이미 점유됨
+				if (InventoryGrid.Cells[CellIndex].bOccupied) // 셀이 이미 점유됨
 				{
 #ifdef UE_EDITOR
 					UE_LOG(LogARPG, Warning, TEXT("Cannot place item at (%d, %d) : Cell(% d, % d) is already occupied."), PosX, PosY, X, Y);
@@ -180,11 +219,39 @@ bool UDiaInventoryComponent::FindPlaceForItem(int32 ItemWidth, int32 ItemHeight,
 	return false; // 배치할 수 있는 공간이 없음
 }
 
+void UDiaInventoryComponent::SaveInventoryToSaveGame(UDiaSaveGame* SaveGameInstance) const
+{
+	for (const auto& ItemPair : InventoryItems)
+	{
+		const FInventorySlot& ItemData = ItemPair.Value;
+		SaveGameInstance->InventorySlots.Add(ItemData);
+	}
+}
+
+void UDiaInventoryComponent::LoadInventoryFromSaveGame(const UDiaSaveGame* SaveGameInstance)
+{
+	UItemSubsystem* ItemSubsystem = GetWorld() && GetWorld()->GetGameInstance()
+		? GetWorld()->GetGameInstance()->GetSubsystem<UItemSubsystem>()
+		: nullptr;
+	if (!ItemSubsystem) return;
+
+	for (const FInventorySlot& SavedItem : SaveGameInstance->InventorySlots)
+	{
+		InventoryItems.Add(SavedItem.ItemInstance.InstanceID, SavedItem);
+		if(CanPlaceItemAt(ItemSubsystem->GetItemWidth(SavedItem.ItemInstance), ItemSubsystem->GetItemHeight(SavedItem.ItemInstance), SavedItem.GridX, SavedItem.GridY))
+		{
+			FillGrid(ItemSubsystem->GetItemWidth(SavedItem.ItemInstance), ItemSubsystem->GetItemHeight(SavedItem.ItemInstance), SavedItem.GridX, SavedItem.GridY, SavedItem.ItemInstance);
+		}
+	}
+}
+
 void UDiaInventoryComponent::AddGoldInventoryWithCheckOption(int32 Amount, UDiaOptionManagerComponent* OptionManager)
 {
-	float GoldFind = OptionManager->GetTotalOptionMagnitudeByTag(FDiaGameplayTags::Get().ItemOptionGoldFind);
+	const float GoldFind = IsValid(OptionManager)
+		? OptionManager->GetTotalOptionMagnitudeByTag(FDiaGameplayTags::Get().ItemOptionGoldFind)
+		: 0.0f;
 
-	int32 FinalAmount = FMath::RoundToInt(Amount * (1.0f + GoldFind));
+	const int32 FinalAmount = FMath::RoundToInt(Amount * (1.0f + GoldFind * 0.01f));
 	AddGold(FinalAmount);
 }
 
@@ -197,7 +264,8 @@ bool UDiaInventoryComponent::ClearGrid(int32 ItemWidth, int32 ItemHeight, int32 
 			int32 CellIndex = y * GridWidth + x;
 			if (CellIndex >= 0 && CellIndex < InventoryGrid.Cells.Num())
 			{
-				InventoryGrid.Cells[CellIndex] = false;
+				InventoryGrid.Cells[CellIndex].bOccupied = false;
+				InventoryGrid.Cells[CellIndex].ItemInstanceID.Invalidate();
 			}
 			else
 			{
@@ -236,4 +304,15 @@ void UDiaInventoryComponent::AddGold(int32 Amount)
 		return;
 	}
 	SetGold(Gold + Amount);
+}
+
+const FInventorySlot* UDiaInventoryComponent::GetItemDataAtGuid(const FGuid& InstanceID) const
+{
+	const FInventorySlot* InvenItem = InventoryItems.Find(InstanceID);
+	if (InvenItem)
+	{
+		return InvenItem;
+	}
+
+	return nullptr;
 }

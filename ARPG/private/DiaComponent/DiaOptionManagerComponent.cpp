@@ -54,7 +54,7 @@ FDiaActualItemOption* UDiaOptionManagerComponent::GetOptionByOptionRow(const FDi
 	return GetOptionByID(OptionRow.OptionID);
 }
 
-void UDiaOptionManagerComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot)
+void UDiaOptionManagerComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot SlotType)
 {
 	//gameplayeffect를 이용해 스탯 적용
 	ADiaController* Controller = Cast<ADiaController>(GetOwner());
@@ -115,7 +115,7 @@ void UDiaOptionManagerComponent::ApplyEquipmentStats(const FEquippedItem& Item, 
 	UE_LOG(LogARPG, Warning, TEXT("스탯 적용 완료: ItemID = %s"), *Item.ItemInstance.InstanceID.ToString());
 }
 
-void UDiaOptionManagerComponent::RemoveEqipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot)
+void UDiaOptionManagerComponent::RemoveEqipmentStats(const FEquippedItem& Item, EEquipmentSlot SlotType)
 {
 	const FGuid& ItemID = Item.ItemInstance.InstanceID;
 
@@ -231,7 +231,14 @@ void UDiaOptionManagerComponent::ApplyitemOptionsToSpec(const TArray<FDiaActualI
 	TMap<FGameplayTag, float> OptionValueMap;
 	for (const auto& OptionRow : ItemOptions)
 	{
-		OptionValueMap.Add(OptionRow.GrantedTag, OptionRow.Value);
+		float OptionValue = OptionRow.Value;
+		if (OptionRow.GrantedTag == FDiaGameplayTags::Get().ItemOptionStatSpeed
+			&& OptionRow.ScalingType == EItemOptionScalingType::IOST_Percent)
+		{
+			OptionValue = 1.0f + OptionRow.Value * 0.01f;
+		}
+
+		OptionValueMap.Add(OptionRow.GrantedTag, OptionValue);
 		//UE_LOG(LogARPG, Warning, TEXT("옵션 준비: %s = %f"), *OptionRow.GrantedTag.ToString(), OptionRow.Value);
 	}
 
@@ -246,7 +253,8 @@ void UDiaOptionManagerComponent::ApplyitemOptionsToSpec(const TArray<FDiaActualI
 		}
 		else
 		{
-			Spec->SetSetByCallerMagnitude(OptionTag, 0.f);
+			const float DefaultValue = OptionTag == FDiaGameplayTags::Get().ItemOptionStatSpeed ? 1.0f : 0.0f;
+			Spec->SetSetByCallerMagnitude(OptionTag, DefaultValue);
 			//UE_LOG(LogARPG, Warning, TEXT("옵션 적용 안됨(0으로 설정): %s, 인덱스 : %d"), *OptionTag.ToString(), i);
 		}
 		//++i;

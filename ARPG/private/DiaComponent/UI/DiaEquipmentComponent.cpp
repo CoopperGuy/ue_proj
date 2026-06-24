@@ -1,74 +1,106 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "DiaComponent/UI/DiaEquipmentComponent.h"
-#include "DiaComponent/DiaStatComponent.h"
-#include "Controller/DiaController.h"
-#include "DiaBaseCharacter.h"
-#include "AbilitySystemComponent.h"
 
-#include "GAS/Effects/DiaGE_StatApply.h"
-#include "GAS/DiaAttributeSet.h"
-#include "GAS/DiaGameplayTags.h"
+#include "System/DiaSaveGame.h"
 
-#include "GameplayEffect.h"
-#include "GameplayEffectTypes.h"
-#include "GameplayTagContainer.h"
 #include "Logging/ARPGLogChannels.h"
+
 
 UDiaEquipmentComponent::UDiaEquipmentComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
-
 }
-
 
 void UDiaEquipmentComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void UDiaEquipmentComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
 }
 
-void UDiaEquipmentComponent::EquipItem(const FEquippedItem& Item, EEquipmentSlot Slot)
+void UDiaEquipmentComponent::EquipItem(const FEquippedItem& Item, EEquipmentSlot SlotType)
 {
-	//아이템 추가
-	EquipmentMap.Add(Slot, Item);
-	UE_LOG(LogARPG, Log, TEXT("EquipItem: Slot %s에 아이템 장착됨."), *UEnum::GetValueAsString(Slot));
+	EquipmentMap.Add(SlotType, Item);
+	AddDebugEvent(FString::Printf(TEXT("Equipped %s to %s"),
+		*Item.ItemInstance.ItemID.ToString(),
+		*UEnum::GetValueAsString(SlotType)), true);
+
+	UE_LOG(LogARPG, Log, TEXT("EquipItem: Slot %s equipped item."), *UEnum::GetValueAsString(SlotType));
 }
 
-void UDiaEquipmentComponent::UnEquipItem(EEquipmentSlot Slot)
+void UDiaEquipmentComponent::UnEquipItem(EEquipmentSlot SlotType)
 {
-	//아이템 제거
-	if (FEquippedItem* EquippedItem = EquipmentMap.Find(Slot))
+	if (FEquippedItem* EquippedItem = EquipmentMap.Find(SlotType))
 	{
-		//스텟에서 제거
-		OnItemUnEquipped.Broadcast(Slot);
-		UE_LOG(LogARPG, Log, TEXT("UnEquipItem: Slot %s에서 아이템 제거됨."), *UEnum::GetValueAsString(Slot));
+		AddDebugEvent(FString::Printf(TEXT("Unequip requested for %s from %s"),
+			*EquippedItem->ItemInstance.ItemID.ToString(),
+			*UEnum::GetValueAsString(SlotType)), true);
+
+		OnItemUnEquipped.Broadcast(SlotType);
+		UE_LOG(LogARPG, Log, TEXT("UnEquipItem: Slot %s unequip requested."), *UEnum::GetValueAsString(SlotType));
+		return;
+	}
+
+	AddDebugEvent(FString::Printf(TEXT("Unequip requested for empty %s"),
+		*UEnum::GetValueAsString(SlotType)), false);
+}
+
+void UDiaEquipmentComponent::UnEquipItemFinish(EEquipmentSlot SlotType)
+{
+	if (FEquippedItem* EquippedItem = EquipmentMap.Find(SlotType))
+	{
+		AddDebugEvent(FString::Printf(TEXT("Unequipped %s from %s"),
+			*EquippedItem->ItemInstance.ItemID.ToString(),
+			*UEnum::GetValueAsString(SlotType)), true);
+
+		EquipmentMap.Remove(SlotType);
+		UE_LOG(LogARPG, Log, TEXT("UnEquipItem: Slot %s unequipped item."), *UEnum::GetValueAsString(SlotType));
 	}
 }
 
-void UDiaEquipmentComponent::UnEquipItemFinish(EEquipmentSlot Slot)
+const FEquippedItem* UDiaEquipmentComponent::GetEquippedItem(EEquipmentSlot SlotType) const
 {
-	if (FEquippedItem* EquippedItem = EquipmentMap.Find(Slot))
-	{
-		//스텟에서 제거
-		EquipmentMap.Remove(Slot);
-		UE_LOG(LogARPG, Log, TEXT("UnEquipItem: Slot %s에서 아이템 제거됨."), *UEnum::GetValueAsString(Slot));
-	}
-
-}
-
-const FEquippedItem* UDiaEquipmentComponent::GetEquippedItem(EEquipmentSlot Slot) const
-{
-	if (const FEquippedItem* EquippedItem = EquipmentMap.Find(Slot))
+	if (const FEquippedItem* EquippedItem = EquipmentMap.Find(SlotType))
 	{
 		return EquippedItem;
 	}
+
 	return nullptr;
+}
+
+void UDiaEquipmentComponent::AddDebugEvent(const FString& Message, bool bPassed)
+{
+	FEquipmentDebugEvent Event;
+	Event.Sequence = ++DebugEventSequence;
+	Event.bPassed = bPassed;
+	Event.Message = Message;
+
+	DebugEvents.Add(Event);
+	constexpr int32 MaxDebugEvents = 20;
+	if (DebugEvents.Num() > MaxDebugEvents)
+	{
+		DebugEvents.RemoveAt(0, DebugEvents.Num() - MaxDebugEvents);
+	}
+}
+
+void UDiaEquipmentComponent::SaveEquipmentToSaveGame(UDiaSaveGame* SaveGameInstance) const
+{
+	for(const auto& EquipmentPair : EquipmentMap)
+	{
+		const EEquipmentSlot SlotType = EquipmentPair.Key;
+		const FEquippedItem& EquippedItem = EquipmentPair.Value;
+		SaveGameInstance->EquippedItems.Add(SlotType, EquippedItem);
+	}
+}
+
+void UDiaEquipmentComponent::LoadEquipmentFromSaveGame(const UDiaSaveGame* SaveGameInstance)
+{
+	for(const auto& SaveData : SaveGameInstance->EquippedItems)
+	{
+		EquipmentMap.Add(SaveData.Key, SaveData.Value);
+	}
 }

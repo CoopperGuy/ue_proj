@@ -18,6 +18,7 @@ class UHUDWidget;
 class UDiaStatComponent;
 class ADiaBaseCharacter;
 class USkillObject;
+class UDiaItemDebugWidget;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnTargetChanged, ADiaBaseCharacter*);
 
@@ -48,6 +49,15 @@ public:
 	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat")
 	void CheatGiveItem(FName ItemID, int32 Count = 1, int32 Level = 1);
 
+	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat")
+	void CheatDropItemWithOptions(FName ItemID, const FString& PrefixOptionKeys, const FString& SuffixOptionKeys, int32 Count = 1, int32 Level = 1);
+
+	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat")
+	void CheatGiveItemWithOptions(FName ItemID, const FString& PrefixOptionKeys, const FString& SuffixOptionKeys, int32 Count = 1, int32 Level = 1);
+
+	UFUNCTION(Exec, BlueprintCallable, Category = "Debug")
+	void CheatValidateOptionRolls(FName ItemID, int32 Count = 1000, int32 Level = 1);
+
 	ESlateVisibility GetInventoryVisibility() const;
 	ESlateVisibility GetWidgetVisibility(const FName& FoundName) const;
 
@@ -63,6 +73,10 @@ public:
 	void OnEquipItemProgress(const FEquippedItem& Item, EEquipmentSlot SlotType);
 	UFUNCTION()
 	void OnUnequipItemProgress(EEquipmentSlot SlotType);
+
+	UFUNCTION(Exec)
+	void ToggleItemDebugUI();
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
@@ -88,6 +102,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
 	TSubclassOf<UHUDWidget> HUDWidgetClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	TSubclassOf<UDiaItemDebugWidget> ItemDebugWidgetClass;
+
+	UPROPERTY()
+	TObjectPtr<UDiaItemDebugWidget> ItemDebugWidget;
 
 	bool bBlockSkillInput = false;
 public:

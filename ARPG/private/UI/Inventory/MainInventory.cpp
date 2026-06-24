@@ -14,6 +14,7 @@
 #include "Components/TextBlock.h"
 
 #include "System/ItemSubsystem.h"
+#include "System/DiaSaveGame.h"
 
 #include "DiaComponent/UI/DiaInventoryComponent.h"
 #include "DiaComponent/UI/DiaEquipmentComponent.h"
@@ -27,6 +28,10 @@ void UMainInventory::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	if (UGameInstance* GameInstance = GetGameInstance())
+	{
+		ItemSubsystem = GameInstance->GetSubsystem<UItemSubsystem>();
+	}
 }
 
 void UMainInventory::InitializeInventory()
@@ -34,6 +39,13 @@ void UMainInventory::InitializeInventory()
 
 	// 초기 상태는 Hidden으로 설정
 	SetVisibility(ESlateVisibility::Hidden);
+	if (!ItemSubsystem)
+	{
+		if (UGameInstance* GameInstance = GetGameInstance())
+		{
+			ItemSubsystem = GameInstance->GetSubsystem<UItemSubsystem>();
+		}
+	}
 
 	GridWidth = InventoryComponent->GetGridWidth();
 	GridHeight = InventoryComponent->GetGridHeight();
@@ -66,7 +78,7 @@ bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 It
 	{
 		//스택형 아이템인지 체크 해야한다.
 		//스택형 아이템이 아니라면 그냥 새롭게 추가해야한다.
-		if(ItemData.ItemInstance.BaseItem.bStackable)
+		if(ItemSubsystem && ItemSubsystem->IsItemStackable(ItemData.ItemInstance))
 		{
 			////스택형 아이템이라면, 해당 아이템의 스택을 증가시키는 로직을 구현해야 한다.
 			//UItemWidget* ExistingItemWidget = GetItemWidgetBySlotIndex(PosY * 10 + PosX);
@@ -103,18 +115,10 @@ bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 It
 
 			ItemSlot->SetPosition(SlotPosition);
 			ItemSlot->SetSize(SlotSize);   // 명시적 크기 설정
-						
-			UE_LOG(LogARPG, Log, TEXT("MainInventory: Canvas Panel Slot configured - Position: %s, Size: %s"), 
-				*SlotPosition.ToString(), *SlotSize.ToString());
 			
 			// 아이템 위젯을 맵에 저장
 			ItemWidgets.Emplace(ItemData.ItemInstance.InstanceID, ItemWidget);
 			ItemWidget->SetWidgetGridPos(PosX, PosY);
-			
-			//결과에 대한 로그 작성
-			//fguid, name, gridx ,gridy 표현
-			FString guid = ItemData.ItemInstance.InstanceID.ToString();
-			UE_LOG(LogARPG, Log, TEXT("Added item to inventory: %s (guid : %s) at Slot (%f, %f)"), *ItemData.ItemInstance.BaseItem.ItemID.ToString(), *guid, SlotPosition.X, SlotPosition.Y);
 		}
 	}
 
@@ -132,13 +136,14 @@ bool UMainInventory::RemoveItemFromInventory(int32 SlotIndex)
 	if (!IsValid(ItemWidget))
 		return false;
 
+	const FGuid RemovedItemID = ItemWidget->GetItemInfo().ItemInstance.InstanceID;
 	ItemWidget->ClearItemInfo();
 
 	// ItemWidget을 InventoryCanvas에서 제거
 	InventoryCanvas->RemoveChild(ItemWidget);
 
 	ItemWidget->RemoveFromParent();
-	ItemWidgets.Remove(Cast<UItemWidget>(ItemWidget)->GetItemInfo().ItemInstance.InstanceID);
+	ItemWidgets.Remove(RemovedItemID);
 	ItemWidget->Destruct();
 	ItemWidget = nullptr;
 
@@ -155,8 +160,10 @@ UItemWidget* UMainInventory::GetItemWidgetAtGridPosition(int32 GridX, int32 Grid
 		{
 			const FInventorySlot& ItemData = ItemWidget->GetItemInfo();
 			// 아이템이 해당 그리드 위치를 차지하는지 확인
-			if (ItemData.GridX <= GridX && GridX < ItemData.GridX + ItemData.ItemInstance.GetWidth() &&
-				ItemData.GridY <= GridY && GridY < ItemData.GridY + ItemData.ItemInstance.GetHeight())
+			const int32 ItemWidth = ItemSubsystem ? ItemSubsystem->GetItemWidth(ItemData.ItemInstance) : 1;
+			const int32 ItemHeight = ItemSubsystem ? ItemSubsystem->GetItemHeight(ItemData.ItemInstance) : 1;
+			if (ItemData.GridX <= GridX && GridX < ItemData.GridX + ItemWidth &&
+				ItemData.GridY <= GridY && GridY < ItemData.GridY + ItemHeight)
 			{
 				return ItemWidget;
 			}
@@ -276,8 +283,6 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 	{
 	case EItemDragDropType::EIDT_Inventory:
 		// 인벤토리 내 이동 처리
-		UE_LOG(LogARPG, Log, TEXT("Item moved within inventory to (%d,% d)"), NewGridX, NewGridY);
-
 		// 아이템 위치 업데이트
 		if (InventoryComponent.IsValid())
 		{
@@ -287,13 +292,21 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 		break;
 	case EItemDragDropType::EIDT_Equipment:
 		// 장비에서 인벤토리로 이동 처리
-		UE_LOG(LogARPG, Log, TEXT("Item moved from equipment to inventory at (%d, % d)"), NewGridX, NewGridY);
 		//step.1 장비 컴포넌트에서 아이템 제거 요청
 		//step.2 인벤토리 컴포넌트에 아이템 추가 요청
 		//문제 -> EquipSlot에서 어떻게 지울 것인가??? 상식적으로만 EquipppmentComponent에서 지우는게 맞는데 관리하지 않고 있음.
 		if(InventoryComponent.IsValid() && EquippementComponent.IsValid())
 		{
-			EEquipmentSlot EquipSlot = ItemDragOp->ItemData.ItemInstance.BaseItem.EquipmentSlot;
+			if (!ItemSubsystem)
+			{
+			    return false;
+			}
+
+			EEquipmentSlot EquipSlot = ItemSubsystem->GetEquipmentSlot(ItemDragOp->ItemData.ItemInstance);
+			if (EquipSlot == EEquipmentSlot::EES_None)
+			{
+				return false;
+			}
 			EquippementComponent->UnEquipItem(EquipSlot);
 			InventoryComponent->TryAddItem(ItemDragOp->ItemData, this);
 		}
@@ -338,7 +351,6 @@ bool UMainInventory::CheckInventoryDrop(UItemDragDropOperation* ItemDragOp, int3
 	if (ExistingItem && ExistingItem != ItemDragOp->SourceWidget)
 	{
 		// 다른 아이템 위에 드롭하는 경우 - ItemWidget으로 이벤트 전파
-		UE_LOG(LogARPG, Log, TEXT("Dropping on existing item - letting ItemWidget handle it"));
 		return false;
 	}
 
@@ -435,7 +447,9 @@ bool UMainInventory::AddItem(const FInventorySlot& Item, UItemWidget* ItemWidget
 	int32 OutPosY = PosY;
 
 	//ui작업
-	bool res = AddItemToInventory(Item, Item.ItemInstance.GetWidth(), Item.ItemInstance.GetHeight(), OutPosX, OutPosY);
+	const int32 ItemWidth = ItemSubsystem ? ItemSubsystem->GetItemWidth(Item.ItemInstance) : 1;
+	const int32 ItemHeight = ItemSubsystem ? ItemSubsystem->GetItemHeight(Item.ItemInstance) : 1;
+	bool res = AddItemToInventory(Item, ItemWidth, ItemHeight, OutPosX, OutPosY);
 
 	return res;
 }
@@ -452,7 +466,7 @@ bool UMainInventory::RemoveContainItem(const FGuid& ItemInstanceID)
 	InventoryCanvas->RemoveChild(ItemWidget);
 
 	ItemWidget->RemoveFromParent();
-	ItemWidgets.Remove(Cast<UItemWidget>(ItemWidget)->GetItemInfo().ItemInstance.InstanceID);
+	ItemWidgets.Remove(ItemInstanceID);
 	ItemWidget->Destruct();
 	ItemWidget = nullptr;
 

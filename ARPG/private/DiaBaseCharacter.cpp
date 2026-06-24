@@ -2,7 +2,6 @@
 
 
 #include "DiaBaseCharacter.h"
-#include "DiaComponent/DiaLevelComponent.h"
 #include "DiaComponent/DiaSkillManagerComponent.h"
 #include "DiaComponent/DiaStatusEffectComponent.h"
 #include "DiaComponent/Skill/SkillObject.h"
@@ -36,9 +35,6 @@ ADiaBaseCharacter::ADiaBaseCharacter()
 
 	// AttributeSet 생성
 	AttributeSet = CreateDefaultSubobject<UDiaAttributeSet>(TEXT("AttributeSet"));
-
-	//LevelComponent 생성
-	LevelComponent = CreateDefaultSubobject<UDiaLevelComponent>(TEXT("LevelComponent"));
 
 	//SkillManagerComponent 생성
 	SkillManagerComponent = CreateDefaultSubobject<UDiaSkillManagerComponent>(TEXT("SkillManagerComponent"));
@@ -458,12 +454,12 @@ void ADiaBaseCharacter::SetGravity(bool bEnableGravityAndCollision)
 
 void ADiaBaseCharacter::OnLevelUp()
 {
-	if(!IsValid(LevelComponent))
+	if(!IsValid(AttributeSet))
 	{
 		return;
 	}
 
-	LevelComponent->LevelUp();
+	AttributeSet->SetLevel(FMath::Max(1.0f, AttributeSet->GetLevel() + 1.0f));
 }
 
 void ADiaBaseCharacter::PauseCurrentMontage()

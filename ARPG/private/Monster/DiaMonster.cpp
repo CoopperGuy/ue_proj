@@ -257,7 +257,7 @@ void ADiaMonster::DropItem(FName DieMonsterID)
 		for (const auto& DropInfo : DropInfos)
 		{
 			const FItemBase& ItemBaseData = ItemSubsystem->GetItemData(DropInfo.ItemID);
-			DungeonGameMode->SpawnItemAtLocation(this, ItemBaseData);
+			DungeonGameMode->SpawnItemAtLocation(this, ItemBaseData, 1, DropInfo.Quantity);
 		}
 	}
 	else

@@ -372,9 +372,6 @@ void ADiaCharacter::ToggleInventory()
     {
         ESlateVisibility eVisibility =  PlayerController->GetInventoryVisibility();
 		//보이는 상태면 false로 안보이게 끔, 아니면 true로 보이게끔
-#if WITH_EDITOR || UE_BUILD_DEVELOPMENT
-        UE_LOG(LogARPG, Warning, TEXT("인벤토리 토글"));
-#endif
         PlayerController->ToggleInventoryVisibility(eVisibility == ESlateVisibility::Visible ? false : true);
     }
 }
@@ -385,9 +382,6 @@ void ADiaCharacter::ToggleCharacterStatus()
     {
         ESlateVisibility eVisibility = PlayerController->GetWidgetVisibility("CharacterStatus");
         //보이는 상태면 false로 안보이게 끔, 아니면 true로 보이게끔
-#if WITH_EDITOR || UE_BUILD_DEVELOPMENT
-        UE_LOG(LogARPG, Warning, TEXT("캐릭터 위젯 토글"));
-#endif
         PlayerController->ToggleChracterStatusVisibility(eVisibility == ESlateVisibility::Visible ? false : true);
     }
 }

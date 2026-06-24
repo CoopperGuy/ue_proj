@@ -51,6 +51,12 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UImage* Image_Frame;
 
+	UPROPERTY(meta = (BindWidgetOptional))
+	UImage* Image_Hover;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	USizeBox* itemSlot;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Equip" , meta = (AllowPrivateAccess = "true"))
 	EEquipmentSlot SlotType;
 
@@ -63,7 +69,7 @@ protected:
 public:
 	void SetSlotType(EEquipmentSlot NewSlotType) { SlotType = NewSlotType; }
 	FORCEINLINE EEquipmentSlot	GetSlotType() const { return SlotType; }
-	bool IsEmpty() const { return SlotType == EEquipmentSlot::EES_None; }
+	bool IsEmpty() const;
 	FORCEINLINE UItemWidget* GetItemWidget() const { return SlotItemWidget; }
 	void SetInventoryComponent(UDiaInventoryComponent* InComponent);
 	void SetEquipmentComponent(UDiaEquipmentComponent* InComponent);

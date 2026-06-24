@@ -20,6 +20,29 @@ void UEquipWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	auto ResolveSlot = [this](UEquipSlot*& _Slot, const TArray<FName>& CandidateNames)
+	{
+		if (IsValid(_Slot))
+		{
+			return;
+		}
+
+		for (const FName& CandidateName : CandidateNames)
+		{
+			if (UEquipSlot* FoundSlot = Cast<UEquipSlot>(GetWidgetFromName(CandidateName)))
+			{
+				_Slot = FoundSlot;
+				return;
+			}
+		}
+	};
+
+	ResolveSlot(BeltSlot, { TEXT("BeltSlot"), TEXT("PantsSlot"), TEXT("LegsSlot"), TEXT("LowerSlot") });
+	ResolveSlot(ShieldSlot, { TEXT("ShieldSlot"), TEXT("RightWeaponSlot"), TEXT("OffHandSlot") });
+	ResolveSlot(RingLSlot, { TEXT("RingLSlot"), TEXT("LeftRingSlot"), TEXT("RingLeftSlot"), TEXT("RingSlot2") });
+	ResolveSlot(RingRSlot, { TEXT("RingRSlot"), TEXT("RightRingSlot"), TEXT("RingRightSlot"), TEXT("RingSlot") });
+	ResolveSlot(AmuletSlot, { TEXT("AmuletSlot"), TEXT("NecklaceSlot"), TEXT("NeckSlot") });
+
 	if (ArmorSlot)
 	{
 		ArmorSlot->SetSlotType(EEquipmentSlot::EES_Chest);
@@ -39,6 +62,26 @@ void UEquipWidget::NativeConstruct()
 	if (HelmetSlot)
 	{
 		HelmetSlot->SetSlotType(EEquipmentSlot::EES_Head);
+	}
+	if (BeltSlot)
+	{
+		BeltSlot->SetSlotType(EEquipmentSlot::EES_Belt);
+	}
+	if (ShieldSlot)
+	{
+		ShieldSlot->SetSlotType(EEquipmentSlot::EES_Shield);
+	}
+	if (RingLSlot)
+	{
+		RingLSlot->SetSlotType(EEquipmentSlot::EES_RingL);
+	}
+	if (RingRSlot)
+	{
+		RingRSlot->SetSlotType(EEquipmentSlot::EES_RingR);
+	}
+	if (AmuletSlot)
+	{
+		AmuletSlot->SetSlotType(EEquipmentSlot::EES_Amulet);
 	}
 
 }
@@ -68,13 +111,8 @@ void UEquipWidget::EquipItemToSlot(EEquipmentSlot SlotType, const FEquippedItem&
 		return;
 	}
 
-	//이미 아이템 위젯이 있다는 거기 때문에 반환
-	UItemWidget* ItemWidget = TargetSlot->GetItemWidget();
-	if (IsValid(ItemWidget))
-	{
-		return;
-	}
-	}
+	TargetSlot->SetItemWidget(Item.ToInventorySlot());
+}
 
 void UEquipWidget::UnequipItemFromSlot(EEquipmentSlot SlotType)
 {

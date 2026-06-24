@@ -24,15 +24,43 @@ public:
     virtual void Deinitialize() override;
     
     const FItemBase& GetItemData(const FName& ItemID) const;
+    const FItemBase* FindItemData(const FName& ItemID) const;
+    const FItemBase* FindItemData(const FItemInstance& Item) const;
+    FText GetItemDisplayName(const FItemInstance& Item) const;
+    int32 GetItemWidth(const FItemInstance& Item) const;
+    int32 GetItemHeight(const FItemInstance& Item) const;
+    EEquipmentSlot GetEquipmentSlot(const FItemInstance& Item) const;
+    FSoftObjectPath GetIconPath(const FItemInstance& Item) const;
+    bool IsItemStackable(const FItemInstance& Item) const;
+    const FGameplayTagContainer* GetPossibleItemOptionTags(const FItemInstance& Item) const;
     
-    void CreateInventoryInstance(FInventorySlot& OutItem, FName& ItemID, int32 Level = 1, bool bRandomStats = false);
-    void CreateInventoryInstanceByItemBase(FInventorySlot& OutItem, const FItemBase& ItemData, int32 Level = 1, bool bRandomStats = false);
+    void CreateInventoryInstance(FInventorySlot& OutItem, FName& ItemID, int32 Level = 1, bool bRandomStats = false, int32 Quantity = 1);
+    void CreateInventoryInstanceByItemBase(FInventorySlot& OutItem, const FItemBase& ItemData, int32 Level = 1, bool bRandomStats = false, int32 Quantity = 1);
+    void CreateInventoryInstanceWithOptions(
+        FInventorySlot& OutItem,
+        FName& ItemID,
+        int32 Level,
+        const TArray<FName>& PrefixOptionKeys,
+        const TArray<FName>& SuffixOptionKeys,
+        int32 Quantity = 1);
+
+    bool TryAddItemOptionByKey(
+        FItemInstance& Item,
+        const FName& OptionKey,
+        EItemOptionType ExpectedOptionType,
+        int32 Level,
+        FString* OutFailureReason = nullptr) const;
 
 	UItemWidget* CreateItemWidget(UWorld* WorldContext, const FInventorySlot& Item);
     UItemWidget* CreateItemWidget(UUserWidget* WidgetContext, const FInventorySlot& Item);
     UItemWidget* CreateItemWidgetEmpty();
 
     TArray<FItemDropInfo> GetRandomDropItem(const FName& MonsterID) const;
+
+    UFUNCTION(BlueprintCallable, Category = "Debug")
+    const FString& RunOptionRollStressTest(FName ItemID, int32 Count = 1000, int32 Level = 1);
+
+    const FString& GetLastOptionRollStressReport() const { return LastOptionRollStressReport; }
 private:
     void LoadItemData();
     void LoadOptionData();
@@ -63,8 +91,18 @@ private:
     UPROPERTY()
 	mutable TMap<FName, FMonsterDropTable> DropCache;
 
+    UPROPERTY()
+    FString LastOptionRollStressReport;
+
     void GenerateRandomStats(FItemInstance& Item, int32 Level);
 	void GenerateItemOptions(FItemInstance& Item, int32 Level);
+    const FDiaItemOptionRow* FindOptionRowByKey(const FName& OptionKey) const;
+    bool CanApplyOptionToItem(
+        const FItemInstance& Item,
+        const FDiaItemOptionRow& OptionRow,
+        EItemOptionType ExpectedOptionType,
+        int32 Level,
+        FString* OutFailureReason = nullptr) const;
 
 
     //가중치 기반 표본 추출을 해봅시다.

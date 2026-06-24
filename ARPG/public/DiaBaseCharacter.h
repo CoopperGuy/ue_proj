@@ -21,7 +21,6 @@ class UAnimMontage;
 class UDiaStatusEffectComponent;
 class UAbilitySystemComponent;
 class UDiaAttributeSet;
-class UDiaLevelComponent;
 class UDiaSkillManagerComponent;
 class UCurveFloat;
 UCLASS()
@@ -131,9 +130,6 @@ protected:
 	void OnHitFlashUpdate(float Value); 
 
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatusEffects")
-	UDiaLevelComponent* LevelComponent;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "StatusEffects")
 	UDiaStatusEffectComponent* StatusEffectComponent;
 

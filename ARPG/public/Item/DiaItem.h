@@ -22,8 +22,9 @@ public:
 	// Sets default values for this actor's properties
 	ADiaItem();
 
-	void SetItemProperty(const FItemBase& _ItemData, int32 Level = 1);
-	void DropItem(const FItemBase& ItemData);
+	void SetItemProperty(const FItemBase& _ItemData, int32 Level = 1, int32 Quantity = 1);
+	void SetInventoryItem(const FInventorySlot& NewInventoryItem);
+	void DropItem(const FName& ItemID);
 
 	void RollingItem();
 	
@@ -44,6 +45,7 @@ protected:
 
 	void BindItemName(TSoftClassPtr<UUserWidget>& WidgetAssetPtr);
 	void SetItemName(const FText& NewName);
+	void ApplyItemVisuals(const FItemBase& ItemData);
 	const FVector ComputeDropTarget() const;
 private:
 	ADiaController* FindBestPlayerForPickup();

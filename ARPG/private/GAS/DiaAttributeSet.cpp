@@ -14,6 +14,7 @@ TMap<FGameplayTag, FGameplayAttribute> UDiaAttributeSet::AttributeTagMap;
 UDiaAttributeSet::UDiaAttributeSet()
 {
 	// Initialize default values
+	InitLevel(1.0f);
 	InitHealth(100.0f);
 	InitMaxHealth(100.0f);
 	InitMana(50.0f);
@@ -38,6 +39,10 @@ void UDiaAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, f
 	if (Attribute == GetHealthAttribute())
 	{
 		NewValue = FMath::Min(NewValue, GetMaxHealth());
+	}
+	else if (Attribute == GetLevelAttribute())
+	{
+		NewValue = FMath::Max(NewValue, 1.0f);
 	}
 	else if (Attribute == GetManaAttribute())
 	{
@@ -151,7 +156,7 @@ void UDiaAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, 
 	}
 }
 
-void UDiaAttributeSet::InitializeCharacterAttributes(FName CharacterID, int32 Level)
+void UDiaAttributeSet::InitializeCharacterAttributes(FName CharacterID, int32 InLevel)
 {
 	// 게임 인스턴스에서 캐릭터 매니저 가져오기
 	UGameInstance* GI = GetWorld()->GetGameInstance();
@@ -173,12 +178,13 @@ void UDiaAttributeSet::InitializeCharacterAttributes(FName CharacterID, int32 Le
 	}
 
 	// 체력/마나 초기화
-	SetMaxHealth(CharacterManager->CalculateMaxHPForLevel(CharacterInfo, Level));
+	SetLevel(FMath::Max(InLevel, 1));
+	SetMaxHealth(CharacterManager->CalculateMaxHPForLevel(CharacterInfo, InLevel));
 	SetHealth(GetMaxHealth());
-	SetMaxMana(CharacterManager->CalculateMaxMPForLevel(CharacterInfo, Level));
+	SetMaxMana(CharacterManager->CalculateMaxMPForLevel(CharacterInfo, InLevel));
 	SetMana(GetMaxMana());
-	SetAttackPower(CharacterInfo->BaseAttackPower + (Level - 1) * CharacterInfo->AttackPowerPerLevel);
-	SetDefense(CharacterInfo->BaseDefense + (Level - 1) * CharacterInfo->DefensePerLevel);
+	SetAttackPower(CharacterInfo->BaseAttackPower + (InLevel - 1) * CharacterInfo->AttackPowerPerLevel);
+	SetDefense(CharacterInfo->BaseDefense + (InLevel - 1) * CharacterInfo->DefensePerLevel);
 	SetMovementSpeed(600.0f); // 기본 이동 속도 설정
 }
 

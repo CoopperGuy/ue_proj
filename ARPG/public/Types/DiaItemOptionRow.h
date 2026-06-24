@@ -174,7 +174,7 @@ struct ARPG_API FDiaActualItemOption
 			ValueStr = FString::Printf(TEXT("%.0f"), Value);
 			break;
 		case EItemOptionScalingType::IOST_Percent:
-			ValueStr = FString::Printf(TEXT("%.1f%%"), Value * 100.f);
+			ValueStr = FString::Printf(TEXT("%.1f%%"), Value);
 			break;
 		case EItemOptionScalingType::IOST_Multiplier:
 			ValueStr = FString::Printf(TEXT("x%.2f"), Value);

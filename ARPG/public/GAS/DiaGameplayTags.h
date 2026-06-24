@@ -126,6 +126,7 @@ public:
 	// ========================================
 	// AttributeSet Tags - 기본 스탯
 	// ========================================
+	FGameplayTag AttributeSet_Level;			// Level
 	FGameplayTag AttributeSet_Health;			// 체력
 	FGameplayTag AttributeSet_MaxHealth;		// 최대 체력
 	FGameplayTag AttributeSet_Mana;				// 마나

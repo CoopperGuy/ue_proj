@@ -15,6 +15,7 @@ class UItemWidget;
 class UDiaInventoryComponent;
 class UDiaEquipmentComponent;
 class UItemDragDropOperation;
+class UItemSubsystem;
 /**
  * 
  */
@@ -82,6 +83,9 @@ protected:
 
 	TWeakObjectPtr<UDiaInventoryComponent> InventoryComponent;
 	TWeakObjectPtr<UDiaEquipmentComponent> EquippementComponent;
+
+	UPROPERTY()
+	TObjectPtr<UItemSubsystem> ItemSubsystem;
 
 	int32 GridWidth = 0; // 그리드 너비
 	int32 GridHeight = 0; // 그리드 높이

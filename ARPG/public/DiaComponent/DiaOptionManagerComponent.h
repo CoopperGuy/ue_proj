@@ -35,9 +35,9 @@ public:
 	//모든 옵션을 반환
 	const TMap<FName, FDiaActualItemOption>& GetAllOptions() const { return ActiveOptions; }
 
-	void ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot);
+	void ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot SlotType);
 	void ApplyEquipmentSlotOption(const FEquippedItem& Item);
-	void RemoveEqipmentStats(const FEquippedItem& Item, EEquipmentSlot Slot);
+	void RemoveEqipmentStats(const FEquippedItem& Item, EEquipmentSlot SlotType);
 	FActiveGameplayEffectHandle MakeGameplayEffectOptions(UAbilitySystemComponent* ASC, const TArray<FDiaActualItemOption>& ItemOptions);
 	void ApplyitemOptionsToSpec(const TArray<FDiaActualItemOption>& Options, FGameplayEffectSpec * Spec);
 

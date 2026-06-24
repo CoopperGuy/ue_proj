@@ -82,18 +82,33 @@ void ADiaItem::Tick(float DeltaTime)
 
 }
 
-void ADiaItem::SetItemProperty(const FItemBase& _ItemData, int32 Level)
+void ADiaItem::SetItemProperty(const FItemBase& _ItemData, int32 Level, int32 Quantity)
 {
 
 	//CreateInventoryInstanceByItemBase 를 통해 아이템 생성
 	UItemSubsystem* ItemSubsystem = GetGameInstance()->GetSubsystem<UItemSubsystem>();
-	ItemSubsystem->CreateInventoryInstanceByItemBase(InventoryItem, _ItemData, FMath::Max(Level, 1));
+	ItemSubsystem->CreateInventoryInstanceByItemBase(InventoryItem, _ItemData, FMath::Max(Level, 1), false, Quantity);
 
+	ApplyItemVisuals(_ItemData);
+}
+
+void ADiaItem::SetInventoryItem(const FInventorySlot& NewInventoryItem)
+{
+	InventoryItem = NewInventoryItem;
+	UItemSubsystem* ItemSubsystem = GetGameInstance()->GetSubsystem<UItemSubsystem>();
+	if (const FItemBase* ItemData = ItemSubsystem ? ItemSubsystem->FindItemData(InventoryItem.ItemInstance) : nullptr)
+	{
+		ApplyItemVisuals(*ItemData);
+	}
+}
+
+void ADiaItem::ApplyItemVisuals(const FItemBase& ItemData)
+{
 	//아이템 스태틱 매시 로딩
 	//현재 아이템 스태틱 매시 첫 로딩 이후 아이템 메시가 보이지 않는 현상 존재
 	//두번째 생성 시에 보임
 	//수정 필요하다.
-	UStaticMesh* ItemAsset = _ItemData.ItemMesh.LoadSynchronous();
+	UStaticMesh* ItemAsset = ItemData.ItemMesh.LoadSynchronous();
 	if (ItemAsset)
 	{
 		// 메시 설정
@@ -101,29 +116,29 @@ void ADiaItem::SetItemProperty(const FItemBase& _ItemData, int32 Level)
 
 		// 중요: 메시 설정 후 강제 업데이트
 		ItemMeshComp->RecreateRenderState_Concurrent();
-		UE_LOG(LogARPG, Warning, TEXT("아이템 [%s] 메시 로드 성공: %s"), *GetName(), *_ItemData.ItemMesh.ToString());
+		UE_LOG(LogARPG, Warning, TEXT("아이템 [%s] 메시 로드 성공: %s"), *GetName(), *ItemData.ItemMesh.ToString());
 
 	}
 	else
 	{
-		UE_LOG(LogARPG, Warning, TEXT("아이템 [%s] 메시 로드 실패: %s"), *GetName(), *_ItemData.ItemMesh.ToString());
+		UE_LOG(LogARPG, Warning, TEXT("아이템 [%s] 메시 로드 실패: %s"), *GetName(), *ItemData.ItemMesh.ToString());
 	}
 	
 	//아이템 아이콘 및 기타 등등 변경
-	if (_ItemData.IconPath.IsValid())
+	if (ItemData.IconPath.IsValid())
 	{
-		UObject* LoadedObj = _ItemData.IconPath.TryLoad();
+		UObject* LoadedObj = ItemData.IconPath.TryLoad();
 		UTexture2D* Texture = Cast<UTexture2D>(LoadedObj);
 		if (IsValid(Texture))
 		{
 			ItemIcon = Texture;
 			UE_LOG(LogARPG, Warning,
-				TEXT("아이템 [%s] 아이콘 로드 성공: %s"), *GetName(), *_ItemData.IconPath.ToString());
+				TEXT("아이템 [%s] 아이콘 로드 성공: %s"), *GetName(), *ItemData.IconPath.ToString());
 		}
 		else
 		{
 			UE_LOG(LogARPG, Warning, 
-				TEXT("아이템 [%s] 아이콘 로드 실패: %s"), *GetName(), *_ItemData.IconPath.ToString());
+				TEXT("아이템 [%s] 아이콘 로드 실패: %s"), *GetName(), *ItemData.IconPath.ToString());
 		}
 	}
 }
@@ -131,10 +146,11 @@ void ADiaItem::SetItemProperty(const FItemBase& _ItemData, int32 Level)
 //이거 finishspawn 전에 호출하니까 작동을 안한거였음. 이걸 Finish Spawn이후에 호출하니까 잘된다.
 //Roll도 작업할예정
 //같은 Item끼리는 아예 충돌 안되게 해야함.
-void ADiaItem::DropItem(const FItemBase& ItemData)
+void ADiaItem::DropItem(const FName& ItemID)
 {
 	RollingItem();
-	SetItemName(FText::FromName(InventoryItem.ItemInstance.BaseItem.ItemID));
+	UItemSubsystem* ItemSubsystem = GetGameInstance()->GetSubsystem<UItemSubsystem>();
+	SetItemName(ItemSubsystem ? ItemSubsystem->GetItemDisplayName(InventoryItem.ItemInstance) : FText::FromName(ItemID));
 }
 
 //피직스 안쓰고 그냥 돌리는 거로 변경해야함.
@@ -223,7 +239,7 @@ void ADiaItem::SetItemName(const FText& NewName)
 	UItemName* NameWidget = Cast<UItemName>(ItemWidgetComp->GetUserWidgetObject());
 	if (IsValid(NameWidget))
 	{
-		NameWidget->SetItemName(InventoryItem.ItemInstance.BaseItem.Name);
+		NameWidget->SetItemName(NewName);
 		NameWidget->SetVisibility(ESlateVisibility::Visible);
 		ItemWidgetComp->SetVisibility(true);
 		bPendingNameSet = false;
@@ -256,7 +272,7 @@ void ADiaItem::OnItemNameClicked()
 		{
 			if (UItemName* NameWidget = Cast<UItemName>(Widget))
 			{
-				NameWidget->SetItemName(FText::FromName(InventoryItem.ItemInstance.BaseItem.ItemID));
+				NameWidget->SetItemName(FText::FromName(InventoryItem.ItemInstance.ItemID));
 			}
 		}
 	}
@@ -265,7 +281,7 @@ void ADiaItem::OnItemNameClicked()
 	if (ADiaController* PlayerController = FindBestPlayerForPickup())
 	{
 		FInventorySlot ItemToAdd = InventoryItem;
-		UE_LOG(LogARPG, Log, TEXT("아이템 클릭됨: %s"), *InventoryItem.ItemInstance.BaseItem.ItemID.ToString());
+		UE_LOG(LogARPG, Log, TEXT("아이템 클릭됨: %s"), *InventoryItem.ItemInstance.ItemID.ToString());
 
 		// DiaItem에서 가장 적절한 플레이어 찾기
 

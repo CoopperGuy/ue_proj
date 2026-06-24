@@ -39,14 +39,17 @@ public:
 	bool RequestMoveItem(const FGuid& InstanceID, int32 DestX, int32 DestY, UMainInventory* InventoryWidget);
 	bool RemoveItem(const FGuid& InstanceID, UMainInventory* InvenWidget);
 
-	void FillGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);
 	
 	// 인벤토리 검증 함수들
 	bool CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY) const;
 	bool FindPlaceForItem(int32 ItemWidth, int32 ItemHeight, int32& OutPosX, int32& OutPosY) const;
 
 	void AddGoldInventoryWithCheckOption(int32 Amount, UDiaOptionManagerComponent* OptionManager);
+
+	void SaveInventoryToSaveGame(class UDiaSaveGame* SaveGameInstance) const;
+	void LoadInventoryFromSaveGame(const class UDiaSaveGame* SaveGameInstance);
 private:
+	void FillGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY, const FItemInstance& InstanceInfo);
 	bool ClearGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY);
 private:
 
@@ -57,16 +60,21 @@ private:
     int32 GridHeight = 5;
     
     UPROPERTY()
-    FGrid InventoryGrid;
+    FInventoryGrid InventoryGrid;
 
 	UPROPERTY()
 	int32 Gold = 0;
+
+	UPROPERTY()
+	TMap<FGuid, FInventorySlot> InventoryItems;
 public:
 	// 그리드 크기 가져오기
 	FORCEINLINE int32 GetGridWidth() const { return InventoryGrid.Width; }
 	FORCEINLINE int32 GetGridHeight() const { return InventoryGrid.Height; }
-	FORCEINLINE const FGrid& GetInventoryGrid() const { return InventoryGrid; }
+	FORCEINLINE const FInventoryGrid& GetInventoryGrid() const { return InventoryGrid; }
 	FORCEINLINE const int32 GetGold() const { return Gold; }
 	void SetGold(int32 NewGold);
 	void AddGold(int32 Amount);
+	const TMap<FGuid, FInventorySlot>& GetInventoryItems() const { return InventoryItems; }
+	const FInventorySlot* GetItemDataAtGuid(const FGuid& InstanceID) const;
 };

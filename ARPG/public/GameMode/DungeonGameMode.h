@@ -20,9 +20,10 @@ public:
     virtual void BeginPlay() override;
     virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 
-    UFUNCTION()
+	UFUNCTION()
 	void OnRoomCleared(FGuid RoomID);
-	void SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData, int32 Level = 1);
+	void SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData, int32 Level = 1, int32 Quantity = 1);
+	void SpawnInventoryItemAtLocation(AActor* SpawnActor, const FInventorySlot& InventoryItem);
 
 	void WarpOtherLevel(const FName& LevelName);
 protected:

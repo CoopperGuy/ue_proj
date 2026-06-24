@@ -22,6 +22,8 @@ struct FItemDropInfo : public FTableRowBase
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 MaxQuantity = 0;
+
+	int32 Quantity = 1;
 };
 
 USTRUCT(BlueprintType)
@@ -43,7 +45,9 @@ struct FMonsterDropTable : public FTableRowBase
             if (FMath::FRand() <= DropInfo.DropRate)
             {
                 FItemDropInfo RandomizedDrop = DropInfo;
-                RandomizedDrop.MinQuantity = FMath::RandRange(DropInfo.MinQuantity, DropInfo.MaxQuantity);
+                const int32 MinDropQuantity = FMath::Min(DropInfo.MinQuantity, DropInfo.MaxQuantity);
+                const int32 MaxDropQuantity = FMath::Max(DropInfo.MinQuantity, DropInfo.MaxQuantity);
+                RandomizedDrop.Quantity = FMath::RandRange(MinDropQuantity, MaxDropQuantity);
                 RandomizedDrops.Add(RandomizedDrop);
             }
         }

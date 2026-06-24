@@ -27,8 +27,13 @@ public:
 	virtual void PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data) override;
 	virtual void PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue) override;
 
-	void InitializeCharacterAttributes(FName CharacterID, int32 Level = 1);
+	void InitializeCharacterAttributes(FName CharacterID, int32 InLevel = 1);
 	void InitializeMonsterAttributes(const FMonsterInfo& MonsterInfo);
+
+	UPROPERTY(BlueprintReadOnly, Category = "Level")
+	FGameplayAttributeData Level;
+	ATTRIBUTE_ACCESSORS(UDiaAttributeSet, Level)
+
 	// Health Attributes
 	UPROPERTY(BlueprintReadOnly, Category = "Health")
 	FGameplayAttributeData Health;

@@ -9,6 +9,7 @@
 #include "Utils/InventoryUtils.h"
 
 #include "System/GameViewPort/DiaCustomGameViewPort.h"
+#include "System/ItemSubsystem.h"
 
 #include "Components/Image.h"
 #include "Components/CanvasPanelSlot.h"
@@ -29,19 +30,48 @@ void UItemWidget::NativeConstruct()
 void UItemWidget::SetItemInfo(const FInventorySlot& ItemData)
 {
 	ItemInfo = ItemData;
+	UItemSubsystem* ItemSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<UItemSubsystem>() : nullptr;
+
+	SetVisibility(ESlateVisibility::Visible);
+	SetRenderOpacity(1.0f);
+
+	if (ItemSzBox)
+	{
+		ItemSzBox->SetVisibility(ESlateVisibility::Visible);
+	}
+
 	if (ItemIcon)
 	{
-		if (ItemInfo.ItemInstance.GetIconPath().IsValid())
+		ItemIcon->SetVisibility(ESlateVisibility::Visible);
+		ItemIcon->SetColorAndOpacity(FLinearColor::White);
+		const FSoftObjectPath IconPath = ItemSubsystem ? ItemSubsystem->GetIconPath(ItemInfo.ItemInstance) : FSoftObjectPath();
+		if (IconPath.IsValid())
 		{
 			// FSoftObjectPath를 통해 텍스처 비동기 로딩
-			TSoftObjectPtr<UTexture2D> IconTexture(ItemInfo.ItemInstance.GetIconPath());
+			TSoftObjectPtr<UTexture2D> IconTexture(IconPath);
 			if (UTexture2D* Icon = IconTexture.LoadSynchronous())
 			{
 				ItemIcon->SetBrushFromTexture(Icon);
 				FVector2D IconSize = CalculateIconSize(ItemData);
 				SetIconSize(IconSize);
 			}
+			else
+			{
+				UE_LOG(LogARPG, Warning, TEXT("SetItemInfo: icon load failed. ItemID=%s, IconPath=%s"),
+					*ItemInfo.ItemInstance.ItemID.ToString(),
+					*IconPath.ToString());
+			}
 		}
+		else
+		{
+			UE_LOG(LogARPG, Warning, TEXT("SetItemInfo: invalid icon path. ItemID=%s"),
+				*ItemInfo.ItemInstance.ItemID.ToString());
+		}
+	}
+	else
+	{
+		UE_LOG(LogARPG, Warning, TEXT("SetItemInfo: ItemIcon is null. ItemID=%s"),
+			*ItemInfo.ItemInstance.ItemID.ToString());
 	}
 
 	FSoftObjectPath TooltipWidgetPath(TEXT("/Game/UI/Inventory/WBP_ItemToolTip.WBP_ItemToolTip_C"));
@@ -61,8 +91,9 @@ void UItemWidget::SetItemInfo(const FInventorySlot& ItemData)
 
 FVector2D UItemWidget::CalculateIconSize(const FInventorySlot& ItemData) const
 {
-	int32 ItemWidth = ItemData.ItemInstance.GetWidth();
-	int32 ItemHeight = ItemData.ItemInstance.GetHeight();
+	const UItemSubsystem* ItemSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<UItemSubsystem>() : nullptr;
+	int32 ItemWidth = ItemSubsystem ? ItemSubsystem->GetItemWidth(ItemData.ItemInstance) : 1;
+	int32 ItemHeight = ItemSubsystem ? ItemSubsystem->GetItemHeight(ItemData.ItemInstance) : 1;
 		
 	return FVector2D(
 		ItemWidth * BaseSlotSize * 0.8f, 
@@ -84,8 +115,6 @@ void UItemWidget::SetIconSize(const FVector2D& NewSize)
 	
 	// 레이아웃 강제 업데이트
 	ForceLayoutUpdate();
-	
-	UE_LOG(LogARPG, Log, TEXT("SetIconSize completed: %s"), *NewSize.ToString());
 }
 
 void UItemWidget::SetWidgetGridPos(int32 PositionX, int32 PositionY)
@@ -163,8 +192,16 @@ void UItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPoint
 	DragOperation->ItemData = ItemInfo;
 	DragOperation->SourceWidget = this;
 	DragOperation->SourceInventoryWidget = GetTypedOuter<UMainInventory>();
-	DragOperation->ItemWidth = ItemInfo.ItemInstance.GetWidth();
-	DragOperation->ItemHeight = ItemInfo.ItemInstance.GetHeight();
+	if (UItemSubsystem* ItemSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<UItemSubsystem>() : nullptr)
+	{
+		DragOperation->ItemWidth = ItemSubsystem->GetItemWidth(ItemInfo.ItemInstance);
+		DragOperation->ItemHeight = ItemSubsystem->GetItemHeight(ItemInfo.ItemInstance);
+	}
+	else
+	{
+		DragOperation->ItemWidth = 1;
+		DragOperation->ItemHeight = 1;
+	}
 	DragOperation->DragType = static_cast<EItemDragDropType>(ItemDragDropState);
 	// 드래그 시각적 위젯 생성 (원본의 복사본)
 	UItemWidget* DragVisual = FInventoryUtils::CreateItemWidget(GetWorld(), &ItemInfo);
@@ -210,7 +247,6 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	if (ItemDragOp->SourceWidget == this)
 	{
 		// 자기 자신에게 드롭하는 것은 유효하지 않지만, 드래그를 취소하지 않음
-		UE_LOG(LogARPG, Log, TEXT("ItemWidget::NativeOnDrop - Dropped on self - ignoring"));
 		return true; 
 	}
 	
@@ -230,8 +266,6 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	
 	int32 DropGridX = FMath::FloorToInt(GridPosition.X);
 	int32 DropGridY = FMath::FloorToInt(GridPosition.Y);
-	
-	UE_LOG(LogARPG, Log, TEXT("ItemWidget::NativeOnDrop - Item dropped at grid position: (%d, %d)"), DropGridX, DropGridY);
 
 	// 소스 아이템과 타겟 아이템 정보
 	UItemWidget* SourceWidget = Cast<UItemWidget>(ItemDragOp->SourceWidget);
@@ -254,8 +288,6 @@ bool UItemWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent
 	//{
 	//	SourceWidget->SetRenderOpacity(1.0f);
 	//}
-	
-	UE_LOG(LogARPG, Log, TEXT("Item swap completed successfully"));
 	return true;
 }
 

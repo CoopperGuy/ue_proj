@@ -19,6 +19,7 @@
 
 #include "System/MapInfoSubsystem.h"
 #include "System/DiaMapGeneratorSubsystem.h"
+#include "System/ItemSubsystem.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "Logging/ARPGLogChannels.h"
@@ -87,7 +88,7 @@ void ADungeonGameMode::OnRoomCleared(FGuid RoomID)
 }
 
 
-void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData, int32 Level)
+void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData, int32 Level, int32 Quantity)
 {
 	if (IsValid(SpawnActor))
 	{
@@ -104,9 +105,32 @@ void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& 
 
 		if (SpawnedItem)
 		{
-			SpawnedItem->SetItemProperty(ItemData, Level);
+			SpawnedItem->SetItemProperty(ItemData, Level, Quantity);
 			SpawnedItem->FinishSpawning(SpawnTransform);
-			SpawnedItem->DropItem(ItemData);
+			SpawnedItem->DropItem(ItemData.ItemID);
+		}
+	}
+}
+
+void ADungeonGameMode::SpawnInventoryItemAtLocation(AActor* SpawnActor, const FInventorySlot& InventoryItem)
+{
+	if (IsValid(SpawnActor))
+	{
+		FVector SpawnLocation = SpawnActor->GetActorLocation();
+		SpawnLocation.Z += 100.f;
+		FTransform SpawnTransform = SpawnActor->GetTransform();
+		SpawnTransform.SetLocation(SpawnLocation);
+
+		ADiaItem* SpawnedItem = GetWorld()->SpawnActorDeferred<ADiaItem>(ADiaItem::StaticClass(),
+			SpawnTransform, SpawnActor);
+
+		UE_LOG(LogARPG, Warning, TEXT("Spawned Inventory Item at Location: %s"), *SpawnLocation.ToString());
+
+		if (SpawnedItem)
+		{
+			SpawnedItem->SetInventoryItem(InventoryItem);
+			SpawnedItem->FinishSpawning(SpawnTransform);
+			SpawnedItem->DropItem(InventoryItem.ItemInstance.ItemID);
 		}
 	}
 }

@@ -46,6 +46,21 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UEquipSlot* HelmetSlot;
 
+	UPROPERTY(meta = (BindWidgetOptional))
+	UEquipSlot* BeltSlot;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UEquipSlot* ShieldSlot;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UEquipSlot* RingLSlot;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UEquipSlot* RingRSlot;
+
+	UPROPERTY(meta = (BindWidgetOptional))
+	UEquipSlot* AmuletSlot;
+
 	TWeakObjectPtr<UDiaInventoryComponent> InventoryComponent;
 	TWeakObjectPtr<UDiaEquipmentComponent> EquipementComponent;
 	TWeakObjectPtr<ADiaController> DiaControllerRef;
@@ -59,6 +74,11 @@ public:
 		case EEquipmentSlot::EES_Feet: return ShooseSlot;
 		case EEquipmentSlot::EES_Hands: return HandsSlot;
 		case EEquipmentSlot::EES_Head: return HelmetSlot;
+		case EEquipmentSlot::EES_Belt: return BeltSlot;
+		case EEquipmentSlot::EES_Shield: return ShieldSlot;
+		case EEquipmentSlot::EES_RingL: return RingLSlot;
+		case EEquipmentSlot::EES_RingR: return RingRSlot;
+		case EEquipmentSlot::EES_Amulet: return AmuletSlot;
 		default: return nullptr;
 		}
 	}

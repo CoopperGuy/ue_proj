@@ -138,6 +138,7 @@ void FDiaGameplayTags::RegisterAttributeSetTags()
 {	// ========================================
 	// AttributeSet Tags - 기본 스탯
 	// ========================================
+	GameplayTags.AddTag(GameplayTags.AttributeSet_Level, "AttributeSet.Level", "Level");
 	GameplayTags.AddTag(GameplayTags.AttributeSet_Health, "AttributeSet.Health", "체력");
 	GameplayTags.AddTag(GameplayTags.AttributeSet_MaxHealth, "AttributeSet.MaxHealth", "최대 체력");
 	GameplayTags.AddTag(GameplayTags.AttributeSet_Mana, "AttributeSet.Mana", "마나");
@@ -168,8 +169,8 @@ void FDiaGameplayTags::RegisterItemOptionTags()
 	GameplayTags.AddTag(GameplayTags.ItemOptionGoldFind, "Item.Option.MultiplyAdditive.GoldFind", "골드 획득량 증가");
 	GameplayTags.AddTag(GameplayTags.ItemOptionstatHealth, "Item.Option.Additive.MaxHealth", "체력 증가");
 	GameplayTags.AddTag(GameplayTags.ItemOptionStatSpeed, "Item.Option.MultiplyAdditive.MovementSpeed", "이동 속도 증가");
-	GameplayTags.AddTag(GameplayTags.ItemOptionStatCriticalChance, "Item.Option.Additive.CriticalChance", "치명타 확률 증가");
-	GameplayTags.AddTag(GameplayTags.ItemOptionStatDamage, "Item.Option.MultiplyAdditive.DamageIncreaseOption", "공격력 증가");
+	GameplayTags.AddTag(GameplayTags.ItemOptionStatCriticalChance, "Item.Option.Additive.CritChance", "치명타 확률 증가");
+	GameplayTags.AddTag(GameplayTags.ItemOptionStatDamage, "Item.Option.Additive.DamageIncreaseOption", "공격력 증가");
 
 }
 
@@ -216,8 +217,8 @@ const TArray<FGameplayTag>& FDiaGameplayTags::GetItemOptionList()
 	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.GoldFind")));
 	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.Additive.MaxHealth")));
 	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.MovementSpeed")));
-	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.Additive.CriticalChance")));
-	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.DamageIncreaseOption")));
+	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.Additive.CritChance")));
+	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.Additive.DamageIncreaseOption")));
 
 	return CacheOption;
 }
