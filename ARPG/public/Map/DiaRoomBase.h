@@ -14,6 +14,22 @@ class USceneComponent;
 class UArrowComponent;
 class UChildActorComponent;
 
+UENUM(BlueprintType)
+enum class EDiaRoomBattleState : uint8
+{
+	Idle,
+	BattleActive,
+	Cleared
+};
+
+UENUM(BlueprintType)
+enum class EDiaRoomRole : uint8
+{
+	Normal,
+	Start,
+	StageClear
+};
+
 /// <summary>
 /// Room은 현재 DataAsset으로 만들어지는데, 블루프린트로 만든후, 이 블루프린트를 DataAsset으로 만들어서 관리하는 방식으로 사용할 예정이다.
 /// 몬스터에 대한 정보는 현재 만들어져있는 subsystem에서 가져올거고, 데이터도 다룰거다.
@@ -34,6 +50,13 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	void ConfigurePackedLevelTraceCollision();
+	void ConfigureDoorComponents();
+	void EnsureDoorComponentCount(int32 DesiredCount);
+	TArray<FDiaRoomPort> GetEffectivePossibleDoorPorts() const;
+	bool IsActiveDoorPort(const FDiaRoomPort& Port) const;
+	bool CanStartBattle() const;
+	void SetRoomBattleState(EDiaRoomBattleState NewState);
+	void SetRoomEnterTriggersEnabled(bool bEnabled);
 
 	void OnConstruction(const FTransform& Transform) override;
 public:	
@@ -58,7 +81,7 @@ public:
 
 	void OnBattleStart(const FGuid InGuid);
 	void OnBattleEnd(const FGuid InGuid);
-	bool IsMonsterGenerateRoom(ETileType _TileType);
+	bool IsMonsterGenerateRoom(ETileType _TileType) const;
 protected:
 	UPROPERTY(EditAnywhere)
 	UChildActorComponent* PackedLevelChildActorComponent;
@@ -76,7 +99,16 @@ protected:
 	TArray<AActor*> RoomDoors;
 
 	UPROPERTY()
-	uint8 DoorDirections = 0;
+	TArray<AActor*> ClosedPortDoors;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
+	FIntPoint RoomSize = FIntPoint(1, 1);
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
+	TArray<FDiaRoomPort> PossibleDoorPorts;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
+	TArray<FDiaRoomPort> ActiveDoorPorts;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room")
 	ETileType TileType;
@@ -87,14 +119,26 @@ protected:
 	UPROPERTY()
 	ESpawnType SpawnType;
 
-	bool isCleared = false;
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Room")
+	EDiaRoomBattleState RoomBattleState = EDiaRoomBattleState::Idle;
+
+	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Room")
+	EDiaRoomRole RoomRole = EDiaRoomRole::Normal;
 public:
 	FORCEINLINE void SetTileType(ETileType _TileType) { TileType = _TileType; }
 	FORCEINLINE ETileType GetTileType() const { return TileType; }
 	FORCEINLINE void SetRoomGuid(const FGuid& _RoomGuid) { RoomGuid = _RoomGuid; }
 	FORCEINLINE const FGuid& GetRoomGuid() const { return RoomGuid; }
-	FORCEINLINE void SetDoorDirections(uint8 _DoorDir) { DoorDirections = _DoorDir; }
-	FORCEINLINE uint8 GetDoorDirections() const { return DoorDirections; }
+	void SetDoorPorts(const TArray<FDiaRoomPort>& InPossibleDoorPorts, const TArray<FDiaRoomPort>& InActiveDoorPorts);
+	FORCEINLINE const TArray<FDiaRoomPort>& GetActiveDoorPorts() const { return ActiveDoorPorts; }
 	FORCEINLINE void SetSpawnType(ESpawnType _SpawnType) { SpawnType = _SpawnType; }
 	FORCEINLINE ESpawnType GetSpawnType() const { return SpawnType; }
+	void SetRoomRole(EDiaRoomRole NewRole);
+	FORCEINLINE EDiaRoomRole GetRoomRole() const { return RoomRole; }
+	FORCEINLINE bool IsStartRoom() const { return RoomRole == EDiaRoomRole::Start; }
+	FORCEINLINE bool IsStageClearRoom() const { return RoomRole == EDiaRoomRole::StageClear; }
+	bool IsMonsterSpawnEnabled() const;
+	FORCEINLINE EDiaRoomBattleState GetRoomBattleState() const { return RoomBattleState; }
+	FORCEINLINE bool IsRoomCleared() const { return RoomBattleState == EDiaRoomBattleState::Cleared; }
+	void SetRoomSize(const FIntPoint& InRoomSize);
 };

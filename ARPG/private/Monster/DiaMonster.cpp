@@ -50,6 +50,8 @@ ADiaMonster::ADiaMonster()
 
 void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 {
+	EnsureAbilitySystemInitialized(GetController());
+
 	//// 몬스터 기본 정보 설정
 	MonsterID = MonsterInfo.MonsterID;
 	//

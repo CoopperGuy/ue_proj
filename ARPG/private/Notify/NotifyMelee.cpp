@@ -8,7 +8,7 @@ UNotifyMelee::UNotifyMelee()
 {
 }
 
-void UNotifyMelee::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
+void UNotifyMelee::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference)
 {
     if (!MeshComp || !MeshComp->GetOwner())
     {

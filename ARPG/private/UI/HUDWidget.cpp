@@ -14,6 +14,7 @@
 #include "UI/Alret/ClearAlret.h"
 #include "UI/DiaCaution.h"
 #include "UI/DiaDamagePopup.h"
+#include "UI/Rewards/RewardChoicePanel.h"
 
 #include "GAS/DiaGameplayTags.h"
 #include "GAS/DiaAttributeSet.h"
@@ -48,6 +49,7 @@ void UHUDWidget::NativeConstruct()
 	SkillQuickSlotWidget->SetVisibility(ESlateVisibility::Visible);
 	BossMonsterHPWidget->SetVisibility(ESlateVisibility::Collapsed);
 	MonsterHPWidget->SetVisibility(ESlateVisibility::Collapsed);
+	RewardChoicePanel->SetVisibility(ESlateVisibility::Collapsed);
 
 	ADiaBaseCharacter* OwningActor = Cast<ADiaBaseCharacter>(GetOwningPlayerPawn());
 	ADiaController* OwningController = Cast<ADiaController>(GetOwningPlayer());
@@ -91,12 +93,6 @@ void UHUDWidget::NativeConstruct()
 		OwningController->GetOnTargetChanged().AddUObject(this, &UHUDWidget::UpdateTagetMonster);
 	}
 
-	ADiaGameState* DiaGameState = GetWorld() ? GetWorld()->GetGameState<ADiaGameState>() : nullptr;
-	if (IsValid(DiaGameState))
-	{
-		DiaGameState->OnRoomCleared.AddUObject(this, &UHUDWidget::ShowClearAlret);
-	}
-	
 	UDiaCustomGameViewPort* DiaCumstomGameViewPort = GetWorld() ? Cast<UDiaCustomGameViewPort>(GetWorld()->GetGameViewport()) : nullptr;
 	if (IsValid(DiaCumstomGameViewPort))
 	{
@@ -293,6 +289,17 @@ void UHUDWidget::ShowDamagePopup(float DamageAmount, const FVector2D& ScreenPos,
 	{
 		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::ShowDamagePopup - DamagePopupWidgetClass is null"));
 	}
+}
+
+void UHUDWidget::OpenRewardChoicePanel(const FText& Title, const FText& Subtitle, const TArray<FRewardData>& RewardOptions)
+{
+	if (!IsValid(RewardChoicePanel))
+	{
+		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::OpenRewardChoicePanel - RewardChoicePanel is null"));
+		return;
+	}
+
+	RewardChoicePanel->OpenRewardChoicePanel(Title, Subtitle, RewardOptions);
 }
 
 void UHUDWidget::SetMonsterHPVisibility(ESlateVisibility _Visibility)

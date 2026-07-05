@@ -25,9 +25,12 @@ public:
 	TMap<EEquipmentSlot, FEquippedItem> EquippedItems;
 
 	UPROPERTY()
-	int32 PlayerLevel;
+	int32 PlayerLevel = 1;
 
 	UPROPERTY()
 	FVector PlayerLocation;
+
+	UPROPERTY()
+	FString SaveLevelName;
 		
 };

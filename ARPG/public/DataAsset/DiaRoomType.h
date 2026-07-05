@@ -28,6 +28,9 @@ public:
 	FIntPoint RoomSize;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room Info")
+	TArray<FDiaRoomPort> Ports;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room Info")
 	ETileType TileType = ETileType::Empty;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Room Info")

@@ -7,6 +7,8 @@
 #include "Containers/UnrealString.h"
 #include "ClearAlret.generated.h"
 
+class UWidgetAnimation;
+
 /**
  * 
  */
@@ -26,4 +28,10 @@ protected:
 
 	UPROPERTY()
 	FTimerHandle DeactivateTimerHandle;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Clear Alert", meta = (ClampMin = "0.0"))
+	float DisplayDuration = 1.2f;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	UWidgetAnimation* Anim_FadeOut;
 };

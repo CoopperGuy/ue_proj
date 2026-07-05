@@ -99,6 +99,13 @@ void UDiaEquipmentComponent::SaveEquipmentToSaveGame(UDiaSaveGame* SaveGameInsta
 
 void UDiaEquipmentComponent::LoadEquipmentFromSaveGame(const UDiaSaveGame* SaveGameInstance)
 {
+	EquipmentMap.Empty();
+
+	if (!IsValid(SaveGameInstance))
+	{
+		return;
+	}
+
 	for(const auto& SaveData : SaveGameInstance->EquippedItems)
 	{
 		EquipmentMap.Add(SaveData.Key, SaveData.Value);

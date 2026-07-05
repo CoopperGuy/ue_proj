@@ -19,6 +19,7 @@ class UDiaStatComponent;
 class ADiaBaseCharacter;
 class USkillObject;
 class UDiaItemDebugWidget;
+class UDiaMenuSystem;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnTargetChanged, ADiaBaseCharacter*);
 
@@ -58,9 +59,8 @@ public:
 	UFUNCTION(Exec, BlueprintCallable, Category = "Debug")
 	void CheatValidateOptionRolls(FName ItemID, int32 Count = 1000, int32 Level = 1);
 
-	ESlateVisibility GetInventoryVisibility() const;
-	ESlateVisibility GetWidgetVisibility(const FName& FoundName) const;
-
+	void SetMenuSystemVisibility(bool bVisible);
+	void ToggleMenuSystemVisibility();
 	// StatComponent 초기화 관련 함수들
 	//UFUNCTION()
 	//void OnStatComponentInitialized(UDiaStatComponent* StatComponent);
@@ -109,10 +109,19 @@ protected:
 	UPROPERTY()
 	TObjectPtr<UDiaItemDebugWidget> ItemDebugWidget;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+	TSubclassOf<UDiaMenuSystem> MenuSystemClass;
+	
+	UPROPERTY()
+	TObjectPtr<UDiaMenuSystem> MenuSystemWidget;
+
 	bool bBlockSkillInput = false;
 public:
 	FORCEINLINE FOnTargetChanged& GetOnTargetChanged() { return OnTargetChanged; }
 	UHUDWidget* GetHUDWidget() const;
 	void SetBlockSkillInput(bool bBlock) { bBlockSkillInput = bBlock; }
 	bool IsSkillInputBlocked() const { return bBlockSkillInput; }
+	UDiaMenuSystem* GetMenuSystemWidget() const;
+	ESlateVisibility GetInventoryVisibility() const;
+	ESlateVisibility GetWidgetVisibility(const FName& FoundName) const;
 };

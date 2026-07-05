@@ -34,14 +34,14 @@ void UDiaInventoryComponent::BeginPlay()
 
 void UDiaInventoryComponent::HandleItemRemoved(const FGuid& ItemID)
 {
-	//Inventory UI를 가져온다.
+	//Inventory UI�?가?�온??
 	ADungeonGameMode* GM = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());
 	if (!GM) return;
 	UHUDWidget* HUD = GM->GetHUDWidget();
 	if (!HUD) return;
 	UMainInventory* InvenWidget = HUD->GetInventoryWidget();
 	if (!InvenWidget) return;
-	//아이템을 제거한다.
+	//?�이?�을 ?�거?�다.
 
 	RemoveItem(ItemID, InvenWidget);
 }
@@ -60,7 +60,7 @@ bool UDiaInventoryComponent::TryAddItem(const FInventorySlot& ItemData, UMainInv
 	const int32 ItemWidth = ItemSubsystem->GetItemWidth(ItemData.ItemInstance);
 	const int32 ItemHeight = ItemSubsystem->GetItemHeight(ItemData.ItemInstance);
 
-	//자동으로 찾는 함수 호출
+	//?�동?�로 찾는 ?�수 ?�출
 	if (!FInventoryUtils::FindPlaceForItem(this, ItemWidth, ItemHeight, OutPosX, OutPosY)) 
 		return false;
 
@@ -154,7 +154,7 @@ bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID, UMainInventory*
 
 void UDiaInventoryComponent::FillGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY, const FItemInstance& InstanceInfo)
 {
-	// 아이템이 차지하는 그리드 공간을 채움
+	// ?�이?�이 차�??�는 그리??공간??채�?
 	for (int32 y = PosY; y < PosY + ItemHeight; ++y)
 	{
 		for (int32 x = PosX; x < PosX + ItemWidth; ++x)
@@ -167,7 +167,7 @@ void UDiaInventoryComponent::FillGrid(int32 ItemWidth, int32 ItemHeight, int32 P
 
 bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY) const
 {
-	// 기본 범위 검사
+	// 기본 범위 검??
 	if (PosX < 0 || PosY < 0 || 
 		PosX + ItemWidth > GetGridWidth() || 
 		PosY + ItemHeight > GetGridHeight())
@@ -178,7 +178,7 @@ bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, i
 		return false;
 	}
 
-	// 그리드에서 셀 점유 상태 확인
+	// 그리?�에???� ?�유 ?�태 ?�인
 	for (int32 Y = PosY; Y < PosY + ItemHeight; ++Y)
 	{
 		for (int32 X = PosX; X < PosX + ItemWidth; ++X)
@@ -186,7 +186,7 @@ bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, i
 			int32 CellIndex = Y * GetGridWidth() + X;
 			if (CellIndex >= 0 && CellIndex < InventoryGrid.Cells.Num())
 			{
-				if (InventoryGrid.Cells[CellIndex].bOccupied) // 셀이 이미 점유됨
+				if (InventoryGrid.Cells[CellIndex].bOccupied) // ?�???��? ?�유??
 				{
 #ifdef UE_EDITOR
 					UE_LOG(LogARPG, Warning, TEXT("Cannot place item at (%d, %d) : Cell(% d, % d) is already occupied."), PosX, PosY, X, Y);
@@ -202,7 +202,7 @@ bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, i
 
 bool UDiaInventoryComponent::FindPlaceForItem(int32 ItemWidth, int32 ItemHeight, int32& OutPosX, int32& OutPosY) const
 {
-	// 좌상단부터 순차적으로 배치 가능한 위치 찾기
+	// 좌상?��????�차?�으�?배치 가?�한 ?�치 찾기
 	for (int32 Y = 0; Y <= GetGridHeight() - ItemHeight; ++Y)
 	{
 		for (int32 X = 0; X <= GetGridWidth() - ItemWidth; ++X)
@@ -216,7 +216,7 @@ bool UDiaInventoryComponent::FindPlaceForItem(int32 ItemWidth, int32 ItemHeight,
 		}
 	}
 
-	return false; // 배치할 수 있는 공간이 없음
+	return false; // 배치?????�는 공간???�음
 }
 
 void UDiaInventoryComponent::SaveInventoryToSaveGame(UDiaSaveGame* SaveGameInstance) const
@@ -230,6 +230,14 @@ void UDiaInventoryComponent::SaveInventoryToSaveGame(UDiaSaveGame* SaveGameInsta
 
 void UDiaInventoryComponent::LoadInventoryFromSaveGame(const UDiaSaveGame* SaveGameInstance)
 {
+	InventoryItems.Empty();
+	InventoryGrid = FInventoryGrid(GridWidth, GridHeight);
+
+	if (!IsValid(SaveGameInstance))
+	{
+		return;
+	}
+
 	UItemSubsystem* ItemSubsystem = GetWorld() && GetWorld()->GetGameInstance()
 		? GetWorld()->GetGameInstance()->GetSubsystem<UItemSubsystem>()
 		: nullptr;
@@ -237,9 +245,9 @@ void UDiaInventoryComponent::LoadInventoryFromSaveGame(const UDiaSaveGame* SaveG
 
 	for (const FInventorySlot& SavedItem : SaveGameInstance->InventorySlots)
 	{
-		InventoryItems.Add(SavedItem.ItemInstance.InstanceID, SavedItem);
 		if(CanPlaceItemAt(ItemSubsystem->GetItemWidth(SavedItem.ItemInstance), ItemSubsystem->GetItemHeight(SavedItem.ItemInstance), SavedItem.GridX, SavedItem.GridY))
 		{
+			InventoryItems.Add(SavedItem.ItemInstance.InstanceID, SavedItem);
 			FillGrid(ItemSubsystem->GetItemWidth(SavedItem.ItemInstance), ItemSubsystem->GetItemHeight(SavedItem.ItemInstance), SavedItem.GridX, SavedItem.GridY, SavedItem.ItemInstance);
 		}
 	}

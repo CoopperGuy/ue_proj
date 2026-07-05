@@ -6,6 +6,7 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "InputAction.h"
 #include "InputMappingContext.h"
 
 #include "Controller/DiaController.h"
@@ -21,6 +22,7 @@
 
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "UObject/ConstructorHelpers.h"
 
 #include "UI/HUDWidget.h"
 
@@ -70,6 +72,12 @@ ADiaCharacter::ADiaCharacter()
     SkillActions.Init(nullptr, MaxSkillMapping);
 
     Tags.Emplace(FDiaGameplayTags::Get().Actor_Player.GetTagName());
+
+	static ConstructorHelpers::FObjectFinder<UInputAction> MenuActionFinder(TEXT("/Game/InputSystem/IA_DiaMenuAction.IA_DiaMenuAction"));
+	if (MenuActionFinder.Succeeded())
+	{
+		MenuAction = MenuActionFinder.Object;
+	}
 }
 
 // Called when the game starts or when spawned
@@ -193,6 +201,10 @@ void ADiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
         {
 			EnhancedInputComponent->BindAction(SkillPanelAction, ETriggerEvent::Triggered, this, &ADiaCharacter::ToggleSkillPanel);
         }
+		if (MenuAction)
+		{
+			EnhancedInputComponent->BindAction(MenuAction, ETriggerEvent::Started, this, &ADiaCharacter::ToggleMenuSystem);
+		}
     }
 }
 
@@ -393,6 +405,14 @@ void ADiaCharacter::ToggleSkillPanel()
         ESlateVisibility eVisibility = PlayerController->GetWidgetVisibility("SkillPanelWidget");
         PlayerController->ToggleSkillPanelVisibility(eVisibility == ESlateVisibility::Visible ? false : true);
     }
+}
+
+void ADiaCharacter::ToggleMenuSystem()
+{
+	if (ADiaController* PlayerController = Cast<ADiaController>(Controller))
+	{
+		PlayerController->ToggleMenuSystemVisibility();
+	}
 }
 
 void ADiaCharacter::RegisteCurrentSkillList()

@@ -18,6 +18,7 @@
 
 #include "UI/CharacterStatus/StatusWidget.h"
 #include "UI/DiaItemDebugWidget.h"
+#include "UI/Menu/DiaMenuSystem.h"
 
 #include "GameMode/DungeonGameMode.h"
 #include "DiaBaseCharacter.h"
@@ -91,6 +92,16 @@ ADiaController::ADiaController()
 	else
 	{
 		UE_LOG(LogARPG_Inventory, Warning, TEXT("ADiaController: Failed to find HUD widget class"));
+	}
+
+	static ConstructorHelpers::FClassFinder<UDiaMenuSystem> MenuSystemClassFinder(TEXT("/Game/UI/Menu/WBP_EscMenu.WBP_EscMenu_C"));
+	if (MenuSystemClassFinder.Succeeded())
+	{
+		MenuSystemClass = MenuSystemClassFinder.Class;
+	}
+	else
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("ADiaController: Failed to find menu system widget class"));
 	}
 }
 
@@ -311,6 +322,34 @@ UHUDWidget* ADiaController::GetHUDWidget() const
 	UE_LOG(LogARPG_Inventory, Display, TEXT("ADiaController::GetHUDWidget - HUDWidget created and cached"));
 
 	return NewHUD;
+}
+
+UDiaMenuSystem* ADiaController::GetMenuSystemWidget() const
+{
+	if (IsValid(MenuSystemWidget))
+	{
+		return MenuSystemWidget.Get();
+	}
+
+	if (!MenuSystemClass)
+	{
+		return nullptr;
+	}
+
+	ADiaController* NonConstThis = const_cast<ADiaController*>(this);
+	UDiaMenuSystem* NewWidget = CreateWidget<UDiaMenuSystem>(NonConstThis, MenuSystemClass);
+	if (!IsValid(NewWidget))
+	{
+		return nullptr;
+	}
+
+	// AddToViewport()가 NativeConstruct를 유발하고, 그 안에서 GetHUDWidget()이 다시 호출될 수 있음.
+	// 재귀 방지를 위해 뷰포트에 추가하기 전에 캐시를 먼저 설정.
+	NonConstThis->MenuSystemWidget = NewWidget;
+	NewWidget->AddToViewport();
+
+
+	return NewWidget;
 }
 
 //인벤토리에 아이템 더하기 호출.
@@ -704,6 +743,24 @@ void ADiaController::CheatValidateOptionRolls(FName ItemID, int32 Count, int32 L
 		ItemDebugWidget->RefreshDebugText();
 	}
 #endif
+}
+
+void ADiaController::SetMenuSystemVisibility(bool bVisible)
+{
+	UDiaMenuSystem* MenuWidget = bVisible ? GetMenuSystemWidget() : MenuSystemWidget.Get();
+	if (!IsValid(MenuWidget))
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("MenuSystemWidget is null"));
+		return;
+	}
+
+	MenuWidget->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+}
+
+void ADiaController::ToggleMenuSystemVisibility()
+{
+	const bool bIsVisible = IsValid(MenuSystemWidget) && MenuSystemWidget->GetVisibility() == ESlateVisibility::Visible;
+	SetMenuSystemVisibility(!bIsVisible);
 }
 
 ESlateVisibility ADiaController::GetInventoryVisibility() const

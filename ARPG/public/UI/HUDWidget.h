@@ -7,6 +7,7 @@
 #include "AttributeSet.h"
 #include "AbilitySystemComponent.h"
 #include <GameplayEffectTypes.h>
+#include "Types/DiaRewardData.h"
 
 #include "HUDWidget.generated.h"
 
@@ -38,6 +39,7 @@ class ADiaMonster;
 class USkillQuickSlotWidget;
 class UCommonActivatableWidget;
 class UDiaDamagePopup;
+class URewardChoicePanel;
 /**
  * 
  */
@@ -60,6 +62,8 @@ public:
 
 	void ShowClearAlret(FGuid RoomGuid);
 	void ShowDamagePopup(float DamageAmount, const FVector2D& ScreenPos, bool bIsCritical);
+
+	void OpenRewardChoicePanel(const FText& Title, const FText& Subtitle, const TArray<FRewardData>& RewardOptions);
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UOrb* HpWidget;
@@ -87,6 +91,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	USkillQuickSlotWidget* SkillQuickSlotWidget;
+
+	UPROPERTY(meta = (BindWidget))
+	URewardChoicePanel* RewardChoicePanel;
 
 	UPROPERTY()
 	UDiaPrimaryLayout* DiaPrimaryLayout;
@@ -118,4 +125,3 @@ public:
 
 	UUserWidget* FindWidgetByName(const FName& WidgetName);
 };
-

@@ -77,8 +77,13 @@ void ADungeonGameMode::OnRoomCleared(FGuid RoomID)
 
 	ADiaRoomBase* RoomBase = MapInfo->GetRoomActor(RoomID);
 	//보스룸 클리어 하면 클리어 했다고 보내야함.
-	if (IsValid(RoomBase) && RoomBase->GetTileType() == ETileType::Boss)
+	if (IsValid(RoomBase) && RoomBase->IsStageClearRoom())
 	{
+		if (UHUDWidget* HUDWidget = GetHUDWidget())
+		{
+			HUDWidget->ShowClearAlret(RoomID);
+		}
+
 		ADiaGameState* DiaGameState = Cast<ADiaGameState>(GameState);
 		if (IsValid(DiaGameState))
 		{

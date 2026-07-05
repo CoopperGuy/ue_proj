@@ -6,6 +6,7 @@
 #include "Components/ChildActorComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Components/PrimitiveComponent.h"
+#include "GameFramework/PlayerController.h"
 
 #include "Types/MapGenerate.h"
 #include "System/MonsterManager.h"
@@ -24,30 +25,139 @@ ADiaRoomBase::ADiaRoomBase()
 	SetRootComponent(PackedLevelChildActorComponent);
 
 	// North=+X, East=+Y, South=-X, West=-Y (Unreal 좌표계 기준)
-	const float H = DiaMapConstants::HalfTileSize;
-	const FVector TriggerOffsets[] = {
-		FVector(H, 0.f, 150.f),    // North (+X = Forward)
-		FVector(0.f, H, 150.f),    // East  (+Y = Right)
-		FVector(-H, 0.f, 150.f),   // South (-X = Backward)
-		FVector(0.f, -H, 150.f)    // West  (-Y = Left)
-	};
 	for (int32 i = 0; i < 4; ++i)
 	{
 		FString TriggerName = FString::Printf(TEXT("RoomEnterTrigger%d"), i);
 		UBoxComponent* Trigger = CreateDefaultSubobject<UBoxComponent>(*TriggerName);
 		Trigger->SetupAttachment(RootComponent);
 		Trigger->SetCollisionProfileName(TEXT("RoomEnterTrigger"));
-		Trigger->SetBoxExtent(FVector(10.f, 200.f, 100.f));
-		Trigger->SetRelativeLocation(TriggerOffsets[i]);
-		Trigger->SetRelativeRotation(FRotator(0.f, i * 90.f, 0.f));
 		RoomEnterTriggers.Add(Trigger);
 
 		FString ArrowName = FString::Printf(TEXT("DoorSpawnPoint%d"), i);
 		UArrowComponent* Arrow = CreateDefaultSubobject<UArrowComponent>(*ArrowName);
 		Arrow->SetupAttachment(RootComponent);
-		Arrow->SetRelativeLocation(TriggerOffsets[i]);
-		Arrow->SetRelativeRotation(FRotator(0.f, i * 90.f, 0.f));
 		DoorSpawnPoints.Add(Arrow);
+	}
+
+	ConfigureDoorComponents();
+}
+
+void ADiaRoomBase::EnsureDoorComponentCount(int32 DesiredCount)
+{
+	DesiredCount = FMath::Max(0, DesiredCount);
+	while (RoomEnterTriggers.Num() < DesiredCount)
+	{
+		const FString TriggerName = FString::Printf(TEXT("RoomEnterTrigger%d"), RoomEnterTriggers.Num());
+		UBoxComponent* Trigger = NewObject<UBoxComponent>(this, *TriggerName);
+		Trigger->SetupAttachment(RootComponent);
+		Trigger->SetCollisionProfileName(TEXT("RoomEnterTrigger"));
+		Trigger->RegisterComponent();
+		AddInstanceComponent(Trigger);
+		RoomEnterTriggers.Add(Trigger);
+	}
+
+	while (DoorSpawnPoints.Num() < DesiredCount)
+	{
+		const FString ArrowName = FString::Printf(TEXT("DoorSpawnPoint%d"), DoorSpawnPoints.Num());
+		UArrowComponent* Arrow = NewObject<UArrowComponent>(this, *ArrowName);
+		Arrow->SetupAttachment(RootComponent);
+		Arrow->RegisterComponent();
+		AddInstanceComponent(Arrow);
+		DoorSpawnPoints.Add(Arrow);
+	}
+}
+
+TArray<FDiaRoomPort> ADiaRoomBase::GetEffectivePossibleDoorPorts() const
+{
+	if (!PossibleDoorPorts.IsEmpty())
+	{
+		return PossibleDoorPorts;
+	}
+
+	return DiaMapGenerator::MakeDefaultPorts(RoomSize);
+}
+
+bool ADiaRoomBase::IsActiveDoorPort(const FDiaRoomPort& Port) const
+{
+	for (const FDiaRoomPort& ActivePort : ActiveDoorPorts)
+	{
+		if (ActivePort == Port)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool ADiaRoomBase::CanStartBattle() const
+{
+	return IsMonsterSpawnEnabled() && RoomBattleState == EDiaRoomBattleState::Idle && IsMonsterGenerateRoom(TileType);
+}
+
+void ADiaRoomBase::SetRoomBattleState(EDiaRoomBattleState NewState)
+{
+	RoomBattleState = NewState;
+}
+
+void ADiaRoomBase::SetRoomEnterTriggersEnabled(bool bEnabled)
+{
+	const bool bMonsterRoom = IsMonsterSpawnEnabled() && IsMonsterGenerateRoom(TileType);
+	const bool bCanEnable = bEnabled && bMonsterRoom && RoomBattleState == EDiaRoomBattleState::Idle;
+	const TArray<FDiaRoomPort> EffectivePorts = GetEffectivePossibleDoorPorts();
+
+	for (int32 Index = 0; Index < RoomEnterTriggers.Num(); ++Index)
+	{
+		UBoxComponent* Trigger = RoomEnterTriggers[Index];
+		if (!IsValid(Trigger))
+		{
+			continue;
+		}
+
+		const bool bActivePort = EffectivePorts.IsValidIndex(Index) && IsActiveDoorPort(EffectivePorts[Index]);
+		Trigger->SetCollisionEnabled(bCanEnable && bActivePort ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
+	}
+}
+
+void ADiaRoomBase::ConfigureDoorComponents()
+{
+	const FIntPoint SafeRoomSize(FMath::Max(1, RoomSize.X), FMath::Max(1, RoomSize.Y));
+	const TArray<FDiaRoomPort> EffectivePorts = GetEffectivePossibleDoorPorts();
+	EnsureDoorComponentCount(EffectivePorts.Num());
+
+	for (int32 i = 0; i < RoomEnterTriggers.Num(); ++i)
+	{
+		const bool bHasPort = EffectivePorts.IsValidIndex(i);
+		const FDiaRoomPort Port = bHasPort ? EffectivePorts[i] : FDiaRoomPort();
+		const FIntPoint DirectionOffset = bHasPort ? DiaMapGenerator::GetDirectionOffset(Port.Direction) : FIntPoint::ZeroValue;
+		const FIntPoint LocalCell(
+			FMath::Clamp(Port.LocalCell.X, 0, SafeRoomSize.X - 1),
+			FMath::Clamp(Port.LocalCell.Y, 0, SafeRoomSize.Y - 1));
+		const float LocalX = (static_cast<float>(LocalCell.X) - (static_cast<float>(SafeRoomSize.X - 1) * 0.5f)) * DiaMapConstants::TileSize;
+		const float LocalY = (static_cast<float>(LocalCell.Y) - (static_cast<float>(SafeRoomSize.Y - 1) * 0.5f)) * DiaMapConstants::TileSize;
+		const FVector TriggerOffset(
+			LocalX + static_cast<float>(DirectionOffset.X) * DiaMapConstants::HalfTileSize,
+			LocalY + static_cast<float>(DirectionOffset.Y) * DiaMapConstants::HalfTileSize,
+			150.f);
+		const float Yaw = Port.Direction == EDiaDirection::None ? 0.f : static_cast<float>(static_cast<uint8>(Port.Direction)) * 90.f;
+
+		if (UBoxComponent* Trigger = RoomEnterTriggers[i])
+		{
+			Trigger->SetBoxExtent(FVector(10.f, 200.f, 100.f));
+			Trigger->SetRelativeLocation(TriggerOffset);
+			Trigger->SetRelativeRotation(FRotator(0.f, Yaw, 0.f));
+			Trigger->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+
+		if (UArrowComponent* Arrow = DoorSpawnPoints[i])
+		{
+			Arrow->SetRelativeLocation(TriggerOffset);
+			Arrow->SetRelativeRotation(FRotator(0.f, Yaw, 0.f));
+			Arrow->SetHiddenInGame(!bHasPort);
+			Arrow->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			Arrow->SetComponentTickEnabled(false);
+			Arrow->SetActive(bHasPort);
+		}
 	}
 }
 
@@ -58,7 +168,7 @@ void ADiaRoomBase::BeginPlay()
 
 	for (UBoxComponent* Trigger : RoomEnterTriggers)
 	{
-		if (Trigger && IsMonsterGenerateRoom(TileType))
+		if (Trigger && IsMonsterSpawnEnabled() && IsMonsterGenerateRoom(TileType))
 		{
 			Trigger->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnRoomEnterTriggerEndOverlap);
 		}
@@ -74,69 +184,87 @@ void ADiaRoomBase::BeginPlay()
 }
 
 
+
 void ADiaRoomBase::OnConstruction(const FTransform& Transform)
 {
-	// DoorSpawnPoint(Arrow)를 북·동·남·서 순으로 각 방향을 바라보게 설정 (스폰 시점에 확실히 적용)
-	for(int32 i = 0; i < RoomEnterTriggers.Num(); ++i)
+	ConfigureDoorComponents();
+
+	for (AActor* Door : RoomDoors)
 	{
-		if (UBoxComponent* Trigger = RoomEnterTriggers[i])
+		if (IsValid(Door))
 		{
-			Trigger->SetRelativeRotation(FRotator(0.f, i * 90.f, 0.f));
+			Door->Destroy();
 		}
 	}
+	RoomDoors.Reset();
 
-	for (int32 i = 0; i < DoorSpawnPoints.Num(); ++i)
+	for (AActor* Door : ClosedPortDoors)
 	{
-		if (UArrowComponent* Arrow = DoorSpawnPoints[i])
+		if (IsValid(Door))
 		{
-			Arrow->SetRelativeRotation(FRotator(0.f, i * 90.f, 0.f));
+			Door->Destroy();
 		}
 	}
+	ClosedPortDoors.Reset();
 
-	if (!IsValid(RoomDoorClass))
+	const bool bMonsterRoom = IsMonsterSpawnEnabled() && IsMonsterGenerateRoom(TileType);
+	const TArray<FDiaRoomPort> EffectivePorts = GetEffectivePossibleDoorPorts();
+	for (int32 Index = 0; Index < EffectivePorts.Num(); ++Index)
 	{
-		return;
-	}
-
-	//문이 스폰되는 위치를 체크하는 direction을 잡으려 하는데 잘 되지않음 좀 더 수정필요
-	//arrowcomponent의 실제적 위치는 큰 상관없을거같음. 게임내에서 로직적으로 돌아가는그것이 중요할듯.
-	
-	float YawRotation = Transform.GetRotation().Rotator().Yaw;
-
-	TArray<EDiaDirection> Directions = DiaMapGenerator::GetDirections(DiaMapGenerator::AllDirectionsBit);
-	uint8 NativeDirections = DiaMapGenerator::RotateDirectionsDegree(-YawRotation, DoorDirections);
-	TArray<EDiaDirection> RoomDirections = DiaMapGenerator::GetDirections(NativeDirections);
-
-	for(int32 i = 0; i < 4; ++i)
-	{
-		int32 DirValue = static_cast<uint8>(Directions[i]);
-
-		if (!IsValid(DoorSpawnPoints[DirValue]))
+		if (!DoorSpawnPoints.IsValidIndex(Index) || !IsValid(DoorSpawnPoints[Index]))
+		{
 			continue;
+		}
 
-		//해당 방위가 연동되어있는지 체크하는 함수.
-		if (RoomDirections.Contains(Directions[i]))
+		const bool bActivePort = IsActiveDoorPort(EffectivePorts[Index]);
+		if (RoomEnterTriggers.IsValidIndex(Index) && IsValid(RoomEnterTriggers[Index]))
 		{
-			RoomEnterTriggers[DirValue]->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-			DoorSpawnPoints[DirValue]->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+			const bool bEnableTrigger = bActivePort && bMonsterRoom && RoomBattleState == EDiaRoomBattleState::Idle;
+			RoomEnterTriggers[Index]->SetCollisionEnabled(bEnableTrigger ? ECollisionEnabled::QueryOnly : ECollisionEnabled::NoCollision);
+		}
 
-			AActor* Door = GetWorld()->SpawnActor<AActor>(RoomDoorClass, DoorSpawnPoints[DirValue]->GetComponentTransform());
-			if (Door)
-			{
-				RoomDoors.Add(Door);
-				Door->SetActorHiddenInGame(true);
-				Door->SetActorEnableCollision(false);
-			}
+		if (!IsValid(RoomDoorClass))
+		{
+			continue;
+		}
+
+		AActor* Door = GetWorld()->SpawnActor<AActor>(RoomDoorClass, DoorSpawnPoints[Index]->GetComponentTransform());
+		if (!Door)
+		{
+			continue;
+		}
+
+		if (bActivePort && bMonsterRoom)
+		{
+			RoomDoors.Add(Door);
+			Door->SetActorHiddenInGame(true);
+			Door->SetActorEnableCollision(false);
+		}
+		else if (!bActivePort && bMonsterRoom)
+		{
+			ClosedPortDoors.Add(Door);
+			Door->SetActorHiddenInGame(false);
+			Door->SetActorEnableCollision(true);
 		}
 		else
 		{
-			RoomEnterTriggers[DirValue]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			DoorSpawnPoints[DirValue]->SetHiddenInGame(true);
-			DoorSpawnPoints[DirValue]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-			DoorSpawnPoints[DirValue]->SetComponentTickEnabled(false);
-			DoorSpawnPoints[DirValue]->SetActive(false);
+			Door->Destroy();
 		}
 	}
+}
+
+void ADiaRoomBase::SetDoorPorts(const TArray<FDiaRoomPort>& InPossibleDoorPorts, const TArray<FDiaRoomPort>& InActiveDoorPorts)
+{
+	PossibleDoorPorts = InPossibleDoorPorts.IsEmpty() ? DiaMapGenerator::MakeDefaultPorts(RoomSize) : InPossibleDoorPorts;
+	ActiveDoorPorts.Reset();
+	for (const FDiaRoomPort& ActivePort : InActiveDoorPorts)
+	{
+		if (PossibleDoorPorts.Contains(ActivePort))
+		{
+			ActiveDoorPorts.AddUnique(ActivePort);
+		}
+	}
+	ConfigureDoorComponents();
 }
 
 // Called every frame
@@ -196,15 +324,29 @@ void ADiaRoomBase::OnRoomEnterTriggerOverlap(UPrimitiveComponent* OverlappedComp
 
 void ADiaRoomBase::OnRoomEnterTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase::OnRoomEnterTriggerEndOverlap: Overlap ended with actor %s"), *OtherActor->GetName());
-	if (isCleared)
+	UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase::OnRoomEnterTriggerEndOverlap: Overlap ended with actor %s"), *GetNameSafe(OtherActor));
+	if (!CanStartBattle())
 		return;
+
+	const APlayerController* PlayerController = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr;
+	if (!PlayerController || OtherActor != PlayerController->GetPawn())
+	{
+		return;
+	}
+
+	if (!IsValid(OverlappedComponent))
+	{
+		return;
+	}
 
 	FVector PlayerLocation = OtherActor->GetActorLocation();
 	FVector DoorLocation = OverlappedComponent->GetComponentLocation();
 	FVector ToPlayer = PlayerLocation - DoorLocation;
 	ToPlayer.Z = 0.f; // 수평 방향으로만 계산
-	ToPlayer.Normalize();
+	if (!ToPlayer.Normalize())
+	{
+		return;
+	}
 	//Trigger의 ForwardVector는 방의 바깥을 향하도록 설정되어 있으므로, ToPlayer와 ForwardVector의 내적이 음수이면 플레이어가 방 안으로 들어오는 방향입니다.
 	FVector TriggerForward = OverlappedComponent->GetForwardVector();
 	float DotProduct = FVector::DotProduct(ToPlayer, TriggerForward);
@@ -223,7 +365,14 @@ void ADiaRoomBase::OnRoomEnterTriggerEndOverlap(UPrimitiveComponent* OverlappedC
 
 	if (DiaGameState)
 	{
-		DiaGameState->SpawnRoomMonsters(this->GetRoomGuid(), GetActorLocation(), GetTileType(), SpawnType, DiaMapConstants::HalfTileSize);
+		SetRoomBattleState(EDiaRoomBattleState::BattleActive);
+		SetRoomEnterTriggersEnabled(false);
+
+		if (!DiaGameState->SpawnRoomMonsters(this->GetRoomGuid(), GetActorLocation(), GetTileType(), SpawnType, DiaMapConstants::HalfTileSize))
+		{
+			SetRoomBattleState(EDiaRoomBattleState::Idle);
+			SetRoomEnterTriggersEnabled(true);
+		}
 	}
 	else
 	{
@@ -279,6 +428,33 @@ void ADiaRoomBase::CreateRoomMonsters()
 {
 }
 
+void ADiaRoomBase::SetRoomRole(EDiaRoomRole NewRole)
+{
+	RoomRole = NewRole;
+	if (RoomRole == EDiaRoomRole::Start)
+	{
+		SetRoomBattleState(EDiaRoomBattleState::Cleared);
+		SetRoomEnterTriggersEnabled(false);
+
+		for (AActor* Door : RoomDoors)
+		{
+			if (IsValid(Door))
+			{
+				Door->SetActorHiddenInGame(true);
+				Door->SetActorEnableCollision(false);
+			}
+		}
+		return;
+	}
+
+	SetRoomEnterTriggersEnabled(true);
+}
+
+bool ADiaRoomBase::IsMonsterSpawnEnabled() const
+{
+	return RoomRole != EDiaRoomRole::Start;
+}
+
 void ADiaRoomBase::OnBattleStart(const FGuid InGuid)
 {
 	if(InGuid != GetRoomGuid())
@@ -290,6 +466,9 @@ void ADiaRoomBase::OnBattleStart(const FGuid InGuid)
 	//3. 이동 막기 트리거 활성화
 	//4. 플레이어에게 "Battle Start" UI 띄우기
 	//5. 기타 등등..
+
+	SetRoomBattleState(EDiaRoomBattleState::BattleActive);
+	SetRoomEnterTriggersEnabled(false);
 
 	for (const auto& Door : RoomDoors)
 	{
@@ -310,6 +489,9 @@ void ADiaRoomBase::OnBattleEnd(const FGuid InGuid)
 		return;
 	}
 
+	SetRoomBattleState(EDiaRoomBattleState::Cleared);
+	SetRoomEnterTriggersEnabled(false);
+
 	for (const auto& Door : RoomDoors)
 	{
 		if (Door)
@@ -318,13 +500,17 @@ void ADiaRoomBase::OnBattleEnd(const FGuid InGuid)
 			Door->SetActorEnableCollision(false);
 		}
 	}
-
-	isCleared = true;
 }
 
-bool ADiaRoomBase::IsMonsterGenerateRoom(ETileType _TileType)
+bool ADiaRoomBase::IsMonsterGenerateRoom(ETileType _TileType) const
 {
 	if (_TileType != ETileType::Corridor && _TileType != ETileType::Empty)
 		return true;
 	return false;
+}
+
+void ADiaRoomBase::SetRoomSize(const FIntPoint& InRoomSize)
+{
+	RoomSize = FIntPoint(FMath::Max(1, InRoomSize.X), FMath::Max(1, InRoomSize.Y));
+	ConfigureDoorComponents();
 }

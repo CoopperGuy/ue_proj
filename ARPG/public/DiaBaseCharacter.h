@@ -33,6 +33,7 @@ public:
 
 	// IAbilitySystemInterface
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
+	void EnsureAbilitySystemInitialized(AActor* OwnerActor = nullptr);
 
 	//////////////////////////////////////////////////////////////////////////
 	// Animation Montage

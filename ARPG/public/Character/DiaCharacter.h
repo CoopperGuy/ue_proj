@@ -64,6 +64,7 @@ protected:
 	void ToggleInventory();
 	void ToggleCharacterStatus();
 	void ToggleSkillPanel();
+	void ToggleMenuSystem();
 	/// <summary>
 	/// 전투 관련 함수
 	/// </summary>
@@ -99,6 +100,9 @@ protected:
 	UInputAction* CharacterStatusAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* SkillPanelAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputAction* MenuAction;
 
 
 	// Input Mapping Context

@@ -5,7 +5,7 @@
 #include "DiaBaseCharacter.h"
 #include "Animation/AnimInstance.h"
 
-void UAnimNotify_Die::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation)
+void UAnimNotify_Die::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference)
 {
 	if (!IsValid(MeshComp)) return;
 

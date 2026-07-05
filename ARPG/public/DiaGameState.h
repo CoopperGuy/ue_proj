@@ -20,10 +20,12 @@ class ARPG_API ADiaGameState : public AGameStateBase
 	GENERATED_BODY()
 	
 public:	
-	void SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& CenterPos, const ETileType NewRoomType, const ESpawnType SpawnType, const float TileSize);
+	bool SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& CenterPos, const ETileType NewRoomType, const ESpawnType SpawnType, const float TileSize);
 
 	void ReportMonsterDeath(const FGuid& RoomID);
 	void ClearCurrentLevel();
+	bool IsRoomCleared(const FGuid& RoomID) const { return ClearedRoomIDs.Contains(RoomID); }
+	bool IsInBattle() const { return bIsInBattle; }
 private:
 	UPROPERTY()
 	FGuid CurrentRoomID;
@@ -35,7 +37,10 @@ private:
 	int32 CurrentMaxMonsterCount = 0;
 
 	UPROPERTY()
-	bool bIsInBattle;
+	bool bIsInBattle = false;
+
+	UPROPERTY()
+	TSet<FGuid> ClearedRoomIDs;
 
 public:
 	FDiaRoomClearedDelegate OnRoomCleared;

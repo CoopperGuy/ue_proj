@@ -82,7 +82,10 @@ void ADiaBaseCharacter::PossessedBy(AController* NewController)
 		{
 			AbilitySystemComponent->InitAbilityActorInfo(NewController, this);
 		}
-		AbilitySystemComponent->AddSpawnedAttribute(AttributeSet);
+		if (AttributeSet && !AbilitySystemComponent->GetSpawnedAttributes().Contains(AttributeSet))
+		{
+			AbilitySystemComponent->AddSpawnedAttribute(AttributeSet);
+		}
 	}
 }
 
@@ -97,9 +100,42 @@ void ADiaBaseCharacter::OnRep_PlayerState()
         if (PS)
         {
             AbilitySystemComponent->InitAbilityActorInfo(PS, this);
-            AbilitySystemComponent->AddSpawnedAttribute(AttributeSet);
+			if (AttributeSet && !AbilitySystemComponent->GetSpawnedAttributes().Contains(AttributeSet))
+			{
+				AbilitySystemComponent->AddSpawnedAttribute(AttributeSet);
+			}
         }
     }
+}
+
+void ADiaBaseCharacter::EnsureAbilitySystemInitialized(AActor* OwnerActor)
+{
+	if (!AbilitySystemComponent)
+	{
+		return;
+	}
+
+	AActor* EffectiveOwner = OwnerActor;
+	const FName PlayerTag = FDiaGameplayTags::Get().Actor_Player.GetTagName();
+	if (Tags.Contains(PlayerTag))
+	{
+		if (APlayerState* PS = GetPlayerState<APlayerState>())
+		{
+			EffectiveOwner = PS;
+		}
+	}
+
+	if (!EffectiveOwner)
+	{
+		EffectiveOwner = GetController() ? Cast<AActor>(GetController()) : this;
+	}
+
+	AbilitySystemComponent->InitAbilityActorInfo(EffectiveOwner, this);
+
+	if (AttributeSet && !AbilitySystemComponent->GetSpawnedAttributes().Contains(AttributeSet))
+	{
+		AbilitySystemComponent->AddSpawnedAttribute(AttributeSet);
+	}
 }
 
 // Called every frame

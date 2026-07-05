@@ -17,7 +17,7 @@ class ARPG_API UNotifyMelee : public UAnimNotify
 public:
 	UNotifyMelee();
 
-	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation) override;
+	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
 	
 	
 };
