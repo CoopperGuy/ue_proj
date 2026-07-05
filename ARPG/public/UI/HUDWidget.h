@@ -64,6 +64,7 @@ public:
 	void ShowDamagePopup(float DamageAmount, const FVector2D& ScreenPos, bool bIsCritical);
 
 	void OpenRewardChoicePanel(const FText& Title, const FText& Subtitle, const TArray<FRewardData>& RewardOptions);
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UOrb* HpWidget;
@@ -116,6 +117,9 @@ protected:
 
 	UFUNCTION()
 	void UpdateTagetMonster(ADiaBaseCharacter* NewTarget);
+
+	UFUNCTION()
+	void OnRewardCardSelected(FRewardData RewardData);
 
 public:
 	void SetMonsterHPVisibility(ESlateVisibility _Visibility);

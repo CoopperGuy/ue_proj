@@ -20,6 +20,7 @@
 #include "System/MapInfoSubsystem.h"
 #include "System/DiaMapGeneratorSubsystem.h"
 #include "System/ItemSubsystem.h"
+#include "System/DiaRewardSubsystem.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "Logging/ARPGLogChannels.h"
@@ -75,6 +76,10 @@ void ADungeonGameMode::OnRoomCleared(FGuid RoomID)
 	if (!IsValid(MapInfo))
 		return;
 
+	UDiaRewardSubsystem* RewardSubsystem = GetGameInstance()->GetSubsystem<UDiaRewardSubsystem>();
+	if (!IsValid(RewardSubsystem))
+		return;
+
 	ADiaRoomBase* RoomBase = MapInfo->GetRoomActor(RoomID);
 	//보스룸 클리어 하면 클리어 했다고 보내야함.
 	if (IsValid(RoomBase) && RoomBase->IsStageClearRoom())
@@ -82,6 +87,8 @@ void ADungeonGameMode::OnRoomCleared(FGuid RoomID)
 		if (UHUDWidget* HUDWidget = GetHUDWidget())
 		{
 			HUDWidget->ShowClearAlret(RoomID);
+			FRewardChoiceData RewardChoiceData = RewardSubsystem->MakeRoomClearRewardChoice(EJobType::Warrior, 3);
+			HUDWidget->OpenRewardChoicePanel(RewardChoiceData.Title, RewardChoiceData.Subtitle, RewardChoiceData.RewardOptions);
 		}
 
 		ADiaGameState* DiaGameState = Cast<ADiaGameState>(GameState);
@@ -89,6 +96,7 @@ void ADungeonGameMode::OnRoomCleared(FGuid RoomID)
 		{
 			DiaGameState->ClearCurrentLevel();
 		}
+
 	}
 }
 

@@ -9,8 +9,26 @@
 #include "Components/TextBlock.h"
 
 
+void URewardCard::NativeConstruct()
+{
+	Super::NativeConstruct();
+	
+	if (CardButton)
+	{
+		CardButton->OnClicked.AddUniqueDynamic(this, &ThisClass::OnCardButtonClicked);
+	}
+}
+
 void URewardCard::SetRewardData(const FRewardData& InRewardData)
 {
+	RewardData = InRewardData;
+
+	if (RewardIcon)
+	{
+		RewardIcon->SetBrushFromTexture(InRewardData.Icon);
+		RewardIcon->SetVisibility(InRewardData.Icon ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	}
+
 	if (RewardTypeText)
 	{
 		const UEnum* RewardTypeEnumPtr = StaticEnum<ERewardType>();
@@ -46,7 +64,7 @@ void URewardCard::SetRewardData(const FRewardData& InRewardData)
 			EffectText = FString::Printf(TEXT("+%d"), InRewardData.GoldAmount);
 			break;
 		case ERewardType::Item:
-			EffectText = FString::Printf(TEXT("Item ID: %s"), *InRewardData.ItemId.ToString());
+			EffectText = FString::Printf(TEXT("Item ID: %s x%d Lv.%d"), *InRewardData.ItemId.ToString(), InRewardData.ItemQuantity, InRewardData.ItemLevel);
 			break;
 		case ERewardType::SkillAdd:
 			EffectText = FString::Printf(TEXT("Skill ID: %d"), InRewardData.SkillId);

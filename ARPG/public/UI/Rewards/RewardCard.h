@@ -23,6 +23,8 @@ class ARPG_API URewardCard : public UCommonUserWidget
 {
 	GENERATED_BODY()
 public:
+	virtual void NativeConstruct() override;
+
 	void SetRewardData(const FRewardData& InRewardData);
 	
 	UFUNCTION()
@@ -33,6 +35,7 @@ public:
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UButton* CardButton;
+
 	UPROPERTY(meta = (BindWidget))
 	UImage* CardBackground;
 
@@ -62,4 +65,10 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* SelectHintText;
+
+	UPROPERTY()
+	FRewardData RewardData;
+
+public:
+	FORCEINLINE const FRewardData& GetRewardData() const { return RewardData; }
 };

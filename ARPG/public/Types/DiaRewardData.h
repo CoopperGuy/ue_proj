@@ -56,8 +56,29 @@ struct ARPG_API FRewardData
 	FName ItemId = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 ItemLevel = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 ItemQuantity = 1;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 SkillId = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 VariantId = 0;
+};
+
+USTRUCT(BlueprintType)
+struct ARPG_API FRewardChoiceData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FText Title;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FText Subtitle;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FRewardData> RewardOptions;
 };

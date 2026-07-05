@@ -13,6 +13,8 @@ class UImage;
 class URewardCard;
 class UTextBlock;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRewardCardSelect, FRewardData, RewardData);
+
 /**
  * 
  */
@@ -28,6 +30,9 @@ public:
 
 	UFUNCTION()
 	void OnRewardCardClicked(URewardCard* ClickedCard);
+
+public:
+	FOnRewardCardSelect OnRewardCardSelected;
 protected:
 	UPROPERTY(meta = (BindWidget))
 	UCanvasPanel* RewardChoiceRoot;

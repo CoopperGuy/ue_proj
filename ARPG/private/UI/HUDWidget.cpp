@@ -98,6 +98,11 @@ void UHUDWidget::NativeConstruct()
 	{
 		DiaPrimaryLayout = DiaCumstomGameViewPort->GetDiaPrimaryLayout();
 	}
+
+	if (IsValid(RewardChoicePanel))
+	{
+		RewardChoicePanel->OnRewardCardSelected.AddUniqueDynamic(this, &UHUDWidget::OnRewardCardSelected);
+	}
 }
 
 void UHUDWidget::UpdateOrbPercentage(OrbType _Type, float _Percentage)
@@ -234,6 +239,16 @@ void UHUDWidget::UpdateTagetMonster(ADiaBaseCharacter* NewTarget)
 		//UE_LOG(LogARPG, Log, TEXT("Target Cleared"));
 	}
 #endif
+}
+
+void UHUDWidget::OnRewardCardSelected(FRewardData RewardData)
+{
+	ADiaBaseCharacter* OwningActor = Cast<ADiaBaseCharacter>(GetOwningPlayerPawn());
+	if (!IsValid(OwningActor))
+		return;
+
+	UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::OnRewardCardSelected called with RewardData: %s"), *RewardData.DisplayName.ToString());
+	//OwningActor->OnRewardCardSelected(RewardData);
 }
 
 void UHUDWidget::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
