@@ -94,6 +94,7 @@ public:
 
 	void GetSkillVariantFromID(int32 SkillID, OUT class UDiaSkillVariant* OutSkillVariant);
 	void GetSkillVariantsFromSkillID(int32 SkillID, OUT TArray<class UDiaSkillVariant*>& OutSkillVariants);
+	void GetOwnedSkillVariantsFromSkillID(int32 SkillID, OUT TArray<class UDiaSkillVariant*>& OutSkillVariants);
 
 	virtual void SetSkillIDOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
 
@@ -106,6 +107,10 @@ public:
 	bool CheckBossMonsterByAbilityTag() const;
 
 	void ApplyStunState(bool bStunned);
+	bool ApplySkillByID(int32 SkillID);
+	bool ApplySkillLevelUpByID(int32 SkillID, int32 AddLevel);
+	bool UnlockSkillVariantByID(int32 SkillID, int32 VariantID);
+	bool ApplySkillVariantByID(int32 SkillID, int32 VariantID);
 protected:
 	// 기본적인 함수
 	virtual void BeginPlay() override;

@@ -11,6 +11,7 @@
 class UItemSubsystem;
 class UGASSkillManager;
 class UJobSkillSetSubSystem;
+class UDiaSkillManagerComponent;
 
 /**
  * 
@@ -27,13 +28,18 @@ public:
 	bool TryMakeSkillUpgradeReward(int32 SkillId, FRewardData& OutRewardData) const;
 	bool TryMakeSkillVariantReward(int32 SkillId, int32 VariantId, FRewardData& OutRewardData) const;
 	TArray<FRewardData> MakeSkillAddRewardsForJob(EJobType JobType, int32 MaxRewardCount = 3) const;
+	TArray<FRewardData> MakeSkillAddRewardsForJob(EJobType JobType, const UDiaSkillManagerComponent* SkillManagerComponent, int32 MaxRewardCount = 3) const;
 	TArray<FRewardData> MakeSkillVariantRewardsForSkill(int32 SkillId, int32 MaxRewardCount = 3) const;
+	TArray<FRewardData> MakeSkillVariantRewardsForSkill(int32 SkillId, const UDiaSkillManagerComponent* SkillManagerComponent, int32 MaxRewardCount = 3) const;
 	FRewardChoiceData MakeRoomClearRewardChoice(EJobType JobType, int32 RewardCount = 3) const;
+	FRewardChoiceData MakeRoomClearRewardChoice(EJobType JobType, const UDiaSkillManagerComponent* SkillManagerComponent, int32 RewardCount = 3) const;
 
 private:
 	UItemSubsystem* GetItemSubsystem() const;
 	UGASSkillManager* GetGASSkillManager() const;
 	UJobSkillSetSubSystem* GetJobSkillSetSubsystem() const;
 
+	bool IsSkillRegistered(const UDiaSkillManagerComponent* SkillManagerComponent, int32 SkillId) const;
+	bool IsSkillVariantOwned(const UDiaSkillManagerComponent* SkillManagerComponent, int32 SkillId, int32 VariantId) const;
 	ERewardRarity ConvertItemRarityToRewardRarity(EItemRarity ItemRarity) const;
 };

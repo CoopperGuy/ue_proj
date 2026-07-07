@@ -548,7 +548,7 @@ const FGameplayTagContainer* UItemSubsystem::GetPossibleItemOptionTags(const FIt
     return nullptr;
 }
 
-void UItemSubsystem::CreateInventoryInstance(FInventorySlot &OutItem, FName &ItemID, int32 Level, bool bRandomStats, int32 Quantity)
+void UItemSubsystem::CreateInventoryInstance(FInventorySlot &OutItem, const FName &ItemID, int32 Level, bool bRandomStats, int32 Quantity)
 {
     const FItemBase& ItemData = GetItemData(ItemID);
     OutItem = FInventorySlot::FromBase(ItemData, FMath::Max(Quantity, 1));

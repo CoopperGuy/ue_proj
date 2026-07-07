@@ -41,6 +41,7 @@ public:
 	void NativeConstruct() override;
 	virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 
+	void UpdateSkillInfoObject(USkillInfoObject* InSkillInfoObjectPtr);
 	void SetSkillInfo(int32 ID, UTexture2D* Icon, const FText& Name, int32 Level);
 
 	void SetSkillID(int32 ID) { SkillID = ID; }

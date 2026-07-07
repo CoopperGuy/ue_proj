@@ -19,6 +19,10 @@ class UDiaSkillActivationService;
 class UDiaSkillVariantExecutorService;
 class UDiaSkillVariantCache;
 
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnSkillRegisteredDelegate, int32 /*SkillID*/, int32 /*SlotIndex*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnSkillLevelChangedDelegate, int32 /*SkillID*/, int32 /*NewLevel*/);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnSkillVariantAddedDelegate, int32 /*SkillID*/, int32 /*VariantID*/);
+
 UCLASS()
 class ARPG_API UDiaSkillManagerComponent : public UActorComponent
 {
@@ -26,6 +30,10 @@ class ARPG_API UDiaSkillManagerComponent : public UActorComponent
 
 public:	
 	UDiaSkillManagerComponent();
+
+	FOnSkillRegisteredDelegate OnSkillRegistered;
+	FOnSkillLevelChangedDelegate OnSkillLevelChanged;
+	FOnSkillVariantAddedDelegate OnSkillVariantAdded;
 
 protected:
 	virtual void BeginPlay() override;
@@ -40,11 +48,16 @@ public:
 	const TArray<int32>& GetCurrentJobSkillIDs() const { return CurrentJobSkillSet.SkillIDs; }
 	void SetSkillIDMapping(const TArray<int32>& NewMapping);
 	void SetSkillIDIndex(int32 SkillID, int32 Index);
+	void NotifySkillRegistered(int32 SkillID, int32 SlotIndex);
 
-	void AddVariantBySkillId(int32 SkillID, int32 VariantID);
+	bool AddOwnedVariantBySkillID(int32 SkillID, int32 VariantID);
+	bool TryUnlockSkillVariantByID(int32 SkillID, int32 VariantID);
+	bool TryApplySkillVariantByID(int32 SkillID, int32 VariantID);
 	// Try activate ability by skill ID
 	UFUNCTION(BlueprintCallable, Category = "GAS|Skills")
 	bool TryActivateAbilityBySkillID(int32 SkillID);
+
+	bool TryAddSkillLevelBySkillID(int32 SkillID, int32 LevelToAdd);
 
 	// Get ability spec by skill ID (C++ only - not exposed to Blueprint)
 	FGameplayAbilitySpec* GetAbilitySpecBySkillID(int32 SkillID) const;
@@ -56,6 +69,10 @@ public:
 	
 	void GetSkillVariantFromID(const int32 VariantID, OUT UDiaSkillVariant* OutVariants);
 	void GetSkillVariantsFromSkillID(const int32 SkillID, OUT TArray<UDiaSkillVariant*>& OutVariants);
+	void GetOwnedSkillVariantsFromSkillID(const int32 SkillID, OUT TArray<UDiaSkillVariant*>& OutVariants);
+
+protected:
+	USkillObject* GetMutableSkillObjectBySkillID(int32 SkillID);
 protected:
 	FJobSkillSet CurrentJobSkillSet;
 

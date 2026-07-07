@@ -372,7 +372,9 @@ bool ADiaCharacter::SetUpSkillID(int32 SkillID)
  	bool isSuccess = Super::SetUpSkillID(SkillID);
     if (isSuccess)
     {
-        RegisteSkillOnQuickSlotWidget(SkillID, SkillManagerComponent->GetIndexOfSkillID(SkillID));
+        const int32 SlotIndex = SkillManagerComponent->GetIndexOfSkillID(SkillID);
+        RegisteSkillOnQuickSlotWidget(SkillID, SlotIndex);
+        SkillManagerComponent->NotifySkillRegistered(SkillID, SlotIndex);
     }
 
     return isSuccess;

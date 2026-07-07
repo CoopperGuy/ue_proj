@@ -3,6 +3,8 @@
 
 #include "System/DiaRewardSubsystem.h"
 
+#include "DiaComponent/DiaSkillManagerComponent.h"
+#include "DiaComponent/Skill/SkillObject.h"
 #include "Engine/Texture2D.h"
 #include "Logging/ARPGLogChannels.h"
 #include "System/GASSkillManager.h"
@@ -176,6 +178,11 @@ bool UDiaRewardSubsystem::TryMakeSkillVariantReward(int32 SkillId, int32 Variant
 
 TArray<FRewardData> UDiaRewardSubsystem::MakeSkillAddRewardsForJob(EJobType JobType, int32 MaxRewardCount) const
 {
+	return MakeSkillAddRewardsForJob(JobType, nullptr, MaxRewardCount);
+}
+
+TArray<FRewardData> UDiaRewardSubsystem::MakeSkillAddRewardsForJob(EJobType JobType, const UDiaSkillManagerComponent* SkillManagerComponent, int32 MaxRewardCount) const
+{
 	TArray<FRewardData> Rewards;
 	if (MaxRewardCount <= 0)
 	{
@@ -192,6 +199,11 @@ TArray<FRewardData> UDiaRewardSubsystem::MakeSkillAddRewardsForJob(EJobType JobT
 	const FJobSkillSet& JobSkillSet = JobSkillSetSubsystem->GetJobSkillSet(JobType);
 	for (const int32 SkillId : JobSkillSet.SkillIDs)
 	{
+		if (IsSkillRegistered(SkillManagerComponent, SkillId))
+		{
+			continue;
+		}
+
 		FRewardData RewardData;
 		if (TryMakeSkillAddReward(SkillId, RewardData))
 		{
@@ -209,8 +221,18 @@ TArray<FRewardData> UDiaRewardSubsystem::MakeSkillAddRewardsForJob(EJobType JobT
 
 TArray<FRewardData> UDiaRewardSubsystem::MakeSkillVariantRewardsForSkill(int32 SkillId, int32 MaxRewardCount) const
 {
+	return MakeSkillVariantRewardsForSkill(SkillId, nullptr, MaxRewardCount);
+}
+
+TArray<FRewardData> UDiaRewardSubsystem::MakeSkillVariantRewardsForSkill(int32 SkillId, const UDiaSkillManagerComponent* SkillManagerComponent, int32 MaxRewardCount) const
+{
 	TArray<FRewardData> Rewards;
 	if (MaxRewardCount <= 0)
+	{
+		return Rewards;
+	}
+
+	if (IsValid(SkillManagerComponent) && !IsSkillRegistered(SkillManagerComponent, SkillId))
 	{
 		return Rewards;
 	}
@@ -231,6 +253,11 @@ TArray<FRewardData> UDiaRewardSubsystem::MakeSkillVariantRewardsForSkill(int32 S
 
 	for (const int32 VariantId : SkillData->VariantIDs)
 	{
+		if (IsSkillVariantOwned(SkillManagerComponent, SkillId, VariantId))
+		{
+			continue;
+		}
+
 		FRewardData RewardData;
 		if (TryMakeSkillVariantReward(SkillId, VariantId, RewardData))
 		{
@@ -247,6 +274,11 @@ TArray<FRewardData> UDiaRewardSubsystem::MakeSkillVariantRewardsForSkill(int32 S
 }
 
 FRewardChoiceData UDiaRewardSubsystem::MakeRoomClearRewardChoice(EJobType JobType, int32 RewardCount) const
+{
+	return MakeRoomClearRewardChoice(JobType, nullptr, RewardCount);
+}
+
+FRewardChoiceData UDiaRewardSubsystem::MakeRoomClearRewardChoice(EJobType JobType, const UDiaSkillManagerComponent* SkillManagerComponent, int32 RewardCount) const
 {
 	FRewardChoiceData ChoiceData;
 	ChoiceData.Title = LOCTEXT("RoomClearRewardTitle", "Room Clear Reward");
@@ -266,7 +298,7 @@ FRewardChoiceData UDiaRewardSubsystem::MakeRoomClearRewardChoice(EJobType JobTyp
 
 	if (ChoiceData.RewardOptions.Num() < TargetRewardCount)
 	{
-		const TArray<FRewardData> SkillRewards = MakeSkillAddRewardsForJob(JobType, TargetRewardCount - ChoiceData.RewardOptions.Num());
+		const TArray<FRewardData> SkillRewards = MakeSkillAddRewardsForJob(JobType, SkillManagerComponent, TargetRewardCount - ChoiceData.RewardOptions.Num());
 		ChoiceData.RewardOptions.Append(SkillRewards);
 	}
 
@@ -278,7 +310,7 @@ FRewardChoiceData UDiaRewardSubsystem::MakeRoomClearRewardChoice(EJobType JobTyp
 			const FJobSkillSet& JobSkillSet = JobSkillSetSubsystem->GetJobSkillSet(JobType);
 			for (const int32 SkillId : JobSkillSet.SkillIDs)
 			{
-				const TArray<FRewardData> VariantRewards = MakeSkillVariantRewardsForSkill(SkillId, TargetRewardCount - ChoiceData.RewardOptions.Num());
+				const TArray<FRewardData> VariantRewards = MakeSkillVariantRewardsForSkill(SkillId, SkillManagerComponent, TargetRewardCount - ChoiceData.RewardOptions.Num());
 				ChoiceData.RewardOptions.Append(VariantRewards);
 
 				if (ChoiceData.RewardOptions.Num() >= TargetRewardCount)
@@ -313,6 +345,22 @@ UJobSkillSetSubSystem* UDiaRewardSubsystem::GetJobSkillSetSubsystem() const
 {
 	UGameInstance* GameInstance = GetGameInstance();
 	return GameInstance ? GameInstance->GetSubsystem<UJobSkillSetSubSystem>() : nullptr;
+}
+
+bool UDiaRewardSubsystem::IsSkillRegistered(const UDiaSkillManagerComponent* SkillManagerComponent, int32 SkillId) const
+{
+	return IsValid(SkillManagerComponent) && SkillManagerComponent->GetAbilitySpecBySkillID(SkillId) != nullptr;
+}
+
+bool UDiaRewardSubsystem::IsSkillVariantOwned(const UDiaSkillManagerComponent* SkillManagerComponent, int32 SkillId, int32 VariantId) const
+{
+	if (!IsValid(SkillManagerComponent))
+	{
+		return false;
+	}
+
+	const USkillObject* SkillObject = SkillManagerComponent->GetSkillObjectBySkillID(SkillId);
+	return IsValid(SkillObject) && SkillObject->HasOwnedVariantID(VariantId);
 }
 
 ERewardRarity UDiaRewardSubsystem::ConvertItemRarityToRewardRarity(EItemRarity ItemRarity) const

@@ -8,6 +8,7 @@
 #include "DiaComponent/UI/DiaInventoryComponent.h"
 #include "DiaComponent/UI/DiaEquipmentComponent.h"
 #include "DiaComponent/DiaOptionManagerComponent.h"
+#include "DiaComponent/DiaSkillManagerComponent.h"
 
 #include "DiaComponent/DiaStatComponent.h"
 #include "UI/HUDWidget.h"
@@ -179,7 +180,7 @@ void ADiaController::BeginPlay()
 			SlotWidget->OnItemEquipped.AddDynamic(this, &ThisClass::OnEquipItemProgress);
 		}
 	}
-	//
+	
 }
 
 void ADiaController::SetupInputComponent()
@@ -196,6 +197,122 @@ void ADiaController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	if (!IsValid(InPawn)) return;
+
+	BindSkillManagerDelegates(InPawn);
+}
+
+void ADiaController::BindSkillManagerDelegates(APawn* InPawn)
+{
+	if (!IsValid(InPawn))
+	{
+		return;
+	}
+
+	UDiaSkillManagerComponent* SkillManagerComponent = InPawn->FindComponentByClass<UDiaSkillManagerComponent>();
+	if (!IsValid(SkillManagerComponent))
+	{
+		return;
+	}
+
+	SkillManagerComponent->OnSkillRegistered.RemoveAll(this);
+	SkillManagerComponent->OnSkillLevelChanged.RemoveAll(this);
+	SkillManagerComponent->OnSkillVariantAdded.RemoveAll(this);
+
+	SkillManagerComponent->OnSkillRegistered.AddUObject(this, &ThisClass::HandleSkillRegistered);
+	SkillManagerComponent->OnSkillLevelChanged.AddUObject(this, &ThisClass::HandleSkillLevelChanged);
+	SkillManagerComponent->OnSkillVariantAdded.AddUObject(this, &ThisClass::HandleSkillVariantAdded);
+}
+
+bool ADiaController::ApplyGoldReward(const FRewardData& RewardData)
+{
+	if(!IsValid(DiaInventoryComponent) || !IsValid(DiaOptionManagerComponent))
+	{
+		return false;
+	}
+	DiaInventoryComponent->AddGoldInventoryWithCheckOption(RewardData.GoldAmount, DiaOptionManagerComponent);
+	
+	return true;
+}
+
+bool ADiaController::ApplyItemReward(const FRewardData& RewardData)
+{
+	if (!IsValid(DiaInventoryComponent) || !IsValid(DiaOptionManagerComponent))
+		return false;
+	
+	UHUDWidget* HUDWidget = GetHUDWidget();
+	if(!IsValid(HUDWidget))
+		return false;
+	
+	UItemSubsystem* ItemSubsystem = GetGameInstance()->GetSubsystem<UItemSubsystem>();
+	if (!ItemSubsystem)
+		return false;
+
+	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
+	FInventorySlot NewItemSlot;
+	ItemSubsystem->CreateInventoryInstance(NewItemSlot, RewardData.ItemId, RewardData.ItemLevel, true, RewardData.ItemQuantity);
+	
+	return DiaInventoryComponent->TryAddItem(NewItemSlot, InventoryWidget);
+}
+
+bool ADiaController::ApplySkillAddReward(const FRewardData& RewardData)
+{
+	ADiaBaseCharacter* DiaCharacter = Cast<ADiaBaseCharacter>(GetCharacter());
+	if(!IsValid(DiaCharacter))
+		return false;
+
+	return DiaCharacter->ApplySkillByID(RewardData.SkillId);
+}
+
+bool ADiaController::ApplySkillUpgradeReward(const FRewardData& RewardData)
+{
+	ADiaBaseCharacter* DiaCharacter = Cast<ADiaBaseCharacter>(GetCharacter());
+	if(!IsValid(DiaCharacter))
+		return false;
+
+	return DiaCharacter->ApplySkillLevelUpByID(RewardData.SkillId, 1);
+}
+
+bool ADiaController::ApplySkillVariantReward(const FRewardData& RewardData)
+{
+	ADiaBaseCharacter* DiaCharacter = Cast<ADiaBaseCharacter>(GetCharacter());
+	if (!IsValid(DiaCharacter))
+		return false;
+
+	return DiaCharacter->UnlockSkillVariantByID(RewardData.SkillId, RewardData.VariantId);
+}
+
+void ADiaController::HandleSkillRegistered(int32 SkillID, int32 SlotIndex)
+{
+	ADiaBaseCharacter* DiaCharacter = Cast<ADiaBaseCharacter>(GetCharacter());
+	if (!IsValid(DiaCharacter))
+		return;
+	UDiaSkillManagerComponent* SkillManager = DiaCharacter->FindComponentByClass<UDiaSkillManagerComponent>();
+	if (!IsValid(SkillManager))
+		return;
+	const USkillObject* SkillObj = SkillManager->GetSkillObjectBySkillID(SkillID);
+	RegisteSkillPannelWidget(SkillObj);
+}
+
+void ADiaController::HandleSkillLevelChanged(int32 SkillID, int32 NewLevel)
+{
+	UHUDWidget* HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget))
+	{
+		return;
+	}
+
+	HUDWidget->UpdateSkillLevel(SkillID, NewLevel);
+}
+
+void ADiaController::HandleSkillVariantAdded(int32 SkillID, int32 VariantID)
+{
+	UHUDWidget* HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget))
+	{
+		return;
+	}
+
+	HUDWidget->RegisterSkillVariant(SkillID, VariantID);
 }
 
 void ADiaController::OnEquipItemProgress(const FEquippedItem& Item, EEquipmentSlot SlotType)
@@ -415,6 +532,25 @@ void ADiaController::ItemRemoved(const FInventorySlot& Item)
 	DiaInventoryComponent->RemoveItem(Item.ItemInstance.InstanceID, HUDWidget->GetInventoryWidget());
 }
 
+bool ADiaController::ApplyReward(const FRewardData& RewardData)
+{
+	switch (RewardData.RewardType)
+	{
+		case ERewardType::Gold:
+			return ApplyGoldReward(RewardData);
+		case ERewardType::Item:
+			return ApplyItemReward(RewardData);
+		case ERewardType::SkillAdd:
+			return ApplySkillAddReward(RewardData);
+		case ERewardType::SkillUpgrade:
+			return ApplySkillUpgradeReward(RewardData);
+		case ERewardType::SkillVariant:
+			return ApplySkillVariantReward(RewardData);
+	}
+
+	return false;
+}
+
 void ADiaController::ToggleInventoryVisibility(bool bVisible)
 {
 	UHUDWidget* HUDWidget = GetHUDWidget();
@@ -482,6 +618,22 @@ void ADiaController::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotInde
 	}
 
 	HUDWidget->RegisteSkillOnQuickSlotWidget(SkillID, SlotIndex);
+}
+
+void ADiaController::RegisteSkillPannelWidget(const USkillObject* SkillData)
+{
+	UHUDWidget* HUDWidget = GetHUDWidget();
+	if (!IsValid(HUDWidget))
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("RegisteSkillPannelWidget HUDWidget is null"));
+		return;
+	}
+	if (!IsValid(SkillData))
+	{
+		UE_LOG(LogARPG_Inventory, Display, TEXT("SkillData is invalid"));
+		return;
+	}
+	HUDWidget->RegisteSkillPannelWidget(SkillData);
 }
 
 void ADiaController::RegisteSkillPannelWidget(const TArray<USkillObject*>& SkillDataList)

@@ -37,31 +37,57 @@ void USkillPanelWidget::HandleItemClicked(UObject* Item)
 	// 여기에 SubSkillListView 업데이트 로직 추가
 	// 예: SubSkillListView->ClearListItems(); 그런 다음 새로운 항목 추가
 	
+	CurrentSelectedSkillID = ClickedSkillInfo->SkillID;
+	RefreshOwnedSkillVariants(CurrentSelectedSkillID);
+		// 아이콘 설정 등 추가 정보 설정 가능
+
+}
+
+void USkillPanelWidget::RegisterSkillVariant(int32 SkillID, int32 VariantID)
+{
+	if (VariantID <= 0)
+	{
+		return;
+	}
+
+	if (CurrentSelectedSkillID != SkillID)
+	{
+		return;
+	}
+
+	RefreshOwnedSkillVariants(SkillID);
+}
+
+void USkillPanelWidget::RefreshOwnedSkillVariants(int32 SkillID)
+{
 	APawn* Pawn = GetOwningPlayerPawn();
 	ADiaCharacter* Character = Cast<ADiaCharacter>(Pawn);
-	if (!Character)
+	if (!Character || !IsValid(SubSkillListView))
+	{
 		return;
+	}
 
 	TArray<UDiaSkillVariant*> SkillVariants;
-	Character->GetSkillVariantsFromSkillID(ClickedSkillInfo->SkillID, SkillVariants);
+	Character->GetOwnedSkillVariantsFromSkillID(SkillID, SkillVariants);
 
 	SubSkillListView->ClearListItems();
 
-	for(const auto & Variant : SkillVariants)
+	for (const auto& Variant : SkillVariants)
 	{
 		if (!Variant)
+		{
 			continue;
+		}
+
 		USkillInfoObject* NewVariantInfo = NewObject<USkillInfoObject>(this);
 		NewVariantInfo->SkillID = Variant->GetSkillID();
 		NewVariantInfo->SkillName = Variant->GetSkillVariantName();
 		NewVariantInfo->SkillLevel = 1;
-		NewVariantInfo->SkillIcon = nullptr; 
+		NewVariantInfo->SkillIcon = nullptr;
 		NewVariantInfo->isMainSkill = false;
-		NewVariantInfo->MainSkillID = ClickedSkillInfo->SkillID;
-		// 아이콘 설정 등 추가 정보 설정 가능
+		NewVariantInfo->MainSkillID = SkillID;
 		SubSkillListView->AddItem(NewVariantInfo);
 	}
-
 }
 
 void USkillPanelWidget::InitializeSkillPanel()
@@ -88,11 +114,27 @@ void USkillPanelWidget::ToggleSkillPanel()
 	}
 }
 
-void USkillPanelWidget::AddSkillToPanel(const FGASSkillData& SkillData, int32 SkillID, bool bIsActiveSkill)
+USkillInfoObject* USkillPanelWidget::FindActiveSkillInfoObject(int32 SkillID) const
+{
+	if (const TWeakObjectPtr<USkillInfoObject>* SkillInfoObject = RegisteredSkillInfoMap.Find(SkillID))
+	{
+		return SkillInfoObject->Get();
+	}
+
+	return nullptr;
+}
+
+void USkillPanelWidget::AddSkillToPanel(const FGASSkillData& SkillData, int32 SkillID, int32 SkillLevel, bool bIsActiveSkill)
 {
 	if (!IsValid(SkillSlotWidgetClass))
 	{
 		UE_LOG(LogARPG, Warning, TEXT("USkillPanelWidget::AddSkillToPanel - SkillSlotWidgetClass is invalid, SkillID: %d"), SkillID);
+		return;
+	}
+
+	if (FindActiveSkillInfoObject(SkillID))
+	{
+		UE_LOG(LogARPG, Verbose, TEXT("USkillPanelWidget::AddSkillToPanel - SkillID %d is already registered"), SkillID);
 		return;
 	}
 
@@ -119,14 +161,71 @@ void USkillPanelWidget::AddSkillToPanel(const FGASSkillData& SkillData, int32 Sk
 	NewSkillInfoObject->SkillID = SkillID;
 	NewSkillInfoObject->SkillIcon = IconTexture;
 	NewSkillInfoObject->SkillName = SkillData.SkillName;
-	NewSkillInfoObject->SkillLevel = 1;
-	NewSkillInfoObject->isMainSkill = true;
+	NewSkillInfoObject->SkillLevel = SkillLevel;
+	NewSkillInfoObject->isMainSkill = bIsActiveSkill;
 	// 3) 어느 리스트에 넣을지만 분기
 	if (IsValid(ActiveSkillListView))
 	{
 		ActiveSkillListView->AddItem(NewSkillInfoObject);
+		RegisteredSkillInfoMap.Add(SkillID, NewSkillInfoObject);
 	}
 
+}
+
+void USkillPanelWidget::RegisterSkill(const USkillObject* Skill)
+{
+	if (!IsValid(Skill))
+	{
+		UE_LOG(LogARPG, Warning, TEXT("USkillPanelWidget::RegisterSkill - SkillObject is invalid"));
+		return;
+	}
+
+	const FGASSkillData* SkillData = Skill->GetSkillData();
+	const int32 SkillID = Skill->GetSkillID();
+
+	if (!SkillData)
+	{
+		UE_LOG(LogARPG, Warning, TEXT("USkillPanelWidget::RegisterSkill - SkillData is null, SkillID: %d"), SkillID);
+		return;
+	}
+
+	AddSkillToPanel(*SkillData, SkillID, Skill->GetSkillLevel(), true);
+}
+
+bool USkillPanelWidget::UpdateSkillLevel(int32 SkillID, int32 NewLevel)
+{
+	USkillInfoObject* SkillInfoObject = FindActiveSkillInfoObject(SkillID);
+	if (!IsValid(SkillInfoObject))
+	{
+		UE_LOG(LogARPG, Warning, TEXT("USkillPanelWidget::UpdateSkillLevel - SkillInfoObject is null, SkillID: %d"), SkillID);
+		return false;
+	}
+
+	SkillInfoObject->SkillLevel = NewLevel;
+
+	if (IsValid(ActiveSkillListView))
+	{
+		TArray<UUserWidget*> Entries = ActiveSkillListView->GetDisplayedEntryWidgets();
+		for (UUserWidget* Entry : Entries)
+		{
+			if (!IsValid(Entry))
+			{
+				continue;
+			}
+
+			IUserObjectListEntry* ListEntry = Cast<IUserObjectListEntry>(Entry);
+			if (ListEntry && ListEntry->GetListItem() == SkillInfoObject)
+			{
+				if (USkillSlotWidget* SkillSlotWidget = Cast<USkillSlotWidget>(Entry))
+				{
+					SkillSlotWidget->UpdateSkillInfoObject(SkillInfoObject);
+				}
+				break;
+			}
+		}
+	}
+
+	return true;
 }
 
 void USkillPanelWidget::RegisterSkillList(const TArray<USkillObject*>& Skills)
@@ -153,7 +252,7 @@ void USkillPanelWidget::RegisterSkillList(const TArray<USkillObject*>& Skills)
 		}
 
 
-		AddSkillToPanel(*SkillData, SkillID, true);
+		AddSkillToPanel(*SkillData, SkillID, SkillObject->GetSkillLevel(), true);
 		++Index;
 
 	}

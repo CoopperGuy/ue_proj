@@ -58,7 +58,10 @@ public:
 	void CreateCautionWidget();
 
 	void RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
+	void RegisteSkillPannelWidget(const class USkillObject* SkillData);
 	void RegisteSkillPannelWidget(const TArray<class USkillObject*>& SkillDataList);
+	void UpdateSkillLevel(int32 SkillID, int32 NewLevel);
+	void RegisterSkillVariant(int32 SkillID, int32 VariantID);
 
 	void ShowClearAlret(FGuid RoomGuid);
 	void ShowDamagePopup(float DamageAmount, const FVector2D& ScreenPos, bool bIsCritical);

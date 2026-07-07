@@ -34,7 +34,7 @@ public:
     bool IsItemStackable(const FItemInstance& Item) const;
     const FGameplayTagContainer* GetPossibleItemOptionTags(const FItemInstance& Item) const;
     
-    void CreateInventoryInstance(FInventorySlot& OutItem, FName& ItemID, int32 Level = 1, bool bRandomStats = false, int32 Quantity = 1);
+    void CreateInventoryInstance(FInventorySlot& OutItem, const FName& ItemID, int32 Level = 1, bool bRandomStats = false, int32 Quantity = 1);
     void CreateInventoryInstanceByItemBase(FInventorySlot& OutItem, const FItemBase& ItemData, int32 Level = 1, bool bRandomStats = false, int32 Quantity = 1);
     void CreateInventoryInstanceWithOptions(
         FInventorySlot& OutItem,

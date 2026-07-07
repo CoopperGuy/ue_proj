@@ -21,6 +21,7 @@
 #include "System/DiaMapGeneratorSubsystem.h"
 #include "System/ItemSubsystem.h"
 #include "System/DiaRewardSubsystem.h"
+#include "DiaComponent/DiaSkillManagerComponent.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "Logging/ARPGLogChannels.h"
@@ -81,14 +82,13 @@ void ADungeonGameMode::OnRoomCleared(FGuid RoomID)
 		return;
 
 	ADiaRoomBase* RoomBase = MapInfo->GetRoomActor(RoomID);
+	UHUDWidget* HUDWidget = GetHUDWidget();
 	//보스룸 클리어 하면 클리어 했다고 보내야함.
 	if (IsValid(RoomBase) && RoomBase->IsStageClearRoom())
 	{
-		if (UHUDWidget* HUDWidget = GetHUDWidget())
+		if (IsValid(HUDWidget))
 		{
 			HUDWidget->ShowClearAlret(RoomID);
-			FRewardChoiceData RewardChoiceData = RewardSubsystem->MakeRoomClearRewardChoice(EJobType::Warrior, 3);
-			HUDWidget->OpenRewardChoicePanel(RewardChoiceData.Title, RewardChoiceData.Subtitle, RewardChoiceData.RewardOptions);
 		}
 
 		ADiaGameState* DiaGameState = Cast<ADiaGameState>(GameState);
@@ -98,8 +98,22 @@ void ADungeonGameMode::OnRoomCleared(FGuid RoomID)
 		}
 
 	}
-}
 
+	const UDiaSkillManagerComponent* SkillManagerComponent = nullptr;
+	if (APlayerController* PlayerController = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr)
+	{
+		if (APawn* PlayerPawn = PlayerController->GetPawn())
+		{
+			SkillManagerComponent = PlayerPawn->FindComponentByClass<UDiaSkillManagerComponent>();
+		}
+	}
+
+	FRewardChoiceData RewardChoiceData = RewardSubsystem->MakeRoomClearRewardChoice(EJobType::Warrior, SkillManagerComponent, 3);
+	if (IsValid(HUDWidget))
+	{
+		HUDWidget->OpenRewardChoicePanel(RewardChoiceData.Title, RewardChoiceData.Subtitle, RewardChoiceData.RewardOptions);
+	}
+}
 
 void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData, int32 Level, int32 Quantity)
 {

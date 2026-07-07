@@ -149,10 +149,16 @@ void UDiaSkillManagerComponent::SetSkillIDIndex(int32 SkillID , int32 Index)
 		NewSkillObject->SetSkillID(SkillID);
 		SkillIDMapping[Index] = NewSkillObject;
 		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::SetSkillIDIndex: SkillIDMapping[%d] set to SkillID %d"), Index, SkillID);
+		NotifySkillRegistered(SkillID, Index);
 	}
 }
 
-void UDiaSkillManagerComponent::AddVariantBySkillId(int32 SkillID, int32 VariantID)
+void UDiaSkillManagerComponent::NotifySkillRegistered(int32 SkillID, int32 SlotIndex)
+{
+	OnSkillRegistered.Broadcast(SkillID, SlotIndex);
+}
+
+bool UDiaSkillManagerComponent::AddOwnedVariantBySkillID(int32 SkillID, int32 VariantID)
 {
 	USkillObject* SkillObj = nullptr;
 	for (const auto& Obj : SkillIDMapping)
@@ -165,11 +171,48 @@ void UDiaSkillManagerComponent::AddVariantBySkillId(int32 SkillID, int32 Variant
 	}
 	if (!SkillObj)
 	{
-		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::AddVariantBySkillId: SkillObject가 유효하지 않습니다."));
-		return;
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::AddOwnedVariantBySkillID: SkillObject is invalid. SkillID: %d"), SkillID);
+		return false;
+	}
+
+	if (!SkillObj->HasSkillVariantID(VariantID))
+	{
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::AddOwnedVariantBySkillID: VariantID %d is not valid for SkillID %d"), VariantID, SkillID);
+		return false;
+	}
+
+	if (SkillObj->HasOwnedVariantID(VariantID))
+	{
+		return false;
+	}
+
+	SkillObj->AddOwnedVariantID(VariantID);
+	OnSkillVariantAdded.Broadcast(SkillID, VariantID);
+	return true;
+}
+
+bool UDiaSkillManagerComponent::TryUnlockSkillVariantByID(int32 SkillID, int32 VariantID)
+{
+	return AddOwnedVariantBySkillID(SkillID, VariantID);
+}
+
+bool UDiaSkillManagerComponent::TryApplySkillVariantByID(int32 SkillID, int32 VariantID)
+{
+	USkillObject* SkillObj = GetMutableSkillObjectBySkillID(SkillID);
+	if (!IsValid(SkillObj))
+	{
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::TryApplySkillVariantByID: SkillObject is invalid. SkillID: %d"), SkillID);
+		return false;
+	}
+
+	if (!SkillObj->HasOwnedVariantID(VariantID))
+	{
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::TryApplySkillVariantByID: VariantID %d is not owned for SkillID %d"), VariantID, SkillID);
+		return false;
 	}
 
 	SkillObj->SetVariantApplyIDs(VariantID);
+	return true;
 }
 
 FGameplayAbilitySpec* UDiaSkillManagerComponent::GetAbilitySpecBySkillID(int32 SkillID) const
@@ -273,10 +316,72 @@ void UDiaSkillManagerComponent::GetSkillVariantsFromSkillID(const int32 SkillID,
 	}
 }
 
+void UDiaSkillManagerComponent::GetOwnedSkillVariantsFromSkillID(const int32 SkillID, OUT TArray<UDiaSkillVariant*>& OutVariants)
+{
+	const USkillObject* SkillObj = GetSkillObjectBySkillID(SkillID);
+	if (!SkillObj)
+	{
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::GetOwnedSkillVariantsFromSkillID: SkillObject is invalid. SkillID: %d"), SkillID);
+		return;
+	}
+
+	for (const int32 VariantID : SkillObj->GetOwnedVariantIDs())
+	{
+		if (UDiaSkillVariant* FoundVariant = SkillVariants.FindRef(VariantID))
+		{
+			OutVariants.Add(FoundVariant);
+		}
+	}
+}
+
+USkillObject* UDiaSkillManagerComponent::GetMutableSkillObjectBySkillID(int32 SkillID)
+{
+	for (auto& SkillObject : SkillIDMapping)
+	{
+		if (SkillObject->GetSkillID() == SkillID)
+		{
+			return SkillObject;
+		}
+	}
+	return nullptr;
+}
+
 bool UDiaSkillManagerComponent::TryActivateAbilityBySkillID(int32 SkillID)
 {
 	const USkillObject* SkillObj = GetSkillObjectBySkillID(SkillID);
 	return ActivationService->TryActivateSkill(SkillID, Cast<ADiaBaseCharacter>(GetOwner()), SkillObj);
+}
+
+bool UDiaSkillManagerComponent::TryAddSkillLevelBySkillID(int32 SkillID, int32 LevelToAdd)
+{
+	if(LevelToAdd <= 0)
+	{
+		return false;
+	}
+
+	USkillObject* SkillObj = GetMutableSkillObjectBySkillID(SkillID);
+	if (!IsValid(SkillObj))
+	{
+		return false;
+	}
+
+	SkillObj->AddSkillLevel(LevelToAdd);
+	OnSkillLevelChanged.Broadcast(SkillID, SkillObj->GetSkillLevel());
+
+	if (FGameplayAbilitySpec* Spec = GetAbilitySpecBySkillID(SkillID))
+	{
+		Spec->Level = SkillObj->GetSkillLevel();
+
+		if (ADiaBaseCharacter* OwnerCharacter = Cast<ADiaBaseCharacter>(GetOwner()))
+		{
+			if (UAbilitySystemComponent* ASC = OwnerCharacter->GetAbilitySystemComponent())
+			{
+				ASC->MarkAbilitySpecDirty(*Spec);
+			}
+		}
+	}
+
+	return true;
 }
 
 

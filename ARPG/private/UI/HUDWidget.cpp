@@ -243,12 +243,11 @@ void UHUDWidget::UpdateTagetMonster(ADiaBaseCharacter* NewTarget)
 
 void UHUDWidget::OnRewardCardSelected(FRewardData RewardData)
 {
-	ADiaBaseCharacter* OwningActor = Cast<ADiaBaseCharacter>(GetOwningPlayerPawn());
-	if (!IsValid(OwningActor))
+	ADiaController* OwningController = Cast<ADiaController>(GetOwningPlayer());
+	if (!IsValid(OwningController))
 		return;
 
-	UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::OnRewardCardSelected called with RewardData: %s"), *RewardData.DisplayName.ToString());
-	//OwningActor->OnRewardCardSelected(RewardData);
+	bool SuccesApplyReward = OwningController->ApplyReward(RewardData);
 }
 
 void UHUDWidget::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
@@ -256,6 +255,18 @@ void UHUDWidget::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
 	if (SkillQuickSlotWidget)
 	{
 		SkillQuickSlotWidget->UpdateSkillSlot(SlotIndex, SkillID);
+	}
+}
+
+void UHUDWidget::RegisteSkillPannelWidget(const USkillObject* Skill)
+{
+	if (SkillPanelWidget)
+	{
+		SkillPanelWidget->RegisterSkill(Skill);
+	}
+	else
+	{
+		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::RegisteSkillPannelWidget - SkillPanelWidget is null"));
 	}
 }
 
@@ -269,6 +280,30 @@ void UHUDWidget::RegisteSkillPannelWidget(const TArray<USkillObject*>& Skills)
 	else
 	{
 		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::RegisteSkillPannelWidget - SkillPanelWidget is null"));
+	}
+}
+
+void UHUDWidget::UpdateSkillLevel(int32 SkillID, int32 NewLevel)
+{
+	if (SkillPanelWidget)
+	{
+		SkillPanelWidget->UpdateSkillLevel(SkillID, NewLevel);
+	}
+	else
+	{
+		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::UpdateSkillLevel - SkillPanelWidget is null"));
+	}
+}
+
+void UHUDWidget::RegisterSkillVariant(int32 SkillID, int32 VariantID)
+{
+	if (SkillPanelWidget)
+	{
+		SkillPanelWidget->RegisterSkillVariant(SkillID, VariantID);
+	}
+	else
+	{
+		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::RegisterSkillVariant - SkillPanelWidget is null"));
 	}
 }
 

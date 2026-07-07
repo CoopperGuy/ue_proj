@@ -20,6 +20,7 @@ class ADiaBaseCharacter;
 class USkillObject;
 class UDiaItemDebugWidget;
 class UDiaMenuSystem;
+struct FRewardData;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnTargetChanged, ADiaBaseCharacter*);
 
@@ -36,12 +37,14 @@ public:
 
 	bool ItemAddedToInventory(const FInventorySlot& Item);
 	void ItemRemoved(const FInventorySlot& Item);
+	bool ApplyReward(const FRewardData& RewardData);
 
 	void ToggleInventoryVisibility(bool bVisible);
 	void ToggleChracterStatusVisibility(bool bVisible);
 	void ToggleSkillPanelVisibility(bool bVisible);
 
 	void RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
+	void RegisteSkillPannelWidget(const USkillObject* SkillData);
 	void RegisteSkillPannelWidget(const TArray<USkillObject*>&);
 
 	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat")
@@ -82,6 +85,16 @@ protected:
 	virtual void SetupInputComponent() override;
 	void OnPossess(APawn* InPawn) override;
 
+	bool ApplyGoldReward(const FRewardData& RewardData);
+	bool ApplyItemReward(const FRewardData& RewardData);
+	bool ApplySkillAddReward(const FRewardData& RewardData);
+	bool ApplySkillUpgradeReward(const FRewardData& RewardData);
+	bool ApplySkillVariantReward(const FRewardData& RewardData);
+
+	void BindSkillManagerDelegates(APawn* InPawn);
+	void HandleSkillRegistered(int32 SkillID, int32 SlotIndex);
+	void HandleSkillLevelChanged(int32 SkillID, int32 NewLevel);
+	void HandleSkillVariantAdded(int32 SkillID, int32 VariantID);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UDiaInventoryComponent* DiaInventoryComponent;

@@ -22,6 +22,21 @@ void USkillObject::SetVariantApplyIDs(int32 _AddVariantID)
 	VariantApplyIDs.Add(_AddVariantID);
 }
 
+void USkillObject::AddOwnedVariantID(int32 VariantID)
+{
+	OwnedVariantIDs.Add(VariantID);
+}
+
+bool USkillObject::HasSkillVariantID(int32 VariantID) const
+{
+	return SkillVariantIDs.Contains(VariantID);
+}
+
+bool USkillObject::HasOwnedVariantID(int32 VariantID) const
+{
+	return OwnedVariantIDs.Contains(VariantID);
+}
+
 const TSet<int32>& USkillObject::GetVariantApplyIDs() const
 {
     // TODO: 여기에 return 문을 삽입합니다.

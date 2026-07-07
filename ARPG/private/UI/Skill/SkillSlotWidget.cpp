@@ -109,10 +109,20 @@ void USkillSlotWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 
 	if (USkillInfoObject* SkillInfoObject = Cast<USkillInfoObject>(ListItemObject))
 	{
-		SkillInfoObjectPtr = SkillInfoObject;
-		SkillInfoObjectPtr->isMainSkill = SkillInfoObject->isMainSkill;
-		SkillInfoObjectPtr->MainSkillID = SkillInfoObject->MainSkillID;
-		MainSkillID = SkillInfoObject->MainSkillID;
-		SetSkillInfo(SkillInfoObject->SkillID, SkillInfoObject->SkillIcon, SkillInfoObject->SkillName, SkillInfoObject->SkillLevel);
+		UpdateSkillInfoObject(SkillInfoObject);
 	}
+}
+
+void USkillSlotWidget::UpdateSkillInfoObject(USkillInfoObject* InSkillInfoObjectPtr)
+{
+	if (!IsValid(InSkillInfoObjectPtr))
+	{
+		return;
+	}
+
+	SkillInfoObjectPtr = InSkillInfoObjectPtr;
+	SkillInfoObjectPtr->isMainSkill = InSkillInfoObjectPtr->isMainSkill;
+	SkillInfoObjectPtr->MainSkillID = InSkillInfoObjectPtr->MainSkillID;
+	MainSkillID = InSkillInfoObjectPtr->MainSkillID;
+	SetSkillInfo(InSkillInfoObjectPtr->SkillID, InSkillInfoObjectPtr->SkillIcon, InSkillInfoObjectPtr->SkillName, InSkillInfoObjectPtr->SkillLevel);
 }

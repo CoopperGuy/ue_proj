@@ -209,6 +209,11 @@ bool ADiaBaseCharacter::SetUpSkillID(int32 SkillID)
 		return false;
 	}
 
+	if (IsValid(SkillManagerComponent) && SkillManagerComponent->GetAbilitySpecBySkillID(SkillID))
+	{
+		return false;
+	}
+
 	UGASSkillManager* GasSkillMgr = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGASSkillManager>() : nullptr;
 	if (!GasSkillMgr)
 	{
@@ -271,7 +276,7 @@ void ADiaBaseCharacter::HandleAddSkillVariant(int32 SkillID, int32 VariantID, bo
 {
 	if (bApply)
 	{
-		SkillManagerComponent->AddVariantBySkillId(SkillID, VariantID);
+		ApplySkillVariantByID(SkillID, VariantID);
 	}
 	else
 	{
@@ -328,6 +333,41 @@ void ADiaBaseCharacter::ApplyStunState(bool bStunned)
 		UE_LOG(LogARPG, Log, TEXT("Character %s is No Longer Stunned."), *GetName());
 		StopCharacterMontage(0.2f);
 	}
+}
+
+bool ADiaBaseCharacter::ApplySkillByID(int32 SkillID)
+{
+	return SetUpSkillID(SkillID);
+}
+
+bool ADiaBaseCharacter::ApplySkillLevelUpByID(int32 SkillID, int32 AddLevel)
+{
+	return SkillManagerComponent->TryAddSkillLevelBySkillID(SkillID, AddLevel);
+}
+
+bool ADiaBaseCharacter::UnlockSkillVariantByID(int32 SkillID, int32 VariantID)
+{
+	if (!IsValid(SkillManagerComponent))
+	{
+		return false;
+	}
+
+	return SkillManagerComponent->TryUnlockSkillVariantByID(SkillID, VariantID);
+}
+
+bool ADiaBaseCharacter::ApplySkillVariantByID(int32 SkillID, int32 VariantID)
+{
+	if (!IsValid(SkillManagerComponent))
+	{
+		return false;
+	}
+
+	if (SkillManagerComponent->GetSkillObjectBySkillID(SkillID) == nullptr)
+	{
+		return false;
+	}
+
+	return SkillManagerComponent->TryApplySkillVariantByID(SkillID, VariantID);
 }
 
 void ADiaBaseCharacter::OnHitFlashUpdate(float Value)
@@ -534,6 +574,16 @@ void ADiaBaseCharacter::GetSkillVariantFromID(int32 SkillID, OUT UDiaSkillVarian
 void ADiaBaseCharacter::GetSkillVariantsFromSkillID(int32 SkillID, OUT TArray<class UDiaSkillVariant*>& OutSkillVariants)
 {
 	SkillManagerComponent->GetSkillVariantsFromSkillID(SkillID, OutSkillVariants);
+}
+
+void ADiaBaseCharacter::GetOwnedSkillVariantsFromSkillID(int32 SkillID, OUT TArray<class UDiaSkillVariant*>& OutSkillVariants)
+{
+	if (!IsValid(SkillManagerComponent))
+	{
+		return;
+	}
+
+	SkillManagerComponent->GetOwnedSkillVariantsFromSkillID(SkillID, OutSkillVariants);
 }
 
 void ADiaBaseCharacter::SetTargetActor(ADiaBaseCharacter* NewTarget)
