@@ -36,11 +36,6 @@ void UDiaProjectileAbility::ActivateAbility(const FGameplayAbilitySpecHandle Han
 {
 	// Call parent implementation
 	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-
-	if (SkillData.CastTime == 0.f)
-	{
-		SpawnProjectile();
-	}
 }
 
 void UDiaProjectileAbility::OnSpawned(AActor* SpawnedProjectile)
@@ -157,8 +152,16 @@ void UDiaProjectileAbility::SpawnProjectile()
 		FDiaSkillVariantContext VariantContext;
 		VariantContext.SkillActorClass = ProjectileClass;
 		VariantContext.TargetData = TargetDataHandle;
+		VariantContext.BaseSpawnCount = bFireMultipleProjectiles ? FMath::Max(1, ProjectileCount) : 1;
+		VariantContext.SpreadAngle = SpreadAngle;
 
 		UDiaSkillManagerComponent* DiaSkillManagerComp = Character->FindComponentByClass<UDiaSkillManagerComponent>();
+		if (!DiaSkillManagerComp)
+		{
+			ARPG_SKILL_LOG(Warning, TEXT("Cannot spawn projectile: SkillManagerComponent is missing"));
+			EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+			return;
+		}
 		DiaSkillManagerComp->SpawnSkillActorUseVariants(VariantContext, this);
 		
 		DrawDebugLine(World, CharacterLocation, CharacterLocation + LaunchDirection * 500.0f, FColor::Red, false, 1.5f, 0, 2.0f); // 캐릭터→LaunchDirection
@@ -169,7 +172,11 @@ void UDiaProjectileAbility::SpawnProjectile()
 
 void UDiaProjectileAbility::ProcessSkillDelayEvents()
 {
-	Super::ProcessSkillDelayEvents();
+	if (SkillData.Steps.Num() > 0)
+	{
+		Super::ProcessSkillDelayEvents();
+		return;
+	}
 
 	ARPG_SKILL_VLOG(TEXT("ProcessSkillDelayEvents. SkillID=%d"), SkillData.SkillID);
 

@@ -14,7 +14,7 @@ FSpawnLocationData FDiaSkillActorSpawnHelper::CalculateSpawnLocationData(
 	const AActor* Character,
 	const FSkillSpawnRuntime& Runtime)
 {
-	constexpr float AdditionalAngle = 10.f;
+	const float AdditionalAngle = Context.SpreadAngle > 0.f ? Context.SpreadAngle : 10.f;
 
 	FSpawnLocationData Result;
 

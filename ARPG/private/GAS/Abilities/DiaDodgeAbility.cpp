@@ -3,6 +3,7 @@
 
 #include "GAS/Abilities/DiaDodgeAbility.h"
 #include "DiaBaseCharacter.h"
+#include "AbilitySystemComponent.h"
 #include "Abilities/Tasks/AbilityTask_ApplyRootMotionConstantForce.h"
 #include "GAS/DiaGameplayTags.h"
 UDiaDodgeAbility::UDiaDodgeAbility()
@@ -26,10 +27,32 @@ void UDiaDodgeAbility::InitializeWithSkillData(const FGASSkillData& InSkillData)
 
 void UDiaDodgeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
-	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+	if (!ActorInfo || !ActorInfo->AvatarActor.IsValid() || !ActorInfo->AbilitySystemComponent.IsValid())
+	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
+
+	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
+	if (ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Stunned) || !CommitAbility(Handle, ActorInfo, ActivationInfo))
+	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
+
+	if (AbilityMontage)
+	{
+		PlayAbilityMontage(AbilityMontage);
+	}
+	ApplyGameplayEffectToSelf();
 
 	//입력키 이동 방향 가져옴
 	ADiaBaseCharacter* DiaCharacter = Cast<ADiaBaseCharacter>(ActorInfo->AvatarActor.Get());
+	if (!DiaCharacter)
+	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
 	FVector MoveDir = DiaCharacter->GetLastMovementInputVector();
 	
 	//입력 없을 때 처리
@@ -55,6 +78,12 @@ void UDiaDodgeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 		false
 	);
 
+	if (!RootMotionTask)
+	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
+
 	RootMotionTask->OnFinish.AddDynamic(this, &UDiaDodgeAbility::OnRollFinish);
 	RootMotionTask->ReadyForActivation();
 }
@@ -63,4 +92,3 @@ void UDiaDodgeAbility::OnRollFinish()
 {
 	EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 }
-

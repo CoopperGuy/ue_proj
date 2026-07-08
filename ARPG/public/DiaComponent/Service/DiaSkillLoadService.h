@@ -30,5 +30,6 @@ public:
 		EJobType JobType,
 		TArray<USkillObject*>& OutSkillObjects,
 		TMap<int32, UDiaSkillVariant*>& OutSkillVariants,
-		UObject* OuterObject);
+		UObject* OuterObject,
+		int32 MaxSkillCount = INDEX_NONE);
 };

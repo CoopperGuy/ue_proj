@@ -26,12 +26,51 @@
 #include "GameplayAbilitySpec.h"
 #include "Logging/ARPGLogChannels.h"
 
+namespace
+{
+void CacheSkillVariantsForSkillData(UGASSkillManager* GASSkillManager, const FGASSkillData& GASData, TMap<int32, UDiaSkillVariant*>& OutSkillVariants, UObject* OuterObject)
+{
+	if (!IsValid(GASSkillManager) || !IsValid(OuterObject))
+	{
+		return;
+	}
+
+	for (const int32 VariantID : GASData.VariantIDs)
+	{
+		if (OutSkillVariants.Contains(VariantID))
+		{
+			continue;
+		}
+
+		const FSkillVariantData* Data = GASSkillManager->GetSkllVariantDataPtr(VariantID);
+		if (!Data)
+		{
+			continue;
+		}
+
+		FDiaSkillVariantSpec Spec;
+		Spec.ModifierValue = Data->ModifierValue;
+		Spec.SkillTag = Data->VariantTag;
+		Spec.VariantExtraData = Data->VariantExtraData;
+
+		UDiaSkillVariant* NewDiaSkillVariant = NewObject<UDiaSkillVariant>(OuterObject);
+		NewDiaSkillVariant->InitializeVariant(Spec);
+		NewDiaSkillVariant->SetSkillID(VariantID);
+		NewDiaSkillVariant->SetSkillVariantName(Data->VariantName);
+		NewDiaSkillVariant->SetSkillVariantDescription(Data->Description);
+
+		OutSkillVariants.Add(VariantID, NewDiaSkillVariant);
+	}
+}
+}
+
 
 UDiaSkillManagerComponent::UDiaSkillManagerComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
-	SkillIDMapping.Reserve(MaxSkillMapping);
+	SkillIDMapping.Reserve(MaxOwnedSkillCount);
+	QuickSlotSkillIDs.Init(-1, MaxQuickSlotCount);
 }
 
 
@@ -40,11 +79,23 @@ void UDiaSkillManagerComponent::BeginPlay()
 	Super::BeginPlay();
 
 	// Service 인스턴스 생성 (생성자에서 NewObject 사용 시 오류 발생하므로 BeginPlay에서 생성)
-	LoadService = NewObject<UDiaSkillLoadService>(this);
-	ActivationService = NewObject<UDiaSkillActivationService>(this);
-	VariantExecutor = NewObject<UDiaSkillVariantExecutorService>(this);
-	VariantExecutor->InitializeExecutorService();
-	VariantCache = NewObject<UDiaSkillVariantCache>(this);
+	if (!IsValid(LoadService))
+	{
+		LoadService = NewObject<UDiaSkillLoadService>(this);
+	}
+	if (!IsValid(ActivationService))
+	{
+		ActivationService = NewObject<UDiaSkillActivationService>(this);
+	}
+	if (!IsValid(VariantExecutor))
+	{
+		VariantExecutor = NewObject<UDiaSkillVariantExecutorService>(this);
+		VariantExecutor->InitializeExecutorService();
+	}
+	if (!IsValid(VariantCache))
+	{
+		VariantCache = NewObject<UDiaSkillVariantCache>(this);
+	}
 }
 
 void UDiaSkillManagerComponent::MakeSkillVariantsArray(IN const UDiaGameplayAbility* Ability, OUT TArray<UDiaSkillVariant*>& OutVariantsArray)
@@ -88,25 +139,44 @@ void UDiaSkillManagerComponent::LoadJobSKillDataFromTable(EJobType JobType)
 {
 	SkillIDMapping.Reset();
 	SkillVariants.Reset();
-	LoadService->LoadJobSkillData(JobType, SkillIDMapping, SkillVariants, this);
+	QuickSlotSkillIDs.Init(-1, MaxQuickSlotCount);
+	if (!IsValid(LoadService))
+	{
+		LoadService = NewObject<UDiaSkillLoadService>(this);
+	}
+	if (!IsValid(LoadService))
+	{
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::LoadJobSKillDataFromTable: LoadService is invalid"));
+		return;
+	}
+
+	LoadService->LoadJobSkillData(JobType, SkillIDMapping, SkillVariants, this, MaxOwnedSkillCount);
+
+	for (int32 Index = 0; Index < SkillIDMapping.Num() && QuickSlotSkillIDs.IsValidIndex(Index); ++Index)
+	{
+		if (IsValid(SkillIDMapping[Index]))
+		{
+			QuickSlotSkillIDs[Index] = SkillIDMapping[Index]->GetSkillID();
+		}
+	}
 }
 
 const int32 UDiaSkillManagerComponent::GetMappedSkillID(int32 Index) const
 {
-	if (SkillIDMapping.IsValidIndex(Index))
+	if (QuickSlotSkillIDs.IsValidIndex(Index))
 	{
-		return SkillIDMapping[Index]->GetSkillID();
+		return QuickSlotSkillIDs[Index];
 	}
 	return -1; // 유효하지 않은 인덱스일 경우 -1 반환
 }
 
 const int32 UDiaSkillManagerComponent::GetIndexOfSkillID(int32 SkillID) const
 {
-	for (size_t i = 0; i < SkillIDMapping.Num(); i++)
+	for (int32 Index = 0; Index < QuickSlotSkillIDs.Num(); ++Index)
 	{
-		if(SkillIDMapping[i]->GetSkillID() == SkillID)
+		if (QuickSlotSkillIDs[Index] == SkillID)
 		{
-			return static_cast<int32>(i);
+			return Index;
 		}
 	}
 
@@ -117,7 +187,7 @@ const USkillObject* UDiaSkillManagerComponent::GetSkillObjectBySkillID(int32 Ski
 {
 	for (const auto& SkillObject : SkillIDMapping)
 	{
-		if (SkillObject->GetSkillID() == SkillID)
+		if (IsValid(SkillObject) && SkillObject->GetSkillID() == SkillID)
 		{
 			return SkillObject;
 		}
@@ -130,27 +200,120 @@ const TArray<USkillObject*>& UDiaSkillManagerComponent::GetSkillIDMapping() cons
 	return SkillIDMapping;
 }
 
+const TArray<int32>& UDiaSkillManagerComponent::GetQuickSlotSkillIDs() const
+{
+	return QuickSlotSkillIDs;
+}
+
+int32 UDiaSkillManagerComponent::FindFirstEmptyQuickSlotIndex() const
+{
+	for (int32 Index = 0; Index < QuickSlotSkillIDs.Num(); ++Index)
+	{
+		if (QuickSlotSkillIDs[Index] <= 0)
+		{
+			return Index;
+		}
+	}
+
+	return INDEX_NONE;
+}
+
+bool UDiaSkillManagerComponent::HasAvailableSkillSlot() const
+{
+	return SkillIDMapping.Num() < MaxOwnedSkillCount;
+}
+
+bool UDiaSkillManagerComponent::TryRegisterSkillByID(int32 SkillID)
+{
+	if (SkillID <= 0 || GetSkillObjectBySkillID(SkillID) != nullptr || !HasAvailableSkillSlot())
+	{
+		return false;
+	}
+
+	UGASSkillManager* GASSkillManager = GetWorld() && GetWorld()->GetGameInstance()
+		? GetWorld()->GetGameInstance()->GetSubsystem<UGASSkillManager>()
+		: nullptr;
+	if (!IsValid(GASSkillManager))
+	{
+		return false;
+	}
+
+	const FGASSkillData* GASData = GASSkillManager->GetSkillDataPtr(SkillID);
+	if (!GASData)
+	{
+		return false;
+	}
+
+	USkillObject* NewSkillObject = NewObject<USkillObject>(this);
+	NewSkillObject->SetSkillID(SkillID);
+	NewSkillObject->SetSkillVariantIDs(GASData->VariantIDs);
+	SkillIDMapping.Add(NewSkillObject);
+
+	CacheSkillVariantsForSkillData(GASSkillManager, *GASData, SkillVariants, this);
+	return true;
+}
+
+bool UDiaSkillManagerComponent::RemoveSkillByID(int32 SkillID)
+{
+	const int32 RemovedCount = SkillIDMapping.RemoveAll([SkillID](const USkillObject* SkillObject)
+	{
+		return IsValid(SkillObject) && SkillObject->GetSkillID() == SkillID;
+	});
+
+	if (RemovedCount > 0)
+	{
+		for (int32& QuickSlotSkillID : QuickSlotSkillIDs)
+		{
+			if (QuickSlotSkillID == SkillID)
+			{
+				QuickSlotSkillID = -1;
+			}
+		}
+	}
+
+	return RemovedCount > 0;
+}
+
 void UDiaSkillManagerComponent::SetSkillIDMapping(const TArray<int32>& NewMapping)
 {
-	for(const auto& SkillID : NewMapping)
+	SkillIDMapping.Reset();
+	SkillVariants.Reset();
+	QuickSlotSkillIDs.Init(-1, MaxQuickSlotCount);
+
+	int32 SlotIndex = 0;
+	for (const int32 SkillID : NewMapping)
 	{
-		USkillObject* NewSkillObject = NewObject<USkillObject>(this);
-		NewSkillObject->SetSkillID(SkillID);
-		SkillIDMapping.Add(NewSkillObject);
+		if (TryRegisterSkillByID(SkillID) && QuickSlotSkillIDs.IsValidIndex(SlotIndex))
+		{
+			QuickSlotSkillIDs[SlotIndex] = SkillID;
+			++SlotIndex;
+		}
 	}
 }
 
 void UDiaSkillManagerComponent::SetSkillIDIndex(int32 SkillID , int32 Index)
 {
 	UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::SetSkillIDIndex: Index %d, SkillID %d"), Index, SkillID);
-	if (SkillIDMapping.IsValidIndex(Index))
+	if (!QuickSlotSkillIDs.IsValidIndex(Index))
 	{
-		USkillObject* NewSkillObject = NewObject<USkillObject>(this);
-		NewSkillObject->SetSkillID(SkillID);
-		SkillIDMapping[Index] = NewSkillObject;
-		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::SetSkillIDIndex: SkillIDMapping[%d] set to SkillID %d"), Index, SkillID);
-		NotifySkillRegistered(SkillID, Index);
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::SetSkillIDIndex: Invalid quick slot index %d"), Index);
+		return;
 	}
+
+	if (SkillID <= 0)
+	{
+		QuickSlotSkillIDs[Index] = -1;
+		return;
+	}
+
+	if (!GetSkillObjectBySkillID(SkillID))
+	{
+		UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::SetSkillIDIndex: SkillID %d is not registered"), SkillID);
+		return;
+	}
+
+	QuickSlotSkillIDs[Index] = SkillID;
+	UE_LOG(LogARPG, Warning, TEXT("DiaSkillManagerComponent::SetSkillIDIndex: QuickSlotSkillIDs[%d] set to SkillID %d"), Index, SkillID);
 }
 
 void UDiaSkillManagerComponent::NotifySkillRegistered(int32 SkillID, int32 SlotIndex)

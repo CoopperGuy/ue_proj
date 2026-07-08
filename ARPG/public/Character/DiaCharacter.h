@@ -7,6 +7,7 @@
 #include "InputActionValue.h"
 #include "Interface/Combatable.h"
 #include "DiaBaseCharacter.h"
+#include "Types/DiaGASSkillData.h"
 #include "DiaCharacter.generated.h"
 
 class UInputAction;
@@ -38,6 +39,7 @@ public:
 	virtual void SetTargetActor(ADiaBaseCharacter* NewTarget);
 
 	virtual bool SetUpSkillID(int32 SkillID);
+	virtual void SetSkillIDOnQuickSlotWidget(int32 SkillID, int32 SlotIndex) override;
 	
 	void RegisteCurrentSkillList();
 protected:
@@ -92,6 +94,9 @@ protected:
 	// Input Actions for Skills
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input|Skills")
 	TArray<UInputAction*> SkillActions;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skills")
+	EJobType InitialJobType = EJobType::Warrior;
 
 	// UI Input Action
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)

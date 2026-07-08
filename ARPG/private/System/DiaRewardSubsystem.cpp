@@ -188,6 +188,10 @@ TArray<FRewardData> UDiaRewardSubsystem::MakeSkillAddRewardsForJob(EJobType JobT
 	{
 		return Rewards;
 	}
+	if (IsValid(SkillManagerComponent) && !SkillManagerComponent->HasAvailableSkillSlot())
+	{
+		return Rewards;
+	}
 
 	const UJobSkillSetSubSystem* JobSkillSetSubsystem = GetJobSkillSetSubsystem();
 	if (!IsValid(JobSkillSetSubsystem))

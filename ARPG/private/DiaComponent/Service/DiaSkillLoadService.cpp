@@ -13,7 +13,8 @@ void UDiaSkillLoadService::LoadJobSkillData(
 	EJobType JobType,
 	TArray<USkillObject*>& OutSkillObjects,
 	TMap<int32, UDiaSkillVariant*>& OutSkillVariants,
-	UObject* OuterObject)
+	UObject* OuterObject,
+	int32 MaxSkillCount)
 {
 	UWorld* World = OuterObject ? OuterObject->GetWorld() : nullptr;
 	if (!World)
@@ -45,8 +46,14 @@ void UDiaSkillLoadService::LoadJobSkillData(
 
 	FJobSkillSet JobSkillSet = JobSkillSubSystem->GetJobSkillSet(JobType);
 
+	int32 LoadedSkillCount = 0;
 	for (const int32 SkillID : JobSkillSet.SkillIDs)
 	{
+		if (MaxSkillCount != INDEX_NONE && LoadedSkillCount >= MaxSkillCount)
+		{
+			break;
+		}
+
 		USkillObject* NewSkillObject = NewObject<USkillObject>(OuterObject);
 		NewSkillObject->SetSkillID(SkillID);
 
@@ -57,6 +64,7 @@ void UDiaSkillLoadService::LoadJobSkillData(
 		}
 
 		OutSkillObjects.Add(NewSkillObject);
+		++LoadedSkillCount;
 
 		// 게임에서 사용할 variant 객체들 미리 생성
 		if (GASData)

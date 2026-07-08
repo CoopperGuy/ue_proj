@@ -48,7 +48,7 @@ void UDiaSkillVariantSpawnExecutor::ExecuteEffect(const TArray<UDiaSkillVariant*
 	}
 
 	FSkillSpawnRuntime Runtime;
-	Runtime.ExtraSpawnCount = 1;
+	Runtime.ExtraSpawnCount = FMath::Max(1, Context.BaseSpawnCount);
 	ApplyEffects(Variants, Context, Runtime);	
 	SpawnCast(Variants, Context, Ability, Runtime);
 	if (AfterSpawn(Variants, Context, Ability, Runtime, OnFinished))
@@ -138,17 +138,22 @@ bool UDiaSkillVariantSpawnExecutor::AfterSpawn(const TArray<UDiaSkillVariant*>& 
 		}
 	}
 
+	if (RemainingRepeatCount <= 0)
+	{
+		return false;
+	}
+
 	World->GetTimerManager().ClearTimer(RepeatTimerHandle);
 
-	if(RemainingRepeatCount > 0)
 	{
 		TWeakObjectPtr<UDiaGameplayAbility> AbilityPtr = Ability;
 		TWeakObjectPtr<UWorld> WorldPtr = World;
 		TArray<UDiaSkillVariant*> RepeatVariants = Variants;
+		FDiaSkillVariantContext RepeatContext = Context;
 		FSkillSpawnRuntime RepeatRuntime = Runtime;
 
 		FTimerDelegate RepeatDelegate;
-		RepeatDelegate.BindLambda([this, AbilityPtr, WorldPtr, RepeatVariants, &Context, RepeatRuntime, OnFinished, RemainingRepeatCount]() mutable
+		RepeatDelegate.BindLambda([this, AbilityPtr, WorldPtr, RepeatVariants, RepeatContext, RepeatRuntime, OnFinished, RemainingRepeatCount]() mutable
 			{
 				UDiaGameplayAbility* RepeatAbility = AbilityPtr.Get();
 				UWorld* RepeatWorld = WorldPtr.Get();
@@ -158,7 +163,7 @@ bool UDiaSkillVariantSpawnExecutor::AfterSpawn(const TArray<UDiaSkillVariant*>& 
 					return;
 				}
 
-				SpawnCast(RepeatVariants, Context, RepeatAbility, RepeatRuntime);
+				SpawnCast(RepeatVariants, RepeatContext, RepeatAbility, RepeatRuntime);
 				--RemainingRepeatCount;
 
 				if (RemainingRepeatCount <= 0)

@@ -73,7 +73,7 @@ struct ARPG_API FGASGroundData : public FGASSkillActorSpawnData
 };
 
 USTRUCT(BlueprintType)
-struct ARPG_API FGASMeleeData : public FGASSkillExtraDataBase
+struct ARPG_API FGASMeleeData : public FGASSkillActorSpawnData
 {
     GENERATED_BODY()
 
@@ -88,6 +88,26 @@ struct ARPG_API FGASMeleeData : public FGASSkillExtraDataBase
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Melee|Debug")
     bool bShowDebugShape = true;
+};
+
+USTRUCT(BlueprintType)
+struct ARPG_API FGASUtilitySpawnData : public FGASSkillActorSpawnData
+{
+    GENERATED_BODY()
+
+    /** Optional second cosmetic actor. Used by skills such as teleport arrival. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Utility")
+    TSubclassOf<ADiaSkillActor> SecondarySkillActorClass;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Utility")
+    FVector SpawnOffset = FVector::ZeroVector;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Utility")
+    bool bUseOwnerRotation = true;
+
+    /** Attach cosmetic actors to the avatar for auras/trails. */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Utility")
+    bool bAttachToOwner = false;
 };
 
 USTRUCT(BlueprintType)

@@ -65,11 +65,11 @@ ADiaCharacter::ADiaCharacter()
 
     //HACK 임시로 최대 개수 지정
 
-	constexpr int32 MaxSkillMapping = 8;
+	constexpr int32 MaxSkillActionCount = UDiaSkillManagerComponent::MaxQuickSlotCount;
 
-    SkillActions.Reserve(MaxSkillMapping);
+    SkillActions.Reserve(MaxSkillActionCount);
 
-    SkillActions.Init(nullptr, MaxSkillMapping);
+    SkillActions.Init(nullptr, MaxSkillActionCount);
 
     Tags.Emplace(FDiaGameplayTags::Get().Actor_Player.GetTagName());
 
@@ -122,16 +122,24 @@ void ADiaCharacter::PossessedBy(AController* NewController)
 
     if (ADiaController* PlayerController = Cast<ADiaController>(NewController))
     {
-        PlayerController->RegisteSkillPannelWidget(SkillManagerComponent->GetSkillIDMapping());
+        if (IsValid(SkillManagerComponent))
+        {
+            PlayerController->RegisteSkillPannelWidget(SkillManagerComponent->GetSkillIDMapping());
+        }
     }
 
 }
 
 void ADiaCharacter::SetupInitialSkills()
 {
-    //HACK 우선은 Warrior로 박아놓는다.
-    SkillManagerComponent->LoadJobSKillDataFromTable(EJobType::Warrior);
+    // Load job-defined initial skills before granting their GAS abilities.
+    if (!IsValid(SkillManagerComponent))
+    {
+        UE_LOG(LogARPG, Warning, TEXT("SetupInitialSkills: No SkillManagerComponent"));
+        return;
+    }
 
+    SkillManagerComponent->LoadJobSKillDataFromTable(InitialJobType);
     Super::SetupInitialSkills();
 
 }
@@ -175,7 +183,8 @@ void ADiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
         // Dodge
         EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &ADiaCharacter::Dodge);
         // 스킬 바인딩
-        for (int32 i = 0; i < SkillActions.Num(); ++i)
+        const int32 SkillActionCount = FMath::Min(SkillActions.Num(), UDiaSkillManagerComponent::MaxQuickSlotCount);
+        for (int32 i = 0; i < SkillActionCount; ++i)
         {
             if (IsValid(SkillActions[i]))
             {
@@ -337,7 +346,13 @@ void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
     if (GetController<ADiaController>()->IsSkillInputBlocked())
         return;
 
-    if (int32 skillID = SkillManagerComponent->GetMappedSkillID(ActionIndex))
+    if (!IsValid(SkillManagerComponent))
+    {
+        return;
+    }
+
+    const int32 skillID = SkillManagerComponent->GetMappedSkillID(ActionIndex);
+    if (skillID > 0)
     {        
 		UE_LOG(LogARPG, Log, TEXT("ExecuteSkillByIndex: 스킬 인덱스 %d에 매핑된 스킬 ID %d 실행 시도"), ActionIndex, skillID);
         // GAS 스킬 먼저 시도 (ID 1000 이상은 GAS 스킬로 간주)
@@ -370,16 +385,41 @@ void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
 bool ADiaCharacter::SetUpSkillID(int32 SkillID)
 {
  	bool isSuccess = Super::SetUpSkillID(SkillID);
-    if (isSuccess)
+    if (isSuccess && IsValid(SkillManagerComponent))
     {
-        const int32 SlotIndex = SkillManagerComponent->GetIndexOfSkillID(SkillID);
-        RegisteSkillOnQuickSlotWidget(SkillID, SlotIndex);
-        SkillManagerComponent->NotifySkillRegistered(SkillID, SlotIndex);
+        const bool bRegisteredSkill = SkillManagerComponent->GetSkillObjectBySkillID(SkillID) != nullptr;
+        int32 SlotIndex = SkillManagerComponent->GetIndexOfSkillID(SkillID);
+        if (SlotIndex == INDEX_NONE)
+        {
+            TryAutoAssignSkillToQuickSlot(SkillID);
+            SlotIndex = SkillManagerComponent->GetIndexOfSkillID(SkillID);
+        }
+        else
+        {
+            RegisteSkillOnQuickSlotWidget(SkillID, SlotIndex);
+        }
+
+        if (bRegisteredSkill)
+        {
+            SkillManagerComponent->NotifySkillRegistered(SkillID, SlotIndex);
+        }
     }
 
     return isSuccess;
 }
 
+void ADiaCharacter::SetSkillIDOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
+{
+    Super::SetSkillIDOnQuickSlotWidget(SkillID, SlotIndex);
+
+    if (SlotIndex >= 0 && IsValid(SkillManagerComponent) && SkillManagerComponent->GetMappedSkillID(SlotIndex) == SkillID)
+    {
+        RegisteSkillOnQuickSlotWidget(SkillID, SlotIndex);
+    }
+}
+
+		//蹂댁씠???곹깭硫?false濡??덈낫?닿쾶 ?? ?꾨땲硫?true濡?蹂댁씠寃뚮걫
+// ?듭뒳濡??꾩젽???ㅽ궗 ?깅줉
 void ADiaCharacter::ToggleInventory()
 {
     if (ADiaController* PlayerController = Cast<ADiaController>(Controller))
@@ -419,13 +459,15 @@ void ADiaCharacter::ToggleMenuSystem()
 
 void ADiaCharacter::RegisteCurrentSkillList()
 {
-	const TArray<USkillObject*>& SkillIDMapping = SkillManagerComponent->GetSkillIDMapping();
-    for (int32 i = 0; i < SkillIDMapping.Num(); ++i)
+    if (!IsValid(SkillManagerComponent))
     {
-        if (int32 SkillID = SkillManagerComponent->GetMappedSkillID(i))
-        {
-            RegisteSkillOnQuickSlotWidget(SkillID, i);
-        }
+        return;
+    }
+
+	const TArray<int32>& QuickSlotSkillIDs = SkillManagerComponent->GetQuickSlotSkillIDs();
+    for (int32 i = 0; i < QuickSlotSkillIDs.Num(); ++i)
+    {
+        RegisteSkillOnQuickSlotWidget(QuickSlotSkillIDs[i], i);
 	}
 }
 

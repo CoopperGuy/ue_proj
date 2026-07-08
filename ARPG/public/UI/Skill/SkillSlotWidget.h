@@ -18,11 +18,11 @@ class ARPG_API USkillInfoObject : public UObject
 {
 	GENERATED_BODY()
 public:
-	int32 SkillID;
+	int32 SkillID = -1;
 	UPROPERTY()
-	UTexture2D* SkillIcon;
+	UTexture2D* SkillIcon = nullptr;
 	FText SkillName;
-	int32 SkillLevel;
+	int32 SkillLevel = 1;
 
 	bool isMainSkill = true;
 	int32 MainSkillID = -1;
@@ -68,8 +68,8 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	UButton* CancelBtn;
 
-	int32 SkillID;
-	int32 MainSkillID;
+	int32 SkillID = -1;
+	int32 MainSkillID = -1;
 
 	UPROPERTY()
 	TWeakObjectPtr<USkillInfoObject> SkillInfoObjectPtr;

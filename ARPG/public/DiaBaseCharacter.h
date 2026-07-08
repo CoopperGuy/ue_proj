@@ -97,6 +97,8 @@ public:
 	void GetOwnedSkillVariantsFromSkillID(int32 SkillID, OUT TArray<class UDiaSkillVariant*>& OutSkillVariants);
 
 	virtual void SetSkillIDOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
+	bool TryAutoAssignSkillToQuickSlot(int32 SkillID);
+	bool ClearSkillFromQuickSlot(int32 SkillID);
 
 	UFUNCTION()
 	void HandleAddSkillVariant(int32 SkillID, int32 VariantID, bool bApply);

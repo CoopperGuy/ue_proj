@@ -13,8 +13,14 @@ void USkillSlotWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	ApplyBtn->OnClicked.AddDynamic(this, &USkillSlotWidget::OnApplyButtonClicked);
-	CancelBtn->OnClicked.AddDynamic(this, &USkillSlotWidget::OnCancelButton);
+	if (IsValid(ApplyBtn))
+	{
+		ApplyBtn->OnClicked.AddDynamic(this, &USkillSlotWidget::OnApplyButtonClicked);
+	}
+	if (IsValid(CancelBtn))
+	{
+		CancelBtn->OnClicked.AddDynamic(this, &USkillSlotWidget::OnCancelButton);
+	}
 }
 
 void USkillSlotWidget::SetSkillInfo(int32 ID, UTexture2D* Icon, const FText& Name, int32 Level)
@@ -61,43 +67,42 @@ void USkillSlotWidget::OnApplyButtonClicked()
 {
 	APawn* Pawn = GetOwningPlayerPawn();
 	ADiaCharacter* Character = Cast<ADiaCharacter>(Pawn);
-	if (!Character)
+	if (!Character || !SkillInfoObjectPtr.IsValid())
+	{
 		return;
+	}
 
 	UE_LOG(LogARPG, Log, TEXT("USkillSlotWidget::OnApplyButtonClicked - Applying SkillID: %d"), SkillID);
 
 	if (SkillInfoObjectPtr->isMainSkill)
 	{
-		Character->SetSkillIDOnQuickSlotWidget(SkillID, 0); // 0은 예시로 첫 번째 슬롯에 할당
+		Character->TryAutoAssignSkillToQuickSlot(SkillID);
 	}
 	else
 	{
-		Character->AddSkillVariantToSkillObjcet(MainSkillID, SkillID, true); // VariantID를 SkillID로 가정
+		Character->AddSkillVariantToSkillObjcet(MainSkillID, SkillID, true);
 	}
-
-	return;
 }
 
 void USkillSlotWidget::OnCancelButton()
 {
 	APawn* Pawn = GetOwningPlayerPawn();
 	ADiaCharacter* Character = Cast<ADiaCharacter>(Pawn);
-	if (!Character)
+	if (!Character || !SkillInfoObjectPtr.IsValid())
+	{
 		return;
+	}
 
-	UE_LOG(LogARPG, Log, TEXT("USkillSlotWidget::OnApplyButtonClicked - Applying SkillID: %d"), SkillID);
+	UE_LOG(LogARPG, Log, TEXT("USkillSlotWidget::OnCancelButton - Canceling SkillID: %d"), SkillID);
 
 	if (SkillInfoObjectPtr->isMainSkill)
 	{
-		Character->SetSkillIDOnQuickSlotWidget(-1, 0); // 0은 예시로 첫 번째 슬롯에 할당
-
+		Character->ClearSkillFromQuickSlot(SkillID);
 	}
 	else
 	{
-		Character->AddSkillVariantToSkillObjcet(MainSkillID, SkillID, false); // VariantID를 SkillID로 가정
+		Character->AddSkillVariantToSkillObjcet(MainSkillID, SkillID, false);
 	}
-
-	return;
 }
 
 void USkillSlotWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
@@ -121,8 +126,6 @@ void USkillSlotWidget::UpdateSkillInfoObject(USkillInfoObject* InSkillInfoObject
 	}
 
 	SkillInfoObjectPtr = InSkillInfoObjectPtr;
-	SkillInfoObjectPtr->isMainSkill = InSkillInfoObjectPtr->isMainSkill;
-	SkillInfoObjectPtr->MainSkillID = InSkillInfoObjectPtr->MainSkillID;
 	MainSkillID = InSkillInfoObjectPtr->MainSkillID;
 	SetSkillInfo(InSkillInfoObjectPtr->SkillID, InSkillInfoObjectPtr->SkillIcon, InSkillInfoObjectPtr->SkillName, InSkillInfoObjectPtr->SkillLevel);
 }

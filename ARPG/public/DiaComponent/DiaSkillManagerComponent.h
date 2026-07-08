@@ -31,6 +31,9 @@ class ARPG_API UDiaSkillManagerComponent : public UActorComponent
 public:	
 	UDiaSkillManagerComponent();
 
+	static constexpr int32 MaxOwnedSkillCount = 8;
+	static constexpr int32 MaxQuickSlotCount = 5;
+
 	FOnSkillRegisteredDelegate OnSkillRegistered;
 	FOnSkillLevelChangedDelegate OnSkillLevelChanged;
 	FOnSkillVariantAddedDelegate OnSkillVariantAdded;
@@ -45,7 +48,12 @@ public:
 	const int32 GetIndexOfSkillID(int32 SkillID) const;
 	const USkillObject* GetSkillObjectBySkillID(int32 SkillID) const;
 	const TArray<USkillObject*>& GetSkillIDMapping() const;
+	const TArray<int32>& GetQuickSlotSkillIDs() const;
 	const TArray<int32>& GetCurrentJobSkillIDs() const { return CurrentJobSkillSet.SkillIDs; }
+	int32 FindFirstEmptyQuickSlotIndex() const;
+	bool HasAvailableSkillSlot() const;
+	bool TryRegisterSkillByID(int32 SkillID);
+	bool RemoveSkillByID(int32 SkillID);
 	void SetSkillIDMapping(const TArray<int32>& NewMapping);
 	void SetSkillIDIndex(int32 SkillID, int32 Index);
 	void NotifySkillRegistered(int32 SkillID, int32 SlotIndex);
@@ -81,9 +89,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Skills")
 	TArray<USkillObject*> SkillIDMapping;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Skills")
+	TArray<int32> QuickSlotSkillIDs;
+
 	UPROPERTY()
 	TMap<int32, UDiaSkillVariant*> SkillVariants;
-	const int32 MaxSkillMapping = 8;
 
 	// Service 인스턴스
 	UPROPERTY()

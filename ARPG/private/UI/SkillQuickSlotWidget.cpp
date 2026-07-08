@@ -94,12 +94,18 @@ void USkillQuickSlotWidget::UpdateSkillSlot(int32 SlotIndex, int32 SkillID)
 
 void USkillQuickSlotWidget::StartCoolDownAnimation(int32 SlotIndex, UAbilitySystemComponent* ASC)
 {
-	SkillSlots[SlotIndex]->UpdateCoolTime(ASC);
+	if (SkillSlots.IsValidIndex(SlotIndex) && SkillSlots[SlotIndex])
+	{
+		SkillSlots[SlotIndex]->UpdateCoolTime(ASC);
+	}
 }
 
 void USkillQuickSlotWidget::EndCoolDownAnimation(int32 SlotIndex)
 {
-	SkillSlots[SlotIndex]->UpdateCoolTime(nullptr);
+	if (SkillSlots.IsValidIndex(SlotIndex) && SkillSlots[SlotIndex])
+	{
+		SkillSlots[SlotIndex]->UpdateCoolTime(nullptr);
+	}
 }
 
 void USkillQuickSlotWidget::SetExpBarPercent(float Percent)

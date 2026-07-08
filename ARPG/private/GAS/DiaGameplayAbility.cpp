@@ -1,5 +1,6 @@
 #include "GAS/DiaGameplayAbility.h"
 #include "GAS/DiaAttributeSet.h"
+#include "GAS/DiaGASHelper.h"
 #include "GAS/DiaGameplayTags.h"
 
 #include "DiaComponent/Skill/DiaSkillVariant.h"
@@ -16,12 +17,14 @@
 #include "Abilities/Tasks/AbilityTask_WaitDelay.h"
 #include "GameFramework/Character.h"
 #include "Animation/AnimInstance.h"
+#include "TimerManager.h"
 
 #include "GAS/Effects/DiaGE_CoolDown_Generic.h"
 #include "GAS/Effects/DiaGE_ManaCost_Generic.h"
 #include "GAS/Effects/DiaGameplayEffect_Damage.h"
 
 #include "DiaComponent/DiaSkillManagerComponent.h"
+#include "DiaComponent/Skill/DiaSkillActorSpawnHelper.h"
 
 #include "Engine/World.h"
 #include "Skill/DiaSkillActor.h"
@@ -30,6 +33,71 @@
 #include "NiagaraSystem.h"
 #include "GameplayTagContainer.h"
 #include "Logging/ARPGLogChannels.h"
+
+namespace
+{
+float GetSkillActorLifeSpan(const FGASSkillData& SkillData)
+{
+	for (const FInstancedStruct& Step : SkillData.Steps)
+	{
+		if (const FGASProjectileSpawnStepData* ProjectileStep = Step.GetPtr<FGASProjectileSpawnStepData>())
+		{
+			if (ProjectileStep->ProjectileData.LifeSpan > 0.f)
+			{
+				return ProjectileStep->ProjectileData.LifeSpan;
+			}
+		}
+
+		if (const FGASGroundSpawnStepData* GroundStep = Step.GetPtr<FGASGroundSpawnStepData>())
+		{
+			if (GroundStep->GroundData.LifeSpan > 0.f)
+			{
+				return GroundStep->GroundData.LifeSpan;
+			}
+		}
+
+		if (const FGASMeleeSpawnStepData* MeleeStep = Step.GetPtr<FGASMeleeSpawnStepData>())
+		{
+			if (MeleeStep->MeleeData.LifeSpan > 0.f)
+			{
+				return MeleeStep->MeleeData.LifeSpan;
+			}
+		}
+
+		if (const FGASUtilityStepData* UtilityStep = Step.GetPtr<FGASUtilityStepData>())
+		{
+			if (UtilityStep->UtilityData.LifeSpan > 0.f)
+			{
+				return UtilityStep->UtilityData.LifeSpan;
+			}
+		}
+	}
+
+	if (const FGASUtilitySpawnData* UtilityData = SkillData.GetExtraPtr<FGASUtilitySpawnData>())
+	{
+		return UtilityData->LifeSpan;
+	}
+	if (const FGASMeleeData* MeleeData = SkillData.GetExtraPtr<FGASMeleeData>())
+	{
+		return MeleeData->LifeSpan;
+	}
+	if (const FGASProjectileData* ProjectileData = SkillData.GetExtraPtr<FGASProjectileData>())
+	{
+		return ProjectileData->LifeSpan;
+	}
+	if (const FGASGroundData* GroundData = SkillData.GetExtraPtr<FGASGroundData>())
+	{
+		return GroundData->LifeSpan;
+	}
+	if (const FGASSkillActorSpawnData* SpawnData = SkillData.GetExtraPtr<FGASSkillActorSpawnData>())
+	{
+		return SpawnData->LifeSpan;
+	}
+
+	return 0.f;
+}
+
+}
 
 UDiaGameplayAbility::UDiaGameplayAbility()
 {
@@ -157,6 +225,25 @@ void UDiaGameplayAbility::ApplyDamageToASC(UAbilitySystemComponent* TargetASC, f
 	SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
 
 	ApplyGameplayEffectToTarget(TargetASC);
+}
+
+void UDiaGameplayAbility::ApplySkillDamageToActor(AActor* TargetActor, float CritMultiplier) const
+{
+	if (!IsValid(TargetActor))
+	{
+		return;
+	}
+
+	UAbilitySystemComponent* TargetASC = UAbilitySystemGlobals::GetAbilitySystemComponentFromActor(TargetActor);
+	if (!IsValid(TargetASC))
+	{
+		return;
+	}
+
+	const UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
+	const UDiaAttributeSet* AttributeSet = SourceASC ? SourceASC->GetSet<UDiaAttributeSet>() : nullptr;
+	const float AttackPower = AttributeSet ? AttributeSet->GetAttackPower() : 0.f;
+	ApplyDamageToASC(TargetASC, SkillData.BaseDamage + AttackPower, CritMultiplier);
 }
 
 void UDiaGameplayAbility::ApplyGameplayEffectToTarget(UAbilitySystemComponent* TargetASC) const
@@ -336,6 +423,42 @@ void UDiaGameplayAbility::SpawnHitEffectAtLocation(const FVector& Location)
 	}
 }
 
+ADiaSkillActor* UDiaGameplayAbility::SpawnCosmeticSkillActorAtTransform(TSubclassOf<ADiaSkillActor> SkillActorClass, const FTransform& SpawnTransform, bool bAttachToAvatar)
+{
+	UWorld* World = GetWorld();
+	AActor* AvatarActor = GetAvatarActorFromActorInfo();
+	if (!World || !SkillActorClass || !AvatarActor)
+	{
+		return nullptr;
+	}
+
+	FDiaSkillActorSpawnRequest SpawnRequest;
+	SpawnRequest.World = World;
+	SpawnRequest.SkillActorClass = SkillActorClass;
+	SpawnRequest.SpawnTransform = SpawnTransform;
+	SpawnRequest.OwnerActor = AvatarActor;
+	SpawnRequest.Instigator = Cast<APawn>(AvatarActor);
+	SpawnRequest.SkillData = &SkillData;
+	SpawnRequest.SourceASC = GetAbilitySystemComponentFromActorInfo();
+	SpawnRequest.DamageEffectClass = nullptr;
+	SpawnRequest.OwningAbility = this;
+	SpawnRequest.bLaunch = false;
+
+	ADiaSkillActor* SpawnedActor = FDiaSkillActorSpawnHelper::SpawnSkillActor(SpawnRequest);
+	if (!IsValid(SpawnedActor))
+	{
+		return nullptr;
+	}
+
+	SpawnedActor->SetActorEnableCollision(false);
+	if (bAttachToAvatar)
+	{
+		SpawnedActor->AttachToActor(AvatarActor, FAttachmentTransformRules::KeepWorldTransform);
+	}
+
+	return SpawnedActor;
+}
+
 void UDiaGameplayAbility::PlayHitSoundAtLocation(const FVector& Location)
 {
 	// 히트 사운드가 설정되어 있으면 재생
@@ -396,6 +519,8 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 		LagacyAbilityEffect = SkillData.LegacyCastEffect.LoadSynchronous();
 	}
 
+	StepExecutors.Reset();
+	StepExecutors.Add(NewObject<UDiaUtilityStepExecutor>(this));
 	StepExecutors.Add(NewObject<UDiaChargeStepExecutor>(this));
 	StepExecutors.Add(NewObject<UDiaGroundSpawnStepExecutor>(this));
 	StepExecutors.Add(NewObject<UDiaProjectileSpawnStepExecutor>(this));
@@ -410,6 +535,16 @@ void UDiaGameplayAbility::SetSkillObject(const USkillObject* InSkillObject)
 
 TSubclassOf<ADiaSkillActor> UDiaGameplayAbility::GetSkillActorClassForSpawn() const
 {
+	if (const FGASUtilitySpawnData* UtilityData = SkillData.GetExtraPtr<FGASUtilitySpawnData>())
+	{
+		return UtilityData->SkillActorClass;
+	}
+
+	if (const FGASMeleeData* MeleeData = SkillData.GetExtraPtr<FGASMeleeData>())
+	{
+		return MeleeData->SkillActorClass;
+	}
+
 	if (const FGASSkillActorSpawnData* SpawnData = SkillData.GetExtraPtr<FGASSkillActorSpawnData>())
 	{
 		return SpawnData->SkillActorClass;
@@ -432,6 +567,22 @@ TSubclassOf<ADiaSkillActor> UDiaGameplayAbility::GetSkillActorClassForSpawn() co
 				return GroundStep->GroundData.SkillActorClass;
 			}
 		}
+
+		if (const FGASMeleeSpawnStepData* MeleeStep = Step.GetPtr<FGASMeleeSpawnStepData>())
+		{
+			if (MeleeStep->MeleeData.SkillActorClass)
+			{
+				return MeleeStep->MeleeData.SkillActorClass;
+			}
+		}
+
+		if (const FGASUtilityStepData* UtilityStep = Step.GetPtr<FGASUtilityStepData>())
+		{
+			if (UtilityStep->UtilityData.SkillActorClass)
+			{
+				return UtilityStep->UtilityData.SkillActorClass;
+			}
+		}
 	}
 
 	return nullptr;
@@ -444,11 +595,7 @@ void UDiaGameplayAbility::ApplySkillObjectRemovalTimer(ADiaSkillActor* SkillActo
 		return;
 	}
 
-	float RemainSeconds = 0.f;
-	if (const FGASSkillActorSpawnData* SpawnData = SkillData.GetExtraPtr<FGASSkillActorSpawnData>())
-	{
-		RemainSeconds = SpawnData->LifeSpan;
-	}
+	const float RemainSeconds = GetSkillActorLifeSpan(SkillData);
 	if (RemainSeconds <= 0.f)
 	{
 		return;
@@ -521,6 +668,12 @@ void UDiaGameplayAbility::StopAbilityMontage(float BlendOutTime)
 
 void UDiaGameplayAbility::ProcessSkillDelayEvents()
 {
+	if (SkillData.Steps.Num() == 0)
+	{
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		return;
+	}
+
 	ExecuteAbilityLogic(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, nullptr);
 }
 

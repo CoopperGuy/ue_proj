@@ -61,6 +61,8 @@ public:
 	void MakeEffectSpecContextToSelf(TArray<FGameplayEffectSpecHandle>& OutContext) const;
 
 	void ActiveModifierEffect(ADiaBaseCharacter* Owner);
+	ADiaSkillActor* SpawnCosmeticSkillActorAtTransform(TSubclassOf<ADiaSkillActor> SkillActorClass, const FTransform& SpawnTransform, bool bAttachToAvatar = false);
+	void ApplySkillDamageToActor(AActor* TargetActor, float CritMultiplier = 1.0f) const;
 
 protected:
 	// Skill data from GAS system

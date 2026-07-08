@@ -64,3 +64,12 @@ struct ARPG_API FGASMeleeSpawnStepData : public FGASSkillStepDataBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ground")
 	bool bUseLastStepEndLocation = true;
 };
+
+USTRUCT(BlueprintType)
+struct ARPG_API FGASUtilityStepData : public FGASSkillStepDataBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Utility")
+	FGASUtilitySpawnData UtilityData;
+};

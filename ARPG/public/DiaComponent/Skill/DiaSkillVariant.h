@@ -62,12 +62,16 @@ struct ARPG_API FDiaSkillVariantContext
 	TObjectPtr<AActor> HitActor = nullptr;	
 	UPROPERTY(BlueprintReadOnly)
 	TSubclassOf<class ADiaSkillActor> SkillActorClass;
-	UPROPERTY(BlueprintReadOnly)	
+	UPROPERTY(BlueprintReadOnly)
 	FGameplayAbilityTargetDataHandle TargetData;
 	UPROPERTY(BlueprintReadOnly)
 	class UAbilitySystemComponent* AbilityComp;
 	UPROPERTY(BlueprintReadOnly)
 	TArray<TObjectPtr<ADiaSkillActor>> SkillActors;
+	UPROPERTY(BlueprintReadOnly)
+	int32 BaseSpawnCount = 1;
+	UPROPERTY(BlueprintReadOnly)
+	float SpreadAngle = 10.f;
 };
 
 /**

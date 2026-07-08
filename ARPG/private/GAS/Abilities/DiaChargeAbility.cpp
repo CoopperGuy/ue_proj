@@ -40,12 +40,24 @@ void UDiaChargeAbility::InitializeWithSkillData(const FGASSkillData& InSkillData
 
 void UDiaChargeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
-	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-	if (!ActorInfo)
+	if (!ActorInfo || !ActorInfo->AvatarActor.IsValid() || !ActorInfo->AbilitySystemComponent.IsValid())
 	{
 		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
+
+	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
+	if (ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Stunned) || !CommitAbility(Handle, ActorInfo, ActivationInfo))
+	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
+		return;
+	}
+
+	if (AbilityMontage)
+	{
+		PlayAbilityMontage(AbilityMontage);
+	}
+	ApplyGameplayEffectToSelf();
 
 	EndLoc = CalcSweepPosition(ActorInfo);
 

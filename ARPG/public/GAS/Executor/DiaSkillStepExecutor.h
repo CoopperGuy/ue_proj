@@ -66,6 +66,8 @@ private:
 	FVector StartLoc = FVector::ZeroVector;
 	UPROPERTY()
 	FVector EndLoc = FVector::ZeroVector;
+	UPROPERTY()
+	float CachedChargeDistance = 600.f;
 
     UPROPERTY()
 	UDiaGameplayAbility* CachedAbility = nullptr;
@@ -103,6 +105,19 @@ public:
         const FInstancedStruct& StepData,
         UDiaGameplayAbility* Ability,
         FDiaSkillExecutionContext& Context,
+		FDiaSkillStepFinishedDelegate OnFinished) override;
+};
+
+UCLASS()
+class ARPG_API UDiaUtilityStepExecutor : public UDiaSkillStepExecutor
+{
+	GENERATED_BODY()
+public:
+	virtual bool CanExecute(const FInstancedStruct& StepData) const override;
+	virtual void Execute(
+		const FInstancedStruct& StepData,
+		UDiaGameplayAbility* Ability,
+		FDiaSkillExecutionContext& Context,
 		FDiaSkillStepFinishedDelegate OnFinished) override;
 };
 

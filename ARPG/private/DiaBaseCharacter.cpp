@@ -269,7 +269,51 @@ bool ADiaBaseCharacter::SetUpSkillID(int32 SkillID)
 
 void ADiaBaseCharacter::SetSkillIDOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
 {
+	if (!IsValid(SkillManagerComponent))
+	{
+		return;
+	}
+
 	SkillManagerComponent->SetSkillIDIndex(SkillID, SlotIndex);
+}
+
+bool ADiaBaseCharacter::TryAutoAssignSkillToQuickSlot(int32 SkillID)
+{
+	if (!IsValid(SkillManagerComponent) || !SkillManagerComponent->GetSkillObjectBySkillID(SkillID))
+	{
+		return false;
+	}
+
+	int32 SlotIndex = SkillManagerComponent->GetIndexOfSkillID(SkillID);
+	if (SlotIndex == INDEX_NONE)
+	{
+		SlotIndex = SkillManagerComponent->FindFirstEmptyQuickSlotIndex();
+	}
+
+	if (SlotIndex == INDEX_NONE)
+	{
+		return false;
+	}
+
+	SetSkillIDOnQuickSlotWidget(SkillID, SlotIndex);
+	return true;
+}
+
+bool ADiaBaseCharacter::ClearSkillFromQuickSlot(int32 SkillID)
+{
+	if (!IsValid(SkillManagerComponent))
+	{
+		return false;
+	}
+
+	const int32 SlotIndex = SkillManagerComponent->GetIndexOfSkillID(SkillID);
+	if (SlotIndex == INDEX_NONE)
+	{
+		return false;
+	}
+
+	SetSkillIDOnQuickSlotWidget(-1, SlotIndex);
+	return true;
 }
 
 void ADiaBaseCharacter::HandleAddSkillVariant(int32 SkillID, int32 VariantID, bool bApply)
@@ -337,7 +381,24 @@ void ADiaBaseCharacter::ApplyStunState(bool bStunned)
 
 bool ADiaBaseCharacter::ApplySkillByID(int32 SkillID)
 {
-	return SetUpSkillID(SkillID);
+	if (!IsValid(SkillManagerComponent))
+	{
+		return false;
+	}
+
+	const bool bAlreadyRegistered = SkillManagerComponent->GetSkillObjectBySkillID(SkillID) != nullptr;
+	if (!bAlreadyRegistered && !SkillManagerComponent->TryRegisterSkillByID(SkillID))
+	{
+		return false;
+	}
+
+	const bool bGranted = SetUpSkillID(SkillID);
+	if (!bGranted && !bAlreadyRegistered)
+	{
+		SkillManagerComponent->RemoveSkillByID(SkillID);
+	}
+
+	return bGranted;
 }
 
 bool ADiaBaseCharacter::ApplySkillLevelUpByID(int32 SkillID, int32 AddLevel)

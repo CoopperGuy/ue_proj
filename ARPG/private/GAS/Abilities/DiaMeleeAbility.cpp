@@ -72,17 +72,6 @@ void UDiaMeleeAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, 
 	TotalHitCount = FMath::Max(1, SkillData.HitCount);
 	HitInterval = FMath::Max(0.0f, SkillData.HitInterval);
 
-	if (SkillData.CastTime == 0.f)
-	{
-		if (TotalHitCount == 1)
-		{
-			PerformHitDetection();
-		}
-		else
-		{
-			StartMultiHit();
-		}
-	}
 }
 
 void UDiaMeleeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
@@ -120,6 +109,7 @@ void UDiaMeleeAbility::PerformHitDetection()
 	FRotator CharacterRotation = Character->GetActorRotation();
 
 	FVector AttackCenter = CharacterLocation + CharacterRotation.RotateVector(AttackOffset);
+	SpawnCosmeticSkillActorAtTransform(GetSkillActorClassForSpawn(), FTransform(CharacterRotation, AttackCenter));
 
 	TArray<FHitResult> HitResults;
 	FCollisionQueryParams QueryParams;
@@ -238,7 +228,11 @@ void UDiaMeleeAbility::StartMultiHit()
 
 void UDiaMeleeAbility::ProcessSkillDelayEvents()
 {
-	Super::ProcessSkillDelayEvents();
+	if (SkillData.Steps.Num() > 0)
+	{
+		Super::ProcessSkillDelayEvents();
+		return;
+	}
 
 	// HitCount 체크: 1이면 단일 히트, 2 이상이면 Multi Hit
 	TotalHitCount = FMath::Max(1, SkillData.HitCount);
@@ -246,7 +240,9 @@ void UDiaMeleeAbility::ProcessSkillDelayEvents()
 
 	if (TotalHitCount == 1)
 	{
+		HitActors.Empty();
 		PerformHitDetection();
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 	}
 	else
 	{
@@ -262,17 +258,28 @@ void UDiaMeleeAbility::ProcessNextHit()
 	if (CurrentHitCount > TotalHitCount)
 	{
 		ARPG_SKILL_VLOG(TEXT("All hits completed"));
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
 		return;
 	}
 
 	// 다음 히트 스케줄링
+	HitActors.Empty();
+	PerformHitDetection();
+
+	if (CurrentHitCount >= TotalHitCount)
+	{
+		ARPG_SKILL_VLOG(TEXT("All hits completed"));
+		EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, false);
+		return;
+	}
+
 	UWorld* World = GetWorld();
 	if (World && HitInterval > 0.0f)
 	{
 		World->GetTimerManager().SetTimer(
 			MultiHitTimerHandle,
 			this,
-			&UDiaMeleeAbility::PerformHitDetection,
+			&UDiaMeleeAbility::ProcessNextHit,
 			HitInterval,
 			false
 		);
@@ -280,7 +287,7 @@ void UDiaMeleeAbility::ProcessNextHit()
 	else
 	{
 		// 간격이 0이면 즉시 실행
-		PerformHitDetection();
+		ProcessNextHit();
 	}
 }
 

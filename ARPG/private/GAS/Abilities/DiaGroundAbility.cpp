@@ -37,11 +37,6 @@ TSubclassOf<ADiaSkillActor> UDiaGroundAbility::GetSkillActorClassForSpawn() cons
 void UDiaGroundAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
     Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
-
-    if(SkillData.CastTime == 0.f)
-    {
-        SpawnSkillGround();
-    }
 }
 
 void UDiaGroundAbility::SpawnSkillGround()
@@ -90,6 +85,12 @@ void UDiaGroundAbility::SpawnSkillGround()
     VariantContext.TargetData = TargetDataHandle;
 
     UDiaSkillManagerComponent* DiaSkillManagerComp = Character->FindComponentByClass<UDiaSkillManagerComponent>();
+    if (!DiaSkillManagerComp)
+    {
+        ARPG_SKILL_LOG(Warning, TEXT("SkillManagerComponent is missing"));
+        EndAbility(CurrentSpecHandle, CurrentActorInfo, CurrentActivationInfo, true, true);
+        return;
+    }
     DiaSkillManagerComp->SpawnSkillActorUseVariants(VariantContext, this);
 
     //SpawnActorTask = UAbilityTask_SpawnActor::SpawnActor
@@ -142,7 +143,11 @@ void UDiaGroundAbility::SpawnSkillGround()
 
 void UDiaGroundAbility::ProcessSkillDelayEvents()
 {
-    Super::ProcessSkillDelayEvents();
+    if (SkillData.Steps.Num() > 0)
+    {
+        Super::ProcessSkillDelayEvents();
+        return;
+    }
 
     SpawnSkillGround();
 }
