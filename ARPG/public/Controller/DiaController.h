@@ -24,6 +24,14 @@ struct FRewardData;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnTargetChanged, ADiaBaseCharacter*);
 
+UENUM(BlueprintType)
+enum class EDiaInputRouting : uint8
+{
+	GameOnly UMETA(DisplayName = "Game Only"),
+	UIOnly UMETA(DisplayName = "UI Only"),
+	GameAndUI UMETA(DisplayName = "Game and UI")
+};
+
 /**
  * 
  */
@@ -38,6 +46,7 @@ public:
 	bool ItemAddedToInventory(const FInventorySlot& Item);
 	void ItemRemoved(const FInventorySlot& Item);
 	bool ApplyReward(const FRewardData& RewardData);
+	void ApplyInputRouting(EDiaInputRouting  NewMode);
 
 	void ToggleInventoryVisibility(bool bVisible);
 	void ToggleChracterStatusVisibility(bool bVisible);
@@ -46,6 +55,9 @@ public:
 	void RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
 	void RegisteSkillPannelWidget(const USkillObject* SkillData);
 	void RegisteSkillPannelWidget(const TArray<USkillObject*>&);
+
+	bool HandlePrimaryClick();
+
 
 	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat")
 	void CheatDropItem(FName ItemID, int32 Count = 1, int32 Level = 1);
@@ -79,6 +91,8 @@ public:
 
 	UFUNCTION(Exec)
 	void ToggleItemDebugUI();
+
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -128,12 +142,14 @@ protected:
 	UPROPERTY()
 	TObjectPtr<UDiaMenuSystem> MenuSystemWidget;
 
-	bool bBlockSkillInput = false;
+	UPROPERTY()
+	EDiaInputRouting CurrentUIMode = EDiaInputRouting::GameOnly;
+
 public:
 	FORCEINLINE FOnTargetChanged& GetOnTargetChanged() { return OnTargetChanged; }
 	UHUDWidget* GetHUDWidget() const;
-	void SetBlockSkillInput(bool bBlock) { bBlockSkillInput = bBlock; }
-	bool IsSkillInputBlocked() const { return bBlockSkillInput; }
+	bool IsSkillInputBlocked() const;
+	bool IsUIInputBlocked() const;
 	UDiaMenuSystem* GetMenuSystemWidget() const;
 	ESlateVisibility GetInventoryVisibility() const;
 	ESlateVisibility GetWidgetVisibility(const FName& FoundName) const;

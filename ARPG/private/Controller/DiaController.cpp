@@ -23,8 +23,12 @@
 
 #include "GameMode/DungeonGameMode.h"
 #include "DiaBaseCharacter.h"
+#include "Character/DiaCharacter.h"
+
 #include "System/ItemSubsystem.h"
 #include "Logging/ARPGLogChannels.h"
+
+#include "Interface/DiaInteractable.h"
 
 #include <AbilitySystemBlueprintLibrary.h>
 
@@ -54,6 +58,7 @@ namespace
 		return true;
 	}
 
+	//치트용 함수
 	TArray<FName> ParseCheatOptionKeys(const FString& OptionKeys)
 	{
 		TArray<FName> ParsedKeys;
@@ -441,6 +446,52 @@ UHUDWidget* ADiaController::GetHUDWidget() const
 	return NewHUD;
 }
 
+void ADiaController::ApplyInputRouting(EDiaInputRouting NewMode)
+{
+	CurrentUIMode = NewMode;
+
+	ADiaCharacter* DiaCharacter = Cast<ADiaCharacter>(GetCharacter());
+	if (!IsValid(DiaCharacter))
+		return;
+
+	switch (CurrentUIMode)
+	{
+	case EDiaInputRouting::GameOnly:
+		DiaCharacter->HandleGameplayInputRouting(this, true);
+		DiaCharacter->HandlePersistentInputRouting(this, false);
+		break;
+	case EDiaInputRouting::UIOnly:
+		DiaCharacter->HandleGameplayInputRouting(this, false);
+		DiaCharacter->HandlePersistentInputRouting(this, true);
+		break;
+	case EDiaInputRouting::GameAndUI:
+		DiaCharacter->HandleGameplayInputRouting(this, true);
+		DiaCharacter->HandlePersistentInputRouting(this, true);
+		break;
+	default:
+		DiaCharacter->HandleGameplayInputRouting(this, true);
+		DiaCharacter->HandlePersistentInputRouting(this, true);
+		break;
+	}
+}
+
+
+bool ADiaController::IsSkillInputBlocked() const
+{
+	if (CurrentUIMode == EDiaInputRouting::UIOnly)
+		return true;
+
+	return false;
+}
+
+bool ADiaController::IsUIInputBlocked() const
+{
+	if (CurrentUIMode == EDiaInputRouting::GameOnly)
+		return true;
+
+	return false;
+}
+
 UDiaMenuSystem* ADiaController::GetMenuSystemWidget() const
 {
 	if (IsValid(MenuSystemWidget))
@@ -650,6 +701,23 @@ void ADiaController::RegisteSkillPannelWidget(const TArray<USkillObject*>& Skill
 		return;
 	}
 	HUDWidget->RegisteSkillPannelWidget(SkillDataList);
+}
+
+bool ADiaController::HandlePrimaryClick()
+{
+	FHitResult HitResult;
+	GetHitResultUnderCursor(ECC_Visibility, false, HitResult);
+
+	for (AActor* Actor = HitResult.GetActor(); Actor; Actor = Actor->GetAttachParentActor())
+	{
+		if (IDiaInteractable* Interactable = Cast<IDiaInteractable>(Actor); Interactable && Interactable->IsInteractable())
+		{
+			Interactable->OnInteract(this);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void ADiaController::CheatDropItem(FName ItemID, int32 Count, int32 Level)

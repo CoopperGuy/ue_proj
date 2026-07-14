@@ -42,7 +42,7 @@ protected:
 	virtual void BeginPlay() override;
 public:
 	void MakeSkillVariantsArray(IN const UDiaGameplayAbility* Ability ,OUT TArray<UDiaSkillVariant*>& OutVariantsArray);	
-	void LoadJobSKillDataFromTable(EJobType JobType);
+	void LoadJobSKillDataFromTable(EJobType JobType, int32 MaxSkillCount = MaxOwnedSkillCount);
 
 	const int32 GetMappedSkillID(int32 Index) const;
 	const int32 GetIndexOfSkillID(int32 SkillID) const;

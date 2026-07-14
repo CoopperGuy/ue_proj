@@ -495,7 +495,8 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 		SetAssetTags(NewTags);
 	}
 
-	//if (SkillData.CastAnimation.IsValid())
+	AbilityMontage = nullptr;
+	if (!SkillData.CastAnimation.IsNull())
 	{
 		AbilityMontage = SkillData.CastAnimation.LoadSynchronous();
 		//로드 성공 시 로그 출력

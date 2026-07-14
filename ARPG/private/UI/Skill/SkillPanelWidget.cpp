@@ -14,6 +14,7 @@
 
 #include "DiaInstance.h"
 #include "Skill/DiaSkillManager.h"
+#include "System/GASSkillManager.h"
 #include "Logging/ARPGLogChannels.h"
 
 void USkillPanelWidget::NativeConstruct()
@@ -69,6 +70,9 @@ void USkillPanelWidget::RefreshOwnedSkillVariants(int32 SkillID)
 
 	TArray<UDiaSkillVariant*> SkillVariants;
 	Character->GetOwnedSkillVariantsFromSkillID(SkillID, SkillVariants);
+	UGASSkillManager* GASSkillManager = GetGameInstance()
+		? GetGameInstance()->GetSubsystem<UGASSkillManager>()
+		: nullptr;
 
 	SubSkillListView->ClearListItems();
 
@@ -83,7 +87,10 @@ void USkillPanelWidget::RefreshOwnedSkillVariants(int32 SkillID)
 		NewVariantInfo->SkillID = Variant->GetSkillID();
 		NewVariantInfo->SkillName = Variant->GetSkillVariantName();
 		NewVariantInfo->SkillLevel = 1;
-		NewVariantInfo->SkillIcon = nullptr;
+		const FSkillVariantData* VariantData = GASSkillManager
+			? GASSkillManager->GetSkllVariantDataPtr(Variant->GetSkillID())
+			: nullptr;
+		NewVariantInfo->SkillIcon = VariantData ? VariantData->Icon.LoadSynchronous() : nullptr;
 		NewVariantInfo->isMainSkill = false;
 		NewVariantInfo->MainSkillID = SkillID;
 		SubSkillListView->AddItem(NewVariantInfo);

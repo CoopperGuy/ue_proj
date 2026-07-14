@@ -26,6 +26,7 @@ public:
 	void SpawnInventoryItemAtLocation(AActor* SpawnActor, const FInventorySlot& InventoryItem);
 
 	void WarpOtherLevel(const FName& LevelName);
+	void HandlePortalInteraction(class ADiaPortal* Portal, class APlayerController* InteractingController);
 protected:
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UHUDWidget> HUDWidgetClass;

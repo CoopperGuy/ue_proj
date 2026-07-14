@@ -65,7 +65,7 @@ void AARPGCharacter::NotifyControllerChanged()
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
-			Subsystem->AddMappingContext(DefaultMappingContext, 0);
+			Subsystem->AddMappingContext(GameplayMappingContext, 0);
 		}
 	}
 }

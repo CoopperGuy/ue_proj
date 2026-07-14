@@ -42,6 +42,9 @@ public:
 	virtual void SetSkillIDOnQuickSlotWidget(int32 SkillID, int32 SlotIndex) override;
 	
 	void RegisteCurrentSkillList();
+
+	void HandleGameplayInputRouting(APlayerController* PlayerController, bool bEnable);
+	void HandlePersistentInputRouting(APlayerController* PlayerController, bool bEnable);
 protected:
 	/// <summary>
 	/// 엔진 기본 함수
@@ -57,6 +60,7 @@ protected:
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
 	void Dodge(const FInputActionValue& Value);
+	void ExecutePrimaryAction();
 	void ExecuteSkillByIndex(int32 ActionIndex);
 
 	// 공격 입력 처리
@@ -76,6 +80,7 @@ protected:
 	virtual void SetupInitialSkills() override;
 
 	void RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
+	
 protected:
 	// GAS 초기 스킬 부여 및 매핑
 	virtual void GrantInitialGASAbilities();
@@ -98,6 +103,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skills")
 	EJobType InitialJobType = EJobType::Warrior;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Skills", meta = (ClampMin = "0", ClampMax = "8"))
+	int32 InitialSkillCount = 1;
+
 	// UI Input Action
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	UInputAction* InventoryAction;
@@ -112,7 +120,10 @@ protected:
 
 	// Input Mapping Context
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
-	UInputMappingContext* DefaultMappingContext;
+	UInputMappingContext* GameplayMappingContext;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	UInputMappingContext* PersistentMappingContext;
 
 	///화면 관련 변수
 	// 카메라 암

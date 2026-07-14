@@ -298,6 +298,8 @@ struct ARPG_API FSkillVariantData : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FText Description;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSoftObjectPtr<UTexture2D> Icon;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ModifierValue;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FGameplayTag VariantTag;

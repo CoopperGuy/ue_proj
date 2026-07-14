@@ -169,7 +169,11 @@ bool UDiaRewardSubsystem::TryMakeSkillVariantReward(int32 SkillId, int32 Variant
 	OutRewardData.RewardRarity = ERewardRarity::Epic;
 	OutRewardData.DisplayName = VariantData->VariantName;
 	OutRewardData.Description = VariantData->Description;
-	OutRewardData.Icon = SkillData->Icon.LoadSynchronous();
+	OutRewardData.Icon = VariantData->Icon.LoadSynchronous();
+	if (!OutRewardData.Icon)
+	{
+		OutRewardData.Icon = SkillData->Icon.LoadSynchronous();
+	}
 	OutRewardData.SkillId = SkillData->SkillID;
 	OutRewardData.VariantId = VariantData->VariantID;
 

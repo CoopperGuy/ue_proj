@@ -17,7 +17,7 @@
 
 ADiaPortal::ADiaPortal()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	PrimaryActorTick.TickInterval = 0.1f;
 
 	PortalCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("PortalCollision"));
@@ -30,50 +30,26 @@ ADiaPortal::ADiaPortal()
 	PortalMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PortalMesh"));
 	PortalMesh->SetupAttachment(RootComponent);
 	PortalMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	DestinationLevel = NAME_None;
+}
+
+void ADiaPortal::OnInteract(APlayerController* InteractingController)
+{
+	if (ADungeonGameMode* GameMode = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		GameMode->HandlePortalInteraction(this, InteractingController);
+	}
+	else
+	{
+		UE_LOG(LogARPG_Inventory, Warning, TEXT("OnInteract failed: DungeonGameMode is null."));
+	}
 }
 
 void ADiaPortal::BeginPlay()
 {
 	Super::BeginPlay();
 	// AActor::OnClicked는 PC가 bEnableMouseOverEvents일 때 CurrentClickablePrimitive만 사용해
-	// 캡처/호버 갱신이 어긋나면 클릭이 안 들어옴. 아래 Tick에서 커서 트레이스 + JustPressed로 처리.
-}
-
-void ADiaPortal::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	UWorld* World = GetWorld();
-	if (!World || World->GetNetMode() == NM_DedicatedServer)
-	{
-		return;
-	}
-
-	APlayerController* PC = World->GetFirstPlayerController();
-	if (!IsValid(PC) || !PC->bShowMouseCursor)
-	{
-		return;
-	}
-
-	FHitResult Hit;
-	const bool bTraceHit = PC->GetHitResultUnderCursor(ECC_Visibility, true, Hit);
-	const bool bOverPortal = bTraceHit && Hit.Component.Get() == PortalCollision;
-
-	if (bOverPortal && bCursorHoveringPortal && PC->WasInputKeyJustPressed(EKeys::LeftMouseButton))
-	{
-		OnPortalClicked(this, EKeys::LeftMouseButton);
-	}
-
-	if (bOverPortal && !bCursorHoveringPortal)
-	{
-		bCursorHoveringPortal = true;
-		OnPortalCursorOver();
-	}
-	else if (!bOverPortal && bCursorHoveringPortal)
-	{
-		bCursorHoveringPortal = false;
-		OnPortalCursorOut();
-	}
 }
 
 void ADiaPortal::OnPortalCursorOver()
@@ -81,7 +57,6 @@ void ADiaPortal::OnPortalCursorOver()
 	if (ADiaController* DiaPC = Cast<ADiaController>(GetWorld()->GetFirstPlayerController()))
 	{
 		DiaPC->CurrentMouseCursor = EMouseCursor::Hand;
-		DiaPC->SetBlockSkillInput(true);
 	}
 }
 
@@ -90,18 +65,6 @@ void ADiaPortal::OnPortalCursorOut()
 	if (ADiaController* DiaPC = Cast<ADiaController>(GetWorld()->GetFirstPlayerController()))
 	{
 		DiaPC->CurrentMouseCursor = EMouseCursor::Default;
-		DiaPC->SetBlockSkillInput(false);
 	}
 }
 
-void ADiaPortal::OnPortalClicked(AActor* TouchedActor, FKey ButtonPressed)
-{
-	ADungeonGameMode* GameMode = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());
-	UE_LOG(LogARPG, Log, TEXT("Portal clicked, attempting to warp to TestRoom"));
-	if (!IsValid(GameMode))
-	{
-		return;
-	}
-	UE_LOG(LogARPG, Log, TEXT("Portal clicked, attempting to warp to TestRoom"));
-	GameMode->WarpOtherLevel("TestRoom");
-}

@@ -4,6 +4,7 @@
 #include "GameMode/DungeonGameMode.h"
 #include "Character/DiaCharacter.h"
 #include "Controller/DiaController.h"
+#include "Actor/DiaPortal.h"
 
 #include "NavigationSystem.h"
 
@@ -166,6 +167,24 @@ void ADungeonGameMode::WarpOtherLevel(const FName& LevelName)
 {
 	UGameplayStatics::OpenLevel(GetWorld(), LevelName);
 
+}
+
+void ADungeonGameMode::HandlePortalInteraction(ADiaPortal* Portal, APlayerController* InteractingController)
+{
+	if (!IsValid(Portal) || !IsValid(InteractingController))
+	{
+		return;
+	}
+
+	const FName DestinationLevel = Portal->GetDestinationLevel();
+	if (DestinationLevel.IsNone())
+	{
+		UE_LOG(LogARPG, Warning, TEXT("Portal %s has no DestinationLevel."),
+			*GetNameSafe(Portal));
+		return;
+	}
+
+	WarpOtherLevel(DestinationLevel);
 }
 
 UHUDWidget* const ADungeonGameMode::GetHUDWidget() const

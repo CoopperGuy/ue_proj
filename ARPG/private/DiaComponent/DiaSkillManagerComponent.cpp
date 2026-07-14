@@ -135,7 +135,7 @@ void UDiaSkillManagerComponent::MakeSkillVariantsArray(IN const UDiaGameplayAbil
 	}
 }
 
-void UDiaSkillManagerComponent::LoadJobSKillDataFromTable(EJobType JobType)
+void UDiaSkillManagerComponent::LoadJobSKillDataFromTable(EJobType JobType, int32 MaxSkillCount)
 {
 	SkillIDMapping.Reset();
 	SkillVariants.Reset();
@@ -150,7 +150,8 @@ void UDiaSkillManagerComponent::LoadJobSKillDataFromTable(EJobType JobType)
 		return;
 	}
 
-	LoadService->LoadJobSkillData(JobType, SkillIDMapping, SkillVariants, this, MaxOwnedSkillCount);
+	const int32 EffectiveMaxSkillCount = FMath::Clamp(MaxSkillCount, 0, MaxOwnedSkillCount);
+	LoadService->LoadJobSkillData(JobType, SkillIDMapping, SkillVariants, this, EffectiveMaxSkillCount);
 
 	for (int32 Index = 0; Index < SkillIDMapping.Num() && QuickSlotSkillIDs.IsValidIndex(Index); ++Index)
 	{

@@ -65,7 +65,8 @@ ADiaCharacter::ADiaCharacter()
 
     //HACK 임시로 최대 개수 지정
 
-	constexpr int32 MaxSkillActionCount = UDiaSkillManagerComponent::MaxQuickSlotCount;
+	constexpr int32 PrimaryActionCount = 1;
+	constexpr int32 MaxSkillActionCount = UDiaSkillManagerComponent::MaxQuickSlotCount + PrimaryActionCount;
 
     SkillActions.Reserve(MaxSkillActionCount);
 
@@ -107,7 +108,14 @@ void ADiaCharacter::BeginPlay()
     {
         if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
         {
-            Subsystem->AddMappingContext(DefaultMappingContext, 0);
+            if(GameplayMappingContext)
+            {
+                Subsystem->AddMappingContext(GameplayMappingContext, 0);
+            }
+            if(PersistentMappingContext)
+            {
+                Subsystem->AddMappingContext(PersistentMappingContext, 1);
+            }
         }
     }
 
@@ -139,9 +147,45 @@ void ADiaCharacter::SetupInitialSkills()
         return;
     }
 
-    SkillManagerComponent->LoadJobSKillDataFromTable(InitialJobType);
+    SkillManagerComponent->LoadJobSKillDataFromTable(InitialJobType, InitialSkillCount);
     Super::SetupInitialSkills();
 
+}
+
+void ADiaCharacter::HandleGameplayInputRouting(APlayerController* PlayerController, bool bEnable)
+{
+    if (!IsValid(PlayerController) || !IsValid(GameplayMappingContext))
+        return;
+    UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
+    if (!IsValid(Subsystem))
+        return;
+
+    if (bEnable)
+    {
+        Subsystem->AddMappingContext(GameplayMappingContext, 0);
+    }
+    else
+    {
+        Subsystem->RemoveMappingContext(GameplayMappingContext);
+    }
+}
+
+void ADiaCharacter::HandlePersistentInputRouting(APlayerController* PlayerController, bool bEnable)
+{
+    if (!IsValid(PlayerController) || !IsValid(PersistentMappingContext))
+        return;
+    UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
+    if (!IsValid(Subsystem))
+        return;
+
+    if (bEnable)
+    {
+        Subsystem->AddMappingContext(PersistentMappingContext, 0);
+    }
+    else
+    {
+        Subsystem->RemoveMappingContext(PersistentMappingContext);
+    }
 }
 
 // Called every frame
@@ -183,16 +227,27 @@ void ADiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
         // Dodge
         EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Triggered, this, &ADiaCharacter::Dodge);
         // 스킬 바인딩
-        const int32 SkillActionCount = FMath::Min(SkillActions.Num(), UDiaSkillManagerComponent::MaxQuickSlotCount);
-        for (int32 i = 0; i < SkillActionCount; ++i)
+        constexpr int32 PrimaryActionIndex = 0;
+        if (SkillActions.IsValidIndex(PrimaryActionIndex) && IsValid(SkillActions[PrimaryActionIndex]))
         {
-            if (IsValid(SkillActions[i]))
+            EnhancedInputComponent->BindAction(SkillActions[PrimaryActionIndex], ETriggerEvent::Started, this,
+                &ADiaCharacter::ExecutePrimaryAction);
+        }
+
+        constexpr int32 PrimaryActionCount = 1;
+        const int32 SkillActionCount = FMath::Min(
+            SkillActions.Num() - PrimaryActionCount,
+            UDiaSkillManagerComponent::MaxQuickSlotCount);
+        for (int32 QuickSlotIndex = 0; QuickSlotIndex < SkillActionCount; ++QuickSlotIndex)
+        {
+            const int32 SkillActionIndex = QuickSlotIndex + PrimaryActionCount;
+            if (IsValid(SkillActions[SkillActionIndex]))
             {
-                EnhancedInputComponent->BindAction(SkillActions[i], ETriggerEvent::Started, this,
-                    &ADiaCharacter::ExecuteSkillByIndex, i);
+                EnhancedInputComponent->BindAction(SkillActions[SkillActionIndex], ETriggerEvent::Started, this,
+                    &ADiaCharacter::ExecuteSkillByIndex, QuickSlotIndex);
                 #if WITH_EDITOR || UE_BUILD_DEVELOPMENT
                     UE_LOG(LogARPG, Log, TEXT("스킬 바인딩 완료 - 인덱스: %d, 액션: %s"), 
-                        i, *SkillActions[i]->GetName());
+                        QuickSlotIndex, *SkillActions[SkillActionIndex]->GetName());
                 #endif
             }
         }
@@ -200,15 +255,15 @@ void ADiaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
         // 인벤토리 토글 바인딩
         if (InventoryAction)
         {
-            EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Triggered, this, &ADiaCharacter::ToggleInventory);
+            EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Started, this, &ADiaCharacter::ToggleInventory);
         }
         if (CharacterStatusAction)
         {
-			EnhancedInputComponent->BindAction(CharacterStatusAction, ETriggerEvent::Triggered, this, &ADiaCharacter::ToggleCharacterStatus);
+			EnhancedInputComponent->BindAction(CharacterStatusAction, ETriggerEvent::Started, this, &ADiaCharacter::ToggleCharacterStatus);
         }
         if (SkillPanelAction)
         {
-			EnhancedInputComponent->BindAction(SkillPanelAction, ETriggerEvent::Triggered, this, &ADiaCharacter::ToggleSkillPanel);
+			EnhancedInputComponent->BindAction(SkillPanelAction, ETriggerEvent::Started, this, &ADiaCharacter::ToggleSkillPanel);
         }
 		if (MenuAction)
 		{
@@ -340,10 +395,27 @@ void ADiaCharacter::Dodge(const FInputActionValue& Value)
     }
 }
 
+void ADiaCharacter::ExecutePrimaryAction()
+{
+    ADiaController* PlayerController = GetController<ADiaController>();
+    if (!IsValid(PlayerController) || PlayerController->IsSkillInputBlocked())
+    {
+        return;
+    }
+
+    if (PlayerController->HandlePrimaryClick())
+    {
+        return;
+    }
+
+    ExecuteSkillByIndex(0);
+}
+
 void ADiaCharacter::ExecuteSkillByIndex(int32 ActionIndex)
 {
     //스킬 막아야 하는 상황이면 막는다.
-    if (GetController<ADiaController>()->IsSkillInputBlocked())
+    const ADiaController* PlayerController = GetController<ADiaController>();
+    if (!IsValid(PlayerController) || PlayerController->IsSkillInputBlocked())
         return;
 
     if (!IsValid(SkillManagerComponent))
@@ -418,15 +490,16 @@ void ADiaCharacter::SetSkillIDOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
     }
 }
 
-		//蹂댁씠???곹깭硫?false濡??덈낫?닿쾶 ?? ?꾨땲硫?true濡?蹂댁씠寃뚮걫
-// ?듭뒳濡??꾩젽???ㅽ궗 ?깅줉
 void ADiaCharacter::ToggleInventory()
 {
     if (ADiaController* PlayerController = Cast<ADiaController>(Controller))
     {
         ESlateVisibility eVisibility =  PlayerController->GetInventoryVisibility();
 		//보이는 상태면 false로 안보이게 끔, 아니면 true로 보이게끔
-        PlayerController->ToggleInventoryVisibility(eVisibility == ESlateVisibility::Visible ? false : true);
+        bool IsVisible = eVisibility == ESlateVisibility::Visible ? false : true;
+		EDiaInputRouting NewUIMode = IsVisible ? EDiaInputRouting::UIOnly : EDiaInputRouting::GameAndUI;
+        PlayerController->ApplyInputRouting(NewUIMode);
+        PlayerController->ToggleInventoryVisibility(IsVisible);
     }
 }
 
@@ -435,8 +508,10 @@ void ADiaCharacter::ToggleCharacterStatus()
     if (ADiaController* PlayerController = Cast<ADiaController>(Controller))
     {
         ESlateVisibility eVisibility = PlayerController->GetWidgetVisibility("CharacterStatus");
-        //보이는 상태면 false로 안보이게 끔, 아니면 true로 보이게끔
-        PlayerController->ToggleChracterStatusVisibility(eVisibility == ESlateVisibility::Visible ? false : true);
+        bool IsVisible = eVisibility == ESlateVisibility::Visible ? false : true;
+        EDiaInputRouting NewUIMode = IsVisible ? EDiaInputRouting::UIOnly : EDiaInputRouting::GameAndUI;
+        PlayerController->ApplyInputRouting(NewUIMode);
+        PlayerController->ToggleChracterStatusVisibility(IsVisible);
     }
 }
 
@@ -445,7 +520,10 @@ void ADiaCharacter::ToggleSkillPanel()
     if (ADiaController* PlayerController = Cast<ADiaController>(Controller))
     {
         ESlateVisibility eVisibility = PlayerController->GetWidgetVisibility("SkillPanelWidget");
-        PlayerController->ToggleSkillPanelVisibility(eVisibility == ESlateVisibility::Visible ? false : true);
+        bool IsVisible = eVisibility == ESlateVisibility::Visible ? false : true;
+        EDiaInputRouting NewUIMode = IsVisible ? EDiaInputRouting::UIOnly : EDiaInputRouting::GameAndUI;
+        PlayerController->ApplyInputRouting(NewUIMode);
+        PlayerController->ToggleSkillPanelVisibility(IsVisible);
     }
 }
 
