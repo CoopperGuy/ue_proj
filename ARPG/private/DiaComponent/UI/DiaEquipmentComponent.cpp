@@ -1,6 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "DiaComponent/UI/DiaEquipmentComponent.h"
+#include "DiaComponent/UI/DiaInventoryComponent.h"
+#include "DiaComponent/DiaOptionManagerComponent.h"
 
 #include "System/DiaSaveGame.h"
 
@@ -25,28 +27,14 @@ void UDiaEquipmentComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 void UDiaEquipmentComponent::EquipItem(const FEquippedItem& Item, EEquipmentSlot SlotType)
 {
 	EquipmentMap.Add(SlotType, Item);
-	AddDebugEvent(FString::Printf(TEXT("Equipped %s to %s"),
-		*Item.ItemInstance.ItemID.ToString(),
-		*UEnum::GetValueAsString(SlotType)), true);
-
-	UE_LOG(LogARPG, Log, TEXT("EquipItem: Slot %s equipped item."), *UEnum::GetValueAsString(SlotType));
 }
 
 void UDiaEquipmentComponent::UnEquipItem(EEquipmentSlot SlotType)
 {
 	if (FEquippedItem* EquippedItem = EquipmentMap.Find(SlotType))
 	{
-		AddDebugEvent(FString::Printf(TEXT("Unequip requested for %s from %s"),
-			*EquippedItem->ItemInstance.ItemID.ToString(),
-			*UEnum::GetValueAsString(SlotType)), true);
-
-		OnItemUnEquipped.Broadcast(SlotType);
-		UE_LOG(LogARPG, Log, TEXT("UnEquipItem: Slot %s unequip requested."), *UEnum::GetValueAsString(SlotType));
 		return;
 	}
-
-	AddDebugEvent(FString::Printf(TEXT("Unequip requested for empty %s"),
-		*UEnum::GetValueAsString(SlotType)), false);
 }
 
 void UDiaEquipmentComponent::UnEquipItemFinish(EEquipmentSlot SlotType)
@@ -110,4 +98,78 @@ void UDiaEquipmentComponent::LoadEquipmentFromSaveGame(const UDiaSaveGame* SaveG
 	{
 		EquipmentMap.Add(SaveData.Key, SaveData.Value);
 	}
+}
+
+bool UDiaEquipmentComponent::TryEquipFromInventory(const FInventorySlot& InventorySlot, EEquipmentSlot SlotType)
+{
+	// 장비를 장착 했다는 정보 저장
+	FEquippedItem Item = FEquippedItem::FromInventorySlot(InventorySlot);
+
+
+	if (!InventoryComponent->RemoveItem(InventorySlot.ItemInstance.InstanceID))
+	{
+		return false;
+	}
+
+	EquipItem(Item, SlotType);
+
+	OptionManagerComponent->ApplyEquipmentStats(Item, SlotType);
+
+	for (const auto& option : Item.ItemInstance.PrefixOptions)
+	{
+		OptionManagerComponent->AddOption(option);
+	}
+	for (const auto& option : Item.ItemInstance.SuffixOptions)
+	{
+		OptionManagerComponent->AddOption(option);
+	}
+
+	OptionManagerComponent->ApplyEquipmentSlotOption(Item);
+
+	return true;
+}
+
+bool UDiaEquipmentComponent::TryUnEquipToInventory(EEquipmentSlot SlotType, FInventorySlot& OutInventorySlot)
+{
+
+	if (!IsValid(InventoryComponent) || !IsValid(OptionManagerComponent))
+	{
+		return false;
+	}
+
+	const FEquippedItem* FoundItem = GetEquippedItem(SlotType);
+	if (!FoundItem)
+	{
+		return false;
+	}
+
+	const FEquippedItem Item = *FoundItem;
+	FInventorySlot InventorySlot = Item.ToInventorySlot();
+
+
+	if (!InventoryComponent->TryAddItem(InventorySlot))
+	{
+		return false;
+	}
+
+	UnEquipItem(SlotType);
+
+	OptionManagerComponent->RemoveEqipmentStats(Item, SlotType);
+
+	for (const auto& option : Item.ItemInstance.PrefixOptions)
+	{
+		OptionManagerComponent->RemoveOption(option);
+	}
+	for (const auto& option : Item.ItemInstance.SuffixOptions)
+	{
+		OptionManagerComponent->RemoveOption(option);
+	}
+
+	UnEquipItemFinish(SlotType);
+
+	OutInventorySlot = InventorySlot;
+
+	OnItemUnEquipped.Broadcast(SlotType);
+
+	return true;
 }

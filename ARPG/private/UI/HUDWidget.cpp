@@ -4,11 +4,7 @@
 #include "UI/HUDWidget.h"
 #include "UI/Orb.h"
 #include "UI/MonsterHP.h"
-#include "UI/Inventory/MainInventory.h"
-#include "UI/CharacterStatus/StatusWidget.h"
-#include "UI/Inventory/EquipWidget.h"
 #include "UI/System/DiaPrimaryLayout.h"
-#include "UI/Skill/SkillPanelWidget.h"
 #include "UI/SkillQuickSlotWidget.h"
 #include "UI/Skill/SkillQuickSlot.h"
 #include "UI/Alret/ClearAlret.h"
@@ -38,59 +34,50 @@ void UHUDWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	// 루트가 Visible이면 화면 전체가 히트 테스트를 먹어서 월드 UWidgetComponent(아이템 이름 등)로 입력이 가지 않음.
-	SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
-	SetMonsterHPVisibility(ESlateVisibility::Collapsed);
-	InventoryWidget->SetVisibility(ESlateVisibility::Collapsed);
-	CharacterStatus->SetVisibility(ESlateVisibility::Collapsed);
-	EquipmentWidget->SetVisibility(ESlateVisibility::Collapsed);
-	SkillPanelWidget->SetVisibility(ESlateVisibility::Collapsed);
+	if (!IsValid(SkillQuickSlotWidget) || !IsValid(BossMonsterHPWidget) || !IsValid(MonsterHPWidget) || !IsValid(RewardChoicePanel))
+		return;
+	if (!IsValid(HpWidget) || !IsValid(MpWidget))
+		return;
+
 	SkillQuickSlotWidget->SetVisibility(ESlateVisibility::Visible);
 	BossMonsterHPWidget->SetVisibility(ESlateVisibility::Collapsed);
 	MonsterHPWidget->SetVisibility(ESlateVisibility::Collapsed);
 	RewardChoicePanel->SetVisibility(ESlateVisibility::Collapsed);
 
 	ADiaBaseCharacter* OwningActor = Cast<ADiaBaseCharacter>(GetOwningPlayerPawn());
-	ADiaController* OwningController = Cast<ADiaController>(GetOwningPlayer());
+
+	// 루트가 Visible이면 화면 전체가 히트 테스트를 먹어서 월드 UWidgetComponent(아이템 이름 등)로 입력이 가지 않음.
+	SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	SetMonsterHPVisibility(ESlateVisibility::Collapsed);
+
 	if (IsValid(OwningActor))
 	{
-		UAbilitySystemComponent* AbilitySystem = OwningActor->GetAbilitySystemComponent();
-		if (IsValid(AbilitySystem))
-		{
-			//player는 이런식으로 설정한다 치는데, 몬스터는 어떻게?하지?
-			HealthChangedDelegateHandle =
-				AbilitySystem
-				->GetGameplayAttributeValueChangeDelegate(UDiaAttributeSet::GetHealthAttribute())
-				.AddUObject(this, &UHUDWidget::HandleHealthChanged);
+		UnBindCharacterAttributeChangeDelegates();
 
-			ManaChangedDelegateHandle =
-				AbilitySystem
-				->GetGameplayAttributeValueChangeDelegate(UDiaAttributeSet::GetManaAttribute())
-				.AddUObject(this, &UHUDWidget::HandleManaChanged);
+		CachedAbilitySystem = OwningActor->GetAbilitySystemComponent();
+		CachedOwningController = Cast<ADiaController>(GetOwningPlayer());
 
-			AbilitySystem->GetGameplayAttributeValueChangeDelegate(UDiaAttributeSet::GetExpAttribute())
-				.AddUObject(this, &UHUDWidget::HandlExpChanged);
+		BindCharacterAttributeChangeDelegates();
+		//// 초기값 1회 반영
+		const float Health = CachedAbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute());
+		const float MaxHealth = CachedAbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxHealthAttribute());
 
-			//// 초기값 1회 반영
-			const float Health = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute());
-			const float MaxHealth = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxHealthAttribute());
+		const float Mana = CachedAbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetManaAttribute());
+		const float MaxMana = CachedAbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxManaAttribute());
 
-			const float Mana = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetManaAttribute());
-			const float MaxMana = AbilitySystem->GetNumericAttribute(UDiaAttributeSet::GetMaxManaAttribute());
-
-			UpdateOrbPercentage(OrbType::OT_HP, Health / MaxHealth);
-			UpdateOrbPercentage(OrbType::OT_MP, Mana / MaxMana);
-		}
+		UpdateOrbPercentage(OrbType::OT_HP, Health / MaxHealth);
+		UpdateOrbPercentage(OrbType::OT_MP, Mana / MaxMana);
 
 		if (ADiaCharacter* DiaCharacter = Cast<ADiaCharacter>(OwningActor))
 		{
 			DiaCharacter->RegisteCurrentSkillList();
 		}
-	}
-	if (IsValid(OwningController))
-	{
-		OwningController->GetOnTargetChanged().AddUObject(this, &UHUDWidget::UpdateTagetMonster);
+
+		if (CachedOwningController->IsValidLowLevel())
+		{
+			TargetChangedDelegateHandle = CachedOwningController->GetOnTargetChanged().AddUObject(this, &UHUDWidget::UpdateTagetMonster);
+		}
 	}
 
 	UDiaCustomGameViewPort* DiaCumstomGameViewPort = GetWorld() ? Cast<UDiaCustomGameViewPort>(GetWorld()->GetGameViewport()) : nullptr;
@@ -103,6 +90,26 @@ void UHUDWidget::NativeConstruct()
 	{
 		RewardChoicePanel->OnRewardCardSelected.AddUniqueDynamic(this, &UHUDWidget::OnRewardCardSelected);
 	}
+
+}
+
+void UHUDWidget::NativeDestruct()
+{
+	UnBindCharacterAttributeChangeDelegates();
+
+	if (ADiaController* Controller = CachedOwningController.Get();
+		IsValid(Controller) && TargetChangedDelegateHandle.IsValid())
+	{
+		Controller->GetOnTargetChanged().Remove(TargetChangedDelegateHandle);
+		TargetChangedDelegateHandle.Reset();
+	}
+
+	if (IsValid(RewardChoicePanel))
+	{
+		RewardChoicePanel->OnRewardCardSelected.RemoveDynamic(this, &ThisClass::OnRewardCardSelected);
+	}
+
+	Super::NativeDestruct();
 }
 
 void UHUDWidget::UpdateOrbPercentage(OrbType _Type, float _Percentage)
@@ -258,55 +265,6 @@ void UHUDWidget::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
 	}
 }
 
-void UHUDWidget::RegisteSkillPannelWidget(const USkillObject* Skill)
-{
-	if (SkillPanelWidget)
-	{
-		SkillPanelWidget->RegisterSkill(Skill);
-	}
-	else
-	{
-		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::RegisteSkillPannelWidget - SkillPanelWidget is null"));
-	}
-}
-
-void UHUDWidget::RegisteSkillPannelWidget(const TArray<USkillObject*>& Skills)
-{
-	UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::RegisteSkillPannelWidget called with %d skills"), Skills.Num());
-	if (SkillPanelWidget)
-	{
-		SkillPanelWidget->RegisterSkillList(Skills);
-	}
-	else
-	{
-		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::RegisteSkillPannelWidget - SkillPanelWidget is null"));
-	}
-}
-
-void UHUDWidget::UpdateSkillLevel(int32 SkillID, int32 NewLevel)
-{
-	if (SkillPanelWidget)
-	{
-		SkillPanelWidget->UpdateSkillLevel(SkillID, NewLevel);
-	}
-	else
-	{
-		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::UpdateSkillLevel - SkillPanelWidget is null"));
-	}
-}
-
-void UHUDWidget::RegisterSkillVariant(int32 SkillID, int32 VariantID)
-{
-	if (SkillPanelWidget)
-	{
-		SkillPanelWidget->RegisterSkillVariant(SkillID, VariantID);
-	}
-	else
-	{
-		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::RegisterSkillVariant - SkillPanelWidget is null"));
-	}
-}
-
 void UHUDWidget::ShowClearAlret(FGuid RoomGuid)
 {
 	UDiaPrimaryLayout* Layout = DiaPrimaryLayout;
@@ -320,7 +278,7 @@ void UHUDWidget::ShowClearAlret(FGuid RoomGuid)
 		UE_LOG(LogARPG, Warning, TEXT("UHUDWidget::ShowClearAlret - ClearAlertWidgetClass is null"));
 		return;
 	}
-	UClearAlret* ClearAlretWidget = Layout->PushToHudLayer<UClearAlret>(FDiaGameplayTags::Get().UI_Layer_HUD, ClearAlertWidgetClass);
+	UClearAlret* ClearAlretWidget = Cast<UClearAlret>(Layout->PushToLayer(FDiaGameplayTags::Get().UI_Layer_Menu, ClearAlertWidgetClass));
 }
 
 void UHUDWidget::ShowDamagePopup(float DamageAmount, const FVector2D& ScreenPos, bool bIsCritical)
@@ -352,24 +310,59 @@ void UHUDWidget::OpenRewardChoicePanel(const FText& Title, const FText& Subtitle
 	RewardChoicePanel->OpenRewardChoicePanel(Title, Subtitle, RewardOptions);
 }
 
+TOptional<FUIInputConfig> UHUDWidget::GetDesiredInputConfig() const
+{
+	return FUIInputConfig(
+		ECommonInputMode::All,
+		EMouseCaptureMode::CaptureDuringMouseDown,
+		EMouseLockMode::LockOnCapture,
+		false);
+}
+
+void UHUDWidget::BindCharacterAttributeChangeDelegates()
+{
+	if (CachedAbilitySystem->IsValidLowLevel())
+	{
+		//player는 이런식으로 설정한다 치는데, 몬스터는 어떻게?하지?
+		HealthChangedDelegateHandle =
+			CachedAbilitySystem
+			->GetGameplayAttributeValueChangeDelegate(UDiaAttributeSet::GetHealthAttribute())
+			.AddUObject(this, &UHUDWidget::HandleHealthChanged);
+
+		ManaChangedDelegateHandle =
+			CachedAbilitySystem
+			->GetGameplayAttributeValueChangeDelegate(UDiaAttributeSet::GetManaAttribute())
+			.AddUObject(this, &UHUDWidget::HandleManaChanged);
+
+		ExpChangedDelegateHandle =
+			CachedAbilitySystem->GetGameplayAttributeValueChangeDelegate(UDiaAttributeSet::GetExpAttribute())
+			.AddUObject(this, &UHUDWidget::HandlExpChanged);
+	}
+}
+
+void UHUDWidget::UnBindCharacterAttributeChangeDelegates()
+{
+	if (CachedAbilitySystem->IsValidLowLevel())
+	{
+		CachedAbilitySystem
+			->GetGameplayAttributeValueChangeDelegate(UDiaAttributeSet::GetHealthAttribute())
+			.Remove(HealthChangedDelegateHandle);
+		HealthChangedDelegateHandle.Reset();
+		CachedAbilitySystem
+			->GetGameplayAttributeValueChangeDelegate(UDiaAttributeSet::GetManaAttribute())
+			.Remove(ManaChangedDelegateHandle);
+		ManaChangedDelegateHandle.Reset();
+		CachedAbilitySystem
+			->GetGameplayAttributeValueChangeDelegate(UDiaAttributeSet::GetExpAttribute())
+			.Remove(ExpChangedDelegateHandle);
+		ExpChangedDelegateHandle.Reset();
+	}
+}
+
 void UHUDWidget::SetMonsterHPVisibility(ESlateVisibility _Visibility)
 {
 	MonsterHPWidget->SetVisibility(_Visibility);
 	BossMonsterHPWidget->SetVisibility(_Visibility);
 }
 
-UUserWidget* UHUDWidget::FindWidgetByName(const FName& WidgetName)
-{
-	if (!WidgetTree)
-	{
-		UE_LOG(LogARPG, Warning, TEXT("WidgetTree is null in UHUDWidget::FindWidgetByName"));
-		return nullptr;
-	}
-	UWidget* FoundWidget = WidgetTree->FindWidget(WidgetName);
-	if (FoundWidget)
-	{
-		return Cast<UUserWidget>(FoundWidget);
-	}
-	return nullptr;
-}
 

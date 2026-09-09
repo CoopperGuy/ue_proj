@@ -127,15 +127,6 @@ void ADiaCharacter::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 
     SetupInitialSkills();
-
-    if (ADiaController* PlayerController = Cast<ADiaController>(NewController))
-    {
-        if (IsValid(SkillManagerComponent))
-        {
-            PlayerController->RegisteSkillPannelWidget(SkillManagerComponent->GetSkillIDMapping());
-        }
-    }
-
 }
 
 void ADiaCharacter::SetupInitialSkills()
@@ -494,12 +485,10 @@ void ADiaCharacter::ToggleInventory()
 {
     if (ADiaController* PlayerController = Cast<ADiaController>(Controller))
     {
-        ESlateVisibility eVisibility =  PlayerController->GetInventoryVisibility();
+		const bool bIsMenuOpen = PlayerController->ToggleInventoryVisibility();
 		//보이는 상태면 false로 안보이게 끔, 아니면 true로 보이게끔
-        bool IsVisible = eVisibility == ESlateVisibility::Visible ? false : true;
-		EDiaInputRouting NewUIMode = IsVisible ? EDiaInputRouting::UIOnly : EDiaInputRouting::GameAndUI;
+		EDiaInputRouting NewUIMode = bIsMenuOpen ? EDiaInputRouting::UIOnly : EDiaInputRouting::GameAndUI;
         PlayerController->ApplyInputRouting(NewUIMode);
-        PlayerController->ToggleInventoryVisibility(IsVisible);
     }
 }
 
@@ -507,11 +496,9 @@ void ADiaCharacter::ToggleCharacterStatus()
 {
     if (ADiaController* PlayerController = Cast<ADiaController>(Controller))
     {
-        ESlateVisibility eVisibility = PlayerController->GetWidgetVisibility("CharacterStatus");
-        bool IsVisible = eVisibility == ESlateVisibility::Visible ? false : true;
-        EDiaInputRouting NewUIMode = IsVisible ? EDiaInputRouting::UIOnly : EDiaInputRouting::GameAndUI;
+		const bool bIsMenuOpen = PlayerController->ToggleCharacterStatusVisibility();
+		EDiaInputRouting NewUIMode = bIsMenuOpen ? EDiaInputRouting::UIOnly : EDiaInputRouting::GameAndUI;
         PlayerController->ApplyInputRouting(NewUIMode);
-        PlayerController->ToggleChracterStatusVisibility(IsVisible);
     }
 }
 
@@ -519,11 +506,9 @@ void ADiaCharacter::ToggleSkillPanel()
 {
     if (ADiaController* PlayerController = Cast<ADiaController>(Controller))
     {
-        ESlateVisibility eVisibility = PlayerController->GetWidgetVisibility("SkillPanelWidget");
-        bool IsVisible = eVisibility == ESlateVisibility::Visible ? false : true;
-        EDiaInputRouting NewUIMode = IsVisible ? EDiaInputRouting::UIOnly : EDiaInputRouting::GameAndUI;
-        PlayerController->ApplyInputRouting(NewUIMode);
-        PlayerController->ToggleSkillPanelVisibility(IsVisible);
+		const bool bIsMenuOpen = PlayerController->ToggleSkillPanelVisibility();
+		EDiaInputRouting NewUIMode = bIsMenuOpen ? EDiaInputRouting::UIOnly : EDiaInputRouting::GameAndUI;
+		PlayerController->ApplyInputRouting(NewUIMode);
     }
 }
 

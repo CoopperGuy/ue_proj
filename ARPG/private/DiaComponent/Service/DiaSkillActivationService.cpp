@@ -1,15 +1,43 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "DiaComponent/Service/DiaSkillActivationService.h"
-#include "DiaBaseCharacter.h"
+
 #include "AbilitySystemComponent.h"
-#include "GameplayAbilitySpec.h"
+#include "DiaBaseCharacter.h"
+#include "GAS/DiaGASHelper.h"
 #include "GAS/DiaGameplayAbility.h"
-#include "DiaComponent/Skill/SkillObject.h"
+#include "GameplayAbilitySpec.h"
 #include "Logging/ARPGLogChannels.h"
 
-bool UDiaSkillActivationService::TryActivateSkill(int32 SkillID, ADiaBaseCharacter* Character, const USkillObject* SkillObj)
+bool UDiaSkillActivationService::CanActivateSkill(
+	int32 SkillID,
+	ADiaBaseCharacter* Character,
+	const USkillObject* SkillObj)
+{
+	if (!IsValid(Character))
+	{
+		return false;
+	}
+
+	UAbilitySystemComponent* ASC = Character->GetAbilitySystemComponent();
+	if (!IsValid(ASC))
+	{
+		return false;
+	}
+
+	FGameplayAbilitySpec* AbilitySpec = UDiaGASHelper::GetAbilitySpecBySkillID(ASC, SkillID);
+	if (!PrepareAbilityRuntime(AbilitySpec, Character, SkillObj))
+	{
+		return false;
+	}
+
+	return UDiaGASHelper::CanActivateAbilityBySkillID(ASC, SkillID);
+}
+
+bool UDiaSkillActivationService::TryActivateSkill(
+	int32 SkillID,
+	ADiaBaseCharacter* Character,
+	const USkillObject* SkillObj)
 {
 	if (!IsValid(Character))
 	{
@@ -24,36 +52,37 @@ bool UDiaSkillActivationService::TryActivateSkill(int32 SkillID, ADiaBaseCharact
 		return false;
 	}
 
-	// SkillID를 InputID로 사용하여 AbilitySpec 찾기
-	FGameplayAbilitySpec* AbilitySpec = nullptr;
-	for (FGameplayAbilitySpec& Spec : ASC->GetActivatableAbilities())
-	{
-		if (Spec.InputID == SkillID)
-		{
-			AbilitySpec = &Spec;
-			break;
-		}
-	}
-
-	if (!AbilitySpec)
+	FGameplayAbilitySpec* AbilitySpec = UDiaGASHelper::GetAbilitySpecBySkillID(ASC, SkillID);
+	if (!PrepareAbilityRuntime(AbilitySpec, Character, SkillObj))
 	{
 		return false;
 	}
 
-	// SkillObject가 제공된 경우, Ability 인스턴스에 설정
-	if (SkillObj)
+	return ASC->TryActivateAbility(AbilitySpec->Handle);
+}
+
+bool UDiaSkillActivationService::PrepareAbilityRuntime(
+	FGameplayAbilitySpec* AbilitySpec,
+	ADiaBaseCharacter* Character,
+	const USkillObject* SkillObj) const
+{
+	if (!AbilitySpec || !IsValid(Character))
 	{
-		UDiaGameplayAbility* AbilityInstance = Cast<UDiaGameplayAbility>(AbilitySpec->GetPrimaryInstance());
-		if (AbilityInstance)
-		{
-			AbilityInstance->SetSkillObject(SkillObj);
-			AbilityInstance->ActiveModifierEffect(Character);
-		}
-		else
-		{
-			UE_LOG(LogARPG, Warning, TEXT("UDiaSkillActivationService::TryActivateSkill: AbilityInstance를 가져올 수 없습니다. SkillID: %d"), SkillID);
-		}
+		return false;
 	}
 
-	return ASC->TryActivateAbility(AbilitySpec->Handle);
+	UDiaGameplayAbility* AbilityInstance = Cast<UDiaGameplayAbility>(AbilitySpec->GetPrimaryInstance());
+	if (!IsValid(AbilityInstance))
+	{
+		UE_LOG(
+			LogARPG,
+			Warning,
+			TEXT("UDiaSkillActivationService: Primary ability instance is unavailable. InputID: %d"),
+			AbilitySpec->InputID);
+		return false;
+	}
+
+	AbilityInstance->SetSkillObject(SkillObj);
+	AbilityInstance->ActiveModifierEffect(Character);
+	return true;
 }

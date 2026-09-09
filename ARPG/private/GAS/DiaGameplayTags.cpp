@@ -4,6 +4,37 @@
 #include "System/GASSkillManager.h"
 #include "GameplayTagsManager.h"
 
+namespace DiaGameplayTags
+{
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_Level, "AttributeSet.Level", "Character level");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_Health, "AttributeSet.Health", "Health");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_MaxHealth, "AttributeSet.MaxHealth", "Maximum health");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_Mana, "AttributeSet.Mana", "Mana");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_MaxMana, "AttributeSet.MaxMana", "Maximum mana");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_Exp, "AttributeSet.Exp", "Experience");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_MaxExp, "AttributeSet.MaxExp", "Maximum experience");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_Strength, "AttributeSet.Strength", "Strength");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_Dexterity, "AttributeSet.Dexterity", "Dexterity");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_Intelligence, "AttributeSet.Intelligence", "Intelligence");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_AttackPower, "AttributeSet.AttackPower", "Attack power");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_Defense, "AttributeSet.Defense", "Defense");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_DamageIncreaseOption, "AttributeSet.DamageIncreaseOption", "Damage increase option");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_MovementSpeed, "AttributeSet.MovementSpeed", "Movement speed");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_IncomingDamage, "AttributeSet.IncomingDamage", "Incoming damage");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_IncomingHealing, "AttributeSet.IncomingHealing", "Incoming healing");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_CritChance, "AttributeSet.CritChance", "Critical hit chance");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_CritDamage, "AttributeSet.CritDamage", "Critical hit damage");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(AttributeSet_CooldownReduction, "AttributeSet.CooldownReduction", "Cooldown reduction");
+
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_LifeSteal, "Item.Option.MultiplyAdditive.LifeSteal", "Life steal");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_CooldownReduction, "Item.Option.Additive.CooldownReduction", "Cooldown reduction");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_GoldFind, "Item.Option.MultiplyAdditive.GoldFind", "Gold find");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_MaxHealth, "Item.Option.Additive.MaxHealth", "Maximum health");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_MovementSpeed, "Item.Option.MultiplyAdditive.MovementSpeed", "Movement speed");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_CritChance, "Item.Option.Additive.CritChance", "Critical hit chance");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_DamageIncreaseOption, "Item.Option.Additive.DamageIncreaseOption", "Damage increase");
+}
+
 FDiaGameplayTags FDiaGameplayTags::GameplayTags;
 
 void FDiaGameplayTags::InitializeNativeTags()
@@ -131,31 +162,36 @@ void FDiaGameplayTags::RegisterUITags()
 	// ========================================
 	GameplayTags.AddTag(GameplayTags.UI_Layer_HUD, "UI.Layer.HUD", "");
 	GameplayTags.AddTag(GameplayTags.UI_Layer_Modal, "UI.Layer.Model", "");
-
+	GameplayTags.AddTag(GameplayTags.UI_Layer_Menu, "UI.Layer.Menu", "");
+	GameplayTags.AddTag(GameplayTags.UI_MenuPage_Skill, "UI.MenuPage.Skill", "");
+	GameplayTags.AddTag(GameplayTags.UI_MenuPage_Inventory, "UI.MenuPage.Inventory", "");
+	GameplayTags.AddTag(GameplayTags.UI_MenuPage_Character, "UI.MenuPage.Character", "");
+	GameplayTags.AddTag(GameplayTags.UI_MenuPage_Settings, "UI.MenuPage.Settings", "");
 }
 
 void FDiaGameplayTags::RegisterAttributeSetTags()
 {	// ========================================
 	// AttributeSet Tags - 기본 스탯
 	// ========================================
-	GameplayTags.AddTag(GameplayTags.AttributeSet_Level, "AttributeSet.Level", "Level");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_Health, "AttributeSet.Health", "체력");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_MaxHealth, "AttributeSet.MaxHealth", "최대 체력");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_Mana, "AttributeSet.Mana", "마나");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_MaxMana, "AttributeSet.MaxMana", "최대 마나");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_Exp, "AttributeSet.Exp", "경험치");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_MaxExp, "AttributeSet.MaxExp", "최대 경험치");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_Strength, "AttributeSet.Strength", "힘 - 기본 스탯");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_Dexterity, "AttributeSet.Dexterity", "민첩 - 기본 스탯");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_Intelligence, "AttributeSet.Intelligence", "지능 - 기본 스탯");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_AttackPower, "AttributeSet.AttackPower", "공격력 - 전투 스탯");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_Defense, "AttributeSet.Defense", "방어력 - 전투 스탯");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_MovementSpeed, "AttributeSet.MovementSpeed", "이동 속도");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_CritChance, "AttributeSet.CritChance", "치명타 확률");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_CritDamage, "AttributeSet.CritDamage", "치명타 대미지");
-	GameplayTags.AddTag(GameplayTags.AttributeSet_CooldownReduction, "AttributeSet.CooldownReduction", "쿨다운 감소");
-
-
+	GameplayTags.AttributeSet_Level = DiaGameplayTags::AttributeSet_Level;
+	GameplayTags.AttributeSet_Health = DiaGameplayTags::AttributeSet_Health;
+	GameplayTags.AttributeSet_MaxHealth = DiaGameplayTags::AttributeSet_MaxHealth;
+	GameplayTags.AttributeSet_Mana = DiaGameplayTags::AttributeSet_Mana;
+	GameplayTags.AttributeSet_MaxMana = DiaGameplayTags::AttributeSet_MaxMana;
+	GameplayTags.AttributeSet_Exp = DiaGameplayTags::AttributeSet_Exp;
+	GameplayTags.AttributeSet_MaxExp = DiaGameplayTags::AttributeSet_MaxExp;
+	GameplayTags.AttributeSet_Strength = DiaGameplayTags::AttributeSet_Strength;
+	GameplayTags.AttributeSet_Dexterity = DiaGameplayTags::AttributeSet_Dexterity;
+	GameplayTags.AttributeSet_Intelligence = DiaGameplayTags::AttributeSet_Intelligence;
+	GameplayTags.AttributeSet_AttackPower = DiaGameplayTags::AttributeSet_AttackPower;
+	GameplayTags.AttributeSet_Defense = DiaGameplayTags::AttributeSet_Defense;
+	GameplayTags.AttributeSet_DamageIncreaseOption = DiaGameplayTags::AttributeSet_DamageIncreaseOption;
+	GameplayTags.AttributeSet_MovementSpeed = DiaGameplayTags::AttributeSet_MovementSpeed;
+	GameplayTags.AttributeSet_IncomingDamage = DiaGameplayTags::AttributeSet_IncomingDamage;
+	GameplayTags.AttributeSet_IncomingHealing = DiaGameplayTags::AttributeSet_IncomingHealing;
+	GameplayTags.AttributeSet_CritChance = DiaGameplayTags::AttributeSet_CritChance;
+	GameplayTags.AttributeSet_CritDamage = DiaGameplayTags::AttributeSet_CritDamage;
+	GameplayTags.AttributeSet_CooldownReduction = DiaGameplayTags::AttributeSet_CooldownReduction;
 }
 
 void FDiaGameplayTags::RegisterItemOptionTags()
@@ -164,63 +200,51 @@ void FDiaGameplayTags::RegisterItemOptionTags()
 	// Item Option Tags - 아이템 옵션
 	// ========================================
 	
-	GameplayTags.AddTag(GameplayTags.ItemOptionLifeSteal, "Item.Option.MultiplyAdditive.LifeSteal", "생명력 흡수");
-	GameplayTags.AddTag(GameplayTags.ItemOptionCooldownReduction, "Item.Option.Additive.CooldownReduction", "쿨다운 감소");
-	GameplayTags.AddTag(GameplayTags.ItemOptionGoldFind, "Item.Option.MultiplyAdditive.GoldFind", "골드 획득량 증가");
-	GameplayTags.AddTag(GameplayTags.ItemOptionstatHealth, "Item.Option.Additive.MaxHealth", "체력 증가");
-	GameplayTags.AddTag(GameplayTags.ItemOptionStatSpeed, "Item.Option.MultiplyAdditive.MovementSpeed", "이동 속도 증가");
-	GameplayTags.AddTag(GameplayTags.ItemOptionStatCriticalChance, "Item.Option.Additive.CritChance", "치명타 확률 증가");
-	GameplayTags.AddTag(GameplayTags.ItemOptionStatDamage, "Item.Option.Additive.DamageIncreaseOption", "공격력 증가");
-
+	GameplayTags.ItemOptionLifeSteal = DiaGameplayTags::ItemOption_LifeSteal;
+	GameplayTags.ItemOptionCooldownReduction = DiaGameplayTags::ItemOption_CooldownReduction;
+	GameplayTags.ItemOptionGoldFind = DiaGameplayTags::ItemOption_GoldFind;
+	GameplayTags.ItemOptionstatHealth = DiaGameplayTags::ItemOption_MaxHealth;
+	GameplayTags.ItemOptionStatSpeed = DiaGameplayTags::ItemOption_MovementSpeed;
+	GameplayTags.ItemOptionStatCriticalChance = DiaGameplayTags::ItemOption_CritChance;
+	GameplayTags.ItemOptionStatDamage = DiaGameplayTags::ItemOption_DamageIncreaseOption;
 }
 
 const TArray<FGameplayTag>& FDiaGameplayTags::GetAttributeStats()
 {
-	static TArray<FGameplayTag> CacheStats;
+	static const TArray<FGameplayTag> AttributeStats = {
+		DiaGameplayTags::AttributeSet_Health.GetTag(),
+		DiaGameplayTags::AttributeSet_MaxHealth.GetTag(),
+		DiaGameplayTags::AttributeSet_Mana.GetTag(),
+		DiaGameplayTags::AttributeSet_MaxMana.GetTag(),
+		DiaGameplayTags::AttributeSet_Exp.GetTag(),
+		DiaGameplayTags::AttributeSet_MaxExp.GetTag(),
+		DiaGameplayTags::AttributeSet_Strength.GetTag(),
+		DiaGameplayTags::AttributeSet_Dexterity.GetTag(),
+		DiaGameplayTags::AttributeSet_Intelligence.GetTag(),
+		DiaGameplayTags::AttributeSet_AttackPower.GetTag(),
+		DiaGameplayTags::AttributeSet_Defense.GetTag(),
+		DiaGameplayTags::AttributeSet_MovementSpeed.GetTag(),
+		DiaGameplayTags::AttributeSet_CritChance.GetTag(),
+		DiaGameplayTags::AttributeSet_CritDamage.GetTag(),
+		DiaGameplayTags::AttributeSet_CooldownReduction.GetTag(),
+	};
 
-	if(CacheStats.Num() > 0)
-	{
-		return CacheStats;
-	}
-
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Health")));
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxHealth")));
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Mana")));
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxMana")));
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Exp")));
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MaxExp")));
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Strength")));
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Dexterity")));
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Intelligence")));
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.AttackPower")));
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.Defense")));
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.MovementSpeed")));
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.CritChance")));
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.CritDamage")));
-	CacheStats.Add(FGameplayTag::RequestGameplayTag(FName("AttributeSet.CooldownReduction")));
-
-
-	return CacheStats;
+	return AttributeStats;
 }
 
 const TArray<FGameplayTag>& FDiaGameplayTags::GetItemOptionList()
 {
-	static TArray<FGameplayTag> CacheOption;
+	static const TArray<FGameplayTag> ItemOptionTags = {
+		DiaGameplayTags::ItemOption_LifeSteal.GetTag(),
+		DiaGameplayTags::ItemOption_CooldownReduction.GetTag(),
+		DiaGameplayTags::ItemOption_GoldFind.GetTag(),
+		DiaGameplayTags::ItemOption_MaxHealth.GetTag(),
+		DiaGameplayTags::ItemOption_MovementSpeed.GetTag(),
+		DiaGameplayTags::ItemOption_CritChance.GetTag(),
+		DiaGameplayTags::ItemOption_DamageIncreaseOption.GetTag(),
+	};
 
-	if(CacheOption.Num() > 0)
-	{
-		return CacheOption;
-	}
-
-	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.LifeSteal")));
-	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.Additive.CooldownReduction")));
-	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.GoldFind")));
-	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.Additive.MaxHealth")));
-	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.MultiplyAdditive.MovementSpeed")));
-	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.Additive.CritChance")));
-	CacheOption.Add(FGameplayTag::RequestGameplayTag(FName("Item.Option.Additive.DamageIncreaseOption")));
-
-	return CacheOption;
+	return ItemOptionTags;
 }
 
 void FDiaGameplayTags::AddTag(FGameplayTag& OutTag, const ANSICHAR* TagName, const ANSICHAR* TagComment)

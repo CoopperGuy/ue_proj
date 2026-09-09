@@ -8,16 +8,11 @@
 #include "DiaComponent/UI/DiaInventoryComponent.h"
 #include "DiaComponent/UI/DiaEquipmentComponent.h"
 #include "DiaComponent/DiaOptionManagerComponent.h"
-#include "DiaComponent/DiaSkillManagerComponent.h"
 
 #include "DiaComponent/DiaStatComponent.h"
 #include "UI/HUDWidget.h"
-#include "UI/Inventory/MainInventory.h"
-#include "UI/Inventory/EquipWidget.h"
-#include "UI/Inventory/EquipSlot.h"
-#include "UI/Skill/SkillPanelWidget.h"
+#include "UI/System/DiaPrimaryLayout.h"
 
-#include "UI/CharacterStatus/StatusWidget.h"
 #include "UI/DiaItemDebugWidget.h"
 #include "UI/Menu/DiaMenuSystem.h"
 
@@ -26,9 +21,12 @@
 #include "Character/DiaCharacter.h"
 
 #include "System/ItemSubsystem.h"
+#include "System/GameViewPort/DiaCustomGameViewPort.h"
 #include "Logging/ARPGLogChannels.h"
 
 #include "Interface/DiaInteractable.h"
+
+#include "GAS/DiaGameplayTags.h"
 
 #include <AbilitySystemBlueprintLibrary.h>
 
@@ -77,7 +75,6 @@ namespace
 		return ParsedKeys;
 	}
 }
-
 ADiaController::ADiaController()
 {
 	bShowMouseCursor = true;
@@ -114,43 +111,18 @@ ADiaController::ADiaController()
 void ADiaController::BeginPlay()
 {
 	Super::BeginPlay();
-	UHUDWidget* HUDWidget = GetHUDWidget();
-	if (!IsValid(HUDWidget))
-	{
-		return;
-	}
-	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
-	UEquipWidget* EquipmentWidget = Cast<UEquipWidget>(HUDWidget->FindWidgetByName("EquipmentWidget"));
 
-	const bool bHasInventoryWidget = IsValid(InventoryWidget);
-	if (!bHasInventoryWidget)
-	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("InventoryWidget is missing from HUDWidget; inventory setup skipped."));
-	}
-
-	const bool bHasEquipmentWidget = IsValid(EquipmentWidget);
-	if (!bHasEquipmentWidget)
-	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("EquipmentWidget is missing from HUDWidget; equipment setup skipped."));
-	}
-
-	if (!bHasInventoryWidget && !bHasEquipmentWidget)
+	UDiaCustomGameViewPort* DiaCustomGameViewPort = GetWorld() ? Cast<UDiaCustomGameViewPort>(GetWorld()->GetGameViewport()) : nullptr;
+	if (!IsValid(DiaCustomGameViewPort) || !IsValid(DiaCustomGameViewPort->CreatePrimaryLayout(this)))
 	{
 		return;
 	}
 
 	if (IsValid(DiaInventoryComponent))
 	{
-		DiaInventoryComponent->RegisterComponent();
-		if (bHasInventoryWidget)
+		if (!DiaInventoryComponent->IsRegistered())
 		{
-			InventoryWidget->SetInventoryComponent(DiaInventoryComponent);
-			InventoryWidget->InitializeInventory();
-		}
-
-		if (bHasEquipmentWidget)
-		{
-			EquipmentWidget->SetInventoryComponent(DiaInventoryComponent);
+			DiaInventoryComponent->RegisterComponent();
 		}
 	}
 	else
@@ -160,16 +132,9 @@ void ADiaController::BeginPlay()
 
 	if (IsValid(DiaEquipmentComponent))
 	{
-		DiaEquipmentComponent->RegisterComponent();
-		if (bHasInventoryWidget)
+		if (!DiaEquipmentComponent->IsRegistered())
 		{
-			InventoryWidget->SetEquipmentComponent(DiaEquipmentComponent);
-		}
-
-		if (bHasEquipmentWidget)
-		{
-			EquipmentWidget->SetDiaController(this);
-			EquipmentWidget->SetEquipmentComponent(DiaEquipmentComponent);
+			DiaEquipmentComponent->RegisterComponent();
 		}
 	}
 	else
@@ -177,15 +142,11 @@ void ADiaController::BeginPlay()
 		UE_LOG(LogARPG_Inventory, Warning, TEXT("DiaEquipmentComponent is null"));
 	}
 
-	for (int32 i = 0; i < static_cast<int32>(EEquipmentSlot::EES_Max); ++i)
+	if (IsValid(DiaEquipmentComponent) && IsValid(DiaInventoryComponent) && IsValid(DiaOptionManagerComponent))
 	{
-		UEquipSlot* SlotWidget = EquipmentWidget->GetEquipSlot(static_cast<EEquipmentSlot>(i));
-		if (SlotWidget)
-		{
-			SlotWidget->OnItemEquipped.AddDynamic(this, &ThisClass::OnEquipItemProgress);
-		}
+		DiaEquipmentComponent->SetInventoryComponent(DiaInventoryComponent);
+		DiaEquipmentComponent->SetOptionManagerComponent(DiaOptionManagerComponent);
 	}
-	
 }
 
 void ADiaController::SetupInputComponent()
@@ -196,36 +157,6 @@ void ADiaController::SetupInputComponent()
 	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::LockOnCapture);
 	InputModeData.SetHideCursorDuringCapture(false);
 	SetInputMode(InputModeData);
-}
-
-void ADiaController::OnPossess(APawn* InPawn)
-{
-	Super::OnPossess(InPawn);
-	if (!IsValid(InPawn)) return;
-
-	BindSkillManagerDelegates(InPawn);
-}
-
-void ADiaController::BindSkillManagerDelegates(APawn* InPawn)
-{
-	if (!IsValid(InPawn))
-	{
-		return;
-	}
-
-	UDiaSkillManagerComponent* SkillManagerComponent = InPawn->FindComponentByClass<UDiaSkillManagerComponent>();
-	if (!IsValid(SkillManagerComponent))
-	{
-		return;
-	}
-
-	SkillManagerComponent->OnSkillRegistered.RemoveAll(this);
-	SkillManagerComponent->OnSkillLevelChanged.RemoveAll(this);
-	SkillManagerComponent->OnSkillVariantAdded.RemoveAll(this);
-
-	SkillManagerComponent->OnSkillRegistered.AddUObject(this, &ThisClass::HandleSkillRegistered);
-	SkillManagerComponent->OnSkillLevelChanged.AddUObject(this, &ThisClass::HandleSkillLevelChanged);
-	SkillManagerComponent->OnSkillVariantAdded.AddUObject(this, &ThisClass::HandleSkillVariantAdded);
 }
 
 bool ADiaController::ApplyGoldReward(const FRewardData& RewardData)
@@ -244,19 +175,14 @@ bool ADiaController::ApplyItemReward(const FRewardData& RewardData)
 	if (!IsValid(DiaInventoryComponent) || !IsValid(DiaOptionManagerComponent))
 		return false;
 	
-	UHUDWidget* HUDWidget = GetHUDWidget();
-	if(!IsValid(HUDWidget))
-		return false;
-	
 	UItemSubsystem* ItemSubsystem = GetGameInstance()->GetSubsystem<UItemSubsystem>();
 	if (!ItemSubsystem)
 		return false;
 
-	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
 	FInventorySlot NewItemSlot;
 	ItemSubsystem->CreateInventoryInstance(NewItemSlot, RewardData.ItemId, RewardData.ItemLevel, true, RewardData.ItemQuantity);
 	
-	return DiaInventoryComponent->TryAddItem(NewItemSlot, InventoryWidget);
+	return DiaInventoryComponent->TryAddItem(NewItemSlot);
 }
 
 bool ADiaController::ApplySkillAddReward(const FRewardData& RewardData)
@@ -284,40 +210,6 @@ bool ADiaController::ApplySkillVariantReward(const FRewardData& RewardData)
 		return false;
 
 	return DiaCharacter->UnlockSkillVariantByID(RewardData.SkillId, RewardData.VariantId);
-}
-
-void ADiaController::HandleSkillRegistered(int32 SkillID, int32 SlotIndex)
-{
-	ADiaBaseCharacter* DiaCharacter = Cast<ADiaBaseCharacter>(GetCharacter());
-	if (!IsValid(DiaCharacter))
-		return;
-	UDiaSkillManagerComponent* SkillManager = DiaCharacter->FindComponentByClass<UDiaSkillManagerComponent>();
-	if (!IsValid(SkillManager))
-		return;
-	const USkillObject* SkillObj = SkillManager->GetSkillObjectBySkillID(SkillID);
-	RegisteSkillPannelWidget(SkillObj);
-}
-
-void ADiaController::HandleSkillLevelChanged(int32 SkillID, int32 NewLevel)
-{
-	UHUDWidget* HUDWidget = GetHUDWidget();
-	if (!IsValid(HUDWidget))
-	{
-		return;
-	}
-
-	HUDWidget->UpdateSkillLevel(SkillID, NewLevel);
-}
-
-void ADiaController::HandleSkillVariantAdded(int32 SkillID, int32 VariantID)
-{
-	UHUDWidget* HUDWidget = GetHUDWidget();
-	if (!IsValid(HUDWidget))
-	{
-		return;
-	}
-
-	HUDWidget->RegisterSkillVariant(SkillID, VariantID);
 }
 
 void ADiaController::OnEquipItemProgress(const FEquippedItem& Item, EEquipmentSlot SlotType)
@@ -415,35 +307,30 @@ void ADiaController::SetTarget(ADiaBaseCharacter* NewTarget)
 #endif
 }
 
+void ADiaController::NotifyPlayerASCReady(ADiaBaseCharacter* PlayerCharacter, UAbilitySystemComponent* AbilitySystem)
+{
+	if (!IsValid(PlayerCharacter) || !IsValid(AbilitySystem) || GetPawn() != PlayerCharacter)
+	{
+		return;
+	}
+
+	OnPlayerASCReady.Broadcast(PlayerCharacter, AbilitySystem);
+}
+
 UHUDWidget* ADiaController::GetHUDWidget() const
 {
-	if (CachedHUDWidget.IsValid())
+	UDiaCustomGameViewPort* DiaCumstomGameViewPort = GetWorld() ? Cast<UDiaCustomGameViewPort>(GetWorld()->GetGameViewport()) : nullptr;
+	if (!IsValid(DiaCumstomGameViewPort))
 	{
-		return CachedHUDWidget.Get();
+		return nullptr;
 	}
-
-	if (!HUDWidgetClass)
+	UDiaPrimaryLayout* DiaPrimaryLayout = DiaCumstomGameViewPort->GetDiaPrimaryLayout();
+	if(!IsValid(DiaPrimaryLayout))
 	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("ADiaController::GetHUDWidget - HUDWidgetClass is not set"));
 		return nullptr;
 	}
 
-	ADiaController* NonConstThis = const_cast<ADiaController*>(this);
-	UHUDWidget* NewHUD = CreateWidget<UHUDWidget>(NonConstThis, HUDWidgetClass);
-	if (!IsValid(NewHUD))
-	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("ADiaController::GetHUDWidget - Failed to create HUDWidget"));
-		return nullptr;
-	}
-
-	// AddToViewport()가 NativeConstruct를 유발하고, 그 안에서 GetHUDWidget()이 다시 호출될 수 있음.
-	// 재귀 방지를 위해 뷰포트에 추가하기 전에 캐시를 먼저 설정.
-	NonConstThis->CachedHUDWidget = NewHUD;
-	NewHUD->AddToViewport();
-
-	UE_LOG(LogARPG_Inventory, Display, TEXT("ADiaController::GetHUDWidget - HUDWidget created and cached"));
-
-	return NewHUD;
+	return DiaPrimaryLayout->GetHUDWidget();
 }
 
 void ADiaController::ApplyInputRouting(EDiaInputRouting NewMode)
@@ -530,31 +417,16 @@ bool ADiaController::ItemAddedToInventory(const FInventorySlot& Item)
 		return false;
 	}
 
-	ADungeonGameMode* GameMode = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());
-	if (!IsValid(GameMode))
-	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("DungeonGameMode is null"));
-		return false;
-	}
 
-	UHUDWidget* HUDWidget = GetHUDWidget();
 	//인벤토리 위젯을 가져와서 넣는다.
-	if (!IsValid(HUDWidget))
-	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
-		return false;
-	}
-
-    if (Item.ItemInstance.ItemID == "Gold")
+	if (Item.ItemInstance.ItemID == "Gold")
     {
         DiaInventoryComponent->AddGoldInventoryWithCheckOption(Item.ItemInstance.Quantity, DiaOptionManagerComponent);
         return true;
     }
 
 	//검증은 tryadditem에서 한다.
-	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
-
-	bool bResult = DiaInventoryComponent->TryAddItem(Item, InventoryWidget);
+	bool bResult = DiaInventoryComponent->TryAddItem(Item);
 	if (bResult)
 	{
 		UE_LOG(LogARPG_Inventory, Verbose, TEXT("Item successfully added to inventory: %s"), *Item.ItemInstance.ItemID.ToString());
@@ -571,16 +443,9 @@ void ADiaController::ItemRemoved(const FInventorySlot& Item)
 		return;
 	}
 
-	UHUDWidget* HUDWidget = GetHUDWidget();
-	if (!IsValid(HUDWidget))
-	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
-		return;
-	}
-
 	//Inventory Component에서 제거 
 
-	DiaInventoryComponent->RemoveItem(Item.ItemInstance.InstanceID, HUDWidget->GetInventoryWidget());
+	DiaInventoryComponent->RemoveItem(Item.ItemInstance.InstanceID);
 }
 
 bool ADiaController::ApplyReward(const FRewardData& RewardData)
@@ -602,61 +467,36 @@ bool ADiaController::ApplyReward(const FRewardData& RewardData)
 	return false;
 }
 
-void ADiaController::ToggleInventoryVisibility(bool bVisible)
+bool ADiaController::ToggleMenuPage(const FGameplayTag& MenuPageTag)
 {
-	UHUDWidget* HUDWidget = GetHUDWidget();
-	if (!IsValid(HUDWidget))
+	UDiaCustomGameViewPort* DiaCustomGameViewPort = GetWorld() ? Cast<UDiaCustomGameViewPort>(GetWorld()->GetGameViewport()) : nullptr;
+	if (!IsValid(DiaCustomGameViewPort))
 	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
-		return;
+		return false;
 	}
 
-	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
-	if (!InventoryWidget)
+	UDiaPrimaryLayout* DiaPrimaryLayout = DiaCustomGameViewPort->GetDiaPrimaryLayout();
+	if (!IsValid(DiaPrimaryLayout))
 	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("InventoryWidget is null"));
-		return;
+		return false;
 	}
-	UEquipWidget* EquipmentWidget = HUDWidget->GetEquipmentWidget();
 
-	InventoryWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-	EquipmentWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	return DiaPrimaryLayout->ToggleMenu(MenuPageTag);
 }
 
-void ADiaController::ToggleChracterStatusVisibility(bool bVisible)
+bool ADiaController::ToggleInventoryVisibility()
 {
-	UHUDWidget* HUDWidget = GetHUDWidget();
-	if (!IsValid(HUDWidget))
-	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
-		return;
-	}
-
-	UStatusWidget* StatusWidget = HUDWidget->GetCharacterStatusWidget();
-	if (!StatusWidget)
-	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("StatusWidget is null"));
-		return;
-	}
-
-	StatusWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	return ToggleMenuPage(FDiaGameplayTags::Get().UI_MenuPage_Inventory);
 }
 
-void ADiaController::ToggleSkillPanelVisibility(bool bVisible)
+bool ADiaController::ToggleCharacterStatusVisibility()
 {
-	UHUDWidget* HUDWidget = GetHUDWidget();
-	if (!IsValid(HUDWidget))
-	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
-		return;
-	}
-	USkillPanelWidget* SkillPanelWidget = Cast<USkillPanelWidget>(HUDWidget->FindWidgetByName("SkillPanelWidget"));
-	if (!SkillPanelWidget)
-	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("SkillPanelWidget is null"));
-		return;
-	}
-	SkillPanelWidget->SetVisibility((bVisible) ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	return ToggleMenuPage(FDiaGameplayTags::Get().UI_MenuPage_Character);
+}
+
+bool ADiaController::ToggleSkillPanelVisibility()
+{
+	return ToggleMenuPage(FDiaGameplayTags::Get().UI_MenuPage_Skill);
 }
 
 void ADiaController::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
@@ -669,38 +509,6 @@ void ADiaController::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotInde
 	}
 
 	HUDWidget->RegisteSkillOnQuickSlotWidget(SkillID, SlotIndex);
-}
-
-void ADiaController::RegisteSkillPannelWidget(const USkillObject* SkillData)
-{
-	UHUDWidget* HUDWidget = GetHUDWidget();
-	if (!IsValid(HUDWidget))
-	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("RegisteSkillPannelWidget HUDWidget is null"));
-		return;
-	}
-	if (!IsValid(SkillData))
-	{
-		UE_LOG(LogARPG_Inventory, Display, TEXT("SkillData is invalid"));
-		return;
-	}
-	HUDWidget->RegisteSkillPannelWidget(SkillData);
-}
-
-void ADiaController::RegisteSkillPannelWidget(const TArray<USkillObject*>& SkillDataList)
-{
-	UHUDWidget* HUDWidget = GetHUDWidget();
-	if (!IsValid(HUDWidget))
-	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("RegisteSkillPannelWidget HUDWidget is null"));
-		return;
-	}
-	if (SkillDataList.Num() == 0)
-	{
-		UE_LOG(LogARPG_Inventory, Display, TEXT("SkillDataList is empty"));
-		return;
-	}
-	HUDWidget->RegisteSkillPannelWidget(SkillDataList);
 }
 
 bool ADiaController::HandlePrimaryClick()
@@ -979,54 +787,25 @@ void ADiaController::SetMenuSystemVisibility(bool bVisible)
 
 void ADiaController::ToggleMenuSystemVisibility()
 {
-	const bool bIsVisible = IsValid(MenuSystemWidget) && MenuSystemWidget->GetVisibility() == ESlateVisibility::Visible;
-	SetMenuSystemVisibility(!bIsVisible);
-}
-
-ESlateVisibility ADiaController::GetInventoryVisibility() const
-{
-	const UHUDWidget* const HUDWidget = GetHUDWidget();
-	if (!IsValid(HUDWidget))
+	UDiaCustomGameViewPort* DiaCustomGameViewPort = GetWorld() ? Cast<UDiaCustomGameViewPort>(GetWorld()->GetGameViewport()) : nullptr;
+	if (!IsValid(DiaCustomGameViewPort))
 	{
-		if (ShouldLogControllerWarning(this, TEXT("GetInventoryVisibility_HUDWidgetNull")))
-		{
-			UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
-		}
-		return ESlateVisibility::Collapsed;
+		return ;
 	}
 
-	UMainInventory* InventoryWidget = HUDWidget->GetInventoryWidget();
-	if (!InventoryWidget)
+	UDiaPrimaryLayout* DiaPrimaryLayout = DiaCustomGameViewPort->GetDiaPrimaryLayout();
+	if (!IsValid(DiaPrimaryLayout))
 	{
-		if (ShouldLogControllerWarning(this, TEXT("GetInventoryVisibility_InventoryWidgetNull")))
-		{
-			UE_LOG(LogARPG_Inventory, Warning, TEXT("InventoryWidget is null"));
-		}
-		return ESlateVisibility::Collapsed;
+		return ;
 	}
 
-	return InventoryWidget->GetVisibility();
-}
-
-ESlateVisibility ADiaController::GetWidgetVisibility(const FName& FoundName) const
-{
-	UHUDWidget* const HUDWidget = GetHUDWidget();
-	if (!IsValid(HUDWidget))
+	if (DiaPrimaryLayout->IsMainMenuOpen())
 	{
-		if (ShouldLogControllerWarning(this, TEXT("GetWidgetVisibility_HUDWidgetNull")))
-		{
-			UE_LOG(LogARPG_Inventory, Warning, TEXT("HUDWidget is null"));
-		}
-		return ESlateVisibility::Collapsed;
+		DiaPrimaryLayout->CloseMenu();
 	}
-	UUserWidget* FoundWidget = HUDWidget->FindWidgetByName(FoundName);
-	if (!IsValid(FoundWidget))
+	else
 	{
-		if (ShouldLogControllerWarning(this, *FString::Printf(TEXT("GetWidgetVisibility_%s_NotFound"), *FoundName.ToString())))
-		{
-			UE_LOG(LogARPG_Inventory, Warning, TEXT("Widget with name '%s' not found in HUDWidget"), *FoundName.ToString());
-		}
-		return ESlateVisibility::Collapsed;
+		const bool bIsVisible = IsValid(MenuSystemWidget) && MenuSystemWidget->GetVisibility() == ESlateVisibility::Visible;
+		SetMenuSystemVisibility(!bIsVisible);
 	}
-	return FoundWidget->GetVisibility();
 }

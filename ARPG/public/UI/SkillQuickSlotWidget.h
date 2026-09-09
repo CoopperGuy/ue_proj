@@ -9,6 +9,8 @@
 class USkillQuickSlot;
 class UAbilitySystemComponent;
 class UProgressBar;
+class ADiaBaseCharacter;
+class ADiaController;
 /**
  * 
  */
@@ -20,6 +22,7 @@ class ARPG_API USkillQuickSlotWidget : public UUserWidget
 	
 public:
 	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	void UpdateSkillSlot(int32 SlotIndex, int32 SkillID);
@@ -31,7 +34,12 @@ public:
 protected:
 	
 private:
-		UPROPERTY(meta = (BindWidget))
+	bool TryInitializeFromPlayer();
+	void BindPlayerASCReadyEvent();
+	void UnbindPlayerASCReadyEvent();
+	void HandlePlayerASCReady(ADiaBaseCharacter* PlayerCharacter, UAbilitySystemComponent* AbilitySystem);
+
+	UPROPERTY(meta = (BindWidget))
 	UProgressBar* ExpBar;
 
 	UPROPERTY(meta = (BindWidget))
@@ -51,4 +59,8 @@ private:
 	UPROPERTY()
 	TWeakObjectPtr<UAbilitySystemComponent> CachedASC;
 
+	UPROPERTY(Transient)
+	TWeakObjectPtr<ADiaController> BoundPlayerController;
+
+	FDelegateHandle PlayerASCReadyDelegateHandle;
 };

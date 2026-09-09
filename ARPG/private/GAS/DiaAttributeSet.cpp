@@ -208,30 +208,7 @@ bool UDiaAttributeSet::TranslateAttributeTagToAttribute(const FGameplayTag& Attr
 		MakeAttributeTagMap();
 	}
 
-	FGameplayTag AttributeGameplayTag;
-	FString Parse = AttributeTag.ToString();
-	TArray<FString> Parts;
-	Parse.ParseIntoArray(Parts, TEXT("."));
-	
-	if (Parts.Num() == 0)
-	{
-		return false;
-	}
-	
-	//Size를 판별해서 Attributeset.TagName으로 변환한다. (쉽게 서칭하기)
-	//일반적인 세팅은 Item.Option.Flat.(Name)이다.
-	if (Parts.Num() > 3)
-	{
-		FString OptionAttribute = Parts[3];
-		FString TagName =  FString::Printf(TEXT("AttributeSet.%s"), *OptionAttribute);
-		AttributeGameplayTag = FGameplayTag::RequestGameplayTag(FName(*TagName));
-	}
-	else
-	{
-		AttributeGameplayTag = AttributeTag;
-	}
-		
-	const FGameplayAttribute* Found = AttributeTagMap.Find(AttributeGameplayTag);
+	const FGameplayAttribute* Found = AttributeTagMap.Find(AttributeTag);
 	if (Found)
 	{
 		OutAttribute = *Found;
@@ -275,16 +252,30 @@ void UDiaAttributeSet::MakeAttributeTagMap()
 	{
 		return;
 	}
-	
-	for (TFieldIterator<FStructProperty> It(UDiaAttributeSet::StaticClass()); It; ++It)
-	{
-		FStructProperty* Property = *It;
-		if (Property && Property->Struct == FGameplayAttributeData::StaticStruct())
-		{
-			FString TagName =  FString::Printf(TEXT("AttributeSet.%s"), *Property->GetName());
-			FGameplayTag AttributeTag = FGameplayTag::RequestGameplayTag(FName(*TagName));
-			FGameplayAttribute Attribute(Property);
-			AttributeTagMap.Add(AttributeTag, Attribute);
-		}
-	}
+
+	AttributeTagMap.Reserve(22);
+
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_Level.GetTag(), GetLevelAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_Health.GetTag(), GetHealthAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_MaxHealth.GetTag(), GetMaxHealthAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_Mana.GetTag(), GetManaAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_MaxMana.GetTag(), GetMaxManaAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_Exp.GetTag(), GetExpAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_MaxExp.GetTag(), GetMaxExpAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_Strength.GetTag(), GetStrengthAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_Dexterity.GetTag(), GetDexterityAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_Intelligence.GetTag(), GetIntelligenceAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_AttackPower.GetTag(), GetAttackPowerAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_Defense.GetTag(), GetDefenseAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_DamageIncreaseOption.GetTag(), GetDamageIncreaseOptionAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_MovementSpeed.GetTag(), GetMovementSpeedAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_CritChance.GetTag(), GetCritChanceAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_CritDamage.GetTag(), GetCritDamageAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::AttributeSet_CooldownReduction.GetTag(), GetCooldownReductionAttribute());
+
+	AttributeTagMap.Add(DiaGameplayTags::ItemOption_CooldownReduction.GetTag(), GetCooldownReductionAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::ItemOption_MaxHealth.GetTag(), GetMaxHealthAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::ItemOption_MovementSpeed.GetTag(), GetMovementSpeedAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::ItemOption_CritChance.GetTag(), GetCritChanceAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::ItemOption_DamageIncreaseOption.GetTag(), GetDamageIncreaseOptionAttribute());
 }

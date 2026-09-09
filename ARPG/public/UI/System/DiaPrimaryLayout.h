@@ -11,6 +11,8 @@
 #include "Logging/ARPGLogChannels.h"
 #include "DiaPrimaryLayout.generated.h"
 
+class UHUDWidget;
+class UDiaMainMenuWorkspace;
 /**
  * 
  */
@@ -23,78 +25,44 @@ public:
 	FGameplayTag DefaultHudTag;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Layout")
 	FGameplayTag DefaultModelTag;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Layout")
+	FGameplayTag DefaultMenuTag;
 
-	UCommonActivatableWidgetStack* GetLayerByTag(const FGameplayTag InTag) const;
-	void PopTopFromLayer(const FGameplayTag InTag);
+	UCommonActivatableWidgetStack* GetLayerByTag(const FGameplayTag& InTag) const;
+	void PopTopFromLayer(const FGameplayTag& InTag);
+	UCommonActivatableWidget* PushToLayer(const FGameplayTag& InTag, TSubclassOf<UCommonActivatableWidget> WidgetClass);
+	UCommonActivatableWidget* OpenMenuPage(const FGameplayTag& UITag);
+	void CloseMenu();
+	UCommonActivatableWidget* GetTopWidgetFromLayer(const FGameplayTag& InTag) const;
+	UHUDWidget* GetHUDWidget() const;
+
+	bool ToggleMenu(const FGameplayTag& UITag);
 
 	void InitLayers();
 	void DisableLayers();
+
+	bool IsMainMenuOpen() const;
 protected:
 	void NativeConstruct() override;
+	UDiaMainMenuWorkspace* GetActiveMenuWorkspace() const;
+	UDiaMainMenuWorkspace* GetOrCreateMenuWorkspace();
+	void SetHUDInteractionEnabled(bool bEnabled);
 protected:
 	UPROPERTY(meta = (BindWidget), EditAnywhere, BlueprintReadWrite, Category = "Layout")
 	UCommonActivatableWidgetStack* HudLayer;
 	UPROPERTY(meta = (BindWidget), EditAnywhere, BlueprintReadWrite, Category = "Layout")
-	UCommonActivatableWidgetStack* ModelLayer;
+	UCommonActivatableWidgetStack* ModalLayer;
+	UPROPERTY(meta = (BindWidget), EditAnywhere, BlueprintReadWrite, Category = "Layout")
+	UCommonActivatableWidgetStack* MenuLayer;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Layout")
 	TMap<FGameplayTag, UCommonActivatableWidgetStack*> HudWidgets;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Class")
+	TSubclassOf<UCommonActivatableWidget> DefaultHudWidgetClass;
 
-public:
-	template<class T>
-	T* PushToHudLayer(const FGameplayTag InTag, TSubclassOf<UCommonActivatableWidget> WidgetClass)
-	{
-		if (!this->IsInViewport())
-		{
-			this->AddToViewport();
-		}
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Class")
+	TSubclassOf<UCommonActivatableWidget> DefaultMenuWidgetClass;
 
-		UE_LOG(LogARPG, Warning, TEXT("PushToHudLayer called with tag: %s"), *InTag.ToString());
-		if (!WidgetClass)
-		{
-			return nullptr;
-		}
-
-		UCommonActivatableWidgetStack* Layer = GetLayerByTag(InTag);
-		if (!Layer)
-		{
-			UE_LOG(LogARPG, Warning, TEXT("PushToHudLayer No layer found for tag: %s"), *InTag.ToString());
-			return nullptr;
-		}
-
-		T* Widget = Cast<T>(Layer->AddWidget(WidgetClass));
-		if(!Widget)
-		{
-			UE_LOG(LogARPG, Warning, TEXT("PushToHudLayer Failed to create widget of class: %s"), *WidgetClass->GetName());
-			return nullptr;
-		}
-
-		// 레이어 가시성 확보
-		Layer->SetVisibility(ESlateVisibility::Visible);
-
-		// 위젯 가시성 설정
-		Widget->SetVisibility(ESlateVisibility::Visible);
-
-
-		UCommonActivatableWidget* Active = Layer->GetActiveWidget();
-		UE_LOG(LogARPG, Warning, TEXT("ActiveWidget after AddWidget: %s"),
-			Active ? *Active->GetName() : TEXT("NULL"));
-		UE_LOG(LogARPG, Warning, TEXT("Widget valid: %s, InViewport: %s"),
-			Widget ? TEXT("YES") : TEXT("NO"),
-			this->IsInViewport() ? TEXT("YES") : TEXT("NO"));
-
-
-		// 이미 이 위젯이 레이어에 있는지 확인
-		if (Layer->GetActiveWidget() == Widget)
-		{
-			UE_LOG(LogARPG, Warning, TEXT("PushToHudLayer Widget of class %s is already active in layer with tag: %s"), *WidgetClass->GetName(), *InTag.ToString());
-			return Widget;
-		}
-
-
-
-	
-		UE_LOG(LogARPG, Warning, TEXT("PushToHudLayer Widget of class %s pushed to layer with tag: %s"), *WidgetClass->GetName(), *InTag.ToString());
-		return Widget;
-	}
+	UPROPERTY(Transient)
+	TObjectPtr<UHUDWidget> HUDWidget;
 };

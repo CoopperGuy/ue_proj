@@ -510,8 +510,24 @@ USkillObject* UDiaSkillManagerComponent::GetMutableSkillObjectBySkillID(int32 Sk
 	return nullptr;
 }
 
+bool UDiaSkillManagerComponent::CanActivateAbilityBySkillID(int32 SkillID)
+{
+	if (!IsValid(ActivationService))
+	{
+		return false;
+	}
+
+	const USkillObject* SkillObj = GetSkillObjectBySkillID(SkillID);
+	return ActivationService->CanActivateSkill(SkillID, Cast<ADiaBaseCharacter>(GetOwner()), SkillObj);
+}
+
 bool UDiaSkillManagerComponent::TryActivateAbilityBySkillID(int32 SkillID)
 {
+	if (!IsValid(ActivationService))
+	{
+		return false;
+	}
+
 	const USkillObject* SkillObj = GetSkillObjectBySkillID(SkillID);
 	return ActivationService->TryActivateSkill(SkillID, Cast<ADiaBaseCharacter>(GetOwner()), SkillObj);
 }

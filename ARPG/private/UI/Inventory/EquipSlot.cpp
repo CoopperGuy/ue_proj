@@ -136,15 +136,21 @@ bool UEquipSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
 		return false;
 	}
 
+	return HandleInventoryDrop(ItemDragOp->ItemData, ItemDragOp->DragType,
+		ItemDragOp->SourceWidget, ItemDragOp->SourceInventoryWidget);
+}
+
+bool UEquipSlot::HandleInventoryDrop(const FInventorySlot& ItemData, EItemDragDropType DragType,
+	UItemWidget* SourceWidget, UMainInventory* SourceInventoryWidget)
+{
 	//같은 슬롯 타입이면 가능하다. (장비인지도 판별 가능)
 	UItemSubsystem* ItemSubsystem = GetGameInstance()->GetSubsystem<UItemSubsystem>();
 	if (!ItemSubsystem)
 	{
-		UE_LOG(LogARPG, Warning, TEXT("EquipSlot: ItemSubsystem is null."));
 		return false;
 	}
 
-	EEquipmentSlot EquipSlot = ItemSubsystem->GetEquipmentSlot(ItemDragOp->ItemData.ItemInstance);
+	EEquipmentSlot EquipSlot = ItemSubsystem->GetEquipmentSlot(ItemData.ItemInstance);
 	if (!CheckEquipSlot(EquipSlot))
 	{
 		UE_LOG(LogARPG, Warning, TEXT("EquipSlot: Dropped item does not match equip slot type. Expected: %s, Got: %s"), *UEnum::GetValueAsString(SlotType), *UEnum::GetValueAsString(EquipSlot));
@@ -152,27 +158,24 @@ bool UEquipSlot::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent&
 	}
 
 	//인벤토리에서 온 경우에만 가능.
-	if (ItemDragOp->DragType == EItemDragDropType::EIDT_Inventory)
+	if (DragType == EItemDragDropType::EIDT_Inventory)
 	{
-		UMainInventory* SourceInventoryWidget = ItemDragOp->SourceInventoryWidget;
-		if (!IsValid(SourceInventoryWidget) && IsValid(ItemDragOp->SourceWidget))
+		if (!IsValid(SourceInventoryWidget) && IsValid(SourceWidget))
 		{
-			SourceInventoryWidget = ItemDragOp->SourceWidget->GetTypedOuter<UMainInventory>();
+			SourceInventoryWidget = SourceWidget->GetTypedOuter<UMainInventory>();
 		}
 		if (!IsValid(SourceInventoryWidget))
 		{
-			UE_LOG(LogARPG, Warning, TEXT("EquipSlot: Source inventory widget not found."));
-			if (IsValid(ItemDragOp->SourceWidget))
+			if (IsValid(SourceWidget))
 			{
-				ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
+				SourceWidget->SetRenderOpacity(1.0f);
 			}
 			return false;
 		}
 
-		return AddItemFromInventory(ItemDragOp->ItemData, ItemDragOp->SourceWidget, SourceInventoryWidget);
+		return AddItemFromInventory(ItemData, SourceWidget, SourceInventoryWidget);
 	}
 
-	UE_LOG(LogARPG, Warning, TEXT("EquipSlot: Unsupported drag type dropped on equip slot. Expected Inventory, Got: %d"), static_cast<int32>(ItemDragOp->DragType));
 	return false;
 }
 
@@ -183,117 +186,33 @@ void UEquipSlot::HandleItemEquipped(const FEquippedItem& Item)
 
 bool UEquipSlot::AddItem(const FInventorySlot& ItemInstance, UItemWidget* ItemWidget, int32 PosY, int32 PosX)
 {
-	if(!IsValid(ItemWidget))
-	{
-		return false;
-	}
-
-	SetItemWidget(ItemInstance);
-
-	//장착한다는 deleagte broadcast 실행
-	HandleItemEquipped(FEquippedItem::FromInventorySlot(ItemInstance));
-
-	//인벤토리에서 제거해야한다
-	//인벤 델리게이트 실행하자.
-	if (InventoryComponent.IsValid())
-	{
-		InventoryComponent.Get()->OnItemRemoved.Broadcast(ItemInstance.ItemInstance.InstanceID);
-	}	
-	return true;
+	return false;
 }
 
 bool UEquipSlot::AddItemFromInventory(const FInventorySlot& ItemInstance, UItemWidget* ItemWidget, UMainInventory* SourceInventoryWidget)
 {
-	auto AddEquipDebugEvent = [this](const FString& Message, bool bPassed)
-	{
-		if (EquippementComponent.IsValid())
-		{
-			EquippementComponent->AddDebugEvent(Message, bPassed);
-		}
-	};
 
-	if (!IsValid(ItemWidget) || !IsValid(SourceInventoryWidget))
-	{
-		AddEquipDebugEvent(TEXT("Equip failed: invalid item widget or source inventory."), false);
+	if (!InventoryComponent.IsValid() || !EquippementComponent.IsValid())
 		return false;
-	}
-
-	if (!InventoryComponent.IsValid())
-	{
-		UE_LOG(LogARPG, Warning, TEXT("EquipSlot: InventoryComponent is not valid."));
-		AddEquipDebugEvent(TEXT("Equip failed: inventory component is invalid."), false);
-		ItemWidget->SetRenderOpacity(1.0f);
-		return false;
-	}
 
 	UItemWidget* CurrentItemWidget = GetItemWidget();
-	const bool bHasCurrentItem = IsValid(CurrentItemWidget) && !CurrentItemWidget->GetItemInfo().IsEmpty();
-	AddEquipDebugEvent(FString::Printf(TEXT("Equip request: %s -> %s%s"),
-		*ItemInstance.ItemInstance.ItemID.ToString(),
-		*UEnum::GetValueAsString(SlotType),
-		bHasCurrentItem ? TEXT(" with replacement") : TEXT("")), true);
+	const bool bHasCurrentItem = EquippementComponent->GetEquippedItem(SlotType) == nullptr ? false : true;
+	const FInventorySlot ItemInfo = ItemInstance;
 
-	if (!bHasCurrentItem)
+	if (bHasCurrentItem)
 	{
-		if (!InventoryComponent->RemoveItem(ItemInstance.ItemInstance.InstanceID, SourceInventoryWidget))
+		// 새 아이템의 인벤토리 공간을 먼저 비워야 기존 장비가 되돌아갈 수 있다.
+		FInventorySlot PrevItem;
+		if (!EquippementComponent->TryUnEquipToInventory(SlotType, PrevItem))
 		{
-			UE_LOG(LogARPG, Warning, TEXT("EquipSlot: Failed to remove item from inventory before equipping. InstanceID: %s"),
-				*ItemInstance.ItemInstance.InstanceID.ToString());
-			AddEquipDebugEvent(FString::Printf(TEXT("Inventory remove failed: %s"),
-				*ItemInstance.ItemInstance.ItemID.ToString()), false);
-			ItemWidget->SetRenderOpacity(1.0f);
 			return false;
 		}
-
-		AddEquipDebugEvent(FString::Printf(TEXT("Inventory remove passed: %s"),
-			*ItemInstance.ItemInstance.ItemID.ToString()), true);
-		SetItemWidget(ItemInstance);
-		HandleItemEquipped(FEquippedItem::FromInventorySlot(ItemInstance));
-		return true;
 	}
 
-	const FInventorySlot PreviousItem = CurrentItemWidget->GetItemInfo();
-
-	// 새 아이템의 인벤토리 공간을 먼저 비워야 기존 장비가 되돌아갈 수 있다.
-	if (!InventoryComponent->RemoveItem(ItemInstance.ItemInstance.InstanceID, SourceInventoryWidget))
-	{
-		UE_LOG(LogARPG, Warning, TEXT("EquipSlot: Failed to remove new item from inventory. InstanceID: %s"),
-			*ItemInstance.ItemInstance.InstanceID.ToString());
-		AddEquipDebugEvent(FString::Printf(TEXT("Inventory remove failed: %s"),
-			*ItemInstance.ItemInstance.ItemID.ToString()), false);
-		ItemWidget->SetRenderOpacity(1.0f);
+	if (!EquippementComponent->TryEquipFromInventory(ItemInfo, SlotType))
 		return false;
-	}
 
-	AddEquipDebugEvent(FString::Printf(TEXT("Inventory remove passed: %s"),
-		*ItemInstance.ItemInstance.ItemID.ToString()), true);
-	if (!InventoryComponent->TryAddItem(PreviousItem, SourceInventoryWidget))
-	{
-		UE_LOG(LogARPG, Warning, TEXT("EquipSlot: Failed to return previous item to inventory. Rollback new item. PreviousID: %s"),
-			*PreviousItem.ItemInstance.InstanceID.ToString());
-		AddEquipDebugEvent(FString::Printf(TEXT("Previous return failed: %s"),
-			*PreviousItem.ItemInstance.ItemID.ToString()), false);
-		InventoryComponent->TryAddItem(ItemInstance, SourceInventoryWidget);
-		AddEquipDebugEvent(FString::Printf(TEXT("Rollback attempted: %s"),
-			*ItemInstance.ItemInstance.ItemID.ToString()), false);
-		return false;
-	}
-
-	AddEquipDebugEvent(FString::Printf(TEXT("Previous return passed: %s"),
-		*PreviousItem.ItemInstance.ItemID.ToString()), true);
-	if (EquippementComponent.IsValid())
-	{
-		EquippementComponent->UnEquipItem(SlotType);
-	}
-	else
-	{
-		ClearItemWidget();
-	}
-
-	SetItemWidget(ItemInstance);
-	HandleItemEquipped(FEquippedItem::FromInventorySlot(ItemInstance));
-	AddEquipDebugEvent(FString::Printf(TEXT("Replacement equip finished: %s"),
-		*ItemInstance.ItemInstance.ItemID.ToString()), true);
+	SetItemWidget(ItemInfo);
 
 	return true;
 }

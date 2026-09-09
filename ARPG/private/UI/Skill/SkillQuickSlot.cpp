@@ -14,6 +14,7 @@
 
 void USkillQuickSlot::NativeConstruct()
 {
+    Super::NativeConstruct();
     if (skillParamIconName.IsNone())
     {
         skillParamIconName = FName("SkillIcon");
@@ -42,9 +43,9 @@ void USkillQuickSlot::NativeConstruct()
             SkillCoolDownMateiral = UMaterialInstanceDynamic::Create(baseMaterial, this);
             SkillCoolTime->SetBrushFromMaterial(SkillCoolDownMateiral);
         }
+        SkillCoolTime->SetVisibility(ESlateVisibility::Collapsed);
     }
 
-	SkillCoolTime->SetVisibility(ESlateVisibility::Collapsed);
     UpdateCoolDownPercentage(0.f);
 }
 

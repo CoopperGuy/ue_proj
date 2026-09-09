@@ -9,26 +9,48 @@
 
 #include "Widgets/CommonActivatableWidgetContainer.h"
 
-#include "Engine/Engine.h"
-
 #include "UI/DragDrop/ItemDragDropOperation.h"
 #include "UI/System/DiaPrimaryLayout.h"
 #include "UI/DiaCaution.h"
 #include "UI/Item/ItemWidget.h"
 
+#include "Engine/Engine.h"
+
 void UDiaCustomGameViewPort::Init(struct FWorldContext& WorldContext, UGameInstance* OwningGameInstance, bool bCreateNewAudioDevice)
 {
 	Super::Init(WorldContext, OwningGameInstance, bCreateNewAudioDevice);
+}
 
-	UClass* WidgetClass = LoadClass<UDiaPrimaryLayout>(nullptr, TEXT("/Game/UI/System/WBP_DiaPrimaryLayOut.WBP_DiaPrimaryLayOut_C"));
-	if (WidgetClass)
+
+UDiaPrimaryLayout* UDiaCustomGameViewPort::CreatePrimaryLayout(APlayerController* OwningPlayer)
+{
+	if (!IsValid(OwningPlayer))
 	{
-		DiaPrimaryLayout = CreateWidget<UDiaPrimaryLayout>(OwningGameInstance, WidgetClass);
-		DiaPrimaryLayout->InitLayers();
-		DiaPrimaryLayout->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-		DiaPrimaryLayout->AddToViewport();
+		return nullptr;
 	}
 
+	if (IsValid(DiaPrimaryLayout))
+	{
+		DiaPrimaryLayout->SetOwningPlayer(OwningPlayer);
+		return DiaPrimaryLayout;
+	}
+
+	UClass* WidgetClass = LoadClass<UDiaPrimaryLayout>(nullptr, TEXT("/Game/UI/System/WBP_DiaPrimaryLayOut.WBP_DiaPrimaryLayOut_C"));
+	if (!WidgetClass)
+	{
+		return nullptr;
+	}
+
+	DiaPrimaryLayout = CreateWidget<UDiaPrimaryLayout>(OwningPlayer, WidgetClass);
+	if (!IsValid(DiaPrimaryLayout))
+	{
+		return nullptr;
+	}
+
+	DiaPrimaryLayout->InitLayers();
+	DiaPrimaryLayout->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+	DiaPrimaryLayout->AddToViewport();
+	return DiaPrimaryLayout;
 }
 
 void UDiaCustomGameViewPort::Draw(FViewport* InViewport, FCanvas* SceneCanvas)

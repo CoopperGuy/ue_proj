@@ -6,13 +6,6 @@
 
 #include "GAS/DiaGameplayTags.h"
 
-#include "Controller/DiaController.h"
-
-#include "GameMode/DungeonGameMode.h"
-
-#include "UI/HUDWidget.h"
-#include "UI/Item/ItemWidget.h"
-#include "UI/Inventory/MainInventory.h"
 #include "System/ItemSubsystem.h"
 #include "System/DiaSaveGame.h"
 #include "Utils/InventoryUtils.h"
@@ -29,38 +22,20 @@ void UDiaInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	OnItemRemoved.AddDynamic(this, &UDiaInventoryComponent::HandleItemRemoved);
 }
 
-void UDiaInventoryComponent::HandleItemRemoved(const FGuid& ItemID)
+bool UDiaInventoryComponent::TryAddItem(const FInventorySlot& ItemData)
 {
-	//Inventory UIÎ•?Í∞Ä?∏Ïò®??
-	ADungeonGameMode* GM = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());
-	if (!GM) return;
-	UHUDWidget* HUD = GM->GetHUDWidget();
-	if (!HUD) return;
-	UMainInventory* InvenWidget = HUD->GetInventoryWidget();
-	if (!InvenWidget) return;
-	//?ÑÏù¥?úÏùÑ ?úÍ±∞?úÎã§.
-
-	RemoveItem(ItemID, InvenWidget);
-}
-
-bool UDiaInventoryComponent::TryAddItem(const FInventorySlot& ItemData, UMainInventory* InvenWidget)
-{
-	if (!InvenWidget) return false;
 	UItemSubsystem* ItemSubsystem = GetWorld() && GetWorld()->GetGameInstance()
 		? GetWorld()->GetGameInstance()->GetSubsystem<UItemSubsystem>()
 		: nullptr;
 	if (!ItemSubsystem) return false;
 
-	int32 InvenIdx = 0;
 	int32 OutPosX = 0;
 	int32 OutPosY = 0;
 	const int32 ItemWidth = ItemSubsystem->GetItemWidth(ItemData.ItemInstance);
 	const int32 ItemHeight = ItemSubsystem->GetItemHeight(ItemData.ItemInstance);
 
-	//?êÎèô?ºÎ°ú Ï∞æÎäî ?®Ïàò ?∏Ï∂ú
 	if (!FInventoryUtils::FindPlaceForItem(this, ItemWidth, ItemHeight, OutPosX, OutPosY)) 
 		return false;
 
@@ -68,20 +43,14 @@ bool UDiaInventoryComponent::TryAddItem(const FInventorySlot& ItemData, UMainInv
 	NewItem.GridX = OutPosX;
 	NewItem.GridY = OutPosY;
 
-	bool res = InvenWidget->AddItem(NewItem, nullptr, OutPosY, OutPosX);
-
-	if (res)
-	{
-		FillGrid(ItemWidth, ItemHeight, OutPosX, OutPosY, NewItem.ItemInstance);
-		InventoryItems.Add(NewItem.ItemInstance.InstanceID, NewItem);
-	}
-
-	return res;
+	FillGrid(ItemWidth, ItemHeight, OutPosX, OutPosY, NewItem.ItemInstance);
+	InventoryItems.Add(NewItem.ItemInstance.InstanceID, NewItem);
+	OnItemAdded.Broadcast(NewItem);
+	return true;	
 }
 
-bool UDiaInventoryComponent::RequestMoveItem(const FGuid& InstanceID, int32 DestX, int32 DestY, UMainInventory* InventoryWidget)
+bool UDiaInventoryComponent::RequestMoveItem(const FGuid& InstanceID, int32 DestX, int32 DestY)
 {
-	// const FInventorySlot* ItemInfo = InventoryWidget->GetItemDataAtGuid(InstanceID);
 	FInventorySlot* InventoryItem = InventoryItems.Find(InstanceID);
 	if (!InventoryItem)
 	{
@@ -96,36 +65,33 @@ bool UDiaInventoryComponent::RequestMoveItem(const FGuid& InstanceID, int32 Dest
 		: nullptr;
 	if (!ItemSubsystem) return false;
 
-	
-	if (UItemWidget* ItemWidget = InventoryWidget->GetItemWidgetAtGuid(InstanceID))
+	const int32 ItemWidth = ItemSubsystem->GetItemWidth(InventoryItem->ItemInstance);
+	const int32 ItemHeight = ItemSubsystem->GetItemHeight(InventoryItem->ItemInstance);
+	const int32 OldGridX = InventoryItem->GridX;
+	const int32 OldGridY = InventoryItem->GridY;
+	if (!ClearGrid(ItemWidth, ItemHeight, OldGridX, OldGridY))
 	{
-		const int32 ItemWidth = ItemSubsystem->GetItemWidth(InventoryItem->ItemInstance);
-		const int32 ItemHeight = ItemSubsystem->GetItemHeight(InventoryItem->ItemInstance);
-		
-		if (!ClearGrid(ItemWidth, ItemHeight, InventoryItem->GridX, InventoryItem->GridY))
-		{
-			ItemWidget->SetRenderOpacity(1.0f);
-			return false;
-		}
-
-		FillGrid(ItemWidth, ItemHeight, DestX, DestY, InventoryItem->ItemInstance);
-		InventoryItem->GridX = DestX;
-		InventoryItem->GridY = DestY;
-
-		InventoryWidget->MoveContainItem(InstanceID, DestX, DestY);
-		ItemWidget->SetRenderOpacity(1.0f);
-		InventoryWidget->UpdateItemPosition(ItemWidget, DestX, DestY);
-
-#ifdef UE_EDITOR
-		UE_LOG(LogARPG, Log, TEXT("Item moved to new position: (%d, %d)"), DestX, DestY);
-#endif
-		return true;
+		return false;
 	}
 
-	return false;
+	if (!CanPlaceItemAt(ItemWidth, ItemHeight, DestX, DestY))
+	{
+		FillGrid(ItemWidth, ItemHeight, OldGridX, OldGridY, InventoryItem->ItemInstance);
+		return false;
+	}
+
+	FillGrid(ItemWidth, ItemHeight, DestX, DestY, InventoryItem->ItemInstance);
+	InventoryItem->GridX = DestX;
+	InventoryItem->GridY = DestY;
+	OnItemMoved.Broadcast(InstanceID, DestX, DestY);
+
+#ifdef UE_EDITOR
+	UE_LOG(LogARPG, Log, TEXT("Item moved to new position: (%d, %d)"), DestX, DestY);
+#endif
+	return true;
 }
 
-bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID, UMainInventory* InvenWidget)
+bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID)
 {
 	// const FInventorySlot* ItemInfo = InvenWidget->GetItemDataAtGuid(InstanceID);
 	const FInventorySlot* InventoryItem = InventoryItems.Find(InstanceID);
@@ -142,19 +108,16 @@ bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID, UMainInventory*
 
 	if (ClearGrid(ItemWidth, ItemHeight, PosX, PosY))
 	{
-		if (InvenWidget->RemoveContainItem(InstanceID))
-		{
-			InventoryItems.Remove(InstanceID);
-			UE_LOG(LogARPG, Log, TEXT("Item successfully removed from inventory: %s"), *InstanceID.ToString());
-			return true;
-		}
+		InventoryItems.Remove(InstanceID);
+		OnItemRemoved.Broadcast(InstanceID);
+		UE_LOG(LogARPG, Log, TEXT("Item successfully removed from inventory: %s"), *InstanceID.ToString());
+		return true;
 	}
 	return false;
 }
 
 void UDiaInventoryComponent::FillGrid(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY, const FItemInstance& InstanceInfo)
 {
-	// ?ÑÏù¥?úÏù¥ Ï∞®Ï??òÎäî Í∑∏Î¶¨??Í≥µÍ∞Ñ??Ï±ÑÏ?
 	for (int32 y = PosY; y < PosY + ItemHeight; ++y)
 	{
 		for (int32 x = PosX; x < PosX + ItemWidth; ++x)
@@ -167,7 +130,6 @@ void UDiaInventoryComponent::FillGrid(int32 ItemWidth, int32 ItemHeight, int32 P
 
 bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY) const
 {
-	// Í∏∞Î≥∏ Î≤îÏúÑ Í≤Ä??
 	if (PosX < 0 || PosY < 0 || 
 		PosX + ItemWidth > GetGridWidth() || 
 		PosY + ItemHeight > GetGridHeight())
@@ -178,7 +140,6 @@ bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, i
 		return false;
 	}
 
-	// Í∑∏Î¶¨?úÏóê???Ä ?êÏú† ?ÅÌÉú ?ïÏù∏
 	for (int32 Y = PosY; Y < PosY + ItemHeight; ++Y)
 	{
 		for (int32 X = PosX; X < PosX + ItemWidth; ++X)
@@ -186,7 +147,7 @@ bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, i
 			int32 CellIndex = Y * GetGridWidth() + X;
 			if (CellIndex >= 0 && CellIndex < InventoryGrid.Cells.Num())
 			{
-				if (InventoryGrid.Cells[CellIndex].bOccupied) // ?Ä???¥Î? ?êÏú†??
+				if (InventoryGrid.Cells[CellIndex].bOccupied)
 				{
 #ifdef UE_EDITOR
 					UE_LOG(LogARPG, Warning, TEXT("Cannot place item at (%d, %d) : Cell(% d, % d) is already occupied."), PosX, PosY, X, Y);
@@ -202,7 +163,6 @@ bool UDiaInventoryComponent::CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, i
 
 bool UDiaInventoryComponent::FindPlaceForItem(int32 ItemWidth, int32 ItemHeight, int32& OutPosX, int32& OutPosY) const
 {
-	// Ï¢åÏÉÅ?®Î????úÏ∞®?ÅÏúºÎ°?Î∞∞Ïπò Í∞Ä?•Ìïú ?ÑÏπò Ï∞æÍ∏∞
 	for (int32 Y = 0; Y <= GetGridHeight() - ItemHeight; ++Y)
 	{
 		for (int32 X = 0; X <= GetGridWidth() - ItemWidth; ++X)
@@ -216,7 +176,7 @@ bool UDiaInventoryComponent::FindPlaceForItem(int32 ItemWidth, int32 ItemHeight,
 		}
 	}
 
-	return false; // Î∞∞Ïπò?????àÎäî Í≥µÍ∞Ñ???ÜÏùå
+	return false; 
 }
 
 void UDiaInventoryComponent::SaveInventoryToSaveGame(UDiaSaveGame* SaveGameInstance) const

@@ -177,6 +177,12 @@ FReply UItemWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const F
 	{
 		return UWidgetBlueprintLibrary::DetectDragIfPressed(InMouseEvent, this, EKeys::LeftMouseButton).NativeReply;
 	}
+
+	if(InMouseEvent.GetEffectingButton() == EKeys::RightMouseButton)
+	{
+		OnItemRightClicked.ExecuteIfBound(this);
+		return FReply::Handled();
+	}
 	
 	return FReply::Unhandled();
 }

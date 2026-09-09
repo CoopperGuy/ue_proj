@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "GameplayTagContainer.h"
 #include "Types/ItemBase.h"
 #include "Types/DiaItemOptionRow.h"
 #include "DiaController.generated.h"
@@ -17,12 +18,13 @@ class UDiaOptionManagerComponent;
 class UHUDWidget;
 class UDiaStatComponent;
 class ADiaBaseCharacter;
-class USkillObject;
 class UDiaItemDebugWidget;
 class UDiaMenuSystem;
+class UAbilitySystemComponent;
 struct FRewardData;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnTargetChanged, ADiaBaseCharacter*);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnPlayerASCReady, ADiaBaseCharacter*, UAbilitySystemComponent*);
 
 UENUM(BlueprintType)
 enum class EDiaInputRouting : uint8
@@ -48,13 +50,12 @@ public:
 	bool ApplyReward(const FRewardData& RewardData);
 	void ApplyInputRouting(EDiaInputRouting  NewMode);
 
-	void ToggleInventoryVisibility(bool bVisible);
-	void ToggleChracterStatusVisibility(bool bVisible);
-	void ToggleSkillPanelVisibility(bool bVisible);
+	bool ToggleMenuPage(const FGameplayTag& MenuPageTag);
+	bool ToggleInventoryVisibility();
+	bool ToggleCharacterStatusVisibility();
+	bool ToggleSkillPanelVisibility();
 
 	void RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex);
-	void RegisteSkillPannelWidget(const USkillObject* SkillData);
-	void RegisteSkillPannelWidget(const TArray<USkillObject*>&);
 
 	bool HandlePrimaryClick();
 
@@ -83,6 +84,7 @@ public:
 	//void BindUIToStatComponent(UDiaStatComponent* StatComponent);
 
 	void SetTarget(ADiaBaseCharacter* NewTarget);
+	void NotifyPlayerASCReady(ADiaBaseCharacter* PlayerCharacter, UAbilitySystemComponent* AbilitySystem);
 
 	UFUNCTION()
 	void OnEquipItemProgress(const FEquippedItem& Item, EEquipmentSlot SlotType);
@@ -97,18 +99,12 @@ public:
 protected:
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
-	void OnPossess(APawn* InPawn) override;
 
 	bool ApplyGoldReward(const FRewardData& RewardData);
 	bool ApplyItemReward(const FRewardData& RewardData);
 	bool ApplySkillAddReward(const FRewardData& RewardData);
 	bool ApplySkillUpgradeReward(const FRewardData& RewardData);
 	bool ApplySkillVariantReward(const FRewardData& RewardData);
-
-	void BindSkillManagerDelegates(APawn* InPawn);
-	void HandleSkillRegistered(int32 SkillID, int32 SlotIndex);
-	void HandleSkillLevelChanged(int32 SkillID, int32 NewLevel);
-	void HandleSkillVariantAdded(int32 SkillID, int32 VariantID);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UDiaInventoryComponent* DiaInventoryComponent;
@@ -123,6 +119,7 @@ protected:
 	mutable TWeakObjectPtr<UHUDWidget> CachedHUDWidget = nullptr;
 
 	FOnTargetChanged OnTargetChanged;
+	FOnPlayerASCReady OnPlayerASCReady;
 
 	UPROPERTY()
 	ADiaBaseCharacter* TargetMonster;
@@ -147,10 +144,11 @@ protected:
 
 public:
 	FORCEINLINE FOnTargetChanged& GetOnTargetChanged() { return OnTargetChanged; }
+	FORCEINLINE FOnPlayerASCReady& GetOnPlayerASCReady() { return OnPlayerASCReady; }
 	UHUDWidget* GetHUDWidget() const;
+	UDiaInventoryComponent* GetInventoryComponent() const { return DiaInventoryComponent; }
+	UDiaEquipmentComponent* GetEquipmentComponent() const { return DiaEquipmentComponent; }
 	bool IsSkillInputBlocked() const;
 	bool IsUIInputBlocked() const;
 	UDiaMenuSystem* GetMenuSystemWidget() const;
-	ESlateVisibility GetInventoryVisibility() const;
-	ESlateVisibility GetWidgetVisibility(const FName& FoundName) const;
 };

@@ -10,6 +10,8 @@
 
 #include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "GameFramework/Pawn.h"
+#include "Controller/DiaController.h"
 #include "GAS/DiaAttributeSet.h"
 #include "Logging/ARPGLogChannels.h"
 
@@ -17,16 +19,137 @@ void UStatusWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	UE_LOG(LogARPG_UI, Display, TEXT("UStatusWidget::NativeConstruct called"));
-	// PlayerController와 Pawn 가져오기
+	BindPlayerASCReadyEvent();
+	TryInitializeFromPlayer();
+}
+
+bool UStatusWidget::TryInitializeFromPlayer()
+{
 	APlayerController* PC = GetOwningPlayer();
-	if (!IsValid(PC)) return;
+	if (!IsValid(PC))
+	{
+		UnbindASC();
+		ClearStatusSetMap();
+		return false;
+	}
 
 	APawn* Pawn = PC->GetPawn();
-	if (!IsValid(Pawn)) return;
+	if (!IsValid(Pawn))
+	{
+		UnbindASC();
+		ClearStatusSetMap();
+		return false;
+	}
 
-	// AbilitySystemComponent 가져오기 및 캐싱
-	CachedASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Pawn);
-	if (!IsValid(CachedASC)) return;
+	UAbilitySystemComponent* AbilitySystem = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Pawn);
+	if (!IsValid(AbilitySystem))
+	{
+		UnbindASC();
+		ClearStatusSetMap();
+		return false;
+	}
+
+	BindASC(AbilitySystem);
+	RebuildStatusList();
+	return true;
+}
+
+void UStatusWidget::NativeDestruct()
+{
+	UnbindPlayerASCReadyEvent();
+	UnbindASC();
+	ClearStatusSetMap();
+
+	Super::NativeDestruct();
+}
+
+void UStatusWidget::BindPlayerASCReadyEvent()
+{
+	ADiaController* PlayerController = Cast<ADiaController>(GetOwningPlayer());
+	if (!IsValid(PlayerController))
+	{
+		return;
+	}
+
+	if (BoundPlayerController.Get() == PlayerController && PlayerASCReadyDelegateHandle.IsValid())
+	{
+		return;
+	}
+
+	UnbindPlayerASCReadyEvent();
+	BoundPlayerController = PlayerController;
+	PlayerASCReadyDelegateHandle = PlayerController->GetOnPlayerASCReady()
+		.AddUObject(this, &ThisClass::HandlePlayerASCReady);
+}
+
+void UStatusWidget::UnbindPlayerASCReadyEvent()
+{
+	if (ADiaController* PlayerController = BoundPlayerController.Get(); PlayerController && PlayerASCReadyDelegateHandle.IsValid())
+	{
+		PlayerController->GetOnPlayerASCReady().Remove(PlayerASCReadyDelegateHandle);
+	}
+
+	PlayerASCReadyDelegateHandle.Reset();
+	BoundPlayerController.Reset();
+}
+
+void UStatusWidget::HandlePlayerASCReady(ADiaBaseCharacter* /*PlayerCharacter*/, UAbilitySystemComponent* /*AbilitySystem*/)
+{
+	TryInitializeFromPlayer();
+}
+
+void UStatusWidget::BindASC(UAbilitySystemComponent* InASC)
+{
+	if (!IsValid(InASC))
+	{
+		UnbindASC();
+		return;
+	}
+
+	if (CachedASC.Get() == InASC && AttributeDelegateHandles.Num() > 0)
+	{
+		return;
+	}
+
+	UnbindASC();
+	CachedASC = InASC;
+
+	for (TFieldIterator<FStructProperty> It(UDiaAttributeSet::StaticClass()); It; ++It)
+	{
+		FStructProperty* Property = *It;
+		if (Property && Property->Struct == FGameplayAttributeData::StaticStruct())
+		{
+			const FGameplayAttribute Attribute(Property);
+			const FDelegateHandle Handle = InASC->GetGameplayAttributeValueChangeDelegate(Attribute)
+				.AddUObject(this, &ThisClass::OnUpdateStats);
+			AttributeDelegateHandles.Add(Attribute, Handle);
+		}
+	}
+}
+
+void UStatusWidget::UnbindASC()
+{
+	if (UAbilitySystemComponent* AbilitySystem = CachedASC.Get())
+	{
+		for (const TPair<FGameplayAttribute, FDelegateHandle>& Binding : AttributeDelegateHandles)
+		{
+			AbilitySystem->GetGameplayAttributeValueChangeDelegate(Binding.Key).Remove(Binding.Value);
+		}
+	}
+
+	AttributeDelegateHandles.Reset();
+	CachedASC.Reset();
+}
+
+void UStatusWidget::RebuildStatusList()
+{
+	ClearStatusSetMap();
+
+	UAbilitySystemComponent* AbilitySystem = CachedASC.Get();
+	if (!IsValid(AbilitySystem) || !IsValid(StatusList))
+	{
+		return;
+	}
 
 	for (TFieldIterator<FStructProperty> It(UDiaAttributeSet::StaticClass()); It; ++It)
 	{
@@ -34,11 +157,9 @@ void UStatusWidget::NativeConstruct()
 		if (Property && Property->Struct == FGameplayAttributeData::StaticStruct())
 		{
 			FString PropertyName = Property->GetName();
-			FString TagName = FString::Printf(TEXT("AttributeSet.%s"), *PropertyName);
-			FGameplayTag AttributeTag = FGameplayTag::RequestGameplayTag(FName(*TagName));
-			FGameplayAttribute Attribute(Property);
-			CachedASC->GetGameplayAttributeValueChangeDelegate(Attribute)
-				.AddUObject(this, &UStatusWidget::OnUpdateStats);
+			const FString TagName = FString::Printf(TEXT("AttributeSet.%s"), *PropertyName);
+			const FGameplayTag AttributeTag = FGameplayTag::RequestGameplayTag(FName(*TagName));
+			const FGameplayAttribute Attribute(Property);
 
 			if (IsVisibleStatusTags.Find(AttributeTag))
 			{
@@ -55,7 +176,7 @@ void UStatusWidget::NativeConstruct()
 				if (IsValid(NewStatusItemObject))
 				{
 					NewStatusItemObject->StatusName = PropertyName;
-					float InitialValue = CachedASC->GetNumericAttribute(Attribute);
+					const float InitialValue = AbilitySystem->GetNumericAttribute(Attribute);
 					NewStatusItemObject->StatusValue = FString::FromInt(FMath::RoundToInt(InitialValue));
 					StatusList->AddItem(NewStatusItemObject);
 					StatusSetMap.Add(TagName, NewStatusItemObject);
@@ -74,7 +195,7 @@ void UStatusWidget::NativeConstruct()
 					if (UStatusItemObject* ItemObj = StatusSetMap.FindRef(BaseTagName))
 					{
 						ItemObj->StatusMaxValue = FString::FromInt(
-						FMath::RoundToInt(CachedASC->GetNumericAttribute(Attribute)));
+							FMath::RoundToInt(AbilitySystem->GetNumericAttribute(Attribute)));
 						UE_LOG(LogARPG_UI, Verbose, TEXT("Set Max Value for %s to %s"), *BaseTagName, *ItemObj->StatusMaxValue);
 					}
 				}
@@ -87,7 +208,8 @@ void UStatusWidget::NativeConstruct()
 
 void UStatusWidget::OnUpdateStats(const FOnAttributeChangeData& Data)
 {
-	if (!IsValid(CachedASC)) return;
+	UAbilitySystemComponent* AbilitySystem = CachedASC.Get();
+	if (!IsValid(AbilitySystem)) return;
 
 	FString AttributeName = Data.Attribute.GetName();
 	const bool bIsMaxAttribute = (AttributeName.Find(TEXT("Max")) != INDEX_NONE);
@@ -129,7 +251,7 @@ void UStatusWidget::OnUpdateStats(const FOnAttributeChangeData& Data)
 
 			if (MaxAttribute.IsValid())
 			{
-				float MaxValue = CachedASC->GetNumericAttribute(MaxAttribute);
+				const float MaxValue = AbilitySystem->GetNumericAttribute(MaxAttribute);
 				FindStatusSet->StatusMaxValue = FString::FromInt(FMath::RoundToInt(MaxValue));
 			}
 		}
@@ -155,4 +277,14 @@ void UStatusWidget::RefreshEntryForItem(UStatusItemObject* Item)
 			break;
 		}
 	}
+}
+
+void UStatusWidget::ClearStatusSetMap()
+{
+	if (IsValid(StatusList))
+	{
+		StatusList->ClearListItems();
+	}
+
+	StatusSetMap.Reset();
 }

@@ -23,6 +23,7 @@ class ARPG_API UEquipWidget : public UUserWidget
 public:
 	void NativeConstruct() override;
 	void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	void InitializeEquipment();
 
 	void EquipItemToSlot(EEquipmentSlot SlotType, const FEquippedItem& Item);
 	UFUNCTION()

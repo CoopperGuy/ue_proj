@@ -10,7 +10,7 @@
 
 #include "Controller/DiaController.h"
 
-#include "AbilitySystemComponent.h"
+#include "GAS/DiaAbilitySystemComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/CapsuleComponent.h"
 
@@ -18,7 +18,6 @@
 
 #include "GAS/DiaGASHelper.h"
 #include "GAS/Abilities/DiaBasicAttackAbility.h"
-#include "AbilitySystemComponent.h"
 #include "System/GASSkillManager.h"
 #include "GAS/DiaAttributeSet.h"
 #include "GAS/DiaGameplayTags.h"
@@ -31,7 +30,7 @@ ADiaBaseCharacter::ADiaBaseCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 	
 	// GAS 컴포넌트 생성
-	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
+	AbilitySystemComponent = CreateDefaultSubobject<UDiaAbilitySystemComponent>(TEXT("AbilitySystemComponent"));
 
 	// AttributeSet 생성
 	AttributeSet = CreateDefaultSubobject<UDiaAttributeSet>(TEXT("AttributeSet"));
@@ -86,6 +85,7 @@ void ADiaBaseCharacter::PossessedBy(AController* NewController)
 		{
 			AbilitySystemComponent->AddSpawnedAttribute(AttributeSet);
 		}
+		NotifyPlayerASCReady();
 	}
 }
 
@@ -104,8 +104,9 @@ void ADiaBaseCharacter::OnRep_PlayerState()
 			{
 				AbilitySystemComponent->AddSpawnedAttribute(AttributeSet);
 			}
-        }
-    }
+		}
+		NotifyPlayerASCReady();
+	}
 }
 
 void ADiaBaseCharacter::EnsureAbilitySystemInitialized(AActor* OwnerActor)
@@ -135,6 +136,23 @@ void ADiaBaseCharacter::EnsureAbilitySystemInitialized(AActor* OwnerActor)
 	if (AttributeSet && !AbilitySystemComponent->GetSpawnedAttributes().Contains(AttributeSet))
 	{
 		AbilitySystemComponent->AddSpawnedAttribute(AttributeSet);
+	}
+
+	NotifyPlayerASCReady();
+}
+
+void ADiaBaseCharacter::NotifyPlayerASCReady()
+{
+	if (!IsValid(AbilitySystemComponent)
+		|| !AbilitySystemComponent->AbilityActorInfo.IsValid()
+		|| AbilitySystemComponent->AbilityActorInfo->AvatarActor.Get() != this)
+	{
+		return;
+	}
+
+	if (ADiaController* PlayerController = Cast<ADiaController>(GetController()))
+	{
+		PlayerController->NotifyPlayerASCReady(this, AbilitySystemComponent);
 	}
 }
 

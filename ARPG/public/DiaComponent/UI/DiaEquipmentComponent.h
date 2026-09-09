@@ -11,6 +11,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemUnEquipped, EEquipmentSlot, S
 
 class UEquipWidget;
 class UDiaSaveGame;
+class UDiaInventoryComponent;
+class UDiaOptionManagerComponent;
 
 USTRUCT(BlueprintType)
 struct ARPG_API FEquipmentDebugEvent
@@ -52,6 +54,9 @@ public:
 
 	void SaveEquipmentToSaveGame(UDiaSaveGame* SaveGameInstance) const;
 	void LoadEquipmentFromSaveGame(const UDiaSaveGame* SaveGameInstance);
+
+	bool TryEquipFromInventory(const FInventorySlot& InventorySlot, EEquipmentSlot SlotType);
+	bool TryUnEquipToInventory(EEquipmentSlot SlotType, FInventorySlot& OutInventorySlot);
 public:
 	FOnItemUnEquipped OnItemUnEquipped;
 private:
@@ -63,9 +68,17 @@ private:
 	TArray<FEquipmentDebugEvent> DebugEvents;
 
 	UPROPERTY()
+	TObjectPtr<UDiaInventoryComponent> InventoryComponent;
+
+	UPROPERTY()
+	TObjectPtr<UDiaOptionManagerComponent> OptionManagerComponent;
+
+	UPROPERTY()
 	int32 DebugEventSequence = 0;
 
 public:
 	FORCEINLINE const TMap<EEquipmentSlot, FEquippedItem>& GetEquipmentMap() const { return EquipmentMap; }
 	FORCEINLINE const TArray<FEquipmentDebugEvent>& GetDebugEvents() const { return DebugEvents; }
+	FORCEINLINE void SetInventoryComponent(UDiaInventoryComponent* InventoryComp) { InventoryComponent = InventoryComp; }
+	FORCEINLINE void SetOptionManagerComponent(UDiaOptionManagerComponent* OptionManagerComp) { OptionManagerComponent = OptionManagerComp; }
 };

@@ -4,8 +4,8 @@
 #include "UI/Inventory/MainInventory.h"
 #include "UI/Item/ItemWidget.h"
 #include "UI/DragDrop/ItemDragDropOperation.h"
-#include "UI/HUDWidget.h"
 #include "UI/Inventory/EquipWidget.h"
+#include "UI/Inventory/DiaInventoryPage.h"
 
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
@@ -34,11 +34,23 @@ void UMainInventory::NativeConstruct()
 	}
 }
 
+void UMainInventory::NativeDestruct()
+{
+	if (InventoryComponent.IsValid())
+	{
+		InventoryComponent->OnItemAdded.RemoveDynamic(this, &ThisClass::HandleItemAdded);
+		InventoryComponent->OnItemRemoved.RemoveDynamic(this, &ThisClass::HandleItemRemoved);
+		InventoryComponent->OnItemMoved.RemoveDynamic(this, &ThisClass::HandleItemMoved);
+		InventoryComponent->OnGoldChanged.RemoveDynamic(this, &ThisClass::HandleGoldChanged);
+	}
+
+	Super::NativeDestruct();
+}
+
 void UMainInventory::InitializeInventory()
 {
 
 	// 초기 상태는 Hidden으로 설정
-	SetVisibility(ESlateVisibility::Hidden);
 	if (!ItemSubsystem)
 	{
 		if (UGameInstance* GameInstance = GetGameInstance())
@@ -47,10 +59,26 @@ void UMainInventory::InitializeInventory()
 		}
 	}
 
+	if (!InventoryComponent.IsValid())
+	{
+		return;
+	}
+
 	GridWidth = InventoryComponent->GetGridWidth();
 	GridHeight = InventoryComponent->GetGridHeight();
 
-	CreateInventory();
+	if (InventorySlots.IsEmpty())
+	{
+		CreateInventory();
+	}
+
+	for (const TPair<FGuid, FInventorySlot>& ItemPair : InventoryComponent->GetInventoryItems())
+	{
+		if (!ItemWidgets.Contains(ItemPair.Key))
+		{
+			HandleItemAdded(ItemPair.Value);
+		}
+	}
 	UpdateGoldText(InventoryComponent->GetGold());
 }
 
@@ -71,7 +99,7 @@ bool UMainInventory::IsSlotEmpty(int32 SlotIndex) const
 bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
 {
 	// 범위 체크 추가
-	if (!FInventoryUtils::CanPlaceItemAt(InventoryComponent.Get(), ItemWidth, ItemHeight, PosX, PosY))
+	if (!FInventoryUtils::IsValidGridPosition(GridWidth, GridHeight, ItemWidth, ItemHeight, PosX, PosY))
 		return false;
 	//이미 존재하는 아이템인지 확인
 	if (ItemWidgets.Find(ItemData.ItemInstance.InstanceID))
@@ -119,6 +147,12 @@ bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 It
 			// 아이템 위젯을 맵에 저장
 			ItemWidgets.Emplace(ItemData.ItemInstance.InstanceID, ItemWidget);
 			ItemWidget->SetWidgetGridPos(PosX, PosY);
+
+			ItemWidget->OnItemRightClicked.BindLambda([this](const FInventorySlot& ItemInfo)
+			{
+					const FItemInstance& ItemInstance = ItemInfo.ItemInstance;
+					EEquipmentSlot EquipSlot = ItemSubsystem->GetEquipmentSlot(ItemInstance);
+			});
 		}
 	}
 
@@ -286,7 +320,10 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 		// 아이템 위치 업데이트
 		if (InventoryComponent.IsValid())
 		{
-			InventoryComponent->RequestMoveItem(ItemDragOp->SourceWidget->GetItemInstanceID(), NewGridX, NewGridY, this);
+			if (!InventoryComponent->RequestMoveItem(ItemDragOp->SourceWidget->GetItemInstanceID(), NewGridX, NewGridY))
+			{
+				ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
+			}
 		}
 
 		break;
@@ -307,8 +344,17 @@ bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEv
 			{
 				return false;
 			}
-			EquippementComponent->UnEquipItem(EquipSlot);
-			InventoryComponent->TryAddItem(ItemDragOp->ItemData, this);
+			if (!EquippementComponent->TryUnEquipToInventory(EquipSlot, ItemDragOp->ItemData))
+			{
+				if (IsValid(ItemDragOp->SourceWidget))
+				{
+					ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
+				}
+				return false;
+			}
+
+			//EquippementComponent->UnEquipItem(EquipSlot);
+			//InventoryComponent->TryAddItem(ItemDragOp->ItemData);
 		}
 			
 	
@@ -501,9 +547,9 @@ bool UMainInventory::IsDropOutsideAllWidgets(const FVector2D& ScreenPosition) co
 	UWidget* ParentWidget = GetParent();
 	while (ParentWidget)
 	{
-		if (UHUDWidget* HUDWidget = Cast<UHUDWidget>(ParentWidget))
+		if (UDiaInventoryPage* InventoryPage = Cast<UDiaInventoryPage>(ParentWidget))
 		{
-			if (UEquipWidget* EquipWidget = HUDWidget->GetEquipmentWidget())
+			if (UEquipWidget* EquipWidget = InventoryPage->GetEquipmentWidget())
 			{
 				FGeometry EquipGeometry = EquipWidget->GetCachedGeometry();
 				FVector2D EquipLocalPosition = EquipGeometry.AbsoluteToLocal(ScreenPosition);
@@ -524,10 +570,21 @@ bool UMainInventory::IsDropOutsideAllWidgets(const FVector2D& ScreenPosition) co
 
 void UMainInventory::SetInventoryComponent(UDiaInventoryComponent* InComponent)
 {
+	if (InventoryComponent.IsValid())
+	{
+		InventoryComponent->OnItemAdded.RemoveDynamic(this, &ThisClass::HandleItemAdded);
+		InventoryComponent->OnItemRemoved.RemoveDynamic(this, &ThisClass::HandleItemRemoved);
+		InventoryComponent->OnItemMoved.RemoveDynamic(this, &ThisClass::HandleItemMoved);
+		InventoryComponent->OnGoldChanged.RemoveDynamic(this, &ThisClass::HandleGoldChanged);
+	}
+
 	InventoryComponent = InComponent;
 
 	if (InventoryComponent.IsValid())
 	{
+		InventoryComponent->OnItemAdded.AddUniqueDynamic(this, &ThisClass::HandleItemAdded);
+		InventoryComponent->OnItemRemoved.AddUniqueDynamic(this, &ThisClass::HandleItemRemoved);
+		InventoryComponent->OnItemMoved.AddUniqueDynamic(this, &ThisClass::HandleItemMoved);
 		InventoryComponent->OnGoldChanged.AddUniqueDynamic(this, &UMainInventory::HandleGoldChanged);
 		UpdateGoldText(InventoryComponent->GetGold());
 	}
@@ -541,6 +598,32 @@ void UMainInventory::SetEquipmentComponent(UDiaEquipmentComponent* InComponent)
 void UMainInventory::HandleGoldChanged(int32 NewGoldAmount, int32 DeltaAmount)
 {
 	UpdateGoldText(NewGoldAmount);
+}
+
+void UMainInventory::HandleItemAdded(const FInventorySlot& Item)
+{
+	if (!ItemWidgets.Contains(Item.ItemInstance.InstanceID))
+	{
+		AddItem(Item, nullptr, Item.GridY, Item.GridX);
+	}
+}
+
+void UMainInventory::HandleItemRemoved(const FGuid& ItemID)
+{
+	if (ItemWidgets.Contains(ItemID))
+	{
+		RemoveContainItem(ItemID);
+	}
+}
+
+void UMainInventory::HandleItemMoved(const FGuid& ItemID, int32 GridX, int32 GridY)
+{
+	if (UItemWidget* ItemWidget = GetItemWidgetAtGuid(ItemID))
+	{
+		MoveContainItem(ItemID, GridX, GridY);
+		UpdateItemPosition(ItemWidget, GridX, GridY);
+		ItemWidget->SetRenderOpacity(1.0f);
+	}
 }
 
 void UMainInventory::UpdateGoldText(int32 NewGoldAmount)

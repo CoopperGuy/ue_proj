@@ -27,7 +27,6 @@ class ARPG_API UDiaGameplayAbility : public UGameplayAbility
 public:
 	UDiaGameplayAbility();
 
-	// Override GameplayAbility functions
 	virtual bool CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags = nullptr, const FGameplayTagContainer* TargetTags = nullptr, OUT FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
@@ -64,6 +63,9 @@ public:
 	ADiaSkillActor* SpawnCosmeticSkillActorAtTransform(TSubclassOf<ADiaSkillActor> SkillActorClass, const FTransform& SpawnTransform, bool bAttachToAvatar = false);
 	void ApplySkillDamageToActor(AActor* TargetActor, float CritMultiplier = 1.0f) const;
 
+protected:
+	const float CalculateFinalManaCost(const FGameplayAbilityActorInfo* ActorInfo) const;
+	const float CalculateFinalCooldown(const FGameplayAbilityActorInfo* ActorInfo, const float BaseCoolDown) const;
 protected:
 	// Skill data from GAS system
 	UPROPERTY(BlueprintReadOnly, Category = "Skill")

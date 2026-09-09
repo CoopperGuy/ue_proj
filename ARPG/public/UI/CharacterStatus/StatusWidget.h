@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Blueprint/UserWidget.h"
+#include "CommonActivatableWidget.h"
 #include "AttributeSet.h"
 #include "AbilitySystemComponent.h"
 #include "StatusWidget.generated.h"
@@ -12,27 +12,45 @@ class UTextBlock;
 class UStatusSet;
 class UListView;
 class UStatusItemObject;
+class ADiaBaseCharacter;
+class ADiaController;
 /**
  * 캐릭터 상태 UI 위젯 - GAS AttributeSet 기반
  */
 UCLASS()
-class ARPG_API UStatusWidget : public UUserWidget
+class ARPG_API UStatusWidget : public UCommonActivatableWidget
 {
 	GENERATED_BODY()
 	
 public:
-	// 위젯 초기화 및 AttributeSet 바인딩
-	virtual void NativeConstruct() override;
-				
 	void OnUpdateStats(const FOnAttributeChangeData& Data);
 
 	/** 변경된 아이템을 표시하는 엔트리 위젯에만 갱신 요청 (ListView는 RequestRefresh 시 setter를 다시 호출하지 않음) */
 	void RefreshEntryForItem(UStatusItemObject* Item);
 
+	void ClearStatusSetMap();
+
 protected:
-	// ASC 캐싱
-	UPROPERTY()
-	UAbilitySystemComponent* CachedASC = nullptr;
+	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
+
+	bool TryInitializeFromPlayer();
+	void BindPlayerASCReadyEvent();
+	void UnbindPlayerASCReadyEvent();
+	void HandlePlayerASCReady(ADiaBaseCharacter* PlayerCharacter, UAbilitySystemComponent* AbilitySystem);
+	void BindASC(UAbilitySystemComponent* InASC);
+	void UnbindASC();
+	void RebuildStatusList();
+
+	UPROPERTY(Transient)
+	TWeakObjectPtr<UAbilitySystemComponent> CachedASC;
+
+	TMap<FGameplayAttribute, FDelegateHandle> AttributeDelegateHandles;
+
+	UPROPERTY(Transient)
+	TWeakObjectPtr<ADiaController> BoundPlayerController;
+
+	FDelegateHandle PlayerASCReadyDelegateHandle;
 
 	UPROPERTY(meta = (BindWidget))
 	UListView* StatusList;

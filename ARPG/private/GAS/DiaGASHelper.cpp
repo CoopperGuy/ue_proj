@@ -36,6 +36,7 @@ bool UDiaGASHelper::GrantAbilityFromSkillData(UAbilitySystemComponent* ASC, cons
 	// Create ability spec with SkillID as InputID
 	FGameplayAbilitySpec AbilitySpec(AbilityClass, 1, SkillID);
 	
+	AbilitySpec.GetDynamicSpecSourceTags().AppendTags(SkillData.AbilityTags);
 	FGameplayTag CooldownTag = FDiaGameplayTags::Get().CoolDown_GetTag(SkillID);
 		
 	// Spec의 SetByCallerTagMagnitudes에 쿨다운 태그 저장 (나중에 참조용)
@@ -88,54 +89,34 @@ bool UDiaGASHelper::CanActivateAbilityBySkillID(UAbilitySystemComponent* ASC, in
 {
 	if (!ASC)
 	{
-		//UE_LOG(LogARPG, Warning, TEXT("[CanActivateAbility] ASC is null for SkillID: %d"), SkillID);
 		return false;
 	}
 
 	FGameplayAbilitySpec* AbilitySpec = GetAbilitySpecBySkillID(ASC, SkillID);
-	if (!AbilitySpec || !AbilitySpec->Ability)
+	if (!AbilitySpec)
 	{
-		//UE_LOG(LogARPG, Warning, TEXT("[CanActivateAbility] No ability spec found for SkillID: %d"), SkillID);
 		return false;
 	}
 
 	const FGameplayAbilityActorInfo* ActorInfo = ASC->AbilityActorInfo.Get();
 	if (!ActorInfo)
 	{
-		//UE_LOG(LogARPG, Warning, TEXT("[CanActivateAbility] ActorInfo is null for SkillID: %d"), SkillID);
 		return false;
 	}
 
-	AActor* OwnerActor = ActorInfo->OwnerActor.Get();
-	FString OwnerName = OwnerActor ? OwnerActor->GetName() : TEXT("Unknown");
-	FString AbilityName = GetNameSafe(AbilitySpec->Ability);
-
-	// 1. 이미 활성화 중이면 false
-	if (AbilitySpec->IsActive())
+	const UDiaGameplayAbility* AbilityInstance =
+		Cast<UDiaGameplayAbility>(AbilitySpec->GetPrimaryInstance());
+	if (!AbilityInstance)
 	{
-		//UE_LOG(LogARPG, Warning, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - Already Active"), *OwnerName, SkillID, *AbilityName);
 		return false;
 	}
 
-	// 2. Cooldown 체크 - Ability의 CheckCooldown 사용
-	bool bCanUseCooldown = AbilitySpec->Ability->CheckCooldown(AbilitySpec->Handle, ActorInfo);
-	if (!bCanUseCooldown)
-	{
-		//UE_LOG(LogARPG, Warning, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - On Cooldown"), 
-		//	*OwnerName, SkillID, *AbilityName);
-		return false;
-	}
-
-	// 3. Cost 체크 - false를 반환하면 비용을 지불할 수 없음
-	bool bCanPayCost = AbilitySpec->Ability->CheckCost(AbilitySpec->Handle, ActorInfo);
-	if (!bCanPayCost)
-	{
-		//UE_LOG(LogARPG, Warning, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - Cannot Pay Cost"), *OwnerName, SkillID, *AbilityName);
-		return false;
-	}
-
-	//UE_LOG(LogARPG, Log, TEXT("[CanActivateAbility] [%s] SkillID: %d, Ability: %s - Can Activate"), *OwnerName, SkillID, *AbilityName);
-	return true;
+	return AbilityInstance->CanActivateAbility(
+		AbilitySpec->Handle,
+		ActorInfo,
+		nullptr,
+		nullptr,
+		nullptr);
 }
 
 FGameplayAbilitySpec* UDiaGASHelper::GetAbilitySpecBySkillID(UAbilitySystemComponent* ASC, int32 SkillID)

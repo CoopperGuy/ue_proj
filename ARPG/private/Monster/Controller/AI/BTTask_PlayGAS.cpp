@@ -52,6 +52,12 @@ EBTNodeResult::Type UBTTask_PlayGAS::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 	}
 
 	// 스킬이 실제로 부여됐는지 먼저 확인
+	UDiaSkillManagerComponent* SkillManager = DiaMonster->GetSkillManagerComponent();
+	if (!IsValid(SkillManager))
+	{
+		return EBTNodeResult::Failed;
+	}
+
 	if (FGameplayAbilitySpec* Spec = UDiaGASHelper::GetAbilitySpecBySkillID(ASC, SkillID))
 	{
 		if (Spec->IsActive())
@@ -59,7 +65,7 @@ EBTNodeResult::Type UBTTask_PlayGAS::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 			return EBTNodeResult::InProgress;
 		}
 #if WITH_EDITOR
-		const bool bCan = UDiaGASHelper::CanActivateAbilityBySkillID(ASC, SkillID);
+		const bool bCan = SkillManager->CanActivateAbilityBySkillID(SkillID);
 		if (!bCan)
 		{
 			UE_LOG(LogARPG, Warning, TEXT("BTTask_PlayGAS: Cannot activate ability for SkillID %d"), SkillID);
@@ -92,7 +98,7 @@ EBTNodeResult::Type UBTTask_PlayGAS::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 		);
 
 
-		if (DiaMonster && DiaMonster->GetSkillManagerComponent() && DiaMonster->GetSkillManagerComponent()->TryActivateAbilityBySkillID(SkillID))
+		if (SkillManager->TryActivateAbilityBySkillID(SkillID))
 		{
 			return EBTNodeResult::InProgress;
 		}

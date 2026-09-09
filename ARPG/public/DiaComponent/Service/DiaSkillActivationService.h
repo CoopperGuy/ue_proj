@@ -8,6 +8,7 @@
 
 class ADiaBaseCharacter;
 class USkillObject;
+struct FGameplayAbilitySpec;
 
 /**
  * 스킬 활성화를 담당하는 Service
@@ -18,6 +19,9 @@ class ARPG_API UDiaSkillActivationService : public UObject
 	GENERATED_BODY()
 	
 public:
+	// Prepares the instance runtime before evaluating the normal GAS activation rules.
+	bool CanActivateSkill(int32 SkillID, ADiaBaseCharacter* Character, const USkillObject* SkillObj);
+
 	/**
 	 * 스킬 ID를 기반으로 스킬을 활성화합니다.
 	 * @param SkillID 활성화할 스킬 ID
@@ -26,4 +30,7 @@ public:
 	 * @return 활성화 성공 여부
 	 */
 	bool TryActivateSkill(int32 SkillID, ADiaBaseCharacter* Character, const USkillObject* SkillObj);
+
+private:
+	bool PrepareAbilityRuntime(FGameplayAbilitySpec* AbilitySpec, ADiaBaseCharacter* Character, const USkillObject* SkillObj) const;
 };

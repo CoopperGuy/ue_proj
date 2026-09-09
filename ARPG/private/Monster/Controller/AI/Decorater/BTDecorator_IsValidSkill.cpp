@@ -6,9 +6,9 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 
 #include "AbilitySystemComponent.h"
-#include "GAS/DiaGASHelper.h"
 #include "GAS/Abilities/DiaBasicAttackAbility.h"
 #include "GAS/DiaGameplayTags.h"
+#include "DiaComponent/DiaSkillManagerComponent.h"
 
 #include "System/GASSkillManager.h"
 
@@ -43,17 +43,22 @@ bool UBTDecorator_IsValidSkill::CalculateRawConditionValue(UBehaviorTreeComponen
 		if (IsValid(DiaMonster))
 		{
 			UAbilitySystemComponent* ASC = DiaMonster->GetAbilitySystemComponent();
+			if (!IsValid(ASC))
+			{
+				return false;
+			}
+
 			bool bIsStunned = ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Stunned);
 			if (bIsStunned)
 			{
 				return false;
 			}
 
-			if (ASC && SkillID != 0)
+			UDiaSkillManagerComponent* SkillManager = DiaMonster->GetSkillManagerComponent();
+			if (IsValid(SkillManager))
 			{
-				// DiaGASHelper의 CanActivateAbilityBySkillID를 사용하여
-				// IsActive, Cooldown, Cost를 모두 체크
-				return UDiaGASHelper::CanActivateAbilityBySkillID(ASC, SkillID);
+				// Prepare modifier runtime before checking cooldown, cost, and other GAS conditions.
+				return SkillManager->CanActivateAbilityBySkillID(SkillID);
 			}
 		}
 	}

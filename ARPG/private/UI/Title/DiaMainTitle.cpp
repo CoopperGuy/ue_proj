@@ -27,17 +27,17 @@ void UDiaMainTitle::NativeConstruct()
 
 	if (NewGameButton)
 	{
-		NewGameButton->OnClicked.AddDynamic(this, &UDiaMainTitle::OnNewGameClicked);
+		NewGameButton->OnClicked.AddUniqueDynamic(this, &UDiaMainTitle::OnNewGameClicked);
 	}
 
 	if (LoadGameButton)
 	{
-		LoadGameButton->OnClicked.AddDynamic(this, &UDiaMainTitle::OnLoadGameClicked);
+		LoadGameButton->OnClicked.AddUniqueDynamic(this, &UDiaMainTitle::OnLoadGameClicked);
 	}
 
 	if (SlotSelectPannel)
 	{
-		SlotSelectPannel->OnCloseSlotSelectPanel.AddDynamic(this, &UDiaMainTitle::OnSlotSelectBackClicked);
+		SlotSelectPannel->OnCloseSlotSelectPanel.AddUniqueDynamic(this, &UDiaMainTitle::OnSlotSelectBackClicked);
 	}
 }
 

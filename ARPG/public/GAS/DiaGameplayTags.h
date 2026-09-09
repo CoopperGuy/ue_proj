@@ -5,6 +5,38 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "GameplayTagsManager.h"
+#include "NativeGameplayTags.h"
+
+namespace DiaGameplayTags
+{
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_Level);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_Health);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_MaxHealth);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_Mana);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_MaxMana);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_Exp);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_MaxExp);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_Strength);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_Dexterity);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_Intelligence);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_AttackPower);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_Defense);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_DamageIncreaseOption);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_MovementSpeed);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_IncomingDamage);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_IncomingHealing);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_CritChance);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_CritDamage);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(AttributeSet_CooldownReduction);
+
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_LifeSteal);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_CooldownReduction);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_GoldFind);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_MaxHealth);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_MovementSpeed);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_CritChance);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_DamageIncreaseOption);
+}
 
 /**
  * DiaGameplayTags
@@ -122,6 +154,12 @@ public:
 	// ========================================
 	FGameplayTag UI_Layer_HUD;
 	FGameplayTag UI_Layer_Modal;
+	FGameplayTag UI_Layer_Menu;
+	FGameplayTag UI_MenuPage_Skill;
+	FGameplayTag UI_MenuPage_Inventory;
+	FGameplayTag UI_MenuPage_Character;
+	FGameplayTag UI_MenuPage_Settings;
+
 
 	// ========================================
 	// AttributeSet Tags - 기본 스탯
@@ -138,6 +176,7 @@ public:
 	FGameplayTag AttributeSet_Intelligence;		// 지능 - 기본 스탯
 	FGameplayTag AttributeSet_AttackPower;		// 공격력 - 전투 스탯
 	FGameplayTag AttributeSet_Defense;			// 방어력 - 전투 스탯
+	FGameplayTag AttributeSet_DamageIncreaseOption;
 	FGameplayTag AttributeSet_MovementSpeed;		// 이동 속도
 	FGameplayTag AttributeSet_IncomingDamage;	// 받는 피해 - 메타 스탯
 	FGameplayTag AttributeSet_IncomingHealing;	// 받는 회복 - 메타 스탯

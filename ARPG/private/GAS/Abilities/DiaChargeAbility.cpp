@@ -157,10 +157,7 @@ void UDiaChargeAbility::ApplyHitToActorsInPath(AActor* TargetActor)
 		return;
 	}
 
-	const UDiaAttributeSet* MyAttr = GetAbilitySystemComponentFromActorInfo()->GetSet<UDiaAttributeSet>();
-	const float AttackPower = MyAttr ? MyAttr->GetAttackPower() : 0.f;
-	const float BaseDamage = SkillData.BaseDamage + AttackPower;
-	ApplyDamageToASC(TargetASC, BaseDamage, 1.0f);
+	ApplyDamageToASC(TargetASC, SkillData.BaseDamage, 1.0f);
 }
 
 void UDiaChargeAbility::OnDashFinished()

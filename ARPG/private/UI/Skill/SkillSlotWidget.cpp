@@ -15,11 +15,11 @@ void USkillSlotWidget::NativeConstruct()
 
 	if (IsValid(ApplyBtn))
 	{
-		ApplyBtn->OnClicked.AddDynamic(this, &USkillSlotWidget::OnApplyButtonClicked);
+		ApplyBtn->OnClicked.AddUniqueDynamic(this, &USkillSlotWidget::OnApplyButtonClicked);
 	}
 	if (IsValid(CancelBtn))
 	{
-		CancelBtn->OnClicked.AddDynamic(this, &USkillSlotWidget::OnCancelButton);
+		CancelBtn->OnClicked.AddUniqueDynamic(this, &USkillSlotWidget::OnCancelButton);
 	}
 }
 

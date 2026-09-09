@@ -2,18 +2,17 @@
 
 
 #include "UI/Skill/SkillPanelWidget.h"
-#include "Components/ScrollBox.h"
 #include "CommonListView.h"
 
 #include "UI/Skill/SkillSlotWidget.h"
 
+#include "DiaComponent/DiaSkillManagerComponent.h"
 #include "DiaComponent/Skill/SkillObject.h"
 #include "DiaComponent/Skill/DiaSkillVariant.h"
 
 #include "Character/DiaCharacter.h"
+#include "Controller/DiaController.h"
 
-#include "DiaInstance.h"
-#include "Skill/DiaSkillManager.h"
 #include "System/GASSkillManager.h"
 #include "Logging/ARPGLogChannels.h"
 
@@ -23,9 +22,119 @@ void USkillPanelWidget::NativeConstruct()
 
 	UE_LOG(LogARPG, Log, TEXT("USkillPanelWidget::NativeConstruct - SkillPanelWidget constructed"));
 
-	InitializeSkillPanel();
+	BindPlayerASCReadyEvent();
+	TryInitializeFromPlayer();
 
-	ActiveSkillListView->OnItemClicked().AddUObject(this, &USkillPanelWidget::HandleItemClicked);
+	if (IsValid(ActiveSkillListView))
+	{
+		ActiveSkillListView->OnItemClicked().RemoveAll(this);
+		ActiveSkillListView->OnItemClicked().AddUObject(this, &USkillPanelWidget::HandleItemClicked);
+	}
+}
+
+void USkillPanelWidget::NativeDestruct()
+{
+	UnbindPlayerASCReadyEvent();
+	UnbindSkillManagerDelegates();
+
+	if (IsValid(ActiveSkillListView))
+	{
+		ActiveSkillListView->OnItemClicked().RemoveAll(this);
+	}
+
+	Super::NativeDestruct();
+}
+
+UDiaSkillManagerComponent* USkillPanelWidget::GetSkillManagerComponent() const
+{
+	const APawn* OwningPawn = GetOwningPlayerPawn();
+	return IsValid(OwningPawn) ? OwningPawn->FindComponentByClass<UDiaSkillManagerComponent>() : nullptr;
+}
+
+bool USkillPanelWidget::TryInitializeFromPlayer()
+{
+	const bool bHasRequiredWidgets = IsValid(ActiveSkillListView) && IsValid(SubSkillListView);
+	const bool bHasSkillManager = IsValid(GetSkillManagerComponent());
+
+	InitializeSkillPanel();
+	BindSkillManagerDelegates();
+
+	return bHasRequiredWidgets && bHasSkillManager;
+}
+
+void USkillPanelWidget::BindPlayerASCReadyEvent()
+{
+	ADiaController* PlayerController = Cast<ADiaController>(GetOwningPlayer());
+	if (!IsValid(PlayerController))
+	{
+		return;
+	}
+
+	if (BoundPlayerController.Get() == PlayerController && PlayerASCReadyDelegateHandle.IsValid())
+	{
+		return;
+	}
+
+	UnbindPlayerASCReadyEvent();
+	BoundPlayerController = PlayerController;
+	PlayerASCReadyDelegateHandle = PlayerController->GetOnPlayerASCReady()
+		.AddUObject(this, &ThisClass::HandlePlayerASCReady);
+}
+
+void USkillPanelWidget::UnbindPlayerASCReadyEvent()
+{
+	if (ADiaController* PlayerController = BoundPlayerController.Get(); PlayerController && PlayerASCReadyDelegateHandle.IsValid())
+	{
+		PlayerController->GetOnPlayerASCReady().Remove(PlayerASCReadyDelegateHandle);
+	}
+
+	PlayerASCReadyDelegateHandle.Reset();
+	BoundPlayerController.Reset();
+}
+
+void USkillPanelWidget::HandlePlayerASCReady(ADiaBaseCharacter* /*PlayerCharacter*/, UAbilitySystemComponent* /*AbilitySystem*/)
+{
+	TryInitializeFromPlayer();
+}
+
+void USkillPanelWidget::BindSkillManagerDelegates()
+{
+	UDiaSkillManagerComponent* SkillManager = GetSkillManagerComponent();
+	if (BoundSkillManager.Get() == SkillManager &&
+		SkillRegisteredHandle.IsValid() &&
+		SkillLevelChangedHandle.IsValid() &&
+		SkillVariantAddedHandle.IsValid())
+	{
+		return;
+	}
+
+	UnbindSkillManagerDelegates();
+
+	if (!IsValid(SkillManager))
+	{
+		return;
+	}
+
+	BoundSkillManager = SkillManager;
+
+	SkillRegisteredHandle = SkillManager->OnSkillRegistered.AddUObject(this, &ThisClass::HandleSkillRegistered);
+	SkillLevelChangedHandle = SkillManager->OnSkillLevelChanged.AddUObject(this, &ThisClass::HandleSkillLevelChanged);
+	SkillVariantAddedHandle = SkillManager->OnSkillVariantAdded.AddUObject(this, &ThisClass::HandleSkillVariantAdded);
+}
+
+void USkillPanelWidget::UnbindSkillManagerDelegates()
+{
+	if (UDiaSkillManagerComponent* SkillManager = BoundSkillManager.Get())
+	{
+		SkillManager->OnSkillRegistered.Remove(SkillRegisteredHandle);
+		SkillManager->OnSkillLevelChanged.Remove(SkillLevelChangedHandle);
+		SkillManager->OnSkillVariantAdded.Remove(SkillVariantAddedHandle);
+	}
+
+	SkillRegisteredHandle.Reset();
+	SkillLevelChangedHandle.Reset();
+	SkillVariantAddedHandle.Reset();
+	BoundSkillManager.Reset();
 }
 
 //이거 누르면 sublistview에 variants 업데이트 하기
@@ -99,26 +208,46 @@ void USkillPanelWidget::RefreshOwnedSkillVariants(int32 SkillID)
 
 void USkillPanelWidget::InitializeSkillPanel()
 {
-	UDiaInstance* DiaInstance = (GetWorld()->GetGameInstance<UDiaInstance>());
-	if (!IsValid(DiaInstance))
+	if (!IsValid(ActiveSkillListView) || !IsValid(SubSkillListView))
 	{
-		UE_LOG(LogARPG, Warning, TEXT("USkillPanelWidget::InitializeSkillPanel - DiaInstance is invalid"));
+		UE_LOG(LogARPG, Warning, TEXT("USkillPanelWidget::InitializeSkillPanel - Required list view is invalid"));
 		return;
 	}
 
-	UE_LOG(LogARPG, Log, TEXT("USkillPanelWidget::InitializeSkillPanel - DiaInstance is valid"));
+	ActiveSkillListView->ClearListItems();
+	SubSkillListView->ClearListItems();
+	RegisteredSkillInfoMap.Reset();
+	CurrentSelectedSkillID = INDEX_NONE;
+
+	UDiaSkillManagerComponent* SkillManager = GetSkillManagerComponent();
+	if (!IsValid(SkillManager))
+	{
+		UE_LOG(LogARPG, Warning, TEXT("USkillPanelWidget::InitializeSkillPanel - SkillManagerComponent is invalid"));
+		return;
+	}
+
+	RegisterSkillList(SkillManager->GetSkillIDMapping());
 }
 
-void USkillPanelWidget::ToggleSkillPanel()
+void USkillPanelWidget::HandleSkillRegistered(int32 SkillID, int32 /*SlotIndex*/)
 {
-	if (IsVisible())
+	UDiaSkillManagerComponent* SkillManager = GetSkillManagerComponent();
+	if (!IsValid(SkillManager))
 	{
-		SetVisibility(ESlateVisibility::Collapsed);
+		return;
 	}
-	else
-	{
-		SetVisibility(ESlateVisibility::Visible);
-	}
+
+	RegisterSkill(SkillManager->GetSkillObjectBySkillID(SkillID));
+}
+
+void USkillPanelWidget::HandleSkillLevelChanged(int32 SkillID, int32 NewLevel)
+{
+	UpdateSkillLevel(SkillID, NewLevel);
+}
+
+void USkillPanelWidget::HandleSkillVariantAdded(int32 SkillID, int32 VariantID)
+{
+	RegisterSkillVariant(SkillID, VariantID);
 }
 
 USkillInfoObject* USkillPanelWidget::FindActiveSkillInfoObject(int32 SkillID) const

@@ -12,12 +12,12 @@ void UDiaCaution::NativeConstruct()
     // 버튼 클릭 이벤트 바인딩
     if (ConfirmButton)
     {
-        ConfirmButton->OnClicked.AddDynamic(this, &UDiaCaution::OnClickConfirmButton);
+        ConfirmButton->OnClicked.AddUniqueDynamic(this, &UDiaCaution::OnClickConfirmButton);
     }
     
     if (CancelButton)
     {
-        CancelButton->OnClicked.AddDynamic(this, &UDiaCaution::OnClickCancelButton);
+        CancelButton->OnClicked.AddUniqueDynamic(this, &UDiaCaution::OnClickCancelButton);
     }
 
     SetVisibility(ESlateVisibility::Visible);

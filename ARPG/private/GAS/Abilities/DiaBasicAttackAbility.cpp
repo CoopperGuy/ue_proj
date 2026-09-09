@@ -1,14 +1,12 @@
 #include "GAS/Abilities/DiaBasicAttackAbility.h"
 #include "DiaBaseCharacter.h"
 #include "GAS/DiaAttributeSet.h"
-#include "GAS/Effects/DiaGameplayEffect_Damage.h"
 #include "AbilitySystemComponent.h"
 #include "Engine/World.h"
 #include "Engine/Engine.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "GameplayEffect.h"
 #include "TimerManager.h"
 #include "GameFramework/DamageType.h"
 #include "Engine/EngineTypes.h"
@@ -128,40 +126,16 @@ void UDiaBasicAttackAbility::PerformAttack()
 						UAbilitySystemComponent* TargetASC = TargetCharacter->GetAbilitySystemComponent();
 						if (TargetASC)
 						{
-							// 대미지 GameplayEffect 생성 및 적용
-							FGameplayEffectContextHandle EffectContext = GetAbilitySystemComponentFromActorInfo()->MakeEffectContext();
-							EffectContext.AddSourceObject(Character);
-							
-							// 데미지 계산
-							float FinalDamage = BaseDamage;
-							if (UAbilitySystemComponent* ASC = GetAbilitySystemComponentFromActorInfo())
+							// GAS 데미지 계산은 Exec_Damage가 전담한다.
+							// 여기서는 AttackPower를 미리 더하지 않고 기본 데미지만 전달한다.
+							ApplyDamageToASC(TargetASC, BaseDamage);
+
+							ARPG_SKILL_VLOG(TEXT("Applied GAS damage. Target=%s, BaseDamage=%.1f"), *HitActor->GetName(), BaseDamage);
+
+							if (GEngine)
 							{
-								if (const UDiaAttributeSet* AttributeSet = Cast<UDiaAttributeSet>(ASC->GetAttributeSet(UDiaAttributeSet::StaticClass())))
-								{
-									FinalDamage += AttributeSet->GetAttackPower();
-								}
-							}
-							
-							// GameplayEffect 생성
-							// Check -- user gameplay effect example
-							FGameplayEffectSpecHandle DamageSpecHandle = GetAbilitySystemComponentFromActorInfo()->MakeOutgoingSpec(
-								UDiaGameplayEffect_Damage::StaticClass(), 1, EffectContext);
-								
-							if (DamageSpecHandle.IsValid())
-							{
-								// 대미지 값 설정
-                                DamageSpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(FName("GASData.Damage")), FinalDamage);
-								
-								// 대미지 적용
-								GetAbilitySystemComponentFromActorInfo()->ApplyGameplayEffectSpecToTarget(*DamageSpecHandle.Data.Get(), TargetASC);
-								
-								ARPG_SKILL_VLOG(TEXT("Applied GAS damage. Target=%s, Damage=%.1f"), *HitActor->GetName(), FinalDamage);
-								
-								if (GEngine)
-								{
-									GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red, 
-										FString::Printf(TEXT("GAS Hit %s for %.1f damage!"), *HitActor->GetName(), FinalDamage));
-								}
+								GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Red,
+									FString::Printf(TEXT("GAS Hit %s (BaseDamage %.1f)"), *HitActor->GetName(), BaseDamage));
 							}
 						}
 					}

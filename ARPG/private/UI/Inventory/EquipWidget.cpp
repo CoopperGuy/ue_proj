@@ -91,6 +91,25 @@ void UEquipWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 	Super::NativeTick(MyGeometry, InDeltaTime);
 }
 
+void UEquipWidget::InitializeEquipment()
+{
+	if (!EquipementComponent.IsValid())
+	{
+		return;
+	}
+
+	for (const TPair<EEquipmentSlot, FEquippedItem>& EquippedPair : EquipementComponent->GetEquipmentMap())
+	{
+		if (UEquipSlot* SlotWidget = GetEquipSlot(EquippedPair.Key))
+		{
+			if (SlotWidget->IsEmpty())
+			{
+				SlotWidget->SetItemWidget(EquippedPair.Value.ToInventorySlot());
+			}
+		}
+	}
+}
+
 void UEquipWidget::EquipItemToSlot(EEquipmentSlot SlotType, const FEquippedItem& Item)
 {
 	if (SlotType == EEquipmentSlot::EES_None)
@@ -116,15 +135,11 @@ void UEquipWidget::EquipItemToSlot(EEquipmentSlot SlotType, const FEquippedItem&
 
 void UEquipWidget::UnequipItemFromSlot(EEquipmentSlot SlotType)
 {
-	if (SlotType == EEquipmentSlot::EES_None)
-	{
-		UE_LOG(LogARPG, Warning, TEXT("Invalid Slot Type: %s"), *UEnum::GetValueAsString(SlotType));
-		return ;
-	}
 	UEquipSlot* TargetSlot = GetEquipSlot(SlotType);
-	if (IsValid(TargetSlot))
+	if (!IsValid(TargetSlot) || SlotType == EEquipmentSlot::EES_None)
 	{
 		UE_LOG(LogARPG, Warning, TEXT("Invalid Slot Type: %s"), *UEnum::GetValueAsString(SlotType));
+		return;
 	}
 	TargetSlot->UnEquipItem();
 
@@ -148,6 +163,9 @@ void UEquipWidget::SetInventoryComponent(UDiaInventoryComponent* InComponent)
 
 void UEquipWidget::SetEquipmentComponent(UDiaEquipmentComponent* InComponent)
 {
+	if(EquipementComponent == InComponent)
+		return;
+	
 	EquipementComponent = InComponent;
 
 	for (int32 i = 0; i < static_cast<int32>(EEquipmentSlot::EES_Max); ++i)
@@ -160,10 +178,10 @@ void UEquipWidget::SetEquipmentComponent(UDiaEquipmentComponent* InComponent)
 		}
 	}
 
-	if (EquipementComponent->IsValidLowLevel())
+	if (EquipementComponent.IsValid() && DiaControllerRef.IsValid())
 	{
-		EquipementComponent->OnItemUnEquipped.AddDynamic(DiaControllerRef.Get(), &ADiaController::OnUnequipItemProgress);
-		EquipementComponent->OnItemUnEquipped.AddDynamic(this, &ThisClass::UnequipItemFromSlot);
+		EquipementComponent->OnItemUnEquipped.AddUniqueDynamic(DiaControllerRef.Get(), &ADiaController::OnUnequipItemProgress);
+		EquipementComponent->OnItemUnEquipped.AddUniqueDynamic(this, &ThisClass::UnequipItemFromSlot);
 	}
 
 }

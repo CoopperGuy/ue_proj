@@ -1,7 +1,10 @@
 #include "UI/SkillQuickSlotWidget.h"
 #include "Blueprint/UserWidget.h"
 #include "UI/Skill/SkillQuickSlot.h"
+#include "AbilitySystemBlueprintLibrary.h"
 #include "AbilitySystemComponent.h"
+#include "Controller/DiaController.h"
+#include "GameFramework/Pawn.h"
 #include "System/GASSkillManager.h"
 #include "Components/ProgressBar.h"
 
@@ -11,25 +14,88 @@ void USkillQuickSlotWidget::NativeConstruct()
 
 	// 필수 위젯 유효성 확인(필요 시 초기화 로직 추가)
 	// 현재는 BindWidget으로 바인딩만 확인합니다.
+	if (!IsValid(ExpBar))
+		return;
+	if(!IsValid(SkillQuickSlot1) || !IsValid(SkillQuickSlot2) || !IsValid(SkillQuickSlot3) || !IsValid(SkillQuickSlot4) || !IsValid(SkillQuickSlot5))
+		return;
+
 	SkillSlots = { SkillQuickSlot1, SkillQuickSlot2, SkillQuickSlot3, SkillQuickSlot4, SkillQuickSlot5 };
 
+	BindPlayerASCReadyEvent();
+	TryInitializeFromPlayer();
+
 	ExpBar->SetPercent(0.0f);
+}
+
+void USkillQuickSlotWidget::NativeDestruct()
+{
+	UnbindPlayerASCReadyEvent();
+	CachedASC.Reset();
+
+	Super::NativeDestruct();
+}
+
+bool USkillQuickSlotWidget::TryInitializeFromPlayer()
+{
+	APawn* Pawn = GetOwningPlayerPawn();
+	if (!IsValid(Pawn))
+	{
+		CachedASC.Reset();
+		return false;
+	}
+
+	UAbilitySystemComponent* AbilitySystem = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Pawn);
+	if (!IsValid(AbilitySystem))
+	{
+		CachedASC.Reset();
+		return false;
+	}
+
+	CachedASC = AbilitySystem;
+	return true;
+}
+
+void USkillQuickSlotWidget::BindPlayerASCReadyEvent()
+{
+	ADiaController* PlayerController = Cast<ADiaController>(GetOwningPlayer());
+	if (!IsValid(PlayerController))
+	{
+		return;
+	}
+
+	if (BoundPlayerController.Get() == PlayerController && PlayerASCReadyDelegateHandle.IsValid())
+	{
+		return;
+	}
+
+	UnbindPlayerASCReadyEvent();
+	BoundPlayerController = PlayerController;
+	PlayerASCReadyDelegateHandle = PlayerController->GetOnPlayerASCReady()
+		.AddUObject(this, &ThisClass::HandlePlayerASCReady);
+}
+
+void USkillQuickSlotWidget::UnbindPlayerASCReadyEvent()
+{
+	if (ADiaController* PlayerController = BoundPlayerController.Get();
+		PlayerController && PlayerASCReadyDelegateHandle.IsValid())
+	{
+		PlayerController->GetOnPlayerASCReady().Remove(PlayerASCReadyDelegateHandle);
+	}
+
+	PlayerASCReadyDelegateHandle.Reset();
+	BoundPlayerController.Reset();
+}
+
+void USkillQuickSlotWidget::HandlePlayerASCReady(
+	ADiaBaseCharacter* /*PlayerCharacter*/,
+	UAbilitySystemComponent* AbilitySystem)
+{
+	CachedASC = AbilitySystem;
 }
 
 void USkillQuickSlotWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
-
-	if (!CachedASC.IsValid())
-	{
-		if (APlayerController* PC = GetOwningPlayer())
-		{
-			if (APawn* Pawn = PC->GetPawn())
-			{
-				CachedASC = Cast<UAbilitySystemComponent>(Pawn->GetComponentByClass(UAbilitySystemComponent::StaticClass()));
-			}
-		}
-	}
 
 	// 모든 스킬 슬롯의 쿨타임 업데이트
 	UAbilitySystemComponent* ASC = CachedASC.Get();

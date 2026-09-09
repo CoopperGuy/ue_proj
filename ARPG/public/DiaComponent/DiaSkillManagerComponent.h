@@ -61,6 +61,7 @@ public:
 	bool AddOwnedVariantBySkillID(int32 SkillID, int32 VariantID);
 	bool TryUnlockSkillVariantByID(int32 SkillID, int32 VariantID);
 	bool TryApplySkillVariantByID(int32 SkillID, int32 VariantID);
+	bool CanActivateAbilityBySkillID(int32 SkillID);
 	// Try activate ability by skill ID
 	UFUNCTION(BlueprintCallable, Category = "GAS|Skills")
 	bool TryActivateAbilityBySkillID(int32 SkillID);

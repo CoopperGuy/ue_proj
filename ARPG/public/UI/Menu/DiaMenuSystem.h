@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "CommonUserWidget.h"
+#include "CommonActivatableWidget.h"
 #include "DiaMenuSystem.generated.h"
 
 class UButton;
@@ -13,7 +13,7 @@ class USlotSelectPannel;
  * 
  */
 UCLASS()
-class ARPG_API UDiaMenuSystem : public UCommonUserWidget
+class ARPG_API UDiaMenuSystem : public UCommonActivatableWidget
 {
 	GENERATED_BODY()
 	

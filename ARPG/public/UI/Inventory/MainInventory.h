@@ -26,6 +26,7 @@ class ARPG_API UMainInventory : public UUserWidget, public IItemContainer
 	
 public:	
 	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
 	void InitializeInventory();
 
 	// Add item to inventory
@@ -64,6 +65,15 @@ protected:
 
 	UFUNCTION()
 	void HandleGoldChanged(int32 NewGoldAmount, int32 DeltaAmount);
+
+	UFUNCTION()
+	void HandleItemAdded(const FInventorySlot& Item);
+
+	UFUNCTION()
+	void HandleItemRemoved(const FGuid& ItemID);
+
+	UFUNCTION()
+	void HandleItemMoved(const FGuid& ItemID, int32 GridX, int32 GridY);
 
 protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)

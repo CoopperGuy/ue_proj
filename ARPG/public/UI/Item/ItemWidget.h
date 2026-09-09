@@ -10,6 +10,10 @@
 class UImage;
 class UEquipSlot;
 class USizeBox;
+class UItemWidget;
+
+DECLARE_DELEGATE_OneParam(FOnItemRightClicked, UItemWidget*);
+
 /**
  * 
  */
@@ -18,6 +22,8 @@ class ARPG_API UItemWidget : public UUserWidget
 {
 	GENERATED_BODY()
 public:
+	FOnItemRightClicked OnItemRightClicked;
+
 	virtual void NativeConstruct() override;
 	
 	// 드래그 앤 드롭 지원

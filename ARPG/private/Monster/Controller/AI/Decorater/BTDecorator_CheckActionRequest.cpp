@@ -7,8 +7,8 @@
 
 #include "AbilitySystemComponent.h"
 
-#include "GAS/DiaGASHelper.h"
 #include "GAS/DiaGameplayTags.h"
+#include "DiaComponent/DiaSkillManagerComponent.h"
 
 #include "Monster/Controller/DiaAIController.h"
 #include "Monster/DiaMonster.h"
@@ -62,9 +62,14 @@ bool UBTDecorator_CheckActionRequest::CalculateRawConditionValue(UBehaviorTreeCo
 		return false;
 	}
 
-	// DiaGASHelper를 사용하여 스킬 사용 가능 여부 확인
-	// (IsActive, Cooldown, Cost 모두 체크)
-	bool bCanActivate = UDiaGASHelper::CanActivateAbilityBySkillID(ASC, ActionRequest);
+	// Apply the same skill runtime preparation used by the actual activation path.
+	UDiaSkillManagerComponent* SkillManager = DiaMonster->GetSkillManagerComponent();
+	if (!IsValid(SkillManager))
+	{
+		return false;
+	}
+
+	bool bCanActivate = SkillManager->CanActivateAbilityBySkillID(ActionRequest);
 	
 	if (!bCanActivate)
 	{

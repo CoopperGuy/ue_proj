@@ -206,15 +206,7 @@ void UDiaMeleeAbility::ApplyDamageToTarget(AActor* Target)
 	
 	UAbilitySystemComponent* TargetASC = UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(Target);
 
-	// GAS 경로: Execution 기반 대미지 적용
-	const UDiaAttributeSet* MyAttr = GetAbilitySystemComponentFromActorInfo()->GetSet<UDiaAttributeSet>();
-	const float AttackPower = MyAttr ? MyAttr->GetAttackPower() : 0.f;
-	const float BaseDamage = SkillData.BaseDamage + AttackPower;
-
-	ARPG_SKILL_VLOG(TEXT("Applying Damage. Target=%s, BaseDamage=%.2f"),
-		*GetNameSafe(Target),
-		BaseDamage);
-	ApplyDamageToASC(TargetASC, BaseDamage , 1.0f);
+	ApplyDamageToASC(TargetASC, SkillData.BaseDamage , 1.0f);
 }
 
 void UDiaMeleeAbility::StartMultiHit()

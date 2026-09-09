@@ -11,6 +11,7 @@ class UItemWidget;
 class UDiaPrimaryLayout;
 class UDragDropOperation;
 class UDiaInstance;
+class APlayerController;
 /**
  * 
  */
@@ -27,6 +28,7 @@ public:
 	
 	virtual bool InputKey(const FInputKeyEventArgs& EventArgs) override;
 
+	UDiaPrimaryLayout* CreatePrimaryLayout(APlayerController* OwningPlayer);
 	void SetupGameInstance(UDiaInstance* DiaInstance);
 
 	// TODO: Caution 관련 로직 DiaController로 이전 예정

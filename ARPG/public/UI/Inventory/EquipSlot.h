@@ -10,6 +10,7 @@
 
 class UImage;
 class UItemWidget;
+enum class EItemDragDropType : uint8;
 class USizeBox;
 class UMainInventory;
 class UDiaInventoryComponent;
@@ -41,8 +42,9 @@ public:
 	bool RemoveContainItem(const FGuid& ItemInstanceID);
 
 	void UnEquipItem();
-
 protected:
+	bool HandleInventoryDrop(const FInventorySlot& ItemData, EItemDragDropType DragType,
+		UItemWidget* SourceWidget, UMainInventory* SourceInventoryWidget);
 	bool CheckEquipSlot(EEquipmentSlot InEquipSlot);
 public:
 	FOnItemEquipped OnItemEquipped;

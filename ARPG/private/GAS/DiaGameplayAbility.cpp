@@ -123,6 +123,32 @@ UDiaGameplayAbility::UDiaGameplayAbility()
 	ModifierRuntime.MCRP = 1.f;
 }
 
+bool UDiaGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, OUT FGameplayTagContainer* OptionalRelevantTags) const
+{
+	if (!Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags))
+	{
+		return false;
+	}
+
+	if (!ActorInfo || !ActorInfo->AvatarActor.IsValid())
+	{
+		return false;
+	}
+
+	if (ActorInfo && ActorInfo->AbilitySystemComponent.IsValid())
+	{
+		if (ActorInfo->AbilitySystemComponent->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Stunned))
+		{
+			if (OptionalRelevantTags)
+			{
+				OptionalRelevantTags->AddTag(FDiaGameplayTags::Get().State_Stunned);
+			}
+			return false;
+		}
+	}
+	return true;
+}
+
 void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
 {
 	// 안전 가드: ActorInfo가 없으면 종료
@@ -240,10 +266,29 @@ void UDiaGameplayAbility::ApplySkillDamageToActor(AActor* TargetActor, float Cri
 		return;
 	}
 
-	const UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
-	const UDiaAttributeSet* AttributeSet = SourceASC ? SourceASC->GetSet<UDiaAttributeSet>() : nullptr;
-	const float AttackPower = AttributeSet ? AttributeSet->GetAttackPower() : 0.f;
-	ApplyDamageToASC(TargetASC, SkillData.BaseDamage + AttackPower, CritMultiplier);
+	ApplyDamageToASC(TargetASC, SkillData.BaseDamage, CritMultiplier);
+}
+
+const float UDiaGameplayAbility::CalculateFinalManaCost(const FGameplayAbilityActorInfo* ActorInfo) const
+{
+	const float manaCost = FMath::Max(SkillData.ManaCost * ModifierRuntime.MCRP, 0.f);
+	return manaCost;
+}
+
+const float UDiaGameplayAbility::CalculateFinalCooldown(const FGameplayAbilityActorInfo* ActorInfo, const float BaseCoolDown) const
+{
+	const UAbilitySystemComponent* ASC =  ActorInfo->AbilitySystemComponent.Get();
+
+	if (IsValid(ASC))
+	{
+		const float CooldownReduction = ASC->GetNumericAttribute(UDiaAttributeSet::GetCooldownReductionAttribute());
+		const float CooldownReductionMultiplier = FMath::Clamp(1.0f - CooldownReduction * 0.01f, 0.0f, 1.0f);
+		const float cooldownDuration = FMath::Max(BaseCoolDown * ModifierRuntime.CDRP * CooldownReductionMultiplier, 0.f); // Duration이 음수인 경우 0으로 보정
+
+		return cooldownDuration;
+	}
+
+	return 0.0f;
 }
 
 void UDiaGameplayAbility::ApplyGameplayEffectToTarget(UAbilitySystemComponent* TargetASC) const
@@ -369,7 +414,10 @@ void UDiaGameplayAbility::MakeEffectSpecContextToTarget(TArray<FGameplayEffectSp
 
 void UDiaGameplayAbility::ActiveModifierEffect(ADiaBaseCharacter* Owner)
 {
-	if(!IsValid(Owner))
+	ModifierRuntime.CDRP = 1.f;
+	ModifierRuntime.MCRP = 1.f;
+
+	if (!IsValid(Owner) || !IsValid(SkillObject))
 		return;
 
 	UDiaSkillManagerComponent* DiaSkillManagerComp = Owner->FindComponentByClass<UDiaSkillManagerComponent>();
@@ -377,33 +425,7 @@ void UDiaGameplayAbility::ActiveModifierEffect(ADiaBaseCharacter* Owner)
 		return;
 
 	FDiaSkillVariantContext Context;
-	ModifierRuntime.CDRP = 1.f;
-	ModifierRuntime.MCRP = 1.f;
 	DiaSkillManagerComp->ActiveModifierSkillUseVariants(Context, this, ModifierRuntime);
-}
-
-bool UDiaGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, OUT FGameplayTagContainer* OptionalRelevantTags) const
-{
-	if (!Super::CanActivateAbility(Handle, ActorInfo, SourceTags, TargetTags, OptionalRelevantTags))
-	{
-		return false;
-	}
-
-	// Check mana cost
-	if (ActorInfo && ActorInfo->AbilitySystemComponent.IsValid())
-	{
-		const UDiaAttributeSet* AttributeSet = ActorInfo->AbilitySystemComponent->GetSet<UDiaAttributeSet>();
-		if (AttributeSet)
-		{
-			float CurrentMana = AttributeSet->GetMana();
-			if (CurrentMana < SkillData.ManaCost)
-			{
-				return false;
-			}
-		}
-	}
-
-	return true;
 }
 
 void UDiaGameplayAbility::SpawnHitEffectAtLocation(const FVector& Location)
@@ -488,13 +510,6 @@ void UDiaGameplayAbility::InitializeWithSkillData(const FGASSkillData& InSkillDa
 {
 	SkillData = InSkillData;
 	
-	if (SkillData.AbilityTags.Num() > 0)
-	{
-		FGameplayTagContainer NewTags = GetAssetTags();
-		NewTags.AppendTags(SkillData.AbilityTags);
-		SetAssetTags(NewTags);
-	}
-
 	AbilityMontage = nullptr;
 	if (!SkillData.CastAnimation.IsNull())
 	{
@@ -708,8 +723,10 @@ bool UDiaGameplayAbility::ShouldEndAbilityOnMontageCompleted() const
 
 bool UDiaGameplayAbility::CheckCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags) const
 {
-	const float manaCost = SkillData.ManaCost; // GASSkillData에서 읽기
+	if (!ActorInfo || !ActorInfo->AbilitySystemComponent.IsValid()) return false;
+
 	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
+	const float manaCost = CalculateFinalManaCost(ActorInfo);
 	const float currentMana = ASC->GetNumericAttribute(UDiaAttributeSet::GetManaAttribute());
 	const bool ok = currentMana >= manaCost;
 	if (!ok && OptionalRelevantTags)
@@ -725,7 +742,7 @@ void UDiaGameplayAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle, con
 	if (!ManaCostEffectClass) return;
 	if (!ActorInfo || !ActorInfo->AbilitySystemComponent.IsValid()) return;
 
-	const float manaCost = FMath::Max(SkillData.ManaCost * ModifierRuntime.MCRP, 0.f);
+	const float manaCost = CalculateFinalManaCost(ActorInfo);
 	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
 
 	FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(ManaCostEffectClass, GetAbilityLevel(), ASC->MakeEffectContext());
@@ -802,7 +819,7 @@ bool UDiaGameplayAbility::CheckCooldown(const FGameplayAbilitySpecHandle Handle,
 void UDiaGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
 {
 	if (!CooldownEffectClass) return;
-
+	if (!ActorInfo || !ActorInfo->AbilitySystemComponent.IsValid()) return;
 	UAbilitySystemComponent* ASC = ActorInfo->AbilitySystemComponent.Get();
 	if (!ASC) return;
 
@@ -834,9 +851,7 @@ void UDiaGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle,
 	
 	UE_LOG(LogARPG, Log, TEXT("[ApplyCooldown] Found CooldownTag: %s, Base Duration: %.2f"), *CooldownTag.ToString(), cooldownDuration);
 
-	const float CooldownReduction = ASC->GetNumericAttribute(UDiaAttributeSet::GetCooldownReductionAttribute());
-	const float CooldownReductionMultiplier = FMath::Clamp(1.0f - CooldownReduction * 0.01f, 0.0f, 1.0f);
-	cooldownDuration = FMath::Max(cooldownDuration * ModifierRuntime.CDRP * CooldownReductionMultiplier, 0.f); // Duration이 음수인 경우 0으로 보정
+	cooldownDuration = CalculateFinalCooldown(ActorInfo, cooldownDuration); // Duration이 음수인 경우 0으로 보정
 
 	UE_LOG(LogARPG, Log, TEXT("[ApplyCooldown] SkillID: %d, CooldownTag: %s, Duration: %.2f"), 
 		AbilitySpec->InputID, *CooldownTag.ToString(), cooldownDuration);

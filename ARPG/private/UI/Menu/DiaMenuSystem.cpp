@@ -12,37 +12,37 @@ void UDiaMenuSystem::NativeConstruct()
 
 	if (ResumeButton)
 	{
-		ResumeButton->OnClicked.AddDynamic(this, &ThisClass::OnResumeButtonClicked);
+		ResumeButton->OnClicked.AddUniqueDynamic(this, &ThisClass::OnResumeButtonClicked);
 	}
 
 	if(SaveGameButton)
 	{
-		SaveGameButton->OnClicked.AddDynamic(this, &ThisClass::OnSaveGameButtonClicked);
+		SaveGameButton->OnClicked.AddUniqueDynamic(this, &ThisClass::OnSaveGameButtonClicked);
 	}
 
 	if(LoadGameButton)
 	{
-		LoadGameButton->OnClicked.AddDynamic(this, &ThisClass::OnLoadGameButtonClicked);
+		LoadGameButton->OnClicked.AddUniqueDynamic(this, &ThisClass::OnLoadGameButtonClicked);
 	}
 
 	if(SettingsButton)
 	{
-		SettingsButton->OnClicked.AddDynamic(this, &ThisClass::OnSettingsButtonClicked);
+		SettingsButton->OnClicked.AddUniqueDynamic(this, &ThisClass::OnSettingsButtonClicked);
 	}
 
 	if(MainMenuButton)
 	{
-		MainMenuButton->OnClicked.AddDynamic(this, &ThisClass::OnMainMenuButtonClicked);
+		MainMenuButton->OnClicked.AddUniqueDynamic(this, &ThisClass::OnMainMenuButtonClicked);
 	}
 
 	if(QuitGameButton)
 	{
-		QuitGameButton->OnClicked.AddDynamic(this, &ThisClass::OnQuitGameButtonClicked);
+		QuitGameButton->OnClicked.AddUniqueDynamic(this, &ThisClass::OnQuitGameButtonClicked);
 	}
 
 	if (SlotSelectPannel)
 	{
-		SlotSelectPannel->OnCloseSlotSelectPanel.AddDynamic(this, &ThisClass::OnSlotSelectBackClicked);
+		SlotSelectPannel->OnCloseSlotSelectPanel.AddUniqueDynamic(this, &ThisClass::OnSlotSelectBackClicked);
 	}
 }
 
