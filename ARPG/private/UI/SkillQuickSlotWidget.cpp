@@ -1,4 +1,6 @@
 #include "UI/SkillQuickSlotWidget.h"
+#include "DiaComponent/DiaSkillManagerComponent.h"
+#include "DiaComponent/Skill/SkillObject.h"
 #include "Blueprint/UserWidget.h"
 #include "UI/Skill/SkillQuickSlot.h"
 #include "AbilitySystemBlueprintLibrary.h"
@@ -132,7 +134,10 @@ void USkillQuickSlotWidget::UpdateSkillSlot(int32 SlotIndex, int32 SkillID)
 						UTexture2D* SkillIcon = FoundData->Icon.LoadSynchronous();
 						if (SkillIcon)
 						{
-							int32 SkillLevel = 1;
+                            const APawn* Pawn = GetOwningPlayerPawn();
+                            const UDiaSkillManagerComponent* Skills = Pawn ? Pawn->FindComponentByClass<UDiaSkillManagerComponent>() : nullptr;
+                            const USkillObject* Skill = Skills ? Skills->GetSkillObjectBySkillID(SkillID) : nullptr;
+                            const int32 SkillLevel = Skill ? Skill->GetSkillLevel() : 1;
 							TargetSlot->SetSkillQuickSlot(SkillID, SkillIcon, SkillLevel);
 						}
 						else

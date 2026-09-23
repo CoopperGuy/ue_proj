@@ -8,6 +8,7 @@
 #include "EquipWidget.generated.h"
 
 class UEquipSlot;
+class UMainInventory;
 class ADiaController;
 class UDiaInventoryComponent;
 class UDiaEquipmentComponent;
@@ -84,6 +85,7 @@ public:
 		}
 	}
 	void SetInventoryComponent(UDiaInventoryComponent* InComponent);
+	void SetMainInventoryWidget(UMainInventory* InWidget);
 	void SetEquipmentComponent(UDiaEquipmentComponent* InComponent);
 	void SetDiaController(ADiaController* InController);
 };

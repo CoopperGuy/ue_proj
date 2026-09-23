@@ -23,6 +23,8 @@ class ARPG_API IItemContainer
 	GENERATED_BODY()
 
 public:
+	// Requests a transfer through components. UI changes are applied by component events.
+	// ItemWidget is optional UI context; components verify ownership by item ID.
+	// PosY/PosX are inventory coordinates (-1/-1 for automatic placement).
 	virtual bool AddItem(const FInventorySlot& ItemInstance, UItemWidget* ItemWidget, int32 PosY = -1, int32 PosX = -1) = 0;
-	virtual bool RemoveContainItem(const FGuid& ItemInstanceID) = 0;
 };

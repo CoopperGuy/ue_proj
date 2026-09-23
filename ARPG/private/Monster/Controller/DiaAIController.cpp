@@ -29,6 +29,7 @@
 
 ADiaAIController::ADiaAIController()
 {
+	PrimaryActorTick.bCanEverTick = true;
 	AIPerceptionComp = CreateDefaultSubobject<UAIPerceptionComponent>(TEXT("AIPerceptionComp"));
 	SetPerceptionComponent(*AIPerceptionComp);
 
@@ -113,6 +114,13 @@ void ADiaAIController::InitBlackBoardData(APawn* InPawn, UBlackboardData* _black
 void ADiaAIController::InitializeAI()
 {
 	SetActorTickEnabled(true);
+	// Pool initialization can possess the pawn before it is moved into the room.
+	// Refresh the sight listener and acquire a visible nearby player at activation.
+	if (AIPerceptionComp)
+	{
+		AIPerceptionComp->RequestStimuliListenerUpdate();
+	}
+	DetectTargets();
 	UBehaviorTreeComponent* BehaviorTreeComp = FindComponentByClass<UBehaviorTreeComponent>();
 
 	if (IsValid(BehaviorTreeComp) && IsValid(behaviorTree))
@@ -121,6 +129,20 @@ void ADiaAIController::InitializeAI()
 	}
 
 	UE_LOG(LogARPG, Verbose, TEXT("몬스터 [%s]의 AI 활성화"), *GetName());
+}
+
+void ADiaAIController::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	TargetRefreshElapsed += DeltaSeconds;
+	if (TargetRefreshElapsed >= 0.25f)
+	{
+		TargetRefreshElapsed = 0.f;
+		if (GetPawn() && !GetPawn()->IsHidden() && !IsValid(CurrentTarget))
+		{
+			DetectTargets();
+		}
+	}
 }
 
 void ADiaAIController::UpdateCombatState()
@@ -160,11 +182,6 @@ void ADiaAIController::ExecuteAttack()
 
 void ADiaAIController::SetTarget(AActor* NewTarget)
 {
-	if (CurrentTarget == NewTarget)
-	{
-		return;
-	}
-	
 	CurrentTarget = NewTarget;
 
 	//미사용
@@ -198,6 +215,7 @@ void ADiaAIController::SetTarget(AActor* NewTarget)
 
 void ADiaAIController::DetectTargets()
 {
+	if (!GetPawn()) return;
 	// 가장 가까운 플레이어 찾기
 	AActor* NearestPlayer = FindNearestPlayer();
 	if (IsValid(NearestPlayer))
@@ -207,9 +225,15 @@ void ADiaAIController::DetectTargets()
 		FVector PlayerLocation = NearestPlayer->GetActorLocation();
 		float Distance = FVector::Dist(MyLocation, PlayerLocation);
 		
-		if (Distance <= DetectionRadius)
+		if (Distance <= DetectionRadius && LineOfSightTo(NearestPlayer))
 		{
 			SetTarget(NearestPlayer);
+			bIsLineOfSight = true;
+			LastSeenLocation = PlayerLocation;
+			if (GetBlackboardComponent())
+			{
+				GetBlackboardComponent()->SetValueAsBool(BlackboardKeys::Monster::LOS, true);
+			}
 		}
 	}
 }

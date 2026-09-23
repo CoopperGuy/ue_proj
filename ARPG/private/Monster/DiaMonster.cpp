@@ -50,10 +50,15 @@ ADiaMonster::ADiaMonster()
 
 void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 {
+	// Pooled monsters start a new encounter without the previous death/phase state.
+	Phase = 1;
+	bIsDead = false;
+	KillerCharacterWeakPtr.Reset();
 	EnsureAbilitySystemInitialized(GetController());
 
 	//// 몬스터 기본 정보 설정
 	MonsterID = MonsterInfo.MonsterID;
+	CombatApproachDistance = FMath::Max(0.f, MonsterInfo.AttackRange);
 	//
 	//// 스탯 설정
 	if (AttributeSet)
@@ -153,6 +158,32 @@ void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
 }
 
 // AI 비활성화 함수 구현
+void ADiaMonster::BeginAttack()
+{
+	if (bAttackInProgress) return;
+	bAttackInProgress = true;
+	if (AAIController* AI = Cast<AAIController>(GetController()))
+	{
+		AI->StopMovement();
+		AI->ClearFocus(EAIFocusPriority::Gameplay);
+	}
+	UCharacterMovementComponent* Movement = GetCharacterMovement();
+	Movement->StopMovementImmediately();
+	bSavedOrientToMovement = Movement->bOrientRotationToMovement;
+	bSavedControllerDesiredRotation = Movement->bUseControllerDesiredRotation;
+	Movement->bOrientRotationToMovement = false;
+	Movement->bUseControllerDesiredRotation = false;
+}
+
+void ADiaMonster::FinishAttack()
+{
+	if (!bAttackInProgress) return;
+	bAttackInProgress = false;
+	UCharacterMovementComponent* Movement = GetCharacterMovement();
+	Movement->bOrientRotationToMovement = bSavedOrientToMovement;
+	Movement->bUseControllerDesiredRotation = bSavedControllerDesiredRotation;
+}
+
 void ADiaMonster::DeactivateAI()
 {
 	// AI 컨트롤러 획득
@@ -190,6 +221,9 @@ void ADiaMonster::ActivateAI()
 // 몬스터 리셋 함수 구현
 void ADiaMonster::ResetMonster()
 {
+	// Returning to the pool must cancel pending hit samples and release recovery.
+	GetAbilitySystemComponent()->CancelAllAbilities();
+	FinishAttack();
 	// 체력 및 상태 리셋
 	//Health = MaxHealth;
 	//bIsDead = false;
@@ -246,6 +280,11 @@ float ADiaMonster::TakeDamage(float DamageAmount, const FDamageEvent& DamageEven
 
 void ADiaMonster::DropItem(FName DieMonsterID)
 {
+    if (OwnerRoomGuid.IsValid())
+    {
+        const ADungeonGameMode* Mode = GetWorld()->GetAuthGameMode<ADungeonGameMode>();
+        if (Mode && Mode->UsesRoomRewards()) return;
+    }
 	// 몬스터가 죽었을 때 아이템 드랍 로직 구현
 	// 예시: 아이템 생성 및 월드에 스폰
 	ADungeonGameMode* DungeonGameMode = Cast<ADungeonGameMode>(GetWorld()->GetAuthGameMode());

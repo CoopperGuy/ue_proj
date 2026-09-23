@@ -52,7 +52,8 @@ public:
 	const TArray<int32>& GetCurrentJobSkillIDs() const { return CurrentJobSkillSet.SkillIDs; }
 	int32 FindFirstEmptyQuickSlotIndex() const;
 	bool HasAvailableSkillSlot() const;
-	bool TryRegisterSkillByID(int32 SkillID);
+	// 기본 보유 한도는 유지한다. 전체 지급 치트의 개별 호출에서만 한도 우회를 허용한다.
+	bool TryRegisterSkillByID(int32 SkillID, bool bIgnoreOwnedSkillLimit = false);
 	bool RemoveSkillByID(int32 SkillID);
 	void SetSkillIDMapping(const TArray<int32>& NewMapping);
 	void SetSkillIDIndex(int32 SkillID, int32 Index);
@@ -61,6 +62,8 @@ public:
 	bool AddOwnedVariantBySkillID(int32 SkillID, int32 VariantID);
 	bool TryUnlockSkillVariantByID(int32 SkillID, int32 VariantID);
 	bool TryApplySkillVariantByID(int32 SkillID, int32 VariantID);
+	/** Return the number of cleared applications, or INDEX_NONE if the skill is not owned. Ownership is preserved. */
+	int32 ClearAppliedSkillVariantsByID(int32 SkillID);
 	bool CanActivateAbilityBySkillID(int32 SkillID);
 	// Try activate ability by skill ID
 	UFUNCTION(BlueprintCallable, Category = "GAS|Skills")

@@ -5,6 +5,7 @@
 #include "DiaComponent/Skill/DiaSkillVariant.h"
 
 #include "GAS/DiaGameplayAbility.h"
+#include "GAS/DiaGameplayTags.h"
 #include "GAS/Abilities/DiaProjectileAbility.h"
 #include "GAS/Abilities/DiaGroundAbility.h"
 
@@ -50,7 +51,34 @@ const FGASSkillData* USkillObject::GetSkillData() const
     if (!GasSkillMgr)
     {
         UE_LOG(LogARPG, Warning, TEXT("GrantInitialGASAbilities: No GASSkillManager"));
+		return nullptr;
     }
 
     return GasSkillMgr->GetSkillDataPtr(SkillID);
+}
+
+FGameplayTagContainer USkillObject::GetSkillBuildTags() const
+{
+	FGameplayTagContainer BuildTags;
+	const FGASSkillData* SkillData = GetSkillData();
+	if (!SkillData)
+	{
+		return BuildTags;
+	}
+
+	const FGameplayTag BuildRoot = FDiaGameplayTags::Get().Build_Root;
+	if (!BuildRoot.IsValid())
+	{
+		return BuildTags;
+	}
+
+	for (const FGameplayTag& AbilityTag : SkillData->AbilityTags.GetGameplayTagArray())
+	{
+		if (AbilityTag.MatchesTag(BuildRoot))
+		{
+			BuildTags.AddTag(AbilityTag);
+		}
+	}
+
+	return BuildTags;
 }

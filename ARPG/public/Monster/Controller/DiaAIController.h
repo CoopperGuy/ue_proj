@@ -68,6 +68,7 @@ public:
 protected:
     virtual void BeginPlay() override;
     virtual void OnPossess(APawn* InPawn) override;
+    virtual void Tick(float DeltaSeconds) override;
 
 	UFUNCTION()
 	void OnTargetPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
@@ -106,6 +107,7 @@ protected:
 	UAISenseConfig_Sight* SightConfig;
 
 	bool bIsLineOfSight = false;
+	float TargetRefreshElapsed = 0.f;
 
     UPROPERTY()
 	FVector LastSeenLocation;

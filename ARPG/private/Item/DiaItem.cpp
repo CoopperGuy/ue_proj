@@ -296,13 +296,17 @@ void ADiaItem::OnItemNameClicked()
 			{
 				ItemWidgetComp->SetVisibility(false);
 			}
+			SetActorHiddenInGame(true);
+			SetActorEnableCollision(false);
+			SetActorTickEnabled(false);
+
 			Destroy();
 		}
-
-		SetActorHiddenInGame(true);
-		SetActorEnableCollision(false);
-		SetActorTickEnabled(false);
-		ItemWidgetComp->SetVisibility(false);
+		else
+		{
+			UE_LOG(LogARPG, Warning, TEXT("아이템이 %s의 인벤토리에 추가되지 못함"),
+				*PlayerController->GetName());
+		}
 	}
 }
 

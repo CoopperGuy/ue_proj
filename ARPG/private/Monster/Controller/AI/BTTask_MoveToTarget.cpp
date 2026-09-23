@@ -12,7 +12,9 @@
 #include "BehaviorTree/Blackboard/BlackboardKeyType_Object.h"
 
 #include "AbilitySystemComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "GAS/DiaGameplayTags.h"
+#include "Navigation/PathFollowingComponent.h"
 
 #include "DiaBaseCharacter.h"
 
@@ -34,7 +36,16 @@ EBTNodeResult::Type UBTTask_MoveToTarget::ExecuteTask(UBehaviorTreeComponent& Ow
     if (!IsValid(diaMonster))
         return EBTNodeResult::Failed;
 
-	ADiaBaseCharacter* TargetActor = Cast<ADiaBaseCharacter>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(BlackboardKey.SelectedKeyName));
+    // The ability owns the entire wind-up, hit and recovery, including montage blend-out.
+    // Root-motion charge steps run inside that ability and do not use this chase task.
+    if (diaMonster->IsAttackInProgress())
+        return EBTNodeResult::Failed;
+
+    const UBlackboardComponent* Blackboard = OwnerComp.GetBlackboardComponent();
+    if (!Blackboard)
+        return EBTNodeResult::Failed;
+
+	ADiaBaseCharacter* TargetActor = Cast<ADiaBaseCharacter>(Blackboard->GetValueAsObject(BlackboardKey.SelectedKeyName));
     if (!IsValid(TargetActor))
         return EBTNodeResult::Failed;
 
@@ -49,7 +60,22 @@ EBTNodeResult::Type UBTTask_MoveToTarget::ExecuteTask(UBehaviorTreeComponent& Ow
     }
 
 
-    EPathFollowingRequestResult::Type res = aiController->MoveToActor(TargetActor, 150.0f, true, true);
+    const float ApproachDistance = diaMonster->GetCombatApproachDistance();
+    if (FVector::DistSquared(diaMonster->GetActorLocation(), TargetActor->GetActorLocation())
+        <= FMath::Square(ApproachDistance))
+    {
+        aiController->StopMovement();
+        return EBTNodeResult::Succeeded;
+    }
 
-	return EBTNodeResult::Succeeded;
+    // MoveToActor adds both capsule radii to its reach test. Keep the table's
+    // center-to-center distance consistent with DistanceInRange decorators.
+    const float CapsuleRadii = diaMonster->GetCapsuleComponent()->GetScaledCapsuleRadius()
+        + TargetActor->GetCapsuleComponent()->GetScaledCapsuleRadius();
+    const float AcceptanceRadius = FMath::Max(0.f, ApproachDistance - CapsuleRadii);
+    const EPathFollowingRequestResult::Type Result = aiController->MoveToActor(
+        TargetActor, AcceptanceRadius, true, true);
+
+    return Result == EPathFollowingRequestResult::Failed
+        ? EBTNodeResult::Failed : EBTNodeResult::Succeeded;
 }

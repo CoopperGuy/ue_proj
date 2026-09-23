@@ -9,5 +9,9 @@ public class ARPG : ModuleRules
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput", "Niagara", "NiagaraCore", "AIModule", "GameplayTasks", "NavigationSystem", "Json", "UMG", "Slate", "SlateCore", "CommonUI", "CommonInput", "GameplayTags", "GameplayAbilities" });
+		if (Target.bBuildEditor)
+		{
+			PrivateDependencyModuleNames.Add("UnrealEd"); // Disposable PIE combat regression tests.
+		}
 	}
 }

@@ -397,7 +397,7 @@ void ADiaBaseCharacter::ApplyStunState(bool bStunned)
 	}
 }
 
-bool ADiaBaseCharacter::ApplySkillByID(int32 SkillID)
+bool ADiaBaseCharacter::ApplySkillByID(int32 SkillID, bool bIgnoreOwnedSkillLimit)
 {
 	if (!IsValid(SkillManagerComponent))
 	{
@@ -405,7 +405,7 @@ bool ADiaBaseCharacter::ApplySkillByID(int32 SkillID)
 	}
 
 	const bool bAlreadyRegistered = SkillManagerComponent->GetSkillObjectBySkillID(SkillID) != nullptr;
-	if (!bAlreadyRegistered && !SkillManagerComponent->TryRegisterSkillByID(SkillID))
+	if (!bAlreadyRegistered && !SkillManagerComponent->TryRegisterSkillByID(SkillID, bIgnoreOwnedSkillLimit))
 	{
 		return false;
 	}

@@ -5,6 +5,7 @@
 #include "Character/DiaCharacter.h"
 #include "Controller/DiaController.h"
 #include "Actor/DiaPortal.h"
+#include "Actor/DiaRoomRewardActor.h"
 
 #include "NavigationSystem.h"
 
@@ -58,7 +59,7 @@ void ADungeonGameMode::BeginPlay()
 	ADiaGameState* DiaGameState = Cast<ADiaGameState>(GameState);
 	if (IsValid(DiaGameState))
 	{
-		DiaGameState->OnRoomCleared.AddUObject(this, &ADungeonGameMode::OnRoomCleared);
+		DiaGameState->OnRoonStateChange.AddUObject(this, &ADungeonGameMode::OnRoonStateChange);
 	}
 
 	//if (IsValid(MapInfo))
@@ -72,48 +73,80 @@ void ADungeonGameMode::InitGame(const FString& MapName, const FString& Options, 
 	Super::InitGame(MapName, Options, ErrorMessage);
 }
 
+void ADungeonGameMode::OnRoonStateChange(FGuid RoomID, EDiaRoomBattleState NewState)
+{
+	if (NewState == EDiaRoomBattleState::Cleared)
+	{
+		OnRoomCleared(RoomID);
+	}
+}
+
 void ADungeonGameMode::OnRoomCleared(FGuid RoomID)
 {
-	UDiaMapGeneratorSubsystem* MapInfo = GetWorld()->GetSubsystem<UDiaMapGeneratorSubsystem>();
-	if (!IsValid(MapInfo))
-		return;
+    if (UDiaMapGeneratorSubsystem* Map = GetWorld()->GetSubsystem<UDiaMapGeneratorSubsystem>())
+        PresentRoomReward(Map->GetRoomActor(RoomID));
+}
 
-	UDiaRewardSubsystem* RewardSubsystem = GetGameInstance()->GetSubsystem<UDiaRewardSubsystem>();
-	if (!IsValid(RewardSubsystem))
-		return;
+void ADungeonGameMode::InitializeRoomRewards()
+{
+    const UDiaMapGeneratorSubsystem* Map = GetWorld()->GetSubsystem<UDiaMapGeneratorSubsystem>();
+    const ADiaGameState* GS = GetWorld()->GetGameState<ADiaGameState>();
+    if (!Map || !GS) return;
+    for (const FDiaRoomData& Data : Map->GetRoomLayout())
+    {
+        if (!Data.bIsAnchor || Data.RoomID.IsNone()) continue;
+        ADiaRoomBase* Room = Map->GetRoomActor(Data.RoomGuid);
+        if (Room && (Room->GetRoomRole() == EDiaRoomRole::Treasure || GS->IsRoomCleared(Data.RoomGuid)))
+            PresentRoomReward(Room);
+    }
+}
 
-	ADiaRoomBase* RoomBase = MapInfo->GetRoomActor(RoomID);
-	UHUDWidget* HUDWidget = GetHUDWidget();
-	//보스룸 클리어 하면 클리어 했다고 보내야함.
-	if (IsValid(RoomBase) && RoomBase->IsStageClearRoom())
-	{
-		if (IsValid(HUDWidget))
-		{
-			HUDWidget->ShowClearAlret(RoomID);
-		}
+void ADungeonGameMode::PresentRoomReward(ADiaRoomBase* Room)
+{
+    if (!Room || Room->IsStartRoom() || !Room->IsMonsterGenerateRoom(Room->GetTileType())) return;
+    const FGuid ID = Room->GetRoomGuid();
+    if (IsValid(RewardActors.FindRef(ID))) return;
+    UDiaRewardSubsystem* Rewards = GetGameInstance()->GetSubsystem<UDiaRewardSubsystem>();
+    if (!Rewards) return;
+    const EDiaRoomRewardKind Kind = Room->IsStageClearRoom() ? EDiaRoomRewardKind::Boss
+        : Room->GetRoomRole() == EDiaRoomRole::Treasure ? EDiaRoomRewardKind::Treasure : EDiaRoomRewardKind::Normal;
+    const FDiaRoomRewardState* State = Rewards->FindRoomReward(ID);
+    if (Kind != EDiaRoomRewardKind::Treasure)
+        State = Rewards->ResolveRoomReward(ID, Kind, Cast<ADiaController>(GetWorld()->GetFirstPlayerController()));
+    if (State && ((State->bClaimed && Kind != EDiaRoomRewardKind::Boss) || (State->bResolved && State->Options.IsEmpty()))) return;
 
-		ADiaGameState* DiaGameState = Cast<ADiaGameState>(GameState);
-		if (IsValid(DiaGameState))
-		{
-			DiaGameState->ClearCurrentLevel();
-		}
+    const FTransform Transform(FRotator::ZeroRotator, Room->GetActorLocation() + FVector(0.f, 0.f, 70.f));
+    ADiaRoomRewardActor* Actor = GetWorld()->SpawnActorDeferred<ADiaRoomRewardActor>(
+        ADiaRoomRewardActor::StaticClass(), Transform, Room, nullptr, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
+    if (Actor)
+    {
+        Actor->InitializeReward(ID, Kind);
+        Actor->FinishSpawning(Transform);
+        RewardActors.Add(ID, Actor);
+    }
+}
 
-	}
-
-	const UDiaSkillManagerComponent* SkillManagerComponent = nullptr;
-	if (APlayerController* PlayerController = GetWorld() ? GetWorld()->GetFirstPlayerController() : nullptr)
-	{
-		if (APawn* PlayerPawn = PlayerController->GetPawn())
-		{
-			SkillManagerComponent = PlayerPawn->FindComponentByClass<UDiaSkillManagerComponent>();
-		}
-	}
-
-	FRewardChoiceData RewardChoiceData = RewardSubsystem->MakeRoomClearRewardChoice(EJobType::Warrior, SkillManagerComponent, 3);
-	if (IsValid(HUDWidget))
-	{
-		HUDWidget->OpenRewardChoicePanel(RewardChoiceData.Title, RewardChoiceData.Subtitle, RewardChoiceData.RewardOptions);
-	}
+void ADungeonGameMode::OnRoomRewardClaimed(FGuid RoomID)
+{
+    UDiaRewardSubsystem* Rewards = GetGameInstance()->GetSubsystem<UDiaRewardSubsystem>();
+    const FDiaRoomRewardState* State = Rewards ? Rewards->FindRoomReward(RoomID) : nullptr;
+    if (!State || !State->bClaimed) return;
+    ADiaRoomRewardActor* Actor = RewardActors.FindRef(RoomID);
+    if (State->Kind == EDiaRoomRewardKind::Boss)
+    {
+        if (Actor) Actor->InitializeReward(RoomID, State->Kind);
+        if (UHUDWidget* HUD = GetHUDWidget()) HUD->ShowClearAlret(RoomID);
+        if (!AnnouncedStageRooms.Contains(RoomID))
+        {
+            AnnouncedStageRooms.Add(RoomID);
+            if (ADiaGameState* GS = GetWorld()->GetGameState<ADiaGameState>()) GS->OnStageCleared.Broadcast(RoomID);
+        }
+    }
+    else
+    {
+        if (Actor) Actor->Destroy();
+        RewardActors.Remove(RoomID);
+    }
 }
 
 void ADungeonGameMode::SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData, int32 Level, int32 Quantity)

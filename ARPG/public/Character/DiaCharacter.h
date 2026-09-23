@@ -23,6 +23,7 @@ class ARPG_API ADiaCharacter : public ADiaBaseCharacter
 
 public:
 	ADiaCharacter();
+    EJobType GetJobType() const { return InitialJobType; }
 
 
 	/// <summary>

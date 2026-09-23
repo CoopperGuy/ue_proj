@@ -16,8 +16,6 @@ class UMainInventory;
 class UDiaInventoryComponent;
 class UDiaEquipmentComponent;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemEquipped, const FEquippedItem&, Item, EEquipmentSlot, SlotType);
-
 /**
  * 
  */
@@ -28,6 +26,7 @@ class ARPG_API UEquipSlot : public UUserWidget, public IItemContainer
 	
 public:
 	void NativeConstruct() override;
+	void NativeDestruct() override;
 
 	// ItemWidget 관리 함수들
 	void SetItemWidget(const FInventorySlot& InItemData);
@@ -35,21 +34,18 @@ public:
 
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 
-	void HandleItemEquipped(const FEquippedItem& Item);
+	UFUNCTION()
+	void HandleItemEquipped(const FEquippedItem& Item, EEquipmentSlot EquippedSlot);
 
 	virtual bool AddItem(const FInventorySlot& ItemInstance, UItemWidget* ItemWidget, int32 PosY = -1, int32 PosX = -1) override;
-	bool AddItemFromInventory(const FInventorySlot& ItemInstance, UItemWidget* ItemWidget, UMainInventory* SourceInventoryWidget);
 	bool RemoveContainItem(const FGuid& ItemInstanceID);
 
-	void UnEquipItem();
+	UFUNCTION()
+	void UnEquipItem(EEquipmentSlot UnequippedSlot);
 protected:
 	bool HandleInventoryDrop(const FInventorySlot& ItemData, EItemDragDropType DragType,
 		UItemWidget* SourceWidget, UMainInventory* SourceInventoryWidget);
-	bool CheckEquipSlot(EEquipmentSlot InEquipSlot);
-public:
-	FOnItemEquipped OnItemEquipped;
 
-protected:
 	UPROPERTY(meta = (BindWidget))
 	UImage* Image_Frame;
 
@@ -65,6 +61,7 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	UItemWidget* SlotItemWidget;
 
+	TWeakObjectPtr<UMainInventory> MainInventoryWidget;
 	TWeakObjectPtr<UDiaInventoryComponent> InventoryComponent;
 	TWeakObjectPtr<UDiaEquipmentComponent> EquippementComponent;
 
@@ -74,5 +71,6 @@ public:
 	bool IsEmpty() const;
 	FORCEINLINE UItemWidget* GetItemWidget() const { return SlotItemWidget; }
 	void SetInventoryComponent(UDiaInventoryComponent* InComponent);
+	void SetMainInventoryWidget(UMainInventory* InWidget);
 	void SetEquipmentComponent(UDiaEquipmentComponent* InComponent);
 };

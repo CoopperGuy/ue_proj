@@ -8,6 +8,8 @@
 
 #include "DungeonGameMode.generated.h"
 class UHUDWidget;
+class ADiaRoomRewardActor;
+enum class EDiaRoomBattleState : uint8;
 
 UCLASS()
 class ARPG_API ADungeonGameMode : public AGameModeBase
@@ -20,14 +22,22 @@ public:
     virtual void BeginPlay() override;
     virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 
+	void OnRoonStateChange(FGuid RoomID, EDiaRoomBattleState NewState);
+
 	UFUNCTION()
 	void OnRoomCleared(FGuid RoomID);
+    void InitializeRoomRewards();
+    void OnRoomRewardClaimed(FGuid RoomID);
+    void PresentRoomReward(class ADiaRoomBase* Room);
+    bool UsesRoomRewards() const { return true; }
 	void SpawnItemAtLocation(AActor* SpawnActor, const FItemBase& ItemData, int32 Level = 1, int32 Quantity = 1);
 	void SpawnInventoryItemAtLocation(AActor* SpawnActor, const FInventorySlot& InventoryItem);
 
 	void WarpOtherLevel(const FName& LevelName);
 	void HandlePortalInteraction(class ADiaPortal* Portal, class APlayerController* InteractingController);
 protected:
+    UPROPERTY() TMap<FGuid, TObjectPtr<ADiaRoomRewardActor>> RewardActors;
+    TSet<FGuid> AnnouncedStageRooms;
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<UHUDWidget> HUDWidgetClass;
 

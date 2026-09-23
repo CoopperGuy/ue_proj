@@ -36,9 +36,10 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnGoldChanged OnGoldChanged;
 
-	bool TryAddItem(const FInventorySlot& ItemData);
+	// Suppress notifications only while an equipment transfer is being committed or rolled back.
+	bool TryAddItem(const FInventorySlot& ItemData, int32 PosX = -1, int32 PosY = -1, bool bNotify = true);
 	bool RequestMoveItem(const FGuid& InstanceID, int32 DestX, int32 DestY);
-	bool RemoveItem(const FGuid& InstanceID);
+	bool RemoveItem(const FGuid& InstanceID, bool bNotify = true);
 	bool CanPlaceItemAt(int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY) const;
 	bool FindPlaceForItem(int32 ItemWidth, int32 ItemHeight, int32& OutPosX, int32& OutPosY) const;
 

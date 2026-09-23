@@ -59,6 +59,7 @@ private:
 	static void RegisterSkillTypeTags();
 	static void RegisterAbilityTags();
 	static void RegisterDamageTags();
+	static void RegisterBuildTags();
 	static void RegisterUITags();
 	static void RegisterAttributeSetTags();
 	static void RegisterItemOptionTags();
@@ -148,6 +149,31 @@ public:
 	FGameplayTag Damage_Crit;
 	FGameplayTag Damage_Final;
 	FGameplayTag Damage_Multiplier;
+
+	// ========================================
+	// Build Tags - 보상 빌드 분류
+	// ========================================
+	FGameplayTag Build_Root;
+	FGameplayTag Build_Mechanic_Projectile;
+	FGameplayTag Build_Mechanic_Melee;
+	FGameplayTag Build_Mechanic_Area;
+	FGameplayTag Build_Mechanic_MultiHit;
+
+	FGameplayTag Build_Damage_Physical;
+	FGameplayTag Build_Damage_Fire;
+	FGameplayTag Build_Damage_Cold;
+
+	FGameplayTag Build_Stat_Crit;
+	FGameplayTag Build_Stat_Cooldown;
+	FGameplayTag Build_Stat_MaxHealth;
+
+	FGameplayTag Build_Role_Damage;
+	FGameplayTag Build_Role_Defense;
+	FGameplayTag Build_Role_Mobility;
+	FGameplayTag Build_Role_Control;
+	FGameplayTag Build_Role_Buff;
+
+	FGameplayTag Build_Modifier_Pierce;
 
 	// ========================================
 	// UI Tags

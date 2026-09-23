@@ -2,6 +2,7 @@
 
 
 #include "DiaGameState.h"
+#include "Map/DiaRoomBase.h"
 #include "Monster/DiaMonster.h"
 #include "System/MapInfoSubsystem.h"
 #include "System/MonsterSpawnSubSystem.h"
@@ -23,10 +24,12 @@ bool ADiaGameState::SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& Cen
 
 	FName MapID = MapInfoSubsystem->GetCurrentMapID();
 	FName SpawnGroupName = NAME_None;
-	const TArray<FMapSpawnInfo>& SpawnInfo = MonsterSpawnSubSystem->GetSpawnInfosForMapWithSpawnType(MapID, SpawnType);
+	TArray<FMapSpawnInfo> SpawnInfo = MonsterSpawnSubSystem->GetSpawnInfosForMapWithSpawnType(MapID, SpawnType);
+    SpawnInfo.Sort([](const FMapSpawnInfo& A, const FMapSpawnInfo& B) { return A.GroupName.LexicalLess(B.GroupName); });
 	if (SpawnInfo.Num() > 0)
 	{
-		const int32 RandSpawnInfoIndex = FMath::RandRange(0, SpawnInfo.Num() - 1);
+		FRandomStream Random(static_cast<int32>(GetTypeHash(NewRoomID)));
+		const int32 RandSpawnInfoIndex = Random.RandRange(0, SpawnInfo.Num() - 1);
 		SpawnGroupName = SpawnInfo[RandSpawnInfoIndex].GroupName;
 	}
 
@@ -41,7 +44,7 @@ bool ADiaGameState::SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& Cen
 	bIsInBattle = true;
 
 	const FGuid SpawnRoomID = NewRoomID;
-	MonsterSpawnSubSystem->OnMonsterGroupSpawned.BindLambda([this, SpawnRoomID](const TArray<ADiaMonster*>& InSpawnedMonsters)
+	MonsterSpawnSubSystem->OnMonsterGroupSpawned.BindLambda([this, SpawnRoomID](const TArray<ADiaMonster*>& InSpawnedMonsters, bool isSuccess)
 	{
 		if (CurrentRoomID != SpawnRoomID)
 		{
@@ -59,20 +62,20 @@ bool ADiaGameState::SpawnRoomMonsters(const FGuid& NewRoomID, const FVector& Cen
 		}
 
 		CurrentMaxMonsterCount = ValidMonsterCount;
-		if (CurrentMaxMonsterCount <= 0)
+		if (!isSuccess || CurrentMaxMonsterCount <= 0)
 		{
-			ClearedRoomIDs.Add(SpawnRoomID);
-			OnRoomCleared.Broadcast(SpawnRoomID);
+			//ClearedRoomIDs.Add(SpawnRoomID);
+			OnRoonStateChange.Broadcast(SpawnRoomID, EDiaRoomBattleState::Idle);
 			bIsInBattle = false;
 			CurrentRoomType = ETileType::Empty;
-			CurrentRoomID.Invalidate();
+			//CurrentRoomID.Invalidate();
 			return;
 		}
 
-		OnRoomBattleStart.Broadcast(SpawnRoomID);
+		OnRoonStateChange.Broadcast(SpawnRoomID, EDiaRoomBattleState::BattleActive);
 	});
 
-	MonsterSpawnSubSystem->SpawnMonsterGroup(SpawnGroupName, CenterPos, TileSize);
+	MonsterSpawnSubSystem->SpawnMonsterGroup(SpawnGroupName, CenterPos, TileSize, NewRoomID);
 	return true;
 }
 
@@ -89,7 +92,7 @@ void ADiaGameState::ReportMonsterDeath(const FGuid& RoomID)
 	{
 		const FGuid ClearedRoomID = CurrentRoomID;
 		ClearedRoomIDs.Add(ClearedRoomID);
-		OnRoomCleared.Broadcast(ClearedRoomID);
+		OnRoonStateChange.Broadcast(ClearedRoomID, EDiaRoomBattleState::Cleared);
 
 		bIsInBattle = false;
 		CurrentRoomType = ETileType::Empty;

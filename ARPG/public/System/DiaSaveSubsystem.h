@@ -21,6 +21,7 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
+    const UDiaSaveGame* GetPendingLoadedGame() const { return PendingLoadedGame; }
 	bool SaveGame(const FString& SlotName);
 	bool LoadGame(const FString& SlotName);
 	bool DoesSaveExist(const FString& SlotName) const;

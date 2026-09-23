@@ -1,0 +1,17 @@
+{
+  "pie_running": false,
+  "dirty": {
+    "/Game/Blueprint/Monster/Boss/Warden/BP_WardenBoss": false,
+    "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss": false,
+    "/Game/Blueprint/Monster/Boss/Warden/AI/BB_WardenBoss": false,
+    "/Game/Blueprint/Monster/Boss/Warden/Skills/BP_WardenBladeWave": false,
+    "/Game/Blueprint/Monster/Boss/Warden/Skills/BP_WardenImpact": false,
+    "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenCrossCut": false,
+    "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenCharge": false,
+    "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam": false,
+    "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenBladeFan": false,
+    "/Game/Datatable/DT_GASSkillData": false,
+    "/Game/Datatable/DT_DiaMonsterTable": false,
+    "/Game/Datatable/DT_SpawnGroupTable": false
+  }
+}

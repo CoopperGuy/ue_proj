@@ -2,6 +2,8 @@
 
 
 #include "UI/Rewards/RewardChoicePanel.h"
+#include "InputCoreTypes.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
 #include "UI/Rewards/RewardCard.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
@@ -9,6 +11,8 @@
 void URewardChoicePanel::NativeConstruct()
 {
 	Super::NativeConstruct();
+    SetIsFocusable(true);
+    SetVisibility(ESlateVisibility::Collapsed);
 	
 	RewardCards = { RewardCard_0, RewardCard_1, RewardCard_2 };
 
@@ -20,7 +24,7 @@ void URewardChoicePanel::NativeConstruct()
 		}
 	}
 
-	DimBackground->SetVisibility(ESlateVisibility::Visible);
+	if (DimBackground) DimBackground->SetVisibility(ESlateVisibility::Visible);
 }
 
 void URewardChoicePanel::OpenRewardChoicePanel(const FText& Title, const FText& Subtitle, const TArray<FRewardData>& RewardOptions)
@@ -53,18 +57,35 @@ void URewardChoicePanel::OpenRewardChoicePanel(const FText& Title, const FText& 
 		}
 	}
 
+    if (ConfirmHintText) ConfirmHintText->SetText(NSLOCTEXT("RoomReward", "Choose", "하나를 선택하세요. Esc: 닫기"));
 	SetVisibility(ESlateVisibility::Visible);
+    SetFocus();
 }
 
 void URewardChoicePanel::CloseRewardChoicePanel()
 {
 	SetVisibility(ESlateVisibility::Collapsed);
+    UWidgetBlueprintLibrary::SetFocusToGameViewport();
 }
 
 void URewardChoicePanel::OnRewardCardClicked(URewardCard* ClickedCard)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Reward Card Clicked: %s"), *ClickedCard->GetName());
+    if (!IsValid(ClickedCard) || !IsVisible()) return;
 
 	OnRewardCardSelected.Broadcast(ClickedCard->GetRewardData());
-	CloseRewardChoicePanel();
+}
+
+void URewardChoicePanel::ShowClaimFailure()
+{
+    if (ConfirmHintText) ConfirmHintText->SetText(NSLOCTEXT("RoomReward", "ClaimFailed", "획득할 수 없습니다. 보상대 가까이에서 인벤토리 공간과 스킬 상태를 확인하세요."));
+}
+
+FReply URewardChoicePanel::NativeOnKeyDown(const FGeometry& Geometry, const FKeyEvent& Event)
+{
+    if (Event.GetKey() == EKeys::Escape)
+    {
+        CloseRewardChoicePanel();
+        return FReply::Handled();
+    }
+    return Super::NativeOnKeyDown(Geometry, Event);
 }

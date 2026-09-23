@@ -24,6 +24,7 @@
 #include "DiaBaseCharacter.h"
 
 #include "GAS/DiaGameplayTags.h"
+#include "GAS/DiaAttributeSet.h"
 
 #include "Interface/Damageable.h"
 
@@ -350,7 +351,7 @@ void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitR
         ProcessDamage(DiaOtherActor, HitResult);
 
         // 피격 이펙트 생성
-        SpawnHitEffect(HitResult.ImpactPoint, HitResult.ImpactNormal);
+        SpawnHitEffect(HitResult.ImpactPoint.IsNearlyZero() ? GetActorLocation() : FVector(HitResult.ImpactPoint), HitResult.ImpactNormal);
 
         // 피격 이벤트 호출
         OnSkillHit(DiaOtherActor, HitResult);
@@ -358,11 +359,15 @@ void ADiaSkillActor::ApplyGameplayHit(AActor* OtherActor, const FHitResult& HitR
         //피격시 효과 타겟에게 적용.
         ProcessTargetEffects(DiaOtherActor);
         //타격에 성공하면 받으면 일단 타겟으로 올린다.
+		ApplyChainHits(OtherActor);
         //HACK
         if (IsValid(OwnerActor))
         {
             OwnerActor->SetTargetActor(Cast<ADiaBaseCharacter>(OtherActor));
         }
+
+        // Consume exactly one hit, including when no variants are equipped.
+        PierceCount = FMath::Max(0, PierceCount - 1);
 
         // Pierce: HitExecutor 호출하여 Pierce Effect 적용
         if (IsValid(OwnerActor) && OwnerActor->GetSkillManagerComponent())
@@ -426,10 +431,17 @@ void ADiaSkillActor::ApplyAdditionalHit(AActor* OtherActor, const FHitResult& Hi
         ProcessDamage(DiaOtherActor, HitResult);
 
         // 피격 이펙트 생성
-        SpawnHitEffect(HitResult.ImpactPoint, HitResult.ImpactNormal);
+        SpawnHitEffect(HitResult.ImpactPoint.IsNearlyZero() ? GetActorLocation() : FVector(HitResult.ImpactPoint), HitResult.ImpactNormal);
 
         //피격시 효과 타겟에게 적용.
         ProcessTargetEffects(DiaOtherActor);
+
+        // Forked projectiles cannot fork again, but still have a finite hit budget.
+        PierceCount = FMath::Max(0, PierceCount - 1);
+        if (PierceCount <= 0 && !Tags.Contains(FDiaGameplayTags::Get().SkillActor_Ground.GetTagName()))
+        {
+            Destroy();
+        }
     }
 }
 
@@ -458,6 +470,47 @@ void ADiaSkillActor::LogHitState(AActor* TargetActor, const TCHAR* Reason) const
 
 void ADiaSkillActor::OnSkillHit(IAbilitySystemInterface* HitActor, const FHitResult& HitResult)
 {
+}
+
+void ADiaSkillActor::ApplyChainHits(AActor* FirstTarget)
+{
+	const int32 ChainCount = FMath::Clamp(RuntimeParams.GetInt(FDiaGameplayTags::Get().GASData_Variant_Chain), 0, 8);
+	if (!HasAuthority() || ChainCount == 0 || !IsValid(FirstTarget)) return;
+	FVector Origin = FirstTarget->GetActorLocation();
+	for (int32 Bounce = 0; Bounce < ChainCount; ++Bounce)
+	{
+		TArray<FOverlapResult> Nearby;
+		FCollisionQueryParams Query;
+		Query.AddIgnoredActor(this);
+		Query.AddIgnoredActor(GetOwner());
+		GetWorld()->OverlapMultiByObjectType(Nearby, Origin, FQuat::Identity,
+			FCollisionObjectQueryParams(ECC_Pawn), FCollisionShape::MakeSphere(450.f), Query);
+		AActor* Next = nullptr;
+		float Nearest = MAX_flt;
+		for (const FOverlapResult& Overlap : Nearby)
+		{
+			AActor* Candidate = Overlap.GetActor();
+			if (!IsValidTarget(Candidate) || HitActors.Contains(Candidate)) continue;
+			IAbilitySystemInterface* TargetInterface = Cast<IAbilitySystemInterface>(Candidate);
+			UAbilitySystemComponent* TargetASC = TargetInterface ? TargetInterface->GetAbilitySystemComponent() : nullptr;
+			if (!TargetASC || TargetASC->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute()) <= 0.f ||
+				TargetASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Invincible)) continue;
+			const float Distance = FVector::DistSquared(Origin, Candidate->GetActorLocation());
+			if (Distance < Nearest) { Nearest = Distance; Next = Candidate; }
+		}
+		if (!Next) break;
+		HitActors.Add(Next);
+		Origin = Next->GetActorLocation();
+		FHitResult Hit;
+		Hit.ImpactPoint = Origin;
+		Hit.ImpactNormal = FVector::UpVector;
+		// Secondary hits carry status effects but cannot recursively fork, explode or chain.
+		TGuardValue<float> ReducedDamage(Damage, Damage * .6f);
+		IAbilitySystemInterface* TargetInterface = Cast<IAbilitySystemInterface>(Next);
+		ProcessDamage(TargetInterface, Hit);
+		ProcessTargetEffects(TargetInterface);
+		SpawnHitEffect(Origin, Hit.ImpactNormal);
+	}
 }
 
 void ADiaSkillActor::ProcessDamage(IAbilitySystemInterface* ASCInterface, const FHitResult& HitResult)
@@ -495,12 +548,28 @@ void ADiaSkillActor::ProcessDamage(IAbilitySystemInterface* ASCInterface, const 
             if (SpecHandle.IsValid())
             {
                 // SetByCaller로 기본 대미지 주입(Exec_Damage가 참조 가능)
-                SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.DamageBase")), Damage);
+				float RangeMultiplier = 1.f;
+				if (AActor* TargetActor = TargetASC->GetAvatarActor())
+				{
+					if (FVector::DistSquared(GetOwner()->GetActorLocation(), TargetActor->GetActorLocation()) <= FMath::Square(350.f))
+					{
+						RangeMultiplier = RuntimeParams.GetMagnitude(FDiaGameplayTags::Get().GASData_Variant_CloseRangeBonus, 1.f);
+					}
+				}
+                SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.DamageBase")), Damage * RangeMultiplier);
 
                 // 필요 시 치명타 배수 등 추가 세팅 가능
                 SpecHandle.Data->SetSetByCallerMagnitude(FGameplayTag::RequestGameplayTag(TEXT("GASData.DamageMultiplier")), DamageMultiplier);
 
+				const float HealthBefore = TargetASC->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute());
                 SourceASC->ApplyGameplayEffectSpecToTarget(*SpecHandle.Data.Get(), TargetASC);
+				const float LifeSteal = FMath::Clamp(RuntimeParams.GetMagnitude(FDiaGameplayTags::Get().GASData_Variant_LifeSteal), 0.f, 1.f);
+				if (LifeSteal > 0.f && SourceASC.IsValid() && SourceASC->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute()) > 0.f)
+				{
+					const float LostHealth = FMath::Clamp(HealthBefore - TargetASC->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute()), 0.f, FMath::Max(0.f, HealthBefore));
+					const float MissingHealth = FMath::Max(0.f, SourceASC->GetNumericAttribute(UDiaAttributeSet::GetMaxHealthAttribute()) - SourceASC->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute()));
+					SourceASC->ApplyModToAttribute(UDiaAttributeSet::GetHealthAttribute(), EGameplayModOp::Additive, FMath::Min(MissingHealth, LostHealth * LifeSteal));
+				}
 
 				ARPG_SKILL_VLOG(TEXT("Applied damage effect. TargetASC=%s, DamageEffect=%s %s"),
 					*GetNameSafe(TargetASC),

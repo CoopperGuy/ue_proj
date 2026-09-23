@@ -10,14 +10,9 @@
 
 struct FBTPlayGASTaskMemory
 {
-	// 애니메이션 완료를 감지하기 위한 델리게이트 핸들
-	FDelegateHandle AbilityEndedHandle;
-	
 	// 현재 실행 중인 어빌리티의 핸들을 저장
 	FGameplayAbilitySpecHandle CurrentAbilityHandle;
-	
-	// 어빌리티 종료 플래그
-	bool bAbilityEnded = false;
+	int32 SkillID = 0;
 
 };
 /**
@@ -35,6 +30,7 @@ protected:
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 	virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
 	virtual EBTNodeResult::Type AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+	virtual void OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTNodeResult::Type TaskResult) override;
 
 	virtual uint16 GetInstanceMemorySize() const override { return sizeof(FBTPlayGASTaskMemory); }
 };

@@ -8,4 +8,7 @@ UCLASS()
 class ARPG_API UDiaAbilitySystemComponent : public UAbilitySystemComponent
 {
 	GENERATED_BODY()
+
+public:
+	virtual FGameplayEffectContextHandle MakeEffectContext() const override;
 };

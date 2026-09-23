@@ -25,7 +25,15 @@ void UDiaVariantEffect_SpawnModifier::Apply(const FDiaSkillVariantSpec& Spec, FD
 	}
 	else if(Spec.SkillTag.MatchesTagExact(FDiaGameplayTags::Get().GASData_Variant_LifeSteal))
 	{
-		UE_LOG(LogARPG, Log, TEXT("UDiaVariantEffect_SpawnModifier::Apply - Applying Life Steal Effect"));
+		SpawnRuntime.ActorParams.AddMagnitude(Spec.SkillTag, Spec.ModifierValue);
+	}
+	else if (Spec.SkillTag.MatchesTagExact(FDiaGameplayTags::Get().GASData_Variant_CloseRangeBonus))
+	{
+		SpawnRuntime.ActorParams.MultiplyMagnitude(Spec.SkillTag, Spec.ModifierValue);
+	}
+	else if (Spec.SkillTag.MatchesTagExact(FDiaGameplayTags::Get().GASData_Variant_Chain))
+	{
+		SpawnRuntime.ActorParams.AddMagnitude(Spec.SkillTag, Spec.ModifierValue);
 	}
 	else if (Spec.SkillTag.MatchesTagExact(FDiaGameplayTags::Get().GASData_Variant_Knockback))
 	{
@@ -33,7 +41,12 @@ void UDiaVariantEffect_SpawnModifier::Apply(const FDiaSkillVariantSpec& Spec, FD
 	}
 	else if (Spec.SkillTag.MatchesTagExact(FDiaGameplayTags::Get().GASData_Variant_BigProjectile))
 	{
-		UE_LOG(LogARPG, Log, TEXT("UDiaVariantEffect_SpawnModifier::Apply - Applying Big Projectile Effect"));
+		SpawnRuntime.ActorParams.MultiplyMagnitude(Spec.SkillTag, Spec.ModifierValue);
+		SpawnRuntime.ActorParams.MultiplyMagnitude(FDiaGameplayTags::Get().GASData_Variant_DamageMultiplier, 1.35f);
+	}
+	else if (Spec.SkillTag.MatchesTagExact(FDiaGameplayTags::Get().GASData_Variant_PullToCenter))
+	{
+		SpawnRuntime.ActorParams.AddMagnitude(Spec.SkillTag, Spec.ModifierValue);
 	}
 	else if (Spec.SkillTag.MatchesTagExact(FDiaGameplayTags::Get().GASData_Variant_DamageMultiplier))
 	{

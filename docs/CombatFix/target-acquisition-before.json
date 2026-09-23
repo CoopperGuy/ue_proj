@@ -1,0 +1,22 @@
+[
+  "[2026.09.23-02.54.52:007][117]LogAutomationController: MONSTER_COMBAT BladeGuard_01 stale=0 crowd=0 phase2=0 moving=0 hits=0 damage=0.0 time=22.0 montage=0",
+  "[2026.09.23-02.54.52:007][117]LogAutomationController: LogTemp: MONSTER_COMBAT BladeGuard_01 stale=0 crowd=0 phase2=0 moving=0 hits=0 damage=0.0 time=22.0 montage=0 distance=600.1 [log] ",
+  "[2026.09.23-02.54.52:026][117]LogAutomationController: MONSTER_COMBAT Spitter_01 stale=0 crowd=0 phase2=0 moving=0 hits=0 damage=0.0 time=22.0 montage=0",
+  "[2026.09.23-02.54.52:026][117]LogAutomationController: LogTemp: MONSTER_COMBAT Spitter_01 stale=0 crowd=0 phase2=0 moving=0 hits=0 damage=0.0 time=22.0 montage=0 distance=750.0 [log] ",
+  "[2026.09.23-02.54.52:026][117]LogAutomationController: MONSTER_COMBAT Charger_01 stale=0 crowd=0 phase2=0 moving=0 hits=0 damage=0.0 time=22.0 montage=0",
+  "[2026.09.23-02.54.52:026][117]LogAutomationController: LogTemp: MONSTER_COMBAT Charger_01 stale=0 crowd=0 phase2=0 moving=0 hits=0 damage=0.0 time=22.0 montage=0 distance=550.0 [log] ",
+  "[2026.09.23-02.54.52:027][117]LogAutomationController: MONSTER_COMBAT Warden_Boss stale=0 crowd=0 phase2=0 moving=0 hits=3 damage=7.0 time=6.0 montage=1",
+  "[2026.09.23-02.54.52:027][117]LogAutomationController: LogTemp: MONSTER_COMBAT Warden_Boss stale=0 crowd=0 phase2=0 moving=0 hits=3 damage=7.0 time=6.0 montage=1 distance=115.0 [log] ",
+  "[2026.09.23-02.54.52:027][117]LogAutomationController: MONSTER_COMBAT DualBlade_Boss stale=0 crowd=0 phase2=0 moving=0 hits=0 damage=0.0 time=22.0 montage=0",
+  "[2026.09.23-02.54.52:027][117]LogAutomationController: LogTemp: MONSTER_COMBAT DualBlade_Boss stale=0 crowd=0 phase2=0 moving=0 hits=0 damage=0.0 time=22.0 montage=0 distance=550.1 [log] ",
+  "[2026.09.23-02.54.52:028][117]LogAutomationController: MONSTER_COMBAT BladeGuard_01 stale=1 crowd=0 phase2=0 moving=0 hits=3 damage=3.0 time=6.0 montage=1",
+  "[2026.09.23-02.54.52:028][117]LogAutomationController: LogTemp: MONSTER_COMBAT BladeGuard_01 stale=1 crowd=0 phase2=0 moving=0 hits=3 damage=3.0 time=6.0 montage=1 distance=148.7 [log] ",
+  "[2026.09.23-02.54.52:029][117]LogAutomationController: MONSTER_COMBAT BladeGuard_01 stale=0 crowd=1 phase2=0 moving=0 hits=3 damage=3.0 time=6.0 montage=1",
+  "[2026.09.23-02.54.52:029][117]LogAutomationController: LogTemp: MONSTER_COMBAT BladeGuard_01 stale=0 crowd=1 phase2=0 moving=0 hits=3 damage=3.0 time=6.0 montage=1 distance=140.6 [log] ",
+  "[2026.09.23-02.54.52:030][117]LogAutomationController: MONSTER_COMBAT Warden_Boss stale=0 crowd=0 phase2=1 moving=0 hits=2 damage=6.0 time=6.0 montage=1",
+  "[2026.09.23-02.54.52:030][117]LogAutomationController: LogTemp: MONSTER_COMBAT Warden_Boss stale=0 crowd=0 phase2=1 moving=0 hits=2 damage=6.0 time=6.0 montage=1 distance=219.5 [log] ",
+  "[2026.09.23-02.54.52:030][117]LogAutomationController: MONSTER_COMBAT Warden_Boss stale=0 crowd=0 phase2=1 moving=0 hits=0 damage=0.0 time=22.0 montage=0",
+  "[2026.09.23-02.54.52:030][117]LogAutomationController: LogTemp: MONSTER_COMBAT Warden_Boss stale=0 crowd=0 phase2=1 moving=0 hits=0 damage=0.0 time=22.0 montage=0 distance=650.8 [log] ",
+  "[2026.09.23-02.54.52:031][117]LogAutomationController: MONSTER_COMBAT Charger_01 stale=0 crowd=0 phase2=0 moving=1 hits=2 damage=2.0 time=6.8 montage=1",
+  "[2026.09.23-02.54.52:031][117]LogAutomationController: LogTemp: MONSTER_COMBAT Charger_01 stale=0 crowd=0 phase2=0 moving=1 hits=2 damage=2.0 time=6.8 montage=1 distance=202.9 [log] "
+]

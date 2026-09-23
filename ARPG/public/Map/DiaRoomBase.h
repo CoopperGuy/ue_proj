@@ -19,6 +19,7 @@ enum class EDiaRoomBattleState : uint8
 {
 	Idle,
 	BattleActive,
+	Failed,
 	Cleared
 };
 
@@ -27,7 +28,8 @@ enum class EDiaRoomRole : uint8
 {
 	Normal,
 	Start,
-	StageClear
+	StageClear,
+	Treasure
 };
 
 /// <summary>
@@ -79,8 +81,11 @@ public:
 	);
 	void CreateRoomMonsters();
 
+	void OnRoonStateChange(FGuid RoomID, EDiaRoomBattleState NewState);
 	void OnBattleStart(const FGuid InGuid);
 	void OnBattleEnd(const FGuid InGuid);
+	void OnBattleFailed(const FGuid InGuid);
+	void OnRoomIdle(const FGuid InGuid);
 	bool IsMonsterGenerateRoom(ETileType _TileType) const;
 protected:
 	UPROPERTY(EditAnywhere)

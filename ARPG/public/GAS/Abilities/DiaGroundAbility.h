@@ -8,7 +8,9 @@
 
 class ADiaSkillActor;
 /**
- * 
+ * 레거시 장판 Ability. 기존 데이터/BP 호환을 위해 유지하며 신규 사용은 지양한다.
+ * 신규 스킬은 UDiaGameplayAbility + FGASSkillData::Steps의 FGASGroundSpawnStepData를 우선 사용한다.
+ * Steps가 있는 기존 데이터는 공통 Step 실행기로 위임한다. ADiaGroundObj Actor는 Step에서도 계속 사용한다.
  */
 UCLASS()
 class ARPG_API UDiaGroundAbility : public UDiaGameplayAbility

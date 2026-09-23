@@ -5,6 +5,7 @@
 #include "UI/Item/ItemWidget.h"
 #include "UI/DragDrop/ItemDragDropOperation.h"
 #include "UI/Inventory/EquipWidget.h"
+#include "UI/Inventory/EquipSlot.h"
 #include "UI/Inventory/DiaInventoryPage.h"
 
 #include "Components/CanvasPanel.h"
@@ -72,10 +73,26 @@ void UMainInventory::InitializeInventory()
 		CreateInventory();
 	}
 
+	// Reconcile events missed while the widget was destructed.
+	TArray<FGuid> DisplayedItemIDs;
+	ItemWidgets.GetKeys(DisplayedItemIDs);
+	for (const FGuid& ItemID : DisplayedItemIDs)
+	{
+		if (!InventoryComponent->GetItemDataAtGuid(ItemID))
+		{
+			RemoveContainItem(ItemID);
+		}
+	}
 	for (const TPair<FGuid, FInventorySlot>& ItemPair : InventoryComponent->GetInventoryItems())
 	{
-		if (!ItemWidgets.Contains(ItemPair.Key))
+		if (UItemWidget* ItemWidget = GetItemWidgetAtGuid(ItemPair.Key); IsValid(ItemWidget))
 		{
+			ItemWidget->SetItemInfo(ItemPair.Value);
+			UpdateItemPosition(ItemWidget, ItemPair.Value.GridX, ItemPair.Value.GridY);
+		}
+		else
+		{
+			ItemWidgets.Remove(ItemPair.Key);
 			HandleItemAdded(ItemPair.Value);
 		}
 	}
@@ -95,7 +112,7 @@ bool UMainInventory::IsSlotEmpty(int32 SlotIndex) const
 	return ItemWidget->GetVisibility() != ESlateVisibility::Visible;
 }
 
-//여기서, 아이템을 추가하며 ItemWidget을 생성하고, 아이템이 차지하는 공간을 조정하는 로직을 구현한다.
+//여기서, 아이템을 추가하며 ItemWidget을 생성
 bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 ItemWidth, int32 ItemHeight, int32 PosX, int32 PosY)
 {
 	// 범위 체크 추가
@@ -129,6 +146,10 @@ bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 It
 
 	// ItemSubsystem에서 아이템 위젯을 생성한다.
 	UItemWidget* ItemWidget = FInventoryUtils::CreateItemWidget(this, &ItemData);
+	if (!IsValid(ItemWidget))
+	{
+		return false;
+	}
 	ItemWidget->SetItemDragDropState(static_cast<int32>(EItemDragDropType::EIDT_Inventory));
 	if (IsValid(ItemWidget))
 	{
@@ -148,10 +169,25 @@ bool UMainInventory::AddItemToInventory(const FInventorySlot& ItemData, int32 It
 			ItemWidgets.Emplace(ItemData.ItemInstance.InstanceID, ItemWidget);
 			ItemWidget->SetWidgetGridPos(PosX, PosY);
 
-			ItemWidget->OnItemRightClicked.BindLambda([this](const FInventorySlot& ItemInfo)
+			ItemWidget->OnItemRightClicked.BindLambda([this](UItemWidget* ClickedItemWidget)
 			{
-					const FItemInstance& ItemInstance = ItemInfo.ItemInstance;
-					EEquipmentSlot EquipSlot = ItemSubsystem->GetEquipmentSlot(ItemInstance);
+					if (!IsValid(ClickedItemWidget) || !IsValid(ItemSubsystem))
+					{
+						return;
+					}
+					const FItemInstance& ItemInstance = ClickedItemWidget->GetItemInfo().ItemInstance;
+					EEquipmentSlot eEquipSlot = ItemSubsystem->GetEquipmentSlot(ItemInstance);
+					if (UDiaInventoryPage* Page = InventoryPage.Get())
+					{
+						if (UEquipWidget* EquipWidget = Page->GetEquipmentWidget())
+						{
+							UEquipSlot* EquipSlotWidget = EquipWidget->GetEquipSlot(eEquipSlot);
+							if (IItemContainer* TargetContainer = Cast<IItemContainer>(EquipSlotWidget))
+							{
+								TargetContainer->AddItem(ClickedItemWidget->GetItemInfo(), ClickedItemWidget);
+							}
+						}
+					}
 			});
 		}
 	}
@@ -296,133 +332,41 @@ void UMainInventory::GetAllItemWidgets(TArray<UUserWidget*>& OutItemWidgets) con
 bool UMainInventory::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
 	UItemDragDropOperation* ItemDragOp = Cast<UItemDragDropOperation>(InOperation);
-	if (!ItemDragOp)
-		return false;
-	
-	EItemDragDropType DropType = ItemDragOp->DragType;
-
-	// 화면 좌표를 InventoryCanvas 기준의 로컬 좌표로 변환
-	FVector2D ScreenPosition = InDragDropEvent.GetScreenSpacePosition();
-	FVector2D CanvasLocalPosition = GetCanvasLocalPositionFromScreenPosition(InGeometry, ScreenPosition);
-	
-	// 그리드 좌표로 변환
-	int32 NewGridX = FMath::FloorToInt(CanvasLocalPosition.X / szSlot);
-	int32 NewGridY = FMath::FloorToInt(CanvasLocalPosition.Y / szSlot);
-
-	bool retFlag;
-	bool retVal = CheckInventoryDrop(ItemDragOp, NewGridX, NewGridY, ScreenPosition, retFlag);
-	if (retFlag) return retVal;
-	
-	switch (DropType)
+	if (!IsValid(ItemDragOp) || !IsValid(ItemDragOp->SourceWidget))
 	{
-	case EItemDragDropType::EIDT_Inventory:
-		// 인벤토리 내 이동 처리
-		// 아이템 위치 업데이트
-		if (InventoryComponent.IsValid())
-		{
-			if (!InventoryComponent->RequestMoveItem(ItemDragOp->SourceWidget->GetItemInstanceID(), NewGridX, NewGridY))
-			{
-				ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
-			}
-		}
-
-		break;
-	case EItemDragDropType::EIDT_Equipment:
-		// 장비에서 인벤토리로 이동 처리
-		//step.1 장비 컴포넌트에서 아이템 제거 요청
-		//step.2 인벤토리 컴포넌트에 아이템 추가 요청
-		//문제 -> EquipSlot에서 어떻게 지울 것인가??? 상식적으로만 EquipppmentComponent에서 지우는게 맞는데 관리하지 않고 있음.
-		if(InventoryComponent.IsValid() && EquippementComponent.IsValid())
-		{
-			if (!ItemSubsystem)
-			{
-			    return false;
-			}
-
-			EEquipmentSlot EquipSlot = ItemSubsystem->GetEquipmentSlot(ItemDragOp->ItemData.ItemInstance);
-			if (EquipSlot == EEquipmentSlot::EES_None)
-			{
-				return false;
-			}
-			if (!EquippementComponent->TryUnEquipToInventory(EquipSlot, ItemDragOp->ItemData))
-			{
-				if (IsValid(ItemDragOp->SourceWidget))
-				{
-					ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
-				}
-				return false;
-			}
-
-			//EquippementComponent->UnEquipItem(EquipSlot);
-			//InventoryComponent->TryAddItem(ItemDragOp->ItemData);
-		}
-			
-	
-		break;
+		return false;
 	}
 
-	return true;
+	FVector2D ScreenPosition = InDragDropEvent.GetScreenSpacePosition();
+	const FVector2D CanvasLocalPosition = GetCanvasLocalPositionFromScreenPosition(InGeometry, ScreenPosition);
+	const int32 NewGridX = FMath::FloorToInt(CanvasLocalPosition.X / szSlot);
+	const int32 NewGridY = FMath::FloorToInt(CanvasLocalPosition.Y / szSlot);
+
+	bool bStopDrop = false;
+	const bool bCheckResult = CheckInventoryDrop(ItemDragOp, NewGridX, NewGridY, ScreenPosition, bStopDrop);
+	const bool bSuccess = bStopDrop ? bCheckResult : AddItem(ItemDragOp->ItemData, ItemDragOp->SourceWidget, NewGridY, NewGridX);
+	if (!bSuccess && IsValid(ItemDragOp->SourceWidget))
+	{
+		ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
+	}
+	return bSuccess;
 }
 
 bool UMainInventory::CheckInventoryDrop(UItemDragDropOperation* ItemDragOp, int32 NewGridX, int32 NewGridY, FVector2D& ScreenPosition, bool& retFlag)
 {
+	// UI checks bounds only. Components validate occupancy, including overlap with the moving item.
 	retFlag = true;
-	//UE_LOG(LogARPG, Log, TEXT("MainInventory::NativeOnDrop - Screen: (%f, %f), CanvasLocal: (%f, %f), Grid: (%d, %d)"),
-	//	ScreenPosition.X, ScreenPosition.Y, CanvasLocalPosition.X, CanvasLocalPosition.Y, NewGridX, NewGridY);
-
-	// 인벤토리 슬롯 내의 유효한 위치인지 확인
-	if (InventoryComponent.IsValid() &&
-		!InventoryComponent->CanPlaceItemAt(ItemDragOp->ItemWidth, ItemDragOp->ItemHeight, NewGridX, NewGridY))
+	if (!IsValid(ItemDragOp) || !InventoryComponent.IsValid() || IsDropOutsideAllWidgets(ScreenPosition))
 	{
-		// 유효하지 않은 위치 - 원래 위치로 복원
-		if (ItemDragOp->SourceWidget)
-		{
-			ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
-		}
-		//인벤토리 바깥인지 체크해야 한다.
-
-		// 드롭된 위치가 인벤토리와 장착 위젯 모두의 바깥인지 체크
-		if (IsDropOutsideAllWidgets(ScreenPosition))
-		{
-			UE_LOG(LogARPG, Warning, TEXT("Item dropped completely outside all widgets - cancelling drop"));
-			return false;
-		}
-
-		//UE_LOG(LogARPG, Warning, TEXT("Invalid drop position - failed validation"));
 		return false;
 	}
-
-	// 드롭 위치에 기존 아이템이 있는지 확인
-	UItemWidget* ExistingItem = GetItemWidgetAtGridPosition(NewGridX, NewGridY);
-	if (ExistingItem && ExistingItem != ItemDragOp->SourceWidget)
+	if (!FInventoryUtils::IsValidGridPosition(GridWidth, GridHeight, ItemDragOp->ItemWidth, ItemDragOp->ItemHeight, NewGridX, NewGridY))
 	{
-		// 다른 아이템 위에 드롭하는 경우 - ItemWidget으로 이벤트 전파
 		return false;
-	}
-
-	// 빈 공간에 드롭하는 경우 - 직접 처리
-	// 추가 충돌 검사 (멀티 그리드 아이템의 경우)
-	for (int32 CheckY = NewGridY; CheckY < NewGridY + ItemDragOp->ItemHeight; ++CheckY)
-	{
-		for (int32 CheckX = NewGridX; CheckX < NewGridX + ItemDragOp->ItemWidth; ++CheckX)
-		{
-			UItemWidget* ExistingItemInArea = GetItemWidgetAtGridPosition(CheckX, CheckY);
-			if (ExistingItemInArea && ExistingItemInArea != ItemDragOp->SourceWidget)
-			{
-				// 다른 아이템과 충돌 - 드롭 거부
-				if (ItemDragOp->SourceWidget)
-				{
-					ItemDragOp->SourceWidget->SetRenderOpacity(1.0f);
-				}
-				UE_LOG(LogARPG, Warning, TEXT("Item collision detected at (%d, %d)"), CheckX, CheckY);
-				return false;
-			}
-		}
 	}
 	retFlag = false;
 	return true;
 }
-
 bool UMainInventory::NativeOnDragOver(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
 {
 	UItemDragDropOperation* ItemDragOp = Cast<UItemDragDropOperation>(InOperation);
@@ -489,17 +433,44 @@ void UMainInventory::UpdateItemPosition(UItemWidget* ItemWidget, int32 NewGridX,
 
 bool UMainInventory::AddItem(const FInventorySlot& Item, UItemWidget* ItemWidget, int32 PosY, int32 PosX)
 {
-	int32 OutPosX = PosX;
-	int32 OutPosY = PosY;
+	if (!InventoryComponent.IsValid() || Item.IsEmpty())
+	{
+		return false;
+	}
 
-	//ui작업
-	const int32 ItemWidth = ItemSubsystem ? ItemSubsystem->GetItemWidth(Item.ItemInstance) : 1;
-	const int32 ItemHeight = ItemSubsystem ? ItemSubsystem->GetItemHeight(Item.ItemInstance) : 1;
-	bool res = AddItemToInventory(Item, ItemWidth, ItemHeight, OutPosX, OutPosY);
-
-	return res;
+	// Resolve ownership from component data, not the item's equipment category (left/right rings).
+	const FGuid ItemID = Item.ItemInstance.InstanceID;
+	if (IsValid(ItemWidget) && ItemWidget->GetItemInstanceID() != ItemID)
+	{
+		return false;
+	}
+	if (InventoryComponent->GetItemDataAtGuid(ItemID))
+	{
+		if (PosX == -1 && PosY == -1)
+		{
+			return true; // Already in this inventory; no position was requested.
+		}
+		return InventoryComponent->RequestMoveItem(ItemID, PosX, PosY);
+	}
+	if (EquippementComponent.IsValid())
+	{
+		EEquipmentSlot SourceSlot = EEquipmentSlot::EES_None;
+		for (const auto& Entry : EquippementComponent->GetEquipmentMap())
+		{
+			if (Entry.Value.ItemInstance.InstanceID == ItemID)
+			{
+				SourceSlot = Entry.Key;
+				break;
+			}
+		}
+		if (SourceSlot != EEquipmentSlot::EES_None)
+		{
+			FInventorySlot ReturnedItem;
+			return EquippementComponent->TryUnEquipToInventory(SourceSlot, ReturnedItem, PosX, PosY);
+		}
+	}
+	return false;
 }
-
 bool UMainInventory::RemoveContainItem(const FGuid& ItemInstanceID)
 {
 	UItemWidget* ItemWidget = GetItemWidgetAtGuid(ItemInstanceID);
@@ -542,30 +513,30 @@ bool UMainInventory::IsDropOutsideAllWidgets(const FVector2D& ScreenPosition) co
 	bool bInsideInventory = (LocalPosition.X >= 0 && LocalPosition.X <= MySize.X && 
 	                        LocalPosition.Y >= 0 && LocalPosition.Y <= MySize.Y);
 	
-	// HUD를 통해 장착 위젯 참조 가져오기
+	// 페이지에 저장된 장착 위젯 참조로 경계 체크
 	bool bInsideEquipment = false;
-	UWidget* ParentWidget = GetParent();
-	while (ParentWidget)
+	if (UDiaInventoryPage* Page = InventoryPage.Get())
 	{
-		if (UDiaInventoryPage* InventoryPage = Cast<UDiaInventoryPage>(ParentWidget))
+		UEquipWidget* EquipWidget = Page->GetEquipmentWidget();
+		if (IsValid(EquipWidget))
 		{
-			if (UEquipWidget* EquipWidget = InventoryPage->GetEquipmentWidget())
-			{
-				FGeometry EquipGeometry = EquipWidget->GetCachedGeometry();
-				FVector2D EquipLocalPosition = EquipGeometry.AbsoluteToLocal(ScreenPosition);
-				FVector2D EquipSize = EquipGeometry.GetLocalSize();
-				
-				// 장착 위젯 경계 내부인지 체크
-				bInsideEquipment = (EquipLocalPosition.X >= 0 && EquipLocalPosition.X <= EquipSize.X && 
-				                   EquipLocalPosition.Y >= 0 && EquipLocalPosition.Y <= EquipSize.Y);
-			}
-			break;
+			FGeometry EquipGeometry = EquipWidget->GetCachedGeometry();
+			FVector2D EquipLocalPosition = EquipGeometry.AbsoluteToLocal(ScreenPosition);
+			FVector2D EquipSize = EquipGeometry.GetLocalSize();
+
+			// 장착 위젯 경계 내부인지 체크
+			bInsideEquipment = (EquipLocalPosition.X >= 0 && EquipLocalPosition.X <= EquipSize.X &&
+			                   EquipLocalPosition.Y >= 0 && EquipLocalPosition.Y <= EquipSize.Y);
 		}
-		ParentWidget = ParentWidget->GetParent();
 	}
 	
 	// 둘 다 바깥이면 true 반환 (완전히 바깥으로 드롭됨)
 	return (!bInsideInventory && !bInsideEquipment);
+}
+
+void UMainInventory::SetInventoryPage(UDiaInventoryPage* InInventoryPage)
+{
+	InventoryPage = InInventoryPage;
 }
 
 void UMainInventory::SetInventoryComponent(UDiaInventoryComponent* InComponent)
@@ -604,7 +575,9 @@ void UMainInventory::HandleItemAdded(const FInventorySlot& Item)
 {
 	if (!ItemWidgets.Contains(Item.ItemInstance.InstanceID))
 	{
-		AddItem(Item, nullptr, Item.GridY, Item.GridX);
+		const int32 ItemWidth = ItemSubsystem ? ItemSubsystem->GetItemWidth(Item.ItemInstance) : 1;
+		const int32 ItemHeight = ItemSubsystem ? ItemSubsystem->GetItemHeight(Item.ItemInstance) : 1;
+		AddItemToInventory(Item, ItemWidth, ItemHeight, Item.GridX, Item.GridY);
 	}
 }
 

@@ -61,6 +61,7 @@ public:
 	void ShowClearAlret(FGuid RoomGuid);
 	void ShowDamagePopup(float DamageAmount, const FVector2D& ScreenPos, bool bIsCritical);
 
+	bool IsRewardChoiceOpen() const;
 	void OpenRewardChoicePanel(const FText& Title, const FText& Subtitle, const TArray<FRewardData>& RewardOptions);
 
 protected:

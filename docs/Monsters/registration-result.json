@@ -1,0 +1,32 @@
+{
+  "saved_assets": [
+    "/Game/Blueprint/Monster/Charger/Animation/AM_ChargerRush",
+    "/Game/Blueprint/Monster/BladeGuard/BP_DiaBladeGuard",
+    "/Game/Blueprint/Monster/BladeGuard/AI/BT_DiaBladeGuard",
+    "/Game/Blueprint/Monster/Spitter/BP_DiaSpitter",
+    "/Game/Blueprint/Monster/Spitter/AI/BT_DiaSpitter",
+    "/Game/Blueprint/Monster/Charger/BP_DiaCharger",
+    "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger"
+  ],
+  "saved_tables": [
+    "DT_GASSkillData",
+    "DT_DiaMonsterTable",
+    "DT_SpawnGroupTable"
+  ],
+  "monster_ids": [
+    "BladeGuard_01",
+    "Charger_01",
+    "Spitter_01"
+  ],
+  "skill_ids": [
+    3101,
+    3102,
+    3103
+  ],
+  "existing_rows_preserved": true,
+  "blueprint_compiles": {
+    "/Game/Blueprint/Monster/BladeGuard/BP_DiaBladeGuard": null,
+    "/Game/Blueprint/Monster/Spitter/BP_DiaSpitter": null,
+    "/Game/Blueprint/Monster/Charger/BP_DiaCharger": null
+  }
+}

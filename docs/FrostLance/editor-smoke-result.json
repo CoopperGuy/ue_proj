@@ -1,0 +1,232 @@
+{
+  "suite": "FrostLance.EditorSmoke",
+  "passed": true,
+  "total": 36,
+  "checks": [
+    {
+      "name": "skill_id",
+      "passed": true,
+      "actual": 1012,
+      "expected": 1012
+    },
+    {
+      "name": "variant_ids",
+      "passed": true,
+      "actual": [
+        21,
+        22,
+        23
+      ],
+      "expected": [
+        21,
+        22,
+        23
+      ]
+    },
+    {
+      "name": "base_damage",
+      "passed": true,
+      "actual": 85,
+      "expected": 85
+    },
+    {
+      "name": "mana_cost",
+      "passed": true,
+      "actual": 12,
+      "expected": 12
+    },
+    {
+      "name": "cooldown_seconds",
+      "passed": true,
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "name": "cooldown_tag",
+      "passed": true,
+      "actual": "GASData.CoolDown.1012",
+      "expected": "GASData.CoolDown.1012"
+    },
+    {
+      "name": "spawn_class",
+      "passed": true,
+      "actual": "/Game/Skills/FrostLance/BP_FrostLance.BP_FrostLance_C",
+      "expected": "/Game/Skills/FrostLance/BP_FrostLance.BP_FrostLance_C"
+    },
+    {
+      "name": "lifetime_seconds",
+      "passed": true,
+      "actual": 1.5,
+      "expected": 1.5
+    },
+    {
+      "name": "job_reward_pool",
+      "passed": true,
+      "actual": 1,
+      "expected": 1
+    },
+    {
+      "name": "FrostLance_Pierce.id",
+      "passed": true,
+      "actual": 21,
+      "expected": 21
+    },
+    {
+      "name": "FrostLance_Pierce.magnitude",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "FrostLance_Pierce.icon",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "FrostLance_Fork.id",
+      "passed": true,
+      "actual": 22,
+      "expected": 22
+    },
+    {
+      "name": "FrostLance_Fork.magnitude",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "FrostLance_Fork.icon",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "FrostLance_Freeze.id",
+      "passed": true,
+      "actual": 23,
+      "expected": 23
+    },
+    {
+      "name": "FrostLance_Freeze.magnitude",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "FrostLance_Freeze.icon",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "freeze_effect_class",
+      "passed": true,
+      "actual": "/Game/Skills/FrostLance/GE_FrostLance_Freeze.GE_FrostLance_Freeze_C",
+      "expected": "/Game/Skills/FrostLance/GE_FrostLance_Freeze.GE_FrostLance_Freeze_C"
+    },
+    {
+      "name": "projectile_speed",
+      "passed": true,
+      "actual": 2000,
+      "expected": 2000
+    },
+    {
+      "name": "skillEffect.reference",
+      "passed": true,
+      "actual": "/Game/Skills/FrostLance/Effects/NS_FrostLance_Trail.NS_FrostLance_Trail",
+      "expected": "/Game/Skills/FrostLance/Effects/NS_FrostLance_Trail.NS_FrostLance_Trail"
+    },
+    {
+      "name": "Trail.compile_status",
+      "passed": true,
+      "actual": "UpToDate",
+      "expected": "UpToDate"
+    },
+    {
+      "name": "Trail.compile_errors",
+      "passed": true,
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "Trail.compile_warnings",
+      "passed": true,
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "hitEffect.reference",
+      "passed": true,
+      "actual": "/Game/Skills/FrostLance/Effects/NS_FrostLance_Impact.NS_FrostLance_Impact",
+      "expected": "/Game/Skills/FrostLance/Effects/NS_FrostLance_Impact.NS_FrostLance_Impact"
+    },
+    {
+      "name": "Impact.compile_status",
+      "passed": true,
+      "actual": "UpToDate",
+      "expected": "UpToDate"
+    },
+    {
+      "name": "Impact.compile_errors",
+      "passed": true,
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "Impact.compile_warnings",
+      "passed": true,
+      "actual": false,
+      "expected": false
+    },
+    {
+      "name": "projectile_mesh",
+      "passed": true,
+      "actual": "/Game/Skills/FrostLance/Meshes/SM_FrostLance.SM_FrostLance",
+      "expected": "/Game/Skills/FrostLance/Meshes/SM_FrostLance.SM_FrostLance"
+    },
+    {
+      "name": "projectile_mesh_exists",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "freeze_duration_policy",
+      "passed": true,
+      "actual": "HasDuration",
+      "expected": "HasDuration"
+    },
+    {
+      "name": "freeze_duration_1_2s",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "freeze_movement_override",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "freeze_grants_required_tags",
+      "passed": true,
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "existing_slow.GASData.Duration",
+      "passed": true,
+      "actual": 2,
+      "expected": 2
+    },
+    {
+      "name": "existing_slow.GASData.StatusValue",
+      "passed": true,
+      "actual": 0.1,
+      "expected": 0.1
+    }
+  ],
+  "scope": "Editor data and asset configuration only; no combat or modified C++ execution."
+}

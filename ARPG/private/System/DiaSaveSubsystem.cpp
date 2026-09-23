@@ -3,6 +3,12 @@
 
 #include "System/DiaSaveSubsystem.h"
 #include "System/DiaSaveGame.h"
+#include "System/DiaRewardSubsystem.h"
+#include "System/DiaMapGeneratorSubsystem.h"
+#include "DiaGameState.h"
+#include "DiaComponent/DiaSkillManagerComponent.h"
+#include "DiaComponent/Skill/SkillObject.h"
+#include "Engine/GameInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Controller/DiaController.h"
 #include "DiaBaseCharacter.h"
@@ -30,7 +36,7 @@ namespace
 }
 
 
-//ÀÏ´Ü µ¿±â ¼¼ÀÌºê,·Îµå·Î ÁøÇà
+//ì¼ë‹¨ ë™ê¸° ì„¸ì´ë¸Œ,ë¡œë“œë¡œ ì§„í–‰
 void UDiaSaveSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
@@ -61,6 +67,13 @@ bool UDiaSaveSubsystem::SaveGame(const FString& SlotName)
 		return false;
 	}
 
+    const ADiaGameState* GS = World->GetGameState<ADiaGameState>();
+    const UDiaRewardSubsystem* Rewards = GetGameInstance()->GetSubsystem<UDiaRewardSubsystem>();
+    if (PendingLoadedGame || (GS && GS->IsInBattle()) || (Rewards && Rewards->IsApplyingReward()))
+    {
+        UE_LOG(LogARPG, Warning, TEXT("Save rejected while loading, fighting, or applying a reward."));
+        return false;
+    }
 	ADiaController* Controller = Cast<ADiaController>(UGameplayStatics::GetPlayerController(World, 0));
 	if (!IsValid(Controller))
 	{
@@ -89,18 +102,32 @@ bool UDiaSaveSubsystem::SaveGame(const FString& SlotName)
 		return false;
 	}
 
+    if (!PlayerCharacter->GetAttributeSet() || PlayerCharacter->GetAttributeSet()->GetHealth() <= 0.f) return false;
+    SaveGameInstance->SaveVersion = 1;
 	SaveGameInstance->PlayerName = TEXT("PlayerOne");
 	SaveGameInstance->SaveLevelName = UGameplayStatics::GetCurrentLevelName(World, true);
 	FillSaveDataByGame(SaveGameInstance, Controller);
 
+    if (SaveGameInstance->bHasDungeonFloor && !SaveGameInstance->IsFloorSnapshotValid())
+    {
+        UE_LOG(LogARPG, Error, TEXT("Save rejected: floor snapshot validation failed."));
+        return false;
+    }
 	return UGameplayStatics::SaveGameToSlot(SaveGameInstance, SlotName, 0);
 }
 
 bool UDiaSaveSubsystem::LoadGame(const FString& SlotName)
 {
+    const UDiaRewardSubsystem* Rewards = GetGameInstance()->GetSubsystem<UDiaRewardSubsystem>();
+    if (PendingLoadedGame || (Rewards && Rewards->IsApplyingReward())) return false;
 
 	if (UDiaSaveGame* LoadedGame = Cast<UDiaSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, 0)))
 	{
+        if (LoadedGame->SaveVersion > 1 || (LoadedGame->bHasDungeonFloor && !LoadedGame->IsFloorSnapshotValid()))
+        {
+            UE_LOG(LogARPG, Error, TEXT("Save slot has an unsupported version or invalid floor snapshot; load cancelled."));
+            return false;
+        }
 		const FString SaveLevelName = NormalizeSavedLevelName(LoadedGame->SaveLevelName);
 		if (SaveLevelName.IsEmpty())
 		{
@@ -218,6 +245,7 @@ void UDiaSaveSubsystem::FillSaveDataByGame(UDiaSaveGame* SaveGameInstance, const
 		UDiaEquipmentComponent* EquipComp = Controller->GetComponentByClass<UDiaEquipmentComponent>();
 		if (IsValid(InvenComp) && IsValid(EquipComp))
 		{
+			SaveGameInstance->Gold = InvenComp->GetGold();
 			InvenComp->SaveInventoryToSaveGame(SaveGameInstance);
 			EquipComp->SaveEquipmentToSaveGame(SaveGameInstance);
 		}
@@ -227,9 +255,38 @@ void UDiaSaveSubsystem::FillSaveDataByGame(UDiaSaveGame* SaveGameInstance, const
 			if (const UDiaAttributeSet* Attr = Cast<UDiaAttributeSet>(ASC->GetAttributeSet(UDiaAttributeSet::StaticClass())))
 			{
 				SaveGameInstance->PlayerLevel = FMath::Max(1, FMath::RoundToInt(Attr->GetLevel()));
+                SaveGameInstance->Health = Attr->GetHealth();
+                SaveGameInstance->Mana = Attr->GetMana();
+                SaveGameInstance->Experience = Attr->GetExp();
 			}
 		}
 
+        if (const UDiaSkillManagerComponent* Skills = PlayerCharacter->FindComponentByClass<UDiaSkillManagerComponent>())
+        {
+            SaveGameInstance->Skills.Reset();
+            for (const USkillObject* Skill : Skills->GetSkillIDMapping())
+            {
+                if (!IsValid(Skill)) continue;
+                FDiaSavedSkill Saved;
+                Saved.SkillID = Skill->GetSkillID();
+                Saved.Level = Skill->GetSkillLevel();
+                Saved.OwnedVariants = Skill->GetOwnedVariantIDs();
+                Saved.AppliedVariants = Skill->GetVariantApplyIDs();
+                SaveGameInstance->Skills.Add(Saved);
+            }
+            SaveGameInstance->QuickSlots = Skills->GetQuickSlotSkillIDs();
+        }
+        if (const UDiaMapGeneratorSubsystem* Map = Controller->GetWorld()->GetSubsystem<UDiaMapGeneratorSubsystem>())
+        {
+            SaveGameInstance->FloorSize = Map->GetMapSize();
+            SaveGameInstance->RoomLayout = Map->GetRoomLayout();
+            SaveGameInstance->StartRoom = Map->GetStartRoomData();
+            SaveGameInstance->bHasDungeonFloor = SaveGameInstance->StartRoom.RoomGuid.IsValid();
+        }
+        if (const ADiaGameState* GS = Controller->GetWorld()->GetGameState<ADiaGameState>())
+            SaveGameInstance->ClearedRooms = GS->GetClearedRoomIDs();
+        if (const UDiaRewardSubsystem* Rewards = GetGameInstance()->GetSubsystem<UDiaRewardSubsystem>())
+            SaveGameInstance->RoomRewards = Rewards->GetRoomRewards();
 		SaveGameInstance->PlayerLocation = PlayerCharacter->GetActorLocation();
 	}
 }
@@ -247,8 +304,12 @@ void UDiaSaveSubsystem::ApplySaveDataToGame(const UDiaSaveGame* SaveGameInstance
 		UDiaEquipmentComponent* EquipComp = Controller->GetComponentByClass<UDiaEquipmentComponent>();
 		if (IsValid(InvenComp) && IsValid(EquipComp))
 		{
-			InvenComp->LoadInventoryFromSaveGame(SaveGameInstance);
-			EquipComp->LoadEquipmentFromSaveGame(SaveGameInstance);
+            // Remove initial equipment effects before rebuilding level attributes.
+            TArray<EEquipmentSlot> ExistingSlots;
+            EquipComp->GetEquipmentMap().GetKeys(ExistingSlots);
+            for (const EEquipmentSlot Slot : ExistingSlots) Controller->OnUnequipItemProgress(Slot);
+            InvenComp->LoadInventoryFromSaveGame(SaveGameInstance);
+            if (SaveGameInstance->SaveVersion >= 1) InvenComp->SetGold(SaveGameInstance->Gold);
 		}
 
 		if (UDiaAttributeSet* Attr = PlayerCharacter->GetAttributeSet())
@@ -264,6 +325,52 @@ void UDiaSaveSubsystem::ApplySaveDataToGame(const UDiaSaveGame* SaveGameInstance
 			}
 		}
 
-		PlayerCharacter->SetActorLocation(SaveGameInstance->PlayerLocation);
+        if (IsValid(EquipComp))
+        {
+            for (const auto& Entry : SaveGameInstance->EquippedItems)
+            {
+                Controller->OnEquipItemProgress(Entry.Value, Entry.Key);
+                EquipComp->OnItemEquipped.Broadcast(Entry.Value, Entry.Key);
+            }
+        }
+        if (SaveGameInstance->SaveVersion >= 1)
+        {
+            UDiaSkillManagerComponent* Skills = PlayerCharacter->FindComponentByClass<UDiaSkillManagerComponent>();
+            UAbilitySystemComponent* ASC = PlayerCharacter->GetAbilitySystemComponent();
+            if (Skills && ASC)
+            {
+                TArray<FGameplayAbilitySpecHandle> OldHandles;
+                for (const USkillObject* Skill : Skills->GetSkillIDMapping())
+                    if (Skill) if (const FGameplayAbilitySpec* Spec = Skills->GetAbilitySpecBySkillID(Skill->GetSkillID())) OldHandles.Add(Spec->Handle);
+                for (const FGameplayAbilitySpecHandle Handle : OldHandles) ASC->ClearAbility(Handle);
+                Skills->SetSkillIDMapping(TArray<int32>());
+                for (const FDiaSavedSkill& Saved : SaveGameInstance->Skills)
+                {
+                    if (!PlayerCharacter->ApplySkillByID(Saved.SkillID))
+                    {
+                        UE_LOG(LogARPG, Error, TEXT("Saved skill %d could not be restored."), Saved.SkillID);
+                        continue;
+                    }
+                    if (Saved.Level > 1) PlayerCharacter->ApplySkillLevelUpByID(Saved.SkillID, Saved.Level - 1);
+                    for (const int32 Variant : Saved.OwnedVariants) Skills->TryUnlockSkillVariantByID(Saved.SkillID, Variant);
+                    for (const int32 Variant : Saved.AppliedVariants) Skills->TryApplySkillVariantByID(Saved.SkillID, Variant);
+                }
+                for (int32 Index = 0; Index < UDiaSkillManagerComponent::MaxQuickSlotCount; ++Index)
+                {
+                    const int32 SkillID = SaveGameInstance->QuickSlots.IsValidIndex(Index) ? SaveGameInstance->QuickSlots[Index] : -1;
+                    Skills->SetSkillIDIndex(SkillID, Index);
+                    Controller->RegisteSkillOnQuickSlotWidget(SkillID, Index);
+                }
+            }
+            if (UDiaAttributeSet* Attr = PlayerCharacter->GetAttributeSet())
+            {
+                Attr->SetExp(FMath::Max(0.f, SaveGameInstance->Experience));
+                Attr->SetHealth(FMath::Clamp(SaveGameInstance->Health, 0.f, Attr->GetMaxHealth()));
+                Attr->SetMana(FMath::Clamp(SaveGameInstance->Mana, 0.f, Attr->GetMaxMana()));
+            }
+        }
+        // Legacy saves contain no reproducible layout. Use the new floor's entrance.
+        if (SaveGameInstance->SaveVersion >= 1 && (!SaveGameInstance->bHasDungeonFloor || SaveGameInstance->IsFloorSnapshotValid()))
+            PlayerCharacter->SetActorLocation(SaveGameInstance->PlayerLocation, false, nullptr, ETeleportType::TeleportPhysics);
 	}
 }

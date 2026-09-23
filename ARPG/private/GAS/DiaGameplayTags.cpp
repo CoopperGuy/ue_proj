@@ -47,6 +47,7 @@ void FDiaGameplayTags::InitializeNativeTags()
 	RegisterSkillTypeTags();
 	RegisterAbilityTags();
 	RegisterDamageTags();
+	RegisterBuildTags();
 	RegisterUITags();
 	RegisterAttributeSetTags();
 	RegisterItemOptionTags();
@@ -154,6 +155,34 @@ void FDiaGameplayTags::RegisterDamageTags()
 	GameplayTags.AddTag(GameplayTags.Damage_Final, "GASData.Damage", "");
 	GameplayTags.AddTag(GameplayTags.Damage_Multiplier, "GASData.DamageMultiplier", "");
 
+}
+
+void FDiaGameplayTags::RegisterBuildTags()
+{
+	// ========================================
+	// Build Tags - 보상 빌드 분류
+	// ========================================
+	GameplayTags.AddTag(GameplayTags.Build_Root, "Build", "보상 빌드 분류 루트");
+	GameplayTags.AddTag(GameplayTags.Build_Mechanic_Projectile, "Build.Mechanic.Projectile", "투사체 기반 스킬");
+	GameplayTags.AddTag(GameplayTags.Build_Mechanic_Melee, "Build.Mechanic.Melee", "근접 기반 스킬");
+	GameplayTags.AddTag(GameplayTags.Build_Mechanic_Area, "Build.Mechanic.Area", "범위 기반 스킬");
+	GameplayTags.AddTag(GameplayTags.Build_Mechanic_MultiHit, "Build.Mechanic.MultiHit", "다단 공격 스킬");
+
+	GameplayTags.AddTag(GameplayTags.Build_Damage_Physical, "Build.Damage.Physical", "물리 피해");
+	GameplayTags.AddTag(GameplayTags.Build_Damage_Fire, "Build.Damage.Fire", "화염 피해");
+	GameplayTags.AddTag(GameplayTags.Build_Damage_Cold, "Build.Damage.Cold", "냉기 피해");
+
+	GameplayTags.AddTag(GameplayTags.Build_Stat_Crit, "Build.Stat.Crit", "치명타 중심 빌드");
+	GameplayTags.AddTag(GameplayTags.Build_Stat_Cooldown, "Build.Stat.Cooldown", "쿨다운 감소 중심 빌드");
+	GameplayTags.AddTag(GameplayTags.Build_Stat_MaxHealth, "Build.Stat.MaxHealth", "최대 체력 중심 빌드");
+
+	GameplayTags.AddTag(GameplayTags.Build_Role_Damage, "Build.Role.Damage", "공격 역할");
+	GameplayTags.AddTag(GameplayTags.Build_Role_Defense, "Build.Role.Defense", "방어 역할");
+	GameplayTags.AddTag(GameplayTags.Build_Role_Mobility, "Build.Role.Mobility", "기동 역할");
+	GameplayTags.AddTag(GameplayTags.Build_Role_Control, "Build.Role.Control", "군중 제어 역할");
+	GameplayTags.AddTag(GameplayTags.Build_Role_Buff, "Build.Role.Buff", "강화 역할");
+
+	GameplayTags.AddTag(GameplayTags.Build_Modifier_Pierce, "Build.Modifier.Pierce", "관통 변형");
 }
 
 void FDiaGameplayTags::RegisterUITags()

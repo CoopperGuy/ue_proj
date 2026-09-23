@@ -177,8 +177,7 @@ void ADiaRoomBase::BeginPlay()
 	ADiaGameState* DiaGameState = GetWorld() ? GetWorld()->GetGameState<ADiaGameState>() : nullptr;
 	if (IsValid(DiaGameState))
 	{
-		DiaGameState->OnRoomCleared.AddUObject(this, &ThisClass::OnBattleEnd);
-		DiaGameState->OnRoomBattleStart.AddUObject(this, &ThisClass::OnBattleStart);
+		DiaGameState->OnRoonStateChange.AddUObject(this, &ThisClass::OnRoonStateChange);
 	}
 
 }
@@ -240,7 +239,7 @@ void ADiaRoomBase::OnConstruction(const FTransform& Transform)
 			Door->SetActorHiddenInGame(true);
 			Door->SetActorEnableCollision(false);
 		}
-		else if (!bActivePort && bMonsterRoom)
+		else if (!bActivePort)
 		{
 			ClosedPortDoors.Add(Door);
 			Door->SetActorHiddenInGame(false);
@@ -275,51 +274,7 @@ void ADiaRoomBase::Tick(float DeltaTime)
 
 void ADiaRoomBase::OnRoomEnterTriggerOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	//UMonsterSpawnSubSystem* SpawnSubsystem = GetWorld()->GetSubsystem<UMonsterSpawnSubSystem>();
-	//if (!IsValid(SpawnSubsystem))
-	//{
-	//	UE_LOG(LogARPG_Room, Warning, TEXT("ADiaRoomBase::OnRoomEnterTriggerOverlap: Failed to get UMonsterSpawnSubSystem"));
-	//	return;
-	//}
 
-	//SpawnSubsystem->OnMonsterGroupSpawned.BindLambda([this](const TArray<ADiaMonster*>& InSpawnedMonsters)
-	//{
-	//	this->SpawnedMonsters.Reset();
-	//	for (ADiaMonster* Monster : InSpawnedMonsters)
-	//	{
-	//		this->SpawnedMonsters.Add(Monster);
-	//	}
-
-	//	this->bMonstersSpawned = true;
-	//	this->bIsBattleActive = true;
-
-	//	UGameInstance* GI = GetWorld()->GetGameInstance();
-	//	if (!GI) return;
-
-	//	UMonsterManager* MM = GI->GetSubsystem<UMonsterManager>();
-	//	if (!MM) return;
-	//	MM->SetSpawnedMonstersForRoom(this->GetRoomGuid(), this->SpawnedMonsters);
-
-	//	for(ADiaMonster* Monster : InSpawnedMonsters)
-	//	{
-	//		if (Monster)
-	//		{
-	//			Monster->SetOwningRoom(this->GetRoomGuid());
-	//		}
-	//	}
-	//	UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase: Monster group %d monsters"), InSpawnedMonsters.Num());
-	//});
-
-	//for (UBoxComponent* Trigger : RoomEnterTriggers)
-	//{
-	//	if (Trigger)
-	//	{
-	//		Trigger->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//	}
-	//}
-	//SpawnSubsystem->SpawnMonsterGroup(SpawnGroup, GetActorLocation(), DiaMapConstants::HalfTileSize);
-
-	//OnBattleStart();
 }
 
 void ADiaRoomBase::OnRoomEnterTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -365,9 +320,6 @@ void ADiaRoomBase::OnRoomEnterTriggerEndOverlap(UPrimitiveComponent* OverlappedC
 
 	if (DiaGameState)
 	{
-		SetRoomBattleState(EDiaRoomBattleState::BattleActive);
-		SetRoomEnterTriggersEnabled(false);
-
 		if (!DiaGameState->SpawnRoomMonsters(this->GetRoomGuid(), GetActorLocation(), GetTileType(), SpawnType, DiaMapConstants::HalfTileSize))
 		{
 			SetRoomBattleState(EDiaRoomBattleState::Idle);
@@ -379,49 +331,6 @@ void ADiaRoomBase::OnRoomEnterTriggerEndOverlap(UPrimitiveComponent* OverlappedC
 		UE_LOG(LogARPG_Room, Warning, TEXT("ADiaRoomBase::OnRoomEnterTriggerEndOverlap: Failed to get ADiaGameState"));
 	}
 
-	//UMonsterSpawnSubSystem* SpawnSubsystem = GetWorld()->GetSubsystem<UMonsterSpawnSubSystem>();
-	//if (!IsValid(SpawnSubsystem))
-	//{
-	//	UE_LOG(LogARPG_Room, Warning, TEXT("ADiaRoomBase::OnRoomEnterTriggerOverlap: Failed to get UMonsterSpawnSubSystem"));
-	//	return;
-	//}
-
-	//SpawnSubsystem->OnMonsterGroupSpawned.BindLambda([this](const TArray<ADiaMonster*>& InSpawnedMonsters)
-	//	{
-	//		this->SpawnedMonsters.Reset();
-	//		for (ADiaMonster* Monster : InSpawnedMonsters)
-	//		{
-	//			this->SpawnedMonsters.Add(Monster);
-	//		}
-
-	//		this->bMonstersSpawned = true;
-	//		this->bIsBattleActive = true;
-
-	//		UGameInstance* GI = GetWorld()->GetGameInstance();
-	//		if (!GI) return;
-
-	//		UMonsterManager* MM = GI->GetSubsystem<UMonsterManager>();
-	//		if (!MM) return;
-	//		MM->SetSpawnedMonstersForRoom(this->GetRoomGuid(), this->SpawnedMonsters);
-
-	//		for (ADiaMonster* Monster : InSpawnedMonsters)
-	//		{
-	//			if (Monster)
-	//			{
-	//				Monster->SetOwningRoom(this->GetRoomGuid());
-	//			}
-	//		}
-	//		UE_LOG(LogARPG_Room, Log, TEXT("ADiaRoomBase: Monster group %d monsters"), InSpawnedMonsters.Num());
-	//	});
-
-	//for (UBoxComponent* Trigger : RoomEnterTriggers)
-	//{
-	//	if (Trigger)
-	//	{
-	//		Trigger->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//	}
-	//}
-	//SpawnSubsystem->SpawnMonsterGroup(SpawnGroup, GetActorLocation(), DiaMapConstants::HalfTileSize);
 }
 
 void ADiaRoomBase::CreateRoomMonsters()
@@ -431,7 +340,7 @@ void ADiaRoomBase::CreateRoomMonsters()
 void ADiaRoomBase::SetRoomRole(EDiaRoomRole NewRole)
 {
 	RoomRole = NewRole;
-	if (RoomRole == EDiaRoomRole::Start)
+	if (RoomRole == EDiaRoomRole::Start || RoomRole == EDiaRoomRole::Treasure)
 	{
 		SetRoomBattleState(EDiaRoomBattleState::Cleared);
 		SetRoomEnterTriggersEnabled(false);
@@ -452,7 +361,33 @@ void ADiaRoomBase::SetRoomRole(EDiaRoomRole NewRole)
 
 bool ADiaRoomBase::IsMonsterSpawnEnabled() const
 {
-	return RoomRole != EDiaRoomRole::Start;
+	return RoomRole != EDiaRoomRole::Start && RoomRole != EDiaRoomRole::Treasure;
+}
+
+void ADiaRoomBase::OnRoonStateChange(FGuid RoomID, EDiaRoomBattleState NewState)
+{
+	if (RoomID != GetRoomGuid())
+	{
+		return;
+	}
+
+	switch (NewState)
+	{
+	case EDiaRoomBattleState::BattleActive:
+		OnBattleStart(RoomID);
+		break;
+	case EDiaRoomBattleState::Cleared:
+		OnBattleEnd(RoomID);
+		break;
+	case EDiaRoomBattleState::Idle:
+		OnRoomIdle(RoomID);
+		break;
+	case EDiaRoomBattleState::Failed:
+		OnBattleFailed(RoomID);
+		break;
+	default:
+		break;
+	}
 }
 
 void ADiaRoomBase::OnBattleStart(const FGuid InGuid)
@@ -491,6 +426,46 @@ void ADiaRoomBase::OnBattleEnd(const FGuid InGuid)
 
 	SetRoomBattleState(EDiaRoomBattleState::Cleared);
 	SetRoomEnterTriggersEnabled(false);
+
+	for (const auto& Door : RoomDoors)
+	{
+		if (Door)
+		{
+			Door->SetActorHiddenInGame(true);
+			Door->SetActorEnableCollision(false);
+		}
+	}
+}
+
+void ADiaRoomBase::OnBattleFailed(const FGuid InGuid)
+{
+	if (InGuid != GetRoomGuid())
+	{
+		return;
+	}
+
+	SetRoomBattleState(EDiaRoomBattleState::Idle);
+	SetRoomEnterTriggersEnabled(true);
+
+	for (const auto& Door : RoomDoors)
+	{
+		if (Door)
+		{
+			Door->SetActorHiddenInGame(true);
+			Door->SetActorEnableCollision(false);
+		}
+	}
+}
+
+void ADiaRoomBase::OnRoomIdle(const FGuid InGuid)
+{
+	if (InGuid != GetRoomGuid())
+	{
+		return;
+	}
+
+	SetRoomBattleState(EDiaRoomBattleState::Idle);
+	SetRoomEnterTriggersEnabled(true);
 
 	for (const auto& Door : RoomDoors)
 	{

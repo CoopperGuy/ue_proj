@@ -14,6 +14,7 @@ class UTextBlock;
 class UItemWidget;
 class UDiaInventoryComponent;
 class UDiaEquipmentComponent;
+class UDiaInventoryPage;
 class UItemDragDropOperation;
 class UItemSubsystem;
 /**
@@ -56,8 +57,8 @@ public:
 	// 아이템 위치 업데이트
 	void UpdateItemPosition(UItemWidget* ItemWidget, int32 NewGridX, int32 NewGridY);
 
-	virtual bool AddItem(const FInventorySlot& Item, UItemWidget* ItemWidget, int32 PosY = -1, int32 PosX = -1);
-	virtual bool RemoveContainItem(const FGuid& ItemInstanceID) override;
+	virtual bool AddItem(const FInventorySlot& Item, UItemWidget* ItemWidget, int32 PosY = -1, int32 PosX = -1) override;
+	bool RemoveContainItem(const FGuid& ItemInstanceID);
 	bool MoveContainItem(const FGuid& ItemInstanceID, int32 NewPosX, int32 NewPosY);
 protected:
 	void CreateInventory();
@@ -93,6 +94,7 @@ protected:
 
 	TWeakObjectPtr<UDiaInventoryComponent> InventoryComponent;
 	TWeakObjectPtr<UDiaEquipmentComponent> EquippementComponent;
+	TWeakObjectPtr<UDiaInventoryPage> InventoryPage;
 
 	UPROPERTY()
 	TObjectPtr<UItemSubsystem> ItemSubsystem;
@@ -106,6 +108,7 @@ public:
 	void GetAllItemWidgets(TArray<UUserWidget*>& OutItemWidgets) const;
 	void SetInventoryComponent(UDiaInventoryComponent* InComponent);
 	void SetEquipmentComponent(UDiaEquipmentComponent* InComponent);
+	void SetInventoryPage(UDiaInventoryPage* InInventoryPage);
 private:
 	// 드롭된 위치가 인벤토리와 장착 위젯 모두의 바깥인지 체크
 	bool IsDropOutsideAllWidgets(const FVector2D& ScreenPosition) const;

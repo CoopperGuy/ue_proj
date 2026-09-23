@@ -1,4 +1,5 @@
 #include "GAS/DiaGameplayAbility.h"
+#include "GAS/Executor/DiaStepVariantSupport.h"
 #include "GAS/DiaAttributeSet.h"
 #include "GAS/DiaGASHelper.h"
 #include "GAS/DiaGameplayTags.h"
@@ -12,6 +13,7 @@
 #include "GameplayEffectTypes.h"
 
 #include "DiaBaseCharacter.h"
+#include "Monster/DiaMonster.h"
 
 #include "Abilities/Tasks/AbilityTask_PlayMontageAndWait.h"
 #include "Abilities/Tasks/AbilityTask_WaitDelay.h"
@@ -134,6 +136,10 @@ bool UDiaGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Ha
 	{
 		return false;
 	}
+	if (const ADiaMonster* Monster = Cast<ADiaMonster>(ActorInfo->AvatarActor.Get()); Monster && Monster->IsAttackInProgress())
+	{
+		return false;
+	}
 
 	if (ActorInfo && ActorInfo->AbilitySystemComponent.IsValid())
 	{
@@ -175,6 +181,7 @@ void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 	bool bIsStunned = ASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Stunned);
 	if (bIsStunned)
 	{
+		EndAbility(Handle, ActorInfo, ActivationInfo, true, true);
 		return;
 	}
 
@@ -185,9 +192,18 @@ void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 	}
 
 	// Play animation if available
+	bSkillExecutionFinished = false;
+	CurrentAbilityMontage = nullptr;
+	if (ADiaMonster* Monster = Cast<ADiaMonster>(Avatar))
+	{
+		Monster->BeginAttack();
+		bOwnsMonsterAttack = true;
+	}
 	if (AbilityMontage)
 	{
 		float rate = PlayAbilityMontage(AbilityMontage);
+		// A failed montage can cancel this ability synchronously.
+		if (!IsActive()) return;
 	}
 
 	// Play visual effects
@@ -217,14 +233,32 @@ void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 
 void UDiaGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-	// Stop montage if playing
-	if (MontageTask)
+	// A successful hit is not the end of the monster's attack animation. Keep the
+	// ability (and BT task) active through recovery. Cancellation never waits.
+	if (!bWasCancelled && bOwnsMonsterAttack && CurrentAbilityMontage)
 	{
+		bSkillExecutionFinished = true;
+		return;
+	}
+
+	if (bWasCancelled) StopAbilityMontage(0.1f);
+	if (!bOwnsMonsterAttack && MontageTask)
+	{
+		// Preserve player skill montage lifetime; this recovery change is for AI attacks.
 		MontageTask->EndTask();
 		MontageTask = nullptr;
 	}
-
+	// Let Super notify the montage task that its owning ability ended. Calling
+	// EndTask here used to detach it first, leaving an orphaned animation playing.
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+	MontageTask = nullptr;
+	CurrentAbilityMontage = nullptr;
+	if (bOwnsMonsterAttack)
+	{
+		bOwnsMonsterAttack = false;
+		if (ADiaMonster* Monster = Cast<ADiaMonster>(ActorInfo ? ActorInfo->AvatarActor.Get() : nullptr))
+			Monster->FinishAttack();
+	}
 }
 
 void UDiaGameplayAbility::ApplyDamageToASC(UAbilitySystemComponent* TargetASC, float BaseDamage, float CritMultiplier) const
@@ -239,8 +273,6 @@ void UDiaGameplayAbility::ApplyDamageToASC(UAbilitySystemComponent* TargetASC, f
 
 	
 	FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
-	EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
-		CurrentActorInfo ? Cast<APawn>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
 
 	FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(DamageEffectClass, GetAbilityLevel(), EffectContext);
 	if (!SpecHandle.IsValid()) return;
@@ -266,7 +298,9 @@ void UDiaGameplayAbility::ApplySkillDamageToActor(AActor* TargetActor, float Cri
 		return;
 	}
 
-	ApplyDamageToASC(TargetASC, SkillData.BaseDamage, CritMultiplier);
+	const float PowerScale = DiaStepVariants::Product(DiaStepVariants::Collect(*this), FDiaGameplayTags::Get().GASData_Variant_DamageMultiplier);
+	ApplyDamageToASC(TargetASC, SkillData.BaseDamage * PowerScale, CritMultiplier);
+	DiaStepVariants::ApplyTargetEffects(*this, TargetASC);
 }
 
 const float UDiaGameplayAbility::CalculateFinalManaCost(const FGameplayAbilityActorInfo* ActorInfo) const
@@ -303,8 +337,6 @@ void UDiaGameplayAbility::ApplyGameplayEffectToTarget(UAbilitySystemComponent* T
 	for (const auto EffectClass : SkillData.EffectsToApplyOnHit)
 	{
 		FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
-		EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
-			CurrentActorInfo ? Cast<APawn>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
 
 		UE_LOG(LogARPG, Log, TEXT("Applying Effect: %s"), *EffectClass->GetName());
 		FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(EffectClass, GetAbilityLevel(), EffectContext);
@@ -329,14 +361,13 @@ void UDiaGameplayAbility::ApplyGameplayEffectToTarget(UAbilitySystemComponent* T
 
 void UDiaGameplayAbility::ApplyGameplayEffectToSelf() const
 {
+	DiaStepVariants::ApplyCastSelfEffects(*this);
 	UAbilitySystemComponent* SourceASC = GetAbilitySystemComponentFromActorInfo();
 	if (!IsValid(SourceASC))
 		return;
 	for (const auto EffectClass : SkillData.EffectsToApplyOnSelf)
 	{
 		FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
-		EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
-			CurrentActorInfo ? Cast<APawn>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
 
 		FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(EffectClass, GetAbilityLevel(), EffectContext);
 
@@ -366,6 +397,10 @@ void UDiaGameplayAbility::ExecuteAbilityLogic(const FGameplayAbilitySpecHandle H
 
 void UDiaGameplayAbility::RunNextStep()
 {
+	if (!IsActive())
+	{
+		return;
+	}
 	UE_LOG(LogARPG, Log, TEXT("Running step %d"), CurrentStepIndex);
 	if (CurrentStepIndex >= SkillData.Steps.Num())
 	{
@@ -373,6 +408,24 @@ void UDiaGameplayAbility::RunNextStep()
 		return;
 	}
 
+	const FGASSkillStepDataBase* Step = SkillData.Steps[CurrentStepIndex].GetPtr<FGASSkillStepDataBase>();
+	if (Step && Step->StartDelay > 0.f)
+	{
+		// Ability tasks are cancelled with the ability, so delayed hits cannot survive interruption.
+		UAbilityTask_WaitDelay* DelayTask = UAbilityTask_WaitDelay::WaitDelay(this, Step->StartDelay);
+		DelayTask->OnFinish.AddDynamic(this, &ThisClass::ExecuteCurrentStep);
+		DelayTask->ReadyForActivation();
+		return;
+	}
+	ExecuteCurrentStep();
+}
+
+void UDiaGameplayAbility::ExecuteCurrentStep()
+{
+	if (!IsActive() || !SkillData.Steps.IsValidIndex(CurrentStepIndex))
+	{
+		return;
+	}
 	UE_LOG(LogARPG, Log, TEXT("Current step type: %s"), *SkillData.Steps[CurrentStepIndex].GetScriptStruct()->GetName());
 	FInstancedStruct& CurrentStep = SkillData.Steps[CurrentStepIndex];
 	for (UDiaSkillStepExecutor* Executor : StepExecutors)
@@ -404,8 +457,6 @@ void UDiaGameplayAbility::MakeEffectSpecContextToTarget(TArray<FGameplayEffectSp
 	for (const auto EffectClass : SkillData.EffectsToApplyOnHit)
 	{
 		FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
-		EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
-			CurrentActorInfo ? Cast<APawn>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
 
 		FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(EffectClass, GetAbilityLevel(), EffectContext);
 		OutContext.Add(SpecHandle);
@@ -611,7 +662,8 @@ void UDiaGameplayAbility::ApplySkillObjectRemovalTimer(ADiaSkillActor* SkillActo
 		return;
 	}
 
-	const float RemainSeconds = GetSkillActorLifeSpan(SkillData);
+	const float DurationScale = SkillActor->GetRuntimeParams().GetMagnitude(FDiaGameplayTags::Get().GASData_Variant_DurationMultiplier, 1.f);
+	const float RemainSeconds = GetSkillActorLifeSpan(SkillData) * DurationScale;
 	if (RemainSeconds <= 0.f)
 	{
 		return;
@@ -652,6 +704,8 @@ float UDiaGameplayAbility::PlayAbilityMontage(UAnimMontage* MontageToPlay, float
 		MontageTask->EndTask();
 	}
 
+	// Set this before activation: montage failure can cancel synchronously.
+	CurrentAbilityMontage = MontageToPlay;
 	// Create and start montage task
 	MontageTask = UAbilityTask_PlayMontageAndWait::CreatePlayMontageAndWaitProxy(
 		this,
@@ -668,18 +722,21 @@ float UDiaGameplayAbility::PlayAbilityMontage(UAnimMontage* MontageToPlay, float
 		MontageTask->ReadyForActivation();
 	}
 
-	CurrentAbilityMontage = MontageToPlay;
 	return MontageToPlay->GetPlayLength() / PlayRate;
 }
 
 void UDiaGameplayAbility::StopAbilityMontage(float BlendOutTime)
 {
+	UAnimMontage* MontageToStop = CurrentAbilityMontage;
+	CurrentAbilityMontage = nullptr;
 	if (MontageTask)
 	{
 		MontageTask->EndTask();
 		MontageTask = nullptr;
 	}
-	CurrentAbilityMontage = nullptr;
+	if (ACharacter* Character = Cast<ACharacter>(GetAvatarActorFromActorInfo()))
+		if (UAnimInstance* Anim = Character->GetMesh()->GetAnimInstance(); Anim && MontageToStop)
+			Anim->Montage_Stop(BlendOutTime, MontageToStop);
 }
 
 void UDiaGameplayAbility::ProcessSkillDelayEvents()
@@ -698,7 +755,7 @@ void UDiaGameplayAbility::OnMontageCompleted()
 	MontageTask = nullptr;
 	CurrentAbilityMontage = nullptr;
 
-	if (!ShouldEndAbilityOnMontageCompleted())
+	if (!ShouldEndAbilityOnMontageCompleted() && !(bOwnsMonsterAttack && bSkillExecutionFinished))
 	{
 		return;
 	}
@@ -718,7 +775,8 @@ void UDiaGameplayAbility::OnMontageCancelled()
 
 bool UDiaGameplayAbility::ShouldEndAbilityOnMontageCompleted() const
 {
-	return true;
+	// Step-based skills finish when their final step completes, including delayed or blocked charges.
+	return SkillData.Steps.IsEmpty() || bSkillExecutionFinished;
 }
 
 bool UDiaGameplayAbility::CheckCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags) const

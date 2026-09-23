@@ -24,9 +24,11 @@ class ARPG_API URewardChoicePanel : public UCommonUserWidget
 	GENERATED_BODY()
 public:
 	virtual void NativeConstruct() override;
+    virtual FReply NativeOnKeyDown(const FGeometry& Geometry, const FKeyEvent& Event) override;
 
 	void OpenRewardChoicePanel(const FText& Title, const FText& Subtitle, const TArray<FRewardData>& RewardOptions);
 	void CloseRewardChoicePanel();
+	void ShowClaimFailure();
 
 	UFUNCTION()
 	void OnRewardCardClicked(URewardCard* ClickedCard);

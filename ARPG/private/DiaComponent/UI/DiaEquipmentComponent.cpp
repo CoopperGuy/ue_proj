@@ -5,6 +5,7 @@
 #include "DiaComponent/DiaOptionManagerComponent.h"
 
 #include "System/DiaSaveGame.h"
+#include "System/ItemSubsystem.h"
 
 #include "Logging/ARPGLogChannels.h"
 
@@ -102,17 +103,47 @@ void UDiaEquipmentComponent::LoadEquipmentFromSaveGame(const UDiaSaveGame* SaveG
 
 bool UDiaEquipmentComponent::TryEquipFromInventory(const FInventorySlot& InventorySlot, EEquipmentSlot SlotType)
 {
-	// 장비를 장착 했다는 정보 저장
-	FEquippedItem Item = FEquippedItem::FromInventorySlot(InventorySlot);
-
-
-	if (!InventoryComponent->RemoveItem(InventorySlot.ItemInstance.InstanceID))
+	if (!IsValid(InventoryComponent) || !IsValid(OptionManagerComponent))
 	{
 		return false;
 	}
 
-	EquipItem(Item, SlotType);
+	UItemSubsystem* ItemSubsystem = GetWorld() && GetWorld()->GetGameInstance()
+		? GetWorld()->GetGameInstance()->GetSubsystem<UItemSubsystem>() : nullptr;
+	const FInventorySlot* StoredItem = InventoryComponent->GetItemDataAtGuid(InventorySlot.ItemInstance.InstanceID);
+	if (!IsValid(ItemSubsystem) || !StoredItem || StoredItem->IsEmpty())
+	{
+		return false;
+	}
 
+	// Use component data; a UI copy can be stale or cleared by a notification.
+	const FInventorySlot SourceItem = *StoredItem;
+	const EEquipmentSlot ItemSlot = ItemSubsystem->GetEquipmentSlot(SourceItem.ItemInstance);
+	const bool bRingItem = ItemSlot == EEquipmentSlot::EES_RingL || ItemSlot == EEquipmentSlot::EES_RingR;
+	const bool bRingTarget = SlotType == EEquipmentSlot::EES_RingL || SlotType == EEquipmentSlot::EES_RingR;
+	if (SlotType == EEquipmentSlot::EES_None || SlotType >= EEquipmentSlot::EES_Max ||
+		(ItemSlot != SlotType && !(bRingItem && bRingTarget)))
+	{
+		return false;
+	}
+
+	const bool bReplacingItem = GetEquippedItem(SlotType) != nullptr;
+	if (!InventoryComponent->RemoveItem(SourceItem.ItemInstance.InstanceID, false))
+	{
+		return false;
+	}
+
+	FInventorySlot ReturnedItem;
+	if (bReplacingItem && !TryUnEquipToInventory(SlotType, ReturnedItem, -1, -1, false))
+	{
+		// No notification or equipment change has occurred. Restore the exact vacated cells.
+		const bool bRestored = InventoryComponent->TryAddItem(SourceItem, SourceItem.GridX, SourceItem.GridY, false);
+		ensureMsgf(bRestored, TEXT("Failed to restore inventory item after rejected equipment swap."));
+		return false;
+	}
+
+	const FEquippedItem Item = FEquippedItem::FromInventorySlot(SourceItem);
+	EquipItem(Item, SlotType);
 	OptionManagerComponent->ApplyEquipmentStats(Item, SlotType);
 
 	for (const auto& option : Item.ItemInstance.PrefixOptions)
@@ -123,15 +154,20 @@ bool UDiaEquipmentComponent::TryEquipFromInventory(const FInventorySlot& Invento
 	{
 		OptionManagerComponent->AddOption(option);
 	}
-
 	OptionManagerComponent->ApplyEquipmentSlotOption(Item);
 
+	// Publish only the final state; replacement needs no intermediate empty-slot notification.
+	InventoryComponent->OnItemRemoved.Broadcast(SourceItem.ItemInstance.InstanceID);
+	if (bReplacingItem)
+	{
+		InventoryComponent->OnItemAdded.Broadcast(ReturnedItem);
+	}
+	OnItemEquipped.Broadcast(Item, SlotType);
 	return true;
 }
 
-bool UDiaEquipmentComponent::TryUnEquipToInventory(EEquipmentSlot SlotType, FInventorySlot& OutInventorySlot)
+bool UDiaEquipmentComponent::TryUnEquipToInventory(EEquipmentSlot SlotType, FInventorySlot& OutInventorySlot, int32 PosX, int32 PosY, bool bNotify)
 {
-
 	if (!IsValid(InventoryComponent) || !IsValid(OptionManagerComponent))
 	{
 		return false;
@@ -145,17 +181,14 @@ bool UDiaEquipmentComponent::TryUnEquipToInventory(EEquipmentSlot SlotType, FInv
 
 	const FEquippedItem Item = *FoundItem;
 	FInventorySlot InventorySlot = Item.ToInventorySlot();
-
-
-	if (!InventoryComponent->TryAddItem(InventorySlot))
+	if (!InventoryComponent->TryAddItem(InventorySlot, PosX, PosY, false))
 	{
 		return false;
 	}
+	InventorySlot = *InventoryComponent->GetItemDataAtGuid(Item.ItemInstance.InstanceID);
 
 	UnEquipItem(SlotType);
-
 	OptionManagerComponent->RemoveEqipmentStats(Item, SlotType);
-
 	for (const auto& option : Item.ItemInstance.PrefixOptions)
 	{
 		OptionManagerComponent->RemoveOption(option);
@@ -164,12 +197,13 @@ bool UDiaEquipmentComponent::TryUnEquipToInventory(EEquipmentSlot SlotType, FInv
 	{
 		OptionManagerComponent->RemoveOption(option);
 	}
-
 	UnEquipItemFinish(SlotType);
-
 	OutInventorySlot = InventorySlot;
 
-	OnItemUnEquipped.Broadcast(SlotType);
-
+	if (bNotify)
+	{
+		InventoryComponent->OnItemAdded.Broadcast(InventorySlot);
+		OnItemUnEquipped.Broadcast(SlotType);
+	}
 	return true;
 }

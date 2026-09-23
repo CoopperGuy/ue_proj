@@ -10,7 +10,7 @@
 
 class ADiaMonster;
 
-DECLARE_DELEGATE_OneParam(FOnMonsterGroupSpawned, const TArray<class ADiaMonster*>&);
+DECLARE_DELEGATE_TwoParams(FOnMonsterGroupSpawned, const TArray<class ADiaMonster*>&, bool);
 /**
  * 
  * 오직 스폰만을 관리하기 위해 만든 서브 시스템.
@@ -28,7 +28,7 @@ public:
 
 public:
     // 특정 영역에 몬스터 그룹 스폰
-    void SpawnMonsterGroup(FName GroupID, FVector CenterLocation, float Radius);
+    void SpawnMonsterGroup(FName GroupID, FVector CenterLocation, float Radius, FGuid RoomID = FGuid());
 	void DeSpawnMonsterGroup(ADiaMonster* Monster);
 
     // 이벤트 트리거 기반 스폰
@@ -43,6 +43,9 @@ public:
     
 
 private:
+    void BuildEncounterLocations(const FVector& Center, float Radius, int32 Count,
+        EDiaEncounterPattern Pattern, FRandomStream& Random, TArray<FVector>& OutLocations);
+
     // 네비메시에서 유효한 스폰 위치 찾기
     bool FindValidSpawnLocation(const FVector& Center, float Radius, FVector& OutLocation);
 

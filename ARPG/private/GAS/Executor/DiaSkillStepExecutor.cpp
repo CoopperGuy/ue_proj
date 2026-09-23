@@ -2,8 +2,11 @@
 
 
 #include "GAS/Executor/DiaSkillStepExecutor.h"
+#include "GAS/Executor/DiaStepVariantSupport.h"
 #include "GAS/DiaGameplayAbility.h"
 #include "GAS/DiaGASHelper.h"
+#include "GAS/DiaMeleeTargeting.h"
+#include "Abilities/Tasks/AbilityTask_WaitDelay.h"
 #include "GAS/DiaGameplayTags.h"
 #include "DiaComponent/DiaSkillManagerComponent.h"
 #include "DiaComponent/Skill/DiaSkillVariant.h"
@@ -15,6 +18,7 @@
 #include "AbilitySystemComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Engine/World.h"
+#include "Engine/OverlapResult.h"
 #include "TimerManager.h"
 #include "Skill/DiaSkillActor.h"
 #include "Logging/ARPGLogChannels.h"
@@ -123,6 +127,7 @@ void UDiaChargeStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGamep
 	if (ForceRootMotionMoveTask)
 	{
 		ForceRootMotionMoveTask->OnTimedOutAndDestinationReached.AddDynamic(this, &ThisClass::OnDashFinished);
+		ForceRootMotionMoveTask->OnTimedOut.AddDynamic(this, &ThisClass::OnDashFinished);
 
 		ForceRootMotionMoveTask->ReadyForActivation();
 	}
@@ -184,6 +189,11 @@ FVector UDiaChargeStepExecutor::CalcSweepPosition(const FGameplayAbilityActorInf
 
 void UDiaChargeStepExecutor::OnDashFinished()
 {
+	if (!IsValid(CachedAbility) || !CachedAbility->IsActive())
+	{
+		CacheOnFinished.Unbind();
+		return;
+	}
 	const FGameplayAbilityActorInfo& CurrentActorInfo = CachedAbility->GetActorInfo();
 
 	TArray<FHitResult> HitResults;
@@ -228,8 +238,9 @@ void UDiaChargeStepExecutor::OnDashFinished()
 
 	if(CacheOnFinished.IsBound())
 	{
-		CacheOnFinished.ExecuteIfBound();
+		FDiaSkillStepFinishedDelegate Finished = CacheOnFinished;
 		CacheOnFinished.Unbind();
+		Finished.ExecuteIfBound();
 	}
 }
 
@@ -364,95 +375,52 @@ void UDiaMeleeSpawnStepExecutor::Execute(const FInstancedStruct& StepData, UDiaG
 		return;
 	}
 
-	const FGASMeleeData& MeleeData = MeleeStep->MeleeData;
-	const FVector CharacterLocation = Character->GetActorLocation();
-	const FRotator CharacterRotation = Character->GetActorRotation();
-	const FVector AttackCenter = CharacterLocation + CharacterRotation.RotateVector(MeleeData.AttackOffset);
+	ActiveAbility = Ability;
+	ActiveMeleeData = MeleeStep->MeleeData;
+	const TArray<UDiaSkillVariant*> Variants = DiaStepVariants::Collect(*Ability);
+	const float AreaScale = DiaStepVariants::Product(Variants, FDiaGameplayTags::Get().GASData_Variant_AreaMultiplier);
+	ActiveMeleeData.AttackRange *= AreaScale;
+	ActiveMeleeData.AttackAngle = FMath::Min(360.f, ActiveMeleeData.AttackAngle * AreaScale);
+	HitOrigin = Character->GetActorLocation();
+	HitFacing = Character->GetActorRotation();
+	HitWindowEnd = World->GetTimeSeconds() + FMath::Clamp(MeleeStep->HitWindowDuration, 0.f, 0.5f);
+	DamagedActors.Reset();
+	HitWindowFinished = OnFinished;
+	Context.LastStepLocation = HitOrigin + HitFacing.RotateVector(ActiveMeleeData.AttackOffset);
+	if (ActiveMeleeData.SkillActorClass)
+		Ability->SpawnCosmeticSkillActorAtTransform(ActiveMeleeData.SkillActorClass, FTransform(HitFacing, Context.LastStepLocation));
+	SampleHitWindow();
+}
 
-	if (MeleeData.SkillActorClass)
+void UDiaMeleeSpawnStepExecutor::SampleHitWindow()
+{
+	UDiaGameplayAbility* Ability = ActiveAbility.Get();
+	if (!Ability || !Ability->IsActive()) return;
+	ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(Ability->GetAvatarActorFromActorInfo());
+	if (!Character || !Character->GetWorld()) return;
+	TArray<ADiaBaseCharacter*> Targets;
+	const float Remaining = HitWindowEnd - Character->GetWorld()->GetTimeSeconds();
+	if (Remaining >= -KINDA_SMALL_NUMBER)
+		DiaMeleeTargeting::GatherTargets(*Character, ActiveMeleeData, HitOrigin, HitFacing, Targets);
+	for (ADiaBaseCharacter* Target : Targets)
 	{
-		Ability->SpawnCosmeticSkillActorAtTransform(MeleeData.SkillActorClass, FTransform(CharacterRotation, AttackCenter));
+		if (DamagedActors.Contains(Target)) continue;
+		DamagedActors.Add(Target);
+		Character->SetTargetActor(Target);
+		Ability->ApplySkillDamageToActor(Target);
+		if (!Ability->IsActive()) return;
 	}
-
-	TArray<FHitResult> HitResults;
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(Character);
-	QueryParams.bReturnPhysicalMaterial = false;
-
-	const bool bHit = World->SweepMultiByChannel(
-		HitResults,
-		AttackCenter,
-		AttackCenter,
-		FQuat::Identity,
-		ECC_Pawn,
-		FCollisionShape::MakeSphere(MeleeData.AttackRange),
-		QueryParams);
-
-	if (MeleeData.bShowDebugShape)
+	if (Remaining > KINDA_SMALL_NUMBER)
 	{
-		DrawDebugSphere(World, AttackCenter, MeleeData.AttackRange, 12, FColor::Red, false, 2.0f);
-
-		const FVector ForwardVector = CharacterRotation.Vector();
-		const float HalfAngleRad = FMath::DegreesToRadians(MeleeData.AttackAngle * 0.5f);
-		for (int32 i = 0; i <= 8; ++i)
-		{
-			const float CurrentAngle = -HalfAngleRad + (HalfAngleRad * 2.0f * i / 8.0f);
-			const FVector ConeDirection = ForwardVector.RotateAngleAxis(FMath::RadiansToDegrees(CurrentAngle), FVector::UpVector);
-			DrawDebugLine(World, AttackCenter, AttackCenter + ConeDirection * MeleeData.AttackRange, FColor::Yellow, false, 2.0f);
-		}
+		// Owned by the ability: interruption cancels pending samples automatically.
+		UAbilityTask_WaitDelay* Sample = UAbilityTask_WaitDelay::WaitDelay(Ability, FMath::Min(Remaining, 1.f / 60.f));
+		Sample->OnFinish.AddDynamic(this, &ThisClass::SampleHitWindow);
+		Sample->ReadyForActivation();
+		return;
 	}
-
-	if (bHit)
-	{
-		TSet<AActor*> HitActors;
-		const FVector ForwardVector = CharacterRotation.Vector();
-		const float HalfAngleRad = FMath::DegreesToRadians(MeleeData.AttackAngle * 0.5f);
-
-		for (const FHitResult& HitResult : HitResults)
-		{
-			AActor* HitActor = HitResult.GetActor();
-			if (!IsValid(HitActor) || HitActors.Contains(HitActor))
-			{
-				continue;
-			}
-
-			bool bSameSide = false;
-			static const FName CharacterTag = FName(TEXT("Character"));
-			for (const FName& OwnerTag : Character->Tags)
-			{
-				if (OwnerTag == CharacterTag)
-				{
-					continue;
-				}
-
-				if (HitActor->ActorHasTag(OwnerTag))
-				{
-					bSameSide = true;
-					break;
-				}
-			}
-
-			if (bSameSide)
-			{
-				continue;
-			}
-
-			const FVector ToTarget = (HitActor->GetActorLocation() - AttackCenter).GetSafeNormal();
-			const float DotProduct = FMath::Clamp(FVector::DotProduct(ForwardVector, ToTarget), -1.f, 1.f);
-			const float AngleToTarget = FMath::Acos(DotProduct);
-			if (AngleToTarget > HalfAngleRad)
-			{
-				continue;
-			}
-
-			HitActors.Add(HitActor);
-			Character->SetTargetActor(Cast<ADiaBaseCharacter>(HitActor));
-			Ability->ApplySkillDamageToActor(HitActor);
-		}
-	}
-
-	Context.LastStepLocation = AttackCenter;
-	OnFinished.ExecuteIfBound();
+	FDiaSkillStepFinishedDelegate Finished = HitWindowFinished;
+	HitWindowFinished.Unbind();
+	Finished.ExecuteIfBound();
 }
 
 bool UDiaUtilityStepExecutor::CanExecute(const FInstancedStruct& StepData) const
@@ -485,16 +453,33 @@ void UDiaUtilityStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGame
 	const FGASSkillData& SkillData = Ability->GetSkillData();
 	const FGASUtilitySpawnData& UtilityData = UtilityStep->UtilityData;
 	const float LevelScale = GetStepSkillLevelScale(*Ability);
+	const TArray<UDiaSkillVariant*> Variants = DiaStepVariants::Collect(*Ability);
+	const float PowerScale = DiaStepVariants::Product(Variants, FDiaGameplayTags::Get().GASData_Variant_DamageMultiplier);
+	const float DurationScale = DiaStepVariants::Product(Variants, FDiaGameplayTags::Get().GASData_Variant_DurationMultiplier);
 
 	switch (SkillData.SkillType)
 	{
 	case EGASSkillType::Heal:
 	{
-		const float HealAmount = FMath::Abs(SkillData.BaseDamage) * LevelScale;
+		const float HealAmount = FMath::Abs(SkillData.BaseDamage) * LevelScale * PowerScale;
 		if (HealAmount > 0.f)
 		{
-			ASC->ApplyModToAttribute(UDiaAttributeSet::GetHealthAttribute(), EGameplayModOp::Additive, HealAmount);
+			const float MissingHealth = FMath::Max(0.f, ASC->GetNumericAttribute(UDiaAttributeSet::GetMaxHealthAttribute()) - ASC->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute()));
+			ASC->ApplyModToAttribute(UDiaAttributeSet::GetHealthAttribute(), EGameplayModOp::Additive, FMath::Min(HealAmount, MissingHealth));
 			SpawnUtilityActor(*Ability, *AvatarActor, UtilityData, UtilityData.SkillActorClass, AvatarActor->GetActorLocation());
+			const float EchoFraction = DiaStepVariants::Maximum(Variants, FDiaGameplayTags::Get().GASData_Variant_Echo);
+			if (EchoFraction > 0.f && AvatarActor->HasAuthority())
+			{
+				TWeakObjectPtr<UAbilitySystemComponent> WeakASC = ASC;
+				FTimerHandle EchoTimer;
+				AvatarActor->GetWorld()->GetTimerManager().SetTimer(EchoTimer, FTimerDelegate::CreateLambda([WeakASC, HealAmount, EchoFraction]()
+				{
+					UAbilitySystemComponent* EchoASC = WeakASC.Get();
+					if (!EchoASC || EchoASC->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute()) <= 0.f) return;
+					const float Missing = FMath::Max(0.f, EchoASC->GetNumericAttribute(UDiaAttributeSet::GetMaxHealthAttribute()) - EchoASC->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute()));
+					EchoASC->ApplyModToAttribute(UDiaAttributeSet::GetHealthAttribute(), EGameplayModOp::Additive, FMath::Min(HealAmount * EchoFraction, Missing));
+				}), .6f, false);
+			}
 		}
 		break;
 	}
@@ -515,7 +500,7 @@ void UDiaUtilityStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGame
 		FVector Delta = MouseWorldLocation - StartLocation;
 		Delta.Z = 0.f;
 
-		const float MaxDistance = SkillData.BaseDamage > 0.f ? SkillData.BaseDamage : 600.f;
+		const float MaxDistance = (SkillData.BaseDamage > 0.f ? SkillData.BaseDamage : 600.f) * PowerScale;
 		const FVector ClampedDelta = Delta.GetClampedToMaxSize(MaxDistance);
 		FVector Destination = StartLocation + ClampedDelta;
 		Destination.Z = StartLocation.Z;
@@ -539,8 +524,8 @@ void UDiaUtilityStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGame
 
 		if (SkillData.SkillID == 1005)
 		{
-			const float Duration = GetUtilityDuration(SkillData, 3.f);
-			const float SpeedBonus = FMath::Max(SkillData.BaseDamage, 250.f) * LevelScale;
+			const float Duration = GetUtilityDuration(SkillData, 3.f) * DurationScale;
+			const float SpeedBonus = FMath::Max(SkillData.BaseDamage, 250.f) * LevelScale * PowerScale;
 			ApplyTemporaryAttributeModifier(World, ASC, UDiaAttributeSet::GetMovementSpeedAttribute(), SpeedBonus, Duration);
 			SpawnUtilityActor(*Ability, *AvatarActor, UtilityData, UtilityData.SkillActorClass, AvatarActor->GetActorLocation());
 			break;
@@ -548,8 +533,8 @@ void UDiaUtilityStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGame
 
 		if (SkillData.SkillID == 1010)
 		{
-			const float Duration = GetUtilityDuration(SkillData, 8.f);
-			const float AttackPowerBonus = FMath::Max(SkillData.BaseDamage, 30.f) * LevelScale;
+			const float Duration = GetUtilityDuration(SkillData, 8.f) * DurationScale;
+			const float AttackPowerBonus = FMath::Max(SkillData.BaseDamage, 30.f) * LevelScale * PowerScale;
 			ApplyTemporaryAttributeModifier(World, ASC, UDiaAttributeSet::GetAttackPowerAttribute(), AttackPowerBonus, Duration);
 
 			const float DefenseMultiplier = FMath::Clamp(SkillData.DamageMultiplierPerHit, 0.f, 1.f);
@@ -569,6 +554,7 @@ void UDiaUtilityStepExecutor::Execute(const FInstancedStruct& StepData, UDiaGame
 	}
 
 	Context.LastStepLocation = AvatarActor->GetActorLocation();
+	DiaStepVariants::SpawnCastGrounds(*Ability, Variants, Context.LastStepLocation);
 
 	OnFinished.ExecuteIfBound();
 }

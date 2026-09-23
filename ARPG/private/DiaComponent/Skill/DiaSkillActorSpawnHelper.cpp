@@ -103,14 +103,17 @@ void FDiaSkillActorSpawnHelper::ApplyVariantEffects(
 			continue;
 		
 		const FDiaSkillVariantSpec& Spec = Variant->GetVariantSpec();
+		// CastSelfEffect belongs to the caster; never copy these buffs onto struck enemies.
+		if (Spec.SkillTag.MatchesTagExact(FGameplayTag::RequestGameplayTag(TEXT("GASData.Variant.CastSelfEffect"), false)))
+		{
+			continue;
+		}
 
 		if (const FSkillVariantGameplayEffectData* VariantGameplayEffec = Spec.GetVariantExtraPtr<FSkillVariantGameplayEffectData>())
 		{
 			for (const auto& TagerEffect : VariantGameplayEffec->TargetEffects)
 			{
 				FGameplayEffectContextHandle EffectContext = SourceASC->MakeEffectContext();
-				EffectContext.AddInstigator(CurrentActorInfo ? CurrentActorInfo->OwnerActor.Get() : nullptr,
-					CurrentActorInfo ? Cast<APawn>(CurrentActorInfo->AvatarActor.Get()) : nullptr);
 
 				FGameplayEffectSpecHandle SpecHandle = SourceASC->MakeOutgoingSpec(TagerEffect.EffectClass, 1, EffectContext);
 

@@ -8,6 +8,7 @@
 #include "DiaEquipmentComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnItemUnEquipped, EEquipmentSlot, SlotType);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemEquipped, const FEquippedItem&, Item, EEquipmentSlot, SlotType);
 
 class UEquipWidget;
 class UDiaSaveGame;
@@ -56,8 +57,9 @@ public:
 	void LoadEquipmentFromSaveGame(const UDiaSaveGame* SaveGameInstance);
 
 	bool TryEquipFromInventory(const FInventorySlot& InventorySlot, EEquipmentSlot SlotType);
-	bool TryUnEquipToInventory(EEquipmentSlot SlotType, FInventorySlot& OutInventorySlot);
+	bool TryUnEquipToInventory(EEquipmentSlot SlotType, FInventorySlot& OutInventorySlot, int32 PosX = -1, int32 PosY = -1, bool bNotify = true);
 public:
+	FOnItemEquipped OnItemEquipped;
 	FOnItemUnEquipped OnItemUnEquipped;
 private:
 	//장착한 아이템을 매핑하는 컴포넌트

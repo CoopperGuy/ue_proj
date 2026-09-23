@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "new_variants": 21,
+  "total_variants": 53,
+  "assigned_player_skills": 15,
+  "all_variants_assigned": true,
+  "steps_and_base_skill_values_preserved": true,
+  "boss_monster_and_job_rows_preserved": true,
+  "saved_tables": [
+    "DT_GASSkillData",
+    "DT_SkillVariantion"
+  ],
+  "cpp_built": false,
+  "combat_tested": false
+}

@@ -8,8 +8,9 @@
 #include "Types/DiaMonsterTable.h"
 #include "DiaGameState.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FDiaRoomClearedDelegate, FGuid);
-DECLARE_MULTICAST_DELEGATE_OneParam(FDiaRoomBattleStartDelegate, FGuid);
+enum class EDiaRoomBattleState : uint8;
+
+DECLARE_MULTICAST_DELEGATE_TwoParams(FDiaRoomStateChangeDelegate, FGuid, EDiaRoomBattleState);
 DECLARE_MULTICAST_DELEGATE_OneParam(FDiaStageClearedDelegate, FGuid);
 /**
  * 
@@ -26,6 +27,8 @@ public:
 	void ClearCurrentLevel();
 	bool IsRoomCleared(const FGuid& RoomID) const { return ClearedRoomIDs.Contains(RoomID); }
 	bool IsInBattle() const { return bIsInBattle; }
+    const TSet<FGuid>& GetClearedRoomIDs() const { return ClearedRoomIDs; }
+    void RestoreClearedRooms(const TSet<FGuid>& Rooms) { ClearedRoomIDs = Rooms; }
 private:
 	UPROPERTY()
 	FGuid CurrentRoomID;
@@ -43,7 +46,6 @@ private:
 	TSet<FGuid> ClearedRoomIDs;
 
 public:
-	FDiaRoomClearedDelegate OnRoomCleared;
-	FDiaRoomBattleStartDelegate OnRoomBattleStart;
+	FDiaRoomStateChangeDelegate OnRoonStateChange;
 	FDiaStageClearedDelegate OnStageCleared;
 };

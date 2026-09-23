@@ -24,20 +24,33 @@ void UDiaInventoryComponent::BeginPlay()
 
 }
 
-bool UDiaInventoryComponent::TryAddItem(const FInventorySlot& ItemData)
+bool UDiaInventoryComponent::TryAddItem(const FInventorySlot& ItemData, int32 PosX, int32 PosY, bool bNotify)
 {
+	if (ItemData.IsEmpty() || !ItemData.ItemInstance.InstanceID.IsValid() ||
+		InventoryItems.Contains(ItemData.ItemInstance.InstanceID))
+	{
+		return false;
+	}
+
 	UItemSubsystem* ItemSubsystem = GetWorld() && GetWorld()->GetGameInstance()
 		? GetWorld()->GetGameInstance()->GetSubsystem<UItemSubsystem>()
 		: nullptr;
 	if (!ItemSubsystem) return false;
 
-	int32 OutPosX = 0;
-	int32 OutPosY = 0;
+	int32 OutPosX = PosX;
+	int32 OutPosY = PosY;
 	const int32 ItemWidth = ItemSubsystem->GetItemWidth(ItemData.ItemInstance);
 	const int32 ItemHeight = ItemSubsystem->GetItemHeight(ItemData.ItemInstance);
 
-	if (!FInventoryUtils::FindPlaceForItem(this, ItemWidth, ItemHeight, OutPosX, OutPosY)) 
+	if (PosX == -1 && PosY == -1)
+	{
+		if (!FindPlaceForItem(ItemWidth, ItemHeight, OutPosX, OutPosY))
+			return false;
+	}
+	else if (!CanPlaceItemAt(ItemWidth, ItemHeight, PosX, PosY))
+	{
 		return false;
+	}
 
 	FInventorySlot NewItem = ItemData;
 	NewItem.GridX = OutPosX;
@@ -45,7 +58,10 @@ bool UDiaInventoryComponent::TryAddItem(const FInventorySlot& ItemData)
 
 	FillGrid(ItemWidth, ItemHeight, OutPosX, OutPosY, NewItem.ItemInstance);
 	InventoryItems.Add(NewItem.ItemInstance.InstanceID, NewItem);
-	OnItemAdded.Broadcast(NewItem);
+	if (bNotify)
+	{
+		OnItemAdded.Broadcast(NewItem);
+	}
 	return true;	
 }
 
@@ -91,7 +107,7 @@ bool UDiaInventoryComponent::RequestMoveItem(const FGuid& InstanceID, int32 Dest
 	return true;
 }
 
-bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID)
+bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID, bool bNotify)
 {
 	// const FInventorySlot* ItemInfo = InvenWidget->GetItemDataAtGuid(InstanceID);
 	const FInventorySlot* InventoryItem = InventoryItems.Find(InstanceID);
@@ -108,9 +124,13 @@ bool UDiaInventoryComponent::RemoveItem(const FGuid& InstanceID)
 
 	if (ClearGrid(ItemWidth, ItemHeight, PosX, PosY))
 	{
-		InventoryItems.Remove(InstanceID);
-		OnItemRemoved.Broadcast(InstanceID);
-		UE_LOG(LogARPG, Log, TEXT("Item successfully removed from inventory: %s"), *InstanceID.ToString());
+		const FGuid RemovedID = InstanceID;
+		InventoryItems.Remove(RemovedID);
+		if (bNotify)
+		{
+			OnItemRemoved.Broadcast(RemovedID);
+		}
+		UE_LOG(LogARPG, Log, TEXT("Item successfully removed from inventory: %s"), *RemovedID.ToString());
 		return true;
 	}
 	return false;

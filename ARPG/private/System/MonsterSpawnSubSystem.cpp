@@ -2,6 +2,9 @@
 
 
 #include "System/MonsterSpawnSubSystem.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/Pawn.h"
+#include "Engine/OverlapResult.h"
 #include "NavigationSystem.h"
 #include "Engine/World.h"
 #include "Engine/DataTable.h"
@@ -53,12 +56,19 @@ void UMonsterSpawnSubSystem::Deinitialize()
 	Super::Deinitialize();
 }
 
-void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLocation, float Radius)
+void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLocation, float Radius, FGuid RoomID)
 {
+	constexpr int32 MaxRetryCount = 9;
 	UGameInstance* GI = GetWorld()->GetGameInstance();
-	if (!GI) return;
-	UMonsterManager* MM = GI->GetSubsystem<UMonsterManager>();
-	if (!MM) return;
+    UMonsterManager* MM = GI ? GI->GetSubsystem<UMonsterManager>() : nullptr;
+    const FMapSpawnInfo* Group = MapSpawnCache.Find(GroupID);
+    if (!MM || !Group || Group->MonsterSpawnInfos.IsEmpty() || Group->MaxTotalSpawnCount <= 0)
+    {
+        OnMonsterGroupSpawned.ExecuteIfBound(TArray<ADiaMonster*>(), false);
+        ResetRetry(GroupID);
+        return;
+    }
+    FRandomStream Random(RoomID.IsValid() ? static_cast<int32>(GetTypeHash(RoomID)) : GetTypeHash(GroupID));
 
     // 내비게이션 시스템 준비 상태 확인: 준비 전이면 잠시 후 재시도
     UNavigationSystemV1* NavSys = UNavigationSystemV1::GetCurrent(GetWorld());
@@ -66,10 +76,17 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
     {
         const int32 Retry = GetAndIncrementRetry(GroupID);
         const float Delay = FMath::Min(0.5f + Retry * 0.1f, 3.0f);
-        if (UWorld* World = GetWorld())
+		if (Retry > MaxRetryCount)
+		{
+			TArray<ADiaMonster*> SpawnedMonsters;
+			OnMonsterGroupSpawned.ExecuteIfBound(SpawnedMonsters, false);
+			ResetRetry(GroupID);
+			return;
+		}
+		if (UWorld* World = GetWorld())
         {
             FTimerHandle Handle;
-            World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateUObject(this, &UMonsterSpawnSubSystem::SpawnMonsterGroup, GroupID, CenterLocation, Radius), Delay, false);
+            World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateUObject(this, &UMonsterSpawnSubSystem::SpawnMonsterGroup, GroupID, CenterLocation, Radius, RoomID), Delay, false);
         }
         return;
     }
@@ -80,10 +97,17 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
     {
         const int32 Retry = GetAndIncrementRetry(GroupID);
         const float Delay = FMath::Min(0.5f + Retry * 0.1f, 3.0f);
+		if (Retry > MaxRetryCount)
+		{
+			TArray<ADiaMonster*> SpawnedMonsters;
+			OnMonsterGroupSpawned.ExecuteIfBound(SpawnedMonsters, false);
+			ResetRetry(GroupID);
+			return;
+		}
         if (UWorld* World = GetWorld())
         {
             FTimerHandle Handle;
-            World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateUObject(this, &UMonsterSpawnSubSystem::SpawnMonsterGroup, GroupID, CenterLocation, Radius), Delay, false);
+            World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateUObject(this, &UMonsterSpawnSubSystem::SpawnMonsterGroup, GroupID, CenterLocation, Radius, RoomID), Delay, false);
         }
         return;
     }
@@ -91,43 +115,51 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
 	if (MapSpawnCache.Contains(GroupID))
 	{
 		FMapSpawnInfo& SpawnInfo = MapSpawnCache[GroupID];
-		int32 SpawnCount = FMath::RandRange(SpawnInfo.MinTotalSpawnCount, SpawnInfo.MaxTotalSpawnCount);
-		TArray<FVector> SpawnLocations;
-		SpawnLocations.Reserve(SpawnCount);
-        int32 attempts = 0;
-        const int32 maxAttempts = FMath::Max(SpawnCount * 10, 100);
-        for (int32 i = 0; i < SpawnCount && attempts < maxAttempts;)
-		{
-			//유효한 장소를 찾으면 ++i
-			FVector SpawnLocation;
-            attempts++;
-            if (FindValidSpawnLocation(CenterLocation, Radius, SpawnLocation))
-			{
-				SpawnLocations.Add(SpawnLocation);
-				++i;
-			}
-		}
+        const int32 MinCount = FMath::Max(1, SpawnInfo.MinTotalSpawnCount);
+        const int32 SpawnCount = FMath::Clamp(Random.RandRange(MinCount, FMath::Max(MinCount, SpawnInfo.MaxTotalSpawnCount)), 1, 64);
+        TArray<FVector> SpawnLocations;
+        EDiaEncounterPattern Pattern = SpawnInfo.EncounterPattern;
+        if (Pattern == EDiaEncounterPattern::Automatic)
+            Pattern = static_cast<EDiaEncounterPattern>(Random.RandRange(1, 3));
+        BuildEncounterLocations(CenterLocation, Radius, SpawnCount, Pattern, Random, SpawnLocations);
         if (SpawnLocations.Num() == 0)
         {
             const int32 Retry = GetAndIncrementRetry(GroupID);
             const float Delay = FMath::Min(0.5f + Retry * 0.1f, 3.0f);
+			if (Retry > MaxRetryCount)
+			{
+				TArray<ADiaMonster*> SpawnedMonsters;
+				OnMonsterGroupSpawned.ExecuteIfBound(SpawnedMonsters, false);
+				ResetRetry(GroupID);
+				return;
+			}
             if (UWorld* World = GetWorld())
             {
                 FTimerHandle Handle;
-                World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateUObject(this, &UMonsterSpawnSubSystem::SpawnMonsterGroup, GroupID, CenterLocation, Radius), Delay, false);
+                World->GetTimerManager().SetTimer(Handle, FTimerDelegate::CreateUObject(this, &UMonsterSpawnSubSystem::SpawnMonsterGroup, GroupID, CenterLocation, Radius, RoomID), Delay, false);
             }
             return;
         }
-		OptimizeSpawnDistribution(SpawnLocations);
-		// 몬스터 스폰 로직 추가
-		// 해당 몬스터를 랜덤한 위치에 차례대로 스폰
-		// 아직 비중에 따른 스폰이라던가 이런것은 미구현 (차후 구현 예정)
+        if (SpawnLocations.Num() < SpawnCount)
+            UE_LOG(LogARPG_Spawn, Warning, TEXT("Encounter %s fits %d/%d monsters; using validated positions only."), *GroupID.ToString(), SpawnLocations.Num(), SpawnCount);
+        // Spawn only at validated formation slots, using authored monster weights.
 		
 		TArray<ADiaMonster*> SpawnedMonsters;
         for (int32 i = 0; i < SpawnLocations.Num(); ++i)
 		{
 			const FVector& Location = SpawnLocations[i];
-			int32 MonsterTypeIndex = FMath::RandRange(0, SpawnInfo.MonsterSpawnInfos.Num() - 1);
+            float TotalWeight = 0.f;
+            for (const FMonsterSpawnInfo& Entry : SpawnInfo.MonsterSpawnInfos) TotalWeight += FMath::Max(0.f, Entry.SpawnWeight);
+            int32 MonsterTypeIndex = Random.RandRange(0, SpawnInfo.MonsterSpawnInfos.Num() - 1);
+            if (TotalWeight > 0.f)
+            {
+                float Roll = Random.FRand() * TotalWeight;
+                for (int32 EntryIndex = 0; EntryIndex < SpawnInfo.MonsterSpawnInfos.Num(); ++EntryIndex)
+                {
+                    Roll -= FMath::Max(0.f, SpawnInfo.MonsterSpawnInfos[EntryIndex].SpawnWeight);
+                    if (Roll < 0.f) { MonsterTypeIndex = EntryIndex; break; }
+                }
+            }
 			const FMonsterSpawnInfo& SpawnMonsters = SpawnInfo.MonsterSpawnInfos[MonsterTypeIndex];
 
             ADiaMonster* SpawnedMonster = MM->SpawnMonster(GetWorld(), SpawnMonsters.MonsterID, Location); 
@@ -135,9 +167,15 @@ void UMonsterSpawnSubSystem::SpawnMonsterGroup(FName GroupID, FVector CenterLoca
             {
                 UE_LOG(LogARPG_Spawn, Error, TEXT("[Spawn] Failed to spawn monster id=%s at %s"), *SpawnMonsters.MonsterID.ToString(), *Location.ToString());
             }
-			SpawnedMonsters.Add(SpawnedMonster);
+            if (IsValid(SpawnedMonster)) SpawnedMonsters.Add(SpawnedMonster);
 		}
-		OnMonsterGroupSpawned.ExecuteIfBound(SpawnedMonsters);
+        const bool bComplete = SpawnedMonsters.Num() == SpawnLocations.Num();
+        if (!bComplete)
+        {
+            for (ADiaMonster* Monster : SpawnedMonsters) MM->DespawnMonster(Monster);
+            SpawnedMonsters.Reset();
+        }
+        OnMonsterGroupSpawned.ExecuteIfBound(SpawnedMonsters, bComplete);
         ResetRetry(GroupID);
 	}
 }
@@ -308,4 +346,49 @@ void UMonsterSpawnSubSystem::LoadMonsterSpawnGroupData()
 		UE_LOG(LogARPG_Spawn, Warning, TEXT("UMonsterSpawnSubSystem: Failed to load item data table from path: %s"), *SpawnGroupDataPath);
 	}
 #endif
+}
+
+void UMonsterSpawnSubSystem::BuildEncounterLocations(const FVector& Center, float Radius, int32 Count,
+    EDiaEncounterPattern Pattern, FRandomStream& Random, TArray<FVector>& OutLocations)
+{
+    UNavigationSystemV1* Nav = UNavigationSystemV1::GetCurrent(GetWorld());
+    if (!Nav) return;
+    const APlayerController* PC = GetWorld()->GetFirstPlayerController();
+    const APawn* Player = PC ? PC->GetPawn() : nullptr;
+    const float SafeRadius = FMath::Max(0.f, Radius - 100.f);
+    const float Rotation = Random.RandRange(0, 3) * 90.f;
+    // Try the chosen formation first, then a bounded interior grid for obstacles.
+    for (int32 Slot = 0; Slot < 128 && OutLocations.Num() < Count; ++Slot)
+    {
+        FVector Offset;
+        if (Slot < 64 && Pattern == EDiaEncounterPattern::Ring)
+        {
+            const int32 Ring = Slot / 16;
+            const float Angle = (Slot % 16) * 2.f * PI / 16.f;
+            const float RingRadius = SafeRadius * (1.f - Ring * 0.23f);
+            Offset = FVector(FMath::Cos(Angle), FMath::Sin(Angle), 0.f) * RingRadius;
+        }
+        else if (Slot < 64 && Pattern == EDiaEncounterPattern::TwoFlanks)
+        {
+            const int32 Row = (Slot / 2) % 8;
+            const float X = (Slot % 2 == 0 ? -1.f : 1.f) * SafeRadius * (0.8f - (Slot / 16) * 0.18f);
+            Offset = FVector(X, SafeRadius * (-0.85f + Row * 1.7f / 7.f), 0.f);
+        }
+        else
+        {
+            const int32 Cell = Slot % 64;
+            Offset = FVector(-1.f + (Cell % 8) * 2.f / 7.f, -1.f + (Cell / 8) * 2.f / 7.f, 0.f) * SafeRadius;
+        }
+        const FVector Desired = Center + Offset.RotateAngleAxis(Rotation, FVector::UpVector);
+        FNavLocation Projected;
+        if (!Nav->ProjectPointToNavigation(Desired, Projected, FVector(70.f, 70.f, 250.f))) continue;
+        const FVector Position = Projected.Location;
+        if (FMath::Abs(Position.X - Center.X) > SafeRadius || FMath::Abs(Position.Y - Center.Y) > SafeRadius) continue;
+        if (Player && FVector::DistSquared2D(Position, Player->GetActorLocation()) < FMath::Square(250.f)) continue;
+        if (OutLocations.ContainsByPredicate([&Position](const FVector& Other) { return FVector::DistSquared2D(Position, Other) < FMath::Square(110.f); })) continue;
+        FCollisionQueryParams Params(SCENE_QUERY_STAT(EncounterSpawn), false);
+        if (GetWorld()->OverlapBlockingTestByChannel(Position + FVector(0.f, 0.f, 95.f), FQuat::Identity,
+            ECC_Pawn, FCollisionShape::MakeCapsule(42.f, 88.f), Params)) continue;
+        OutLocations.Add(Position);
+    }
 }

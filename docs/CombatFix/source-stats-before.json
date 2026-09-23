@@ -1,0 +1,14 @@
+{
+  "summary": null,
+  "tests": [
+    {
+      "name": "ARPG.Combat.MonsterAttacksPIE",
+      "state": "Fail",
+      "duration": 127.49964141845703,
+      "errors": [
+        "Expected 'Zombie_01 stale=0 crowd=0 phase2=0 moving=0 deals repeated damage through AI' to be true.",
+        "Expected 'Zombie_02 stale=0 crowd=0 phase2=0 moving=0 deals repeated damage through AI' to be true."
+      ]
+    }
+  ]
+}

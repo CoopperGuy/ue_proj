@@ -1,0 +1,27 @@
+{
+  "passed": true,
+  "checks": {
+    "boss_room_spawn": true,
+    "crosscut_activation": true,
+    "crosscut_damage": true,
+    "crosscut_finished": true,
+    "charge_activation": true,
+    "charge_damage": true,
+    "charge_finished": true,
+    "charge_travel_and_impact": true,
+    "interrupted_combo_only_first_hit": true,
+    "interrupted_combo_finished": true,
+    "phase1_selection": true,
+    "combo_hits_separated": true,
+    "damaged_below_half": true,
+    "phase2_near_selection": true,
+    "phase2_near_damage": true,
+    "phase2_far_selection": true,
+    "phase2_far_damage": true,
+    "five_blade_projectiles": true,
+    "boss_defeat_and_room_clear": true,
+    "saved_and_pie_stopped": true
+  },
+  "charge_distance_cm": 492.81,
+  "observed_combo_gap_seconds": 0.667
+}

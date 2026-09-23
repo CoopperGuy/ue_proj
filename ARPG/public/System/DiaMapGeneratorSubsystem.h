@@ -18,6 +18,8 @@ struct FDiaRoomData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName RoomID;
+    UPROPERTY() FGuid RoomGuid;
+    UPROPERTY() bool bTreasureRoom = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FIntPoint RoomSize = FIntPoint(1, 1);
@@ -55,6 +57,8 @@ public:
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 
 public:
+    const TArray<FDiaRoomData>& GetRoomLayout() const { return MapData; }
+    const FDiaRoomData& GetStartRoomData() const { return StartRoomData; }
 	void LoadAdjacencyRules();
 	void GenerateMap(FName MapID);
 	UFUNCTION(BlueprintCallable, Category = "Map|Generation")
@@ -91,6 +95,9 @@ protected:
 	void UpdatePlacedRoomData(const FDiaRoomData& RoomData);
 	void ValidateAndRepairActivePortLinks();
 
+    int32 CountRewardEligibleRooms() const;
+    void GeneratePlayableFloor(FName MapID);
+    void AssignFloorRoles();
 	void BFSGenerateMap(FName MapID);
 	bool TryPlaceEndRoom(int32 CurrentRooms);
 	void CreateMapFromData();
@@ -119,19 +126,23 @@ protected:
 	bool bRandomizeMapSizeOnBeginPlay = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Generation", meta = (ClampMin = "1", ClampMax = "50", UIMin = "3", UIMax = "15"))
-	int32 MinRandomMapWidth = 5;
+	int32 MinRandomMapWidth = 8;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Generation", meta = (ClampMin = "1", ClampMax = "50", UIMin = "3", UIMax = "15"))
-	int32 MaxRandomMapWidth = 8;
+	int32 MaxRandomMapWidth = 10;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Generation", meta = (ClampMin = "1", ClampMax = "50", UIMin = "3", UIMax = "15"))
-	int32 MinRandomMapHeight = 5;
+	int32 MinRandomMapHeight = 8;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Generation", meta = (ClampMin = "1", ClampMax = "50", UIMin = "3", UIMax = "15"))
-	int32 MaxRandomMapHeight = 8;
+	int32 MaxRandomMapHeight = 10;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Generation", meta = (ClampMin = "1", UIMin = "1", UIMax = "20"))
 	int32 MinMapRoomCount = 5;
+
+    // Six combat rooms plus one room converted to treasure; corridors excluded.
+    UPROPERTY(EditAnywhere, Category = "Settings|Generation", meta = (ClampMin = "1", ClampMax = "20"))
+    int32 TargetCombatRoomCount = 6;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Generation", meta = (ClampMin = "0.0", ClampMax = "1.0", UIMin = "0.1", UIMax = "1.0"))
 	float TargetFillRatio = 0.6f;

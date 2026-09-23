@@ -27,7 +27,8 @@ public:
 
 class UDiaGameplayAbility;
 /**
- * 
+ * FGASSkillData::Steps의 한 단계를 실행한다. 신규 스킬 동작을 추가할 때 확장하는 실행 계층이다.
+ * 대응 StepData와 Executor를 작성하고 UDiaGameplayAbility::InitializeWithSkillData에 등록한다.
  */
 UCLASS(Abstract)
 class ARPG_API UDiaSkillStepExecutor : public UObject
@@ -106,6 +107,17 @@ public:
         UDiaGameplayAbility* Ability,
         FDiaSkillExecutionContext& Context,
 		FDiaSkillStepFinishedDelegate OnFinished) override;
+
+private:
+	UFUNCTION()
+	void SampleHitWindow();
+	TWeakObjectPtr<UDiaGameplayAbility> ActiveAbility;
+	FGASMeleeData ActiveMeleeData;
+	FVector HitOrigin = FVector::ZeroVector;
+	FRotator HitFacing = FRotator::ZeroRotator;
+	float HitWindowEnd = 0.f;
+	TSet<TWeakObjectPtr<AActor>> DamagedActors;
+	FDiaSkillStepFinishedDelegate HitWindowFinished;
 };
 
 UCLASS()

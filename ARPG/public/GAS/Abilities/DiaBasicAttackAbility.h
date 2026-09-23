@@ -5,7 +5,9 @@
 #include "DiaBasicAttackAbility.generated.h"
 
 /**
- * 기본 공격 스킬 - GAS 테스트용 예시
+ * 레거시 기본 공격 테스트 구현. 기존 참조 호환을 위해 유지한다.
+ * 신규 스킬은 이 클래스를 선택/상속하기보다 UDiaGameplayAbility + FGASSkillData::Steps로 작성한다.
+ * 이 클래스는 자체 ActivateAbility 경로를 사용하므로 Steps만 채워도 Step 실행으로 전환되지 않는다.
  */
 UCLASS()
 class ARPG_API UDiaBasicAttackAbility : public UDiaGameplayAbility

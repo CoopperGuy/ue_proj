@@ -3,12 +3,17 @@
 #include "Skill/DiaGroundObj.h"
 
 #include "GAS/DiaGameplayTags.h"
+#include "GAS/DiaAttributeSet.h"
+#include "AbilitySystemComponent.h"
 
 #include "Engine/World.h"
 #include "AbilitySystemInterface.h"
 #include "TimerManager.h"
 #include "Components/SphereComponent.h"
+#include "Components/StaticMeshComponent.h"
+#include "NiagaraComponent.h"
 #include "DiaBaseCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/OverlapResult.h" 
 #include "Logging/ARPGLogChannels.h"
 
@@ -25,6 +30,12 @@ ADiaGroundObj::ADiaGroundObj()
 void ADiaGroundObj::BeginPlay()
 {
 	Super::BeginPlay();
+	// Ordinary ground steps do not go through ConfigureSkillActor (hit variants do).
+	// Initialize has already supplied the table's hit count and interval.
+	if (IntervalBetweenHits > 0.f)
+	{
+		StartHitDetectTimer();
+	}
 }
 
 void ADiaGroundObj::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -46,9 +57,19 @@ void ADiaGroundObj::Initialize(const FGASSkillData& SkillData, AActor* InOwner, 
 void ADiaGroundObj::ApplySpawnRuntimeParams(const FDiaSkillRuntimeParams& InParams)
 {
 	Super::ApplySpawnRuntimeParams(InParams);
+	const float DurationScale = InParams.GetMagnitude(FDiaGameplayTags::Get().GASData_Variant_DurationMultiplier, 1.f);
+	MaxHitCount = FMath::Max(1, FMath::CeilToInt(MaxHitCount * DurationScale));
 	float SpawnRadiusMultiplier = InParams.GetMagnitude(FDiaGameplayTags::Get().GASData_Variant_AreaMultiplier, 1.f);
 	Radius *= SpawnRadiusMultiplier;
 	CollisionComp->SetSphereRadius(Radius);
+	if (SkilleMesh)
+	{
+		SkilleMesh->SetRelativeScale3D(SkilleMesh->GetRelativeScale3D() * SpawnRadiusMultiplier);
+	}
+	if (SkillAbilityEffectComp)
+	{
+		SkillAbilityEffectComp->SetRelativeScale3D(SkillAbilityEffectComp->GetRelativeScale3D() * SpawnRadiusMultiplier);
+	}
 }
 
 void ADiaGroundObj::ConfigureSkillActor(const FDiaSkillActorConfigureData& Config)
@@ -64,7 +85,7 @@ void ADiaGroundObj::ConfigureSkillActor(const FDiaSkillActorConfigureData& Confi
 
 	if (Config.MaxHitCount <= 0 && Config.Duration > 0.f && IntervalBetweenHits > 0.f)
 	{
-		MaxHitCount = FMath::Max(1, FMath::CeilToInt(Config.Duration / IntervalBetweenHits));
+		MaxHitCount = FMath::Max(1, FMath::CeilToInt(LifeSpan / IntervalBetweenHits));
 	}
 
 	StartHitDetectTimer();
@@ -154,27 +175,34 @@ void ADiaGroundObj::OnHitDetect()
 		*GetNameSafe(SourceASC.Get()),
 		*GetNameSafe(DamageGameplayEffect));
 
-	//디버그용 라인 그리기
-	DrawDebugSphere(
-		World,
-		GetActorLocation(),
-		GetTotalRadius(),
-		12,
-		FColor::Red,
-		false,
-		0.1f
-	);
-
 	if (bHasOverlap)
 	{
+		TSet<AActor*> HitThisTick;
 		for (const FOverlapResult& Result : OverlapResults)
 		{
 			AActor* OverlappedActor = Result.GetActor();
-			if (OverlappedActor && OverlappedActor != this)
+			if (IsValidTarget(OverlappedActor) && !HitThisTick.Contains(OverlappedActor))
 			{
 				IAbilitySystemInterface* AbilitySystemActor = Cast<IAbilitySystemInterface>(OverlappedActor);
 				if (AbilitySystemActor)
 				{
+					HitThisTick.Add(OverlappedActor);
+					const float Pull = RuntimeParams.GetMagnitude(FDiaGameplayTags::Get().GASData_Variant_PullToCenter);
+					UAbilitySystemComponent* TargetASC = AbilitySystemActor->GetAbilitySystemComponent();
+					if (Pull > 0.f && HasAuthority() && IsValid(TargetASC) &&
+						TargetASC->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute()) > 0.f &&
+						!TargetASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Invincible))
+					{
+						if (ACharacter* TargetCharacter = Cast<ACharacter>(OverlappedActor))
+						{
+							FVector TowardCenter = GetActorLocation() - TargetCharacter->GetActorLocation();
+							TowardCenter.Z = 0.f;
+							if (TowardCenter.SizeSquared() > FMath::Square(50.f) && TargetCharacter->GetCharacterMovement())
+							{
+								TargetCharacter->GetCharacterMovement()->AddImpulse(TowardCenter.GetSafeNormal() * Pull, true);
+							}
+						}
+					}
 					FHitResult HitResult;
 					HitResult.ImpactPoint = OverlappedActor->GetActorLocation();
 					HitResult.ImpactNormal = (OverlappedActor->GetActorLocation() - GetActorLocation()).GetSafeNormal();

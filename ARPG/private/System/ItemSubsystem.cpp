@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "System/ItemSubsystem.h"
@@ -806,4 +806,19 @@ const FString& UItemSubsystem::RunOptionRollStressTest(FName ItemID, int32 Count
 
     UE_LOG(LogARPG_Inventory, Display, TEXT("%s"), *LastOptionRollStressReport);
     return LastOptionRollStressReport;
+}
+
+TArray<FName> UItemSubsystem::GetRewardEquipmentIDs(bool bCommonOnly) const
+{
+    TArray<FName> IDs;
+    for (const auto& Entry : ItemCache)
+    {
+        if (Entry.Value.bIsEquippable && !Entry.Value.ItemID.IsNone()
+            && (!bCommonOnly || Entry.Value.Rarity == EItemRarity::EIR_Common))
+        {
+            IDs.AddUnique(Entry.Value.ItemID);
+        }
+    }
+    IDs.Sort(FNameLexicalLess());
+    return IDs;
 }

@@ -5,6 +5,7 @@
 #include "Monster/Controller/DiaAIController.h"
 #include "AbilitySystemComponent.h"
 #include "DiaBaseCharacter.h"
+#include "Monster/DiaMonster.h"
 #include "GAS/DiaGameplayTags.h"
 UBTTask_MoveToForward::UBTTask_MoveToForward()
 {
@@ -25,6 +26,8 @@ EBTNodeResult::Type UBTTask_MoveToForward::ExecuteTask(UBehaviorTreeComponent& O
 
 	APawn* Pawn = aiController->GetPawn();
 	if (!IsValid(Pawn))
+		return EBTNodeResult::Failed;
+	if (const ADiaMonster* Monster = Cast<ADiaMonster>(Pawn); Monster && Monster->IsAttackInProgress())
 		return EBTNodeResult::Failed;
 
 	if (ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(Pawn))

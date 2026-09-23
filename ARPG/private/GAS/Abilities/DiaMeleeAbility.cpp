@@ -1,10 +1,12 @@
 #include "GAS/Abilities/DiaMeleeAbility.h"
 #include "GAS/DiaAttributeSet.h"
+#include "GAS/DiaMeleeTargeting.h"
 #include "AbilitySystemComponent.h"
 
 #include "GameFramework/Character.h"
 
 #include "Engine/World.h"
+#include "Engine/OverlapResult.h"
 #include "DrawDebugHelpers.h"
 #include "TimerManager.h"
 
@@ -87,100 +89,22 @@ void UDiaMeleeAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const
 
 void UDiaMeleeAbility::PerformHitDetection()
 {
-	const FGameplayAbilityActorInfo& ActorInfo = GetActorInfo();
-	if (!ActorInfo.AvatarActor.IsValid())
+	ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(GetAvatarActorFromActorInfo());
+	if (!IsActive() || !Character) return;
+	FGASMeleeData Data;
+	Data.AttackRange = AttackRange;
+	Data.AttackAngle = AttackAngle;
+	Data.AttackOffset = AttackOffset;
+	Data.bShowDebugShape = bShowDebugShape;
+	TArray<ADiaBaseCharacter*> Targets;
+	DiaMeleeTargeting::GatherTargets(*Character, Data, Character->GetActorLocation(), Character->GetActorRotation(), Targets);
+	for (ADiaBaseCharacter* Target : Targets)
 	{
-		return;
-	}
-
-	ADiaBaseCharacter* Character = Cast<ADiaBaseCharacter>(ActorInfo.AvatarActor.Get());
-	if (!Character)
-	{
-		return;
-	}
-
-	UWorld* World = Character->GetWorld();
-	if (!World)
-	{
-		return;
-	}
-
-	FVector CharacterLocation = Character->GetActorLocation();
-	FRotator CharacterRotation = Character->GetActorRotation();
-
-	FVector AttackCenter = CharacterLocation + CharacterRotation.RotateVector(AttackOffset);
-	SpawnCosmeticSkillActorAtTransform(GetSkillActorClassForSpawn(), FTransform(CharacterRotation, AttackCenter));
-
-	TArray<FHitResult> HitResults;
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(Character);
-	QueryParams.bReturnPhysicalMaterial = false;
-
-	bool bHit = World->SweepMultiByChannel(
-		HitResults,
-		AttackCenter,
-		AttackCenter,
-		FQuat::Identity,
-		ECC_Pawn,
-		FCollisionShape::MakeSphere(AttackRange),
-		QueryParams
-	);
-	
-	if (bShowDebugShape)
-	{
-		DrawDebugSphere(World, AttackCenter, AttackRange, 12, FColor::Red, false, 2.0f);
-		
-		FVector ForwardVector = CharacterRotation.Vector();
-		float HalfAngleRad = FMath::DegreesToRadians(AttackAngle * 0.5f);
-		
-		for (int32 i = 0; i <= 8; ++i)
-		{
-			float CurrentAngle = -HalfAngleRad + (HalfAngleRad * 2.0f * i / 8.0f);
-			FVector ConeDirection = ForwardVector.RotateAngleAxis(FMath::RadiansToDegrees(CurrentAngle), FVector::UpVector);
-			DrawDebugLine(World, AttackCenter, AttackCenter + ConeDirection * AttackRange, FColor::Yellow, false, 2.0f);
-		}
-	}
-
-	if (bHit)
-	{
-		FVector ForwardVector = CharacterRotation.Vector();
-		float HalfAngleRad = FMath::DegreesToRadians(AttackAngle * 0.5f);
-
-		for (const FHitResult& HitResult : HitResults)
-		{
-			AActor* HitActor = HitResult.GetActor();
-			if (!HitActor || HitActors.Contains(HitActor))
-			{
-				continue;
-			}
-
-			//actor 0번 tag는 character
-			//1번은 player or monster
-			//같은 타입은 피격에서 제외
-			TArray<FName> OwnerTags = Character->Tags;
-			if (HitActor->ActorHasTag(OwnerTags[1]))
-			{
-				continue;
-			}
-			
-			Character->SetTargetActor(Cast<ADiaBaseCharacter>(HitActor));
-
-			FVector ToTarget = (HitActor->GetActorLocation() - AttackCenter).GetSafeNormal();
-			float DotProduct = FVector::DotProduct(ForwardVector, ToTarget);
-			float AngleToTarget = FMath::Acos(DotProduct);
-
-			if (AngleToTarget <= HalfAngleRad)
-			{
-				ARPG_SKILL_VLOG(TEXT("Hit Actor=%s"), *HitActor->GetName());
-				HitActors.Add(HitActor);
-
-				ApplyDamageToTarget(HitActor);
-
-				SpawnHitEffectAtLocation(HitActor->GetActorLocation());
-
-				PlayHitSoundAtLocation(HitActor->GetActorLocation());
-			}
-		}
+		if (HitActors.Contains(Target)) continue;
+		HitActors.Add(Target);
+		ApplyDamageToTarget(Target);
+		SpawnHitEffectAtLocation(Target->GetActorLocation());
+		PlayHitSoundAtLocation(Target->GetActorLocation());
 	}
 }
 

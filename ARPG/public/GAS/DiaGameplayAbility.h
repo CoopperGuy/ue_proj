@@ -19,6 +19,11 @@ class USkillObject;
 class ADiaBaseCharacter;
 class ADiaSkillActor;
 
+/**
+ * 신규 스킬의 공통 실행 Ability. 단일 동작도 FGASSkillData::Steps에 한 단계로 작성한다.
+ * 실행 순서는 RunNextStep과 UDiaSkillStepExecutor가 담당한다.
+ * 새 동작은 StepData/Executor를 확장하고, Abilities/의 레거시 전용 Ability를 새로 선택/상속하는 방식은 지양한다.
+ */
 UCLASS(Blueprintable)
 class ARPG_API UDiaGameplayAbility : public UGameplayAbility
 {
@@ -50,7 +55,7 @@ public:
 	void SetSkillObject(const USkillObject* InSkillObject);
 	const USkillObject* GetSkillObject() const { return SkillObject; }
 
-	/** SkillData.ExtraData(FGASSkillActorSpawnData)의 LifeSpan > 0 이면 엔진 LifeSpan을 끄고 월드 타이머로 액터를 제거합니다. 스폰 직후 호출. */
+	/** Steps에서 첫 유효한 스폰 LifeSpan을 찾고, 없으면 레거시 ExtraData를 확인한다. 양수면 월드 제거 타이머를 적용한다. 스폰 직후 호출. */
 	void ApplySkillObjectRemovalTimer(class ADiaSkillActor* SkillActor) const;
 
 	const TSubclassOf<UGameplayEffect> GetDamageEffectClass() const { return DamageEffectClass; }
@@ -160,6 +165,8 @@ protected:
 
 	int32 CurrentStepIndex = 0;
 	void RunNextStep();
+	UFUNCTION()
+	void ExecuteCurrentStep();
 	void HandleCurrentStepFinished();
 
 protected:
@@ -182,6 +189,9 @@ protected:
 	int32 TotalHitCount;
 
 	float HitInterval;
+
+	bool bSkillExecutionFinished = false;
+	bool bOwnsMonsterAttack = false;
 	//히트 계산 식
 	//-> CurrentHitcount * HitInterval = 총 사용 시간.
 

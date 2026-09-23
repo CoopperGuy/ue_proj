@@ -9,6 +9,7 @@
 #include "Monster/Controller/AI/BlackboardKeys.h"
 
 #include "AIController.h"
+#include "Monster/DiaMonster.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/KismetMathLibrary.h"
 
@@ -36,6 +37,8 @@ EBTNodeResult::Type UBTTask_RotateToTarget::ExecuteTask(UBehaviorTreeComponent& 
 	APawn* pawn = aiController->GetPawn();
 	if (!IsValid(pawn))
 		return EBTNodeResult::Failed;
+	if (const ADiaMonster* Monster = Cast<ADiaMonster>(pawn); Monster && Monster->IsAttackInProgress())
+		return EBTNodeResult::Failed;
 
 	// Blackboard에서 TargetActor 가져오기
 	AActor* TargetActor = Cast<AActor>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(BlackboardKeys::Monster::TargetActor));
@@ -45,6 +48,9 @@ EBTNodeResult::Type UBTTask_RotateToTarget::ExecuteTask(UBehaviorTreeComponent& 
 	}
 	
 	FVector TargetLocation = TargetActor->GetActorLocation();
+
+	// A previous chase request must not carry the monster through its wind-up.
+	aiController->StopMovement();
 
 	// 타겟 방향 계산
 	FVector TargetDirection = GetTargetDirection(OwnerComp, TargetLocation);

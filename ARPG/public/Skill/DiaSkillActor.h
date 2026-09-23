@@ -35,6 +35,11 @@ struct FDiaSkillActorConfigureData
 	float AreaRadius = -1.f;
 };
 
+/**
+ * Step/variant 실행 중 생성되는 발사체·장판 등의 월드 액터 공통 기반. Step 구조에서도 계속 사용한다.
+ * 단계 순서는 UDiaGameplayAbility와 StepExecutor가 담당하며, 이 Actor는 스폰 후 시각 효과·충돌·수명 등을 처리한다.
+ * Abilities/의 레거시 전용 Ability와 달리 신규 스킬의 SkillActorClass로 사용할 수 있다.
+ */
 UCLASS()
 class ARPG_API ADiaSkillActor : public AActor
 {
@@ -86,6 +91,7 @@ public:
 	void ExplodeAdditioanlly(float Radius);
 protected:
     bool IsValidTarget(AActor* OtherActor);
+	void ApplyChainHits(AActor* FirstTarget);
 	FString GetDebugString() const;
 	void LogHitState(AActor* TargetActor, const TCHAR* Reason) const;
 protected:    

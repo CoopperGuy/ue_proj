@@ -37,6 +37,7 @@ public:
 	void SetIconSize(const FVector2D& NewSize);
     void SetWidgetGridPos(int32 PositionX, int32 PositionY);
 	void SetWidgetPosition(int32 PositionX, int32 PositionY);
+	void SetParentSlot(UEquipSlot* InParentSlot) { ParentSlot = InParentSlot; }
 	
 	bool MoveGridPosition(int32 DeltaX, int32 DeltaY);
 

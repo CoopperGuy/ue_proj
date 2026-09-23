@@ -44,6 +44,8 @@ class ARPG_API ADiaController : public APlayerController
 	
 public:
 	ADiaController();
+	UDiaOptionManagerComponent* GetOptionManagerComponent() { return DiaOptionManagerComponent; }
+	const UDiaOptionManagerComponent* GetOptionManagerComponent() const { return DiaOptionManagerComponent; }
 
 	bool ItemAddedToInventory(const FInventorySlot& Item);
 	void ItemRemoved(const FInventorySlot& Item);
@@ -65,6 +67,34 @@ public:
 
 	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat")
 	void CheatGiveItem(FName ItemID, int32 Count = 1, int32 Level = 1);
+
+	/** Give a skill and equip it. QuickSlot: 0 = automatic, 1-5 = replace that slot. */
+	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat|Skills")
+	void CheatGiveSkill(int32 SkillID, int32 QuickSlot = 0);
+
+	/** Give all player skills, bypassing the owned limit. Include non-player skills only when requested. */
+	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat|Skills")
+	void CheatGiveAllSkills(bool bIncludeNonPlayerSkills = false);
+
+	/** Print loaded skill IDs, names, ownership and quick slots. */
+	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat|Skills")
+	void CheatListSkills();
+
+	/** Give an assigned variant to an owned skill. Apply immediately unless bApply is false. */
+	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat|Skills")
+	void CheatGiveSkillVariant(int32 SkillID, int32 VariantID, bool bApply = true);
+
+	/** Give all assigned variants. SkillID 0 selects every owned skill. */
+	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat|Skills")
+	void CheatGiveAllSkillVariants(int32 SkillID = 0, bool bApply = true);
+
+	/** Clear applied variants while keeping ownership. SkillID 0 selects every owned skill. */
+	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat|Skills")
+	void CheatClearSkillVariants(int32 SkillID = 0);
+
+	/** List assigned variants and ownership/application state. SkillID 0 selects owned skills. */
+	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat|Skills")
+	void CheatListSkillVariants(int32 SkillID = 0);
 
 	UFUNCTION(Exec, BlueprintCallable, Category = "Cheat")
 	void CheatDropItemWithOptions(FName ItemID, const FString& PrefixOptionKeys, const FString& SuffixOptionKeys, int32 Count = 1, int32 Level = 1);

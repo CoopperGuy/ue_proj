@@ -224,9 +224,12 @@ bool UDiaSkillManagerComponent::HasAvailableSkillSlot() const
 	return SkillIDMapping.Num() < MaxOwnedSkillCount;
 }
 
-bool UDiaSkillManagerComponent::TryRegisterSkillByID(int32 SkillID)
+bool UDiaSkillManagerComponent::TryRegisterSkillByID(int32 SkillID, bool bIgnoreOwnedSkillLimit)
 {
-	if (SkillID <= 0 || GetSkillObjectBySkillID(SkillID) != nullptr || !HasAvailableSkillSlot())
+#if UE_BUILD_SHIPPING
+	bIgnoreOwnedSkillLimit = false;
+#endif
+	if (SkillID <= 0 || GetSkillObjectBySkillID(SkillID) != nullptr || (!bIgnoreOwnedSkillLimit && !HasAvailableSkillSlot()))
 	{
 		return false;
 	}
@@ -327,7 +330,7 @@ bool UDiaSkillManagerComponent::AddOwnedVariantBySkillID(int32 SkillID, int32 Va
 	USkillObject* SkillObj = nullptr;
 	for (const auto& Obj : SkillIDMapping)
 	{
-		if (Obj->GetSkillID() == SkillID)
+		if (IsValid(Obj) && Obj->GetSkillID() == SkillID)
 		{
 			SkillObj = Obj;
 			break;
@@ -377,6 +380,18 @@ bool UDiaSkillManagerComponent::TryApplySkillVariantByID(int32 SkillID, int32 Va
 
 	SkillObj->SetVariantApplyIDs(VariantID);
 	return true;
+}
+
+int32 UDiaSkillManagerComponent::ClearAppliedSkillVariantsByID(int32 SkillID)
+{
+	USkillObject* SkillObj = GetMutableSkillObjectBySkillID(SkillID);
+	if (!IsValid(SkillObj))
+	{
+		return INDEX_NONE;
+	}
+	const int32 Count = SkillObj->GetVariantApplyIDs().Num();
+	SkillObj->ClearAppliedVariantIDs();
+	return Count;
 }
 
 FGameplayAbilitySpec* UDiaSkillManagerComponent::GetAbilitySpecBySkillID(int32 SkillID) const
@@ -502,7 +517,7 @@ USkillObject* UDiaSkillManagerComponent::GetMutableSkillObjectBySkillID(int32 Sk
 {
 	for (auto& SkillObject : SkillIDMapping)
 	{
-		if (SkillObject->GetSkillID() == SkillID)
+		if (IsValid(SkillObject) && SkillObject->GetSkillID() == SkillID)
 		{
 			return SkillObject;
 		}
@@ -545,7 +560,9 @@ bool UDiaSkillManagerComponent::TryAddSkillLevelBySkillID(int32 SkillID, int32 L
 		return false;
 	}
 
-	SkillObj->AddSkillLevel(LevelToAdd);
+    const int32 RemainingLevels = FMath::Max(0, SkillObj->GetSkillMaxLevel() - SkillObj->GetSkillLevel());
+    if (RemainingLevels == 0) return false;
+	SkillObj->AddSkillLevel(FMath::Min(LevelToAdd, RemainingLevels));
 	OnSkillLevelChanged.Broadcast(SkillID, SkillObj->GetSkillLevel());
 
 	if (FGameplayAbilitySpec* Spec = GetAbilitySpecBySkillID(SkillID))
@@ -563,5 +580,3 @@ bool UDiaSkillManagerComponent::TryAddSkillLevelBySkillID(int32 SkillID, int32 L
 
 	return true;
 }
-
-

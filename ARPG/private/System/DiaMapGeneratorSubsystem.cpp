@@ -1,7 +1,12 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "System/DiaMapGeneratorSubsystem.h"
+#include "System/DiaSaveSubsystem.h"
+#include "System/DiaSaveGame.h"
+#include "System/DiaRewardSubsystem.h"
+#include "DiaGameState.h"
+#include "Engine/GameInstance.h"
 #include "Engine/DataTable.h"
 #include "Engine/AssetManager.h"
 #include "Types/MapGenerate.h"
@@ -111,17 +116,36 @@ void UDiaMapGeneratorSubsystem::OnWorldBeginPlay(UWorld& InWorld)
 		LoadAdjacencyRules();
 	}
 
-	if (bRandomizeMapSizeOnBeginPlay)
-	{
-		RandomizeMapSize();
-	}
+    UDiaSaveSubsystem* Saves = InWorld.GetGameInstance()->GetSubsystem<UDiaSaveSubsystem>();
+    UDiaRewardSubsystem* Rewards = InWorld.GetGameInstance()->GetSubsystem<UDiaRewardSubsystem>();
+    const UDiaSaveGame* Saved = Saves ? Saves->GetPendingLoadedGame() : nullptr;
+    const bool bRestore = Saved && Saved->SaveVersion >= 1 && Saved->bHasDungeonFloor && Saved->IsFloorSnapshotValid();
+    if (Rewards) Rewards->ResetFloor();
+    if (bRestore)
+    {
+        MapWidth = Saved->FloorSize.X;
+        MapHeight = Saved->FloorSize.Y;
+        MapData = Saved->RoomLayout;
+        StartRoomData = Saved->StartRoom;
+        bHasStartRoomData = true;
+        if (Rewards) Rewards->RestoreFloor(Saved->RoomRewards);
+        if (ADiaGameState* GS = InWorld.GetGameState<ADiaGameState>()) GS->RestoreClearedRooms(Saved->ClearedRooms);
+    }
+    else
+    {
+        if (bRandomizeMapSizeOnBeginPlay) RandomizeMapSize();
+        GeneratePlayableFloor(TEXT("Entrance"));
+    }
+    SaveMapToFile(FPaths::ProjectSavedDir() / TEXT("LastGeneratedMap.txt"));
+    CreateMapFromData();
+    if (!bRestore)
+    {
+        MovePlayerToStartRoom();
+        InWorld.GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &UDiaMapGeneratorSubsystem::MovePlayerToStartRoom));
+    }
+    if (ADungeonGameMode* Mode = InWorld.GetAuthGameMode<ADungeonGameMode>())
+        InWorld.GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateUObject(Mode, &ADungeonGameMode::InitializeRoomRewards));
 
-	BFSGenerateMap(FName("Entrance"));
-	SaveMapToFile(FPaths::ProjectSavedDir() / TEXT("LastGeneratedMap.txt"));
-	CreateMapFromData();
-	MovePlayerToStartRoom();
-
-	InWorld.GetTimerManager().SetTimerForNextTick(FTimerDelegate::CreateUObject(this, &UDiaMapGeneratorSubsystem::MovePlayerToStartRoom));
 }
 
 bool UDiaMapGeneratorSubsystem::ShouldGenerateMapForWorld(const UWorld& World) const
@@ -175,7 +199,7 @@ void UDiaMapGeneratorSubsystem::LoadAdjacencyRules()
 //Soruce RoomID濡?Map??Generate?섏옄.
 void UDiaMapGeneratorSubsystem::GenerateMap(FName MapID)
 {
-	BFSGenerateMap(MapID);
+	GeneratePlayableFloor(MapID);
 }
 
 void UDiaMapGeneratorSubsystem::GenerateMapWithSize(FName MapID, int32 InMapWidth, int32 InMapHeight)
@@ -789,44 +813,37 @@ void UDiaMapGeneratorSubsystem::CreateMapFromData()
 	MapObjList.Empty();
 	StartRoomActor = nullptr;
 
-	for(FDiaRoomData& RoomData : MapData)
-	{
-		if(RoomData.RoomID != NAME_None && RoomData.bIsAnchor)
-		{
-			//蹂듬룄??寃쎌슦?먮뒗 留듭씠 ?꾩꽦???꾩뿉 ??泥댄겕?쒕떎.
-			if(RoomData.TileType == ETileType::Corridor)
-			{
-				uint8 Directions = MakeWorldDirectionsFromActivePorts(RoomData);
-				RoomData.RoomID = TEXT("None");
-				RoomData.Directions = Directions;
-				CalcuateCorridorType(Directions, RoomData.RotateDegree, RoomData.RoomID);
-			}
-
-			UDiaRoomType* RoomType = RoomDataCache.FindRef(RoomData.RoomID);
-			if (RoomType)
-			{
-				const bool bIsStartRoom = bHasStartRoomData && RoomData.RoomPosition == StartRoomData.RoomPosition && RoomData.RoomID == StartRoomData.RoomID;
-				const bool bIsStageClearRoom = RoomData.RoomID == TEXT("End");
-				const EDiaRoomRole RoomRole = bIsStartRoom
-					? EDiaRoomRole::Start
-					: bIsStageClearRoom ? EDiaRoomRole::StageClear : EDiaRoomRole::Normal;
-				ESpawnType SpawnType = RoomType->SpawnType;
-				ADiaRoomBase* RoomBase = CreateRoomActor(RoomType, RoomData, DiaMapConstants::TileSize);
-				if (RoomBase)
-				{
-					FGuid RoomGuid = FGuid::NewGuid();
-					RoomBase->SetRoomGuid(RoomGuid);
-					RoomBase->SetSpawnType(SpawnType);
-					RoomBase->SetRoomRole(RoomRole);
-					MapObjList.Add(RoomGuid, RoomBase);
-					if (bIsStartRoom)
-					{
-						StartRoomActor = RoomBase;
-					}
-				}
-			}
-		}
-	}
+    for (const FDiaRoomData& SavedData : MapData)
+    {
+        if (SavedData.RoomID.IsNone() || !SavedData.bIsAnchor) continue;
+        FDiaRoomData VisualData = SavedData;
+        if (VisualData.TileType == ETileType::Corridor)
+        {
+            VisualData.Directions = MakeWorldDirectionsFromActivePorts(SavedData);
+            CalcuateCorridorType(VisualData.Directions, VisualData.RotateDegree, VisualData.RoomID);
+            const UDiaRoomType* Source = RoomDataCache.FindRef(SavedData.RoomID);
+            const UDiaRoomType* Visual = RoomDataCache.FindRef(VisualData.RoomID);
+            if (Source && Visual)
+            {
+                VisualData.ActivePorts.Reset();
+                for (const FDiaRoomPort& Port : SavedData.ActivePorts)
+                {
+                    const FDiaRoomPort WorldPort = DiaMapGenerator::RotatePortDegree(Port, Source->RoomSize, SavedData.RotateDegree);
+                    VisualData.ActivePorts.Add(DiaMapGenerator::RotatePortDegree(WorldPort, SavedData.RoomSize, -VisualData.RotateDegree));
+                }
+            }
+        }
+        if (UDiaRoomType* RoomType = RoomDataCache.FindRef(VisualData.RoomID))
+        {
+            if (ADiaRoomBase* Room = CreateRoomActor(RoomType, VisualData, DiaMapConstants::TileSize))
+            {
+                MapObjList.Add(SavedData.RoomGuid, Room);
+                if (Room->IsStartRoom()) StartRoomActor = Room;
+                if (const ADiaGameState* GS = GetWorld()->GetGameState<ADiaGameState>(); GS && GS->IsRoomCleared(SavedData.RoomGuid))
+                    Room->OnBattleEnd(SavedData.RoomGuid);
+            }
+        }
+    }
 }
 
 ADiaRoomBase* UDiaMapGeneratorSubsystem::CreateRoomActor(UDiaRoomType* RoomType, const FDiaRoomData& RoomData, float TileSize)
@@ -855,6 +872,11 @@ ADiaRoomBase* UDiaMapGeneratorSubsystem::CreateRoomActor(UDiaRoomType* RoomType,
 	RoomActor->SetRoomSize(GetSafeRoomSize(RoomType->RoomSize));
 	RoomActor->SetDoorPorts(GetRoomPorts(RoomType), RoomData.ActivePorts);
 	RoomActor->SetTileType(RoomData.TileType);
+    RoomActor->SetRoomGuid(RoomData.RoomGuid);
+    RoomActor->SetSpawnType(RoomType->SpawnType);
+    const bool bStart = bHasStartRoomData && RoomData.RoomPosition == StartRoomData.RoomPosition;
+    RoomActor->SetRoomRole(bStart ? EDiaRoomRole::Start : RoomData.RoomID == TEXT("End") ? EDiaRoomRole::StageClear
+        : RoomData.bTreasureRoom ? EDiaRoomRole::Treasure : EDiaRoomRole::Normal);
 	RoomActor->FinishSpawning(SpawnTransform);
 
 	return RoomActor;
@@ -1010,7 +1032,7 @@ void UDiaMapGeneratorSubsystem::FindRoomCandidates(const FDiaAdjacencyRule& Rule
 			continue;
 		}
 
-		if (CurrentRooms < MinMapRoomCount && Entry.RoomID == TEXT("End"))
+		if ((CurrentRooms < MinMapRoomCount || CountRewardEligibleRooms() < TargetCombatRoomCount + 1) && Entry.RoomID == TEXT("End"))
 		{
 			continue;
 		}
@@ -1021,6 +1043,9 @@ void UDiaMapGeneratorSubsystem::FindRoomCandidates(const FDiaAdjacencyRule& Rule
 			continue;
 		}
 
+        const UDiaRoomType* CandidateType = RoomDataCache.FindRef(Entry.RoomID);
+        if (CandidateType && CandidateType->TileType == ETileType::Floor && Entry.RoomID != TEXT("End")
+            && CountRewardEligibleRooms() >= TargetCombatRoomCount + 1) continue;
 		WeightedEntries.Add(Entry);
 		TotalWeight += Entry.Weight;
 	}
@@ -1144,3 +1169,94 @@ void UDiaMapGeneratorSubsystem::SaveMapToFile(const FString& FilePath) const
 }
 
 
+
+int32 UDiaMapGeneratorSubsystem::CountRewardEligibleRooms() const
+{
+    int32 Count = 0;
+    for (const FDiaRoomData& Room : MapData)
+        if (Room.bIsAnchor && !Room.RoomID.IsNone() && Room.TileType == ETileType::Floor
+            && Room.RoomID != TEXT("End") && Room.RoomPosition != StartRoomData.RoomPosition) ++Count;
+    return Count;
+}
+
+void UDiaMapGeneratorSubsystem::GeneratePlayableFloor(FName MapID)
+{
+    TArray<FDiaRoomData> BestLayout;
+    FDiaRoomData BestStart;
+    int32 BestScore = -1;
+    for (int32 Attempt = 0; Attempt < 32; ++Attempt)
+    {
+        BFSGenerateMap(MapID);
+        const bool bHasBoss = MapData.ContainsByPredicate([](const FDiaRoomData& R) { return R.bIsAnchor && R.RoomID == TEXT("End"); });
+        const int32 Score = CountRewardEligibleRooms() + (bHasBoss ? 1000 : 0);
+        if (bHasStartRoomData && Score > BestScore)
+        {
+            BestScore = Score;
+            BestLayout = MapData;
+            BestStart = StartRoomData;
+        }
+        if (bHasBoss && CountRewardEligibleRooms() >= TargetCombatRoomCount + 1) break;
+    }
+    if (!BestLayout.IsEmpty())
+    {
+        MapData = MoveTemp(BestLayout);
+        StartRoomData = BestStart;
+        bHasStartRoomData = true;
+    }
+    AssignFloorRoles();
+    if (BestScore < 1000 + TargetCombatRoomCount + 1)
+        UE_LOG(LogARPG_Map, Warning, TEXT("Floor room target could not fit authored rooms in %dx%d. Eligible=%d, boss=%d. Increase grid or adjust room ports."),
+            MapWidth, MapHeight, CountRewardEligibleRooms(), BestScore >= 1000);
+}
+
+void UDiaMapGeneratorSubsystem::AssignFloorRoles()
+{
+    if (!bHasStartRoomData) return;
+    const int32 Start = GetIndex(StartRoomData.RoomPosition.X, StartRoomData.RoomPosition.Y);
+    TMap<int32, int32> Parents;
+    TArray<int32> Queue;
+    Parents.Add(Start, INDEX_NONE);
+    Queue.Add(Start);
+    int32 Boss = INDEX_NONE;
+    for (int32 Head = 0; Head < Queue.Num(); ++Head)
+    {
+        const int32 Index = Queue[Head];
+        const FDiaRoomData& Room = MapData[Index];
+        if (Room.RoomID == TEXT("End")) Boss = Index;
+        const UDiaRoomType* Type = RoomDataCache.FindRef(Room.RoomID);
+        if (!Type) continue;
+        for (const FDiaRoomPort& Port : Room.ActivePorts)
+        {
+            const FDiaRoomPort WorldPort = DiaMapGenerator::RotatePortDegree(Port, Type->RoomSize, Room.RotateDegree);
+            const FIntPoint Cell = Room.RoomPosition + WorldPort.LocalCell + DiaMapGenerator::GetDirectionOffset(WorldPort.Direction);
+            if (Cell.X < 0 || Cell.Y < 0 || Cell.X >= MapWidth || Cell.Y >= MapHeight) continue;
+            const FDiaRoomData& Neighbor = MapData[GetIndex(Cell.X, Cell.Y)];
+            if (Neighbor.RoomID.IsNone()) continue;
+            const int32 Next = GetIndex(Neighbor.RoomPosition.X, Neighbor.RoomPosition.Y);
+            if (!Parents.Contains(Next)) { Parents.Add(Next, Index); Queue.Add(Next); }
+        }
+    }
+    TSet<int32> BossPath;
+    for (int32 Index = Boss; Index != INDEX_NONE; Index = Parents.FindChecked(Index)) BossPath.Add(Index);
+    int32 Treasure = INDEX_NONE;
+    int32 BestScore = -1;
+    for (const int32 Index : Queue)
+    {
+        const FDiaRoomData& Room = MapData[Index];
+        if (Index == Start || Index == Boss || Room.TileType != ETileType::Floor) continue;
+        const int32 Score = (!BossPath.Contains(Index) ? 1000 : 0) + (Room.ActivePorts.Num() == 1 ? 100 : 0)
+            + FMath::Abs(Room.RoomPosition.X - StartRoomData.RoomPosition.X) + FMath::Abs(Room.RoomPosition.Y - StartRoomData.RoomPosition.Y);
+        if (Score > BestScore) { BestScore = Score; Treasure = Index; }
+    }
+    for (int32 Index = 0; Index < MapData.Num(); ++Index)
+    {
+        FDiaRoomData& Room = MapData[Index];
+        if (!Room.bIsAnchor || Room.RoomID.IsNone()) continue;
+        Room.RoomGuid = FGuid::NewGuid();
+        Room.bTreasureRoom = Index == Treasure;
+        const FDiaRoomData Copy = Room;
+        UpdatePlacedRoomData(Copy);
+    }
+    StartRoomData = MapData[Start];
+    if (Treasure == INDEX_NONE) UE_LOG(LogARPG_Map, Error, TEXT("No reachable floor room available for treasure."));
+}

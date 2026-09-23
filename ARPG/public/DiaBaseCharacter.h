@@ -109,7 +109,8 @@ public:
 	bool CheckBossMonsterByAbilityTag() const;
 
 	void ApplyStunState(bool bStunned);
-	bool ApplySkillByID(int32 SkillID);
+	// 보유 한도 우회는 개발 치트용이며 Shipping에서는 무시한다. 실행은 데이터의 Ability/Steps를 따른다.
+	bool ApplySkillByID(int32 SkillID, bool bIgnoreOwnedSkillLimit = false);
 	bool ApplySkillLevelUpByID(int32 SkillID, int32 AddLevel);
 	bool UnlockSkillVariantByID(int32 SkillID, int32 VariantID);
 	bool ApplySkillVariantByID(int32 SkillID, int32 VariantID);
@@ -182,7 +183,9 @@ protected:
 
 	FOnAddSkillVariantDelegate OnAddSkillVariantDelegate;
 public:
-	UDiaAttributeSet* GetAttributeSet() const { return AttributeSet; }
-	bool GetIsDead() const { return bIsDead; }
-	UDiaSkillManagerComponent* GetSkillManagerComponent() const { return SkillManagerComponent; }
+	UDiaAttributeSet* GetAttributeSet() { return AttributeSet; }
+	const UDiaAttributeSet* GetAttributeSet() const { return AttributeSet; }
+	const bool GetIsDead() const { return bIsDead; }
+	UDiaSkillManagerComponent* GetSkillManagerComponent() { return SkillManagerComponent; }
+	const UDiaSkillManagerComponent* GetSkillManagerComponent() const { return SkillManagerComponent; }
 };

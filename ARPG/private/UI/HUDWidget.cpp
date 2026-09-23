@@ -2,6 +2,8 @@
 
 
 #include "UI/HUDWidget.h"
+#include "System/DiaRewardSubsystem.h"
+#include "GameMode/DungeonGameMode.h"
 #include "UI/Orb.h"
 #include "UI/MonsterHP.h"
 #include "UI/System/DiaPrimaryLayout.h"
@@ -254,7 +256,17 @@ void UHUDWidget::OnRewardCardSelected(FRewardData RewardData)
 	if (!IsValid(OwningController))
 		return;
 
-	bool SuccesApplyReward = OwningController->ApplyReward(RewardData);
+    UDiaRewardSubsystem* Rewards = GetGameInstance()->GetSubsystem<UDiaRewardSubsystem>();
+    const bool bApplied = RewardData.SourceRoomGuid.IsValid()
+        ? Rewards && Rewards->TryClaimRoomReward(RewardData.SourceRoomGuid, RewardData.SourceOptionIndex, OwningController)
+        : OwningController->ApplyReward(RewardData);
+    if (bApplied)
+    {
+        if (RewardChoicePanel) RewardChoicePanel->CloseRewardChoicePanel();
+        if (ADungeonGameMode* Mode = GetWorld()->GetAuthGameMode<ADungeonGameMode>())
+            Mode->OnRoomRewardClaimed(RewardData.SourceRoomGuid);
+    }
+    else if (RewardChoicePanel) RewardChoicePanel->ShowClaimFailure();
 }
 
 void UHUDWidget::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotIndex)
@@ -366,3 +378,8 @@ void UHUDWidget::SetMonsterHPVisibility(ESlateVisibility _Visibility)
 }
 
 
+
+bool UHUDWidget::IsRewardChoiceOpen() const
+{
+    return IsValid(RewardChoicePanel) && RewardChoicePanel->IsVisible();
+}

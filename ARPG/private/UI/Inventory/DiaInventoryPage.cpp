@@ -4,13 +4,17 @@
 #include "DiaComponent/UI/DiaEquipmentComponent.h"
 #include "DiaComponent/UI/DiaInventoryComponent.h"
 #include "Logging/ARPGLogChannels.h"
-#include "UI/Inventory/EquipSlot.h"
 #include "UI/Inventory/EquipWidget.h"
 #include "UI/Inventory/MainInventory.h"
 
 void UDiaInventoryPage::NativeConstruct()
 {
 	Super::NativeConstruct();
+
+	if (IsValid(InventoryWidget))
+	{
+		InventoryWidget->SetInventoryPage(this);
+	}
 
 	ADiaController* DiaController = Cast<ADiaController>(GetOwningPlayer());
 	if (!IsValid(DiaController) || !IsValid(InventoryWidget) || !IsValid(EquipmentWidget))
@@ -34,13 +38,6 @@ void UDiaInventoryPage::NativeConstruct()
 	EquipmentWidget->SetDiaController(DiaController);
 	EquipmentWidget->SetInventoryComponent(InventoryComponent);
 	EquipmentWidget->SetEquipmentComponent(EquipmentComponent);
+	EquipmentWidget->SetMainInventoryWidget(InventoryWidget);
 	EquipmentWidget->InitializeEquipment();
-
-	for (int32 Index = 0; Index < static_cast<int32>(EEquipmentSlot::EES_Max); ++Index)
-	{
-		if (UEquipSlot* SlotWidget = EquipmentWidget->GetEquipSlot(static_cast<EEquipmentSlot>(Index)))
-		{
-			SlotWidget->OnItemEquipped.AddUniqueDynamic(DiaController, &ADiaController::OnEquipItemProgress);
-		}
-	}
 }

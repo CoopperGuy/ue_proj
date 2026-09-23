@@ -1,0 +1,2633 @@
+{
+  "DT_GASSkillData": {
+    "BasicAttack": {
+      "skillId": 1001,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData\", \"BasicAttack_SkillName\", \"기본 공격\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData\", \"BasicAttack_Description\", \"기본적인 근접 공격을 합니다.\")",
+      "icon": "/Game/Generated/SkillIcons/Player/1001_BasicAttack.1001_BasicAttack",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASProjectileSpawnStepData",
+          "ProjectileData": {
+            "ProjectileOffset": {
+              "X": 50,
+              "Y": 0,
+              "Z": 0
+            },
+            "MinimumRange": 100,
+            "bUseOwnerRotation": false,
+            "bFireMultipleProjectiles": false,
+            "ProjectileCount": 3,
+            "SpreadAngle": 15,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Character/Skill/Object/BP_NormalProjectile.BP_NormalProjectile_C'",
+            "LifeSpan": 5
+          },
+          "bUseLastStepEndLocation": true,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "Magic",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Player"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.1001"
+      },
+      "baseDamage": 150,
+      "manaCost": 0,
+      "cooldownDuration": 0.25,
+      "castTime": 0,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Character/Animation/AM_NAtk.AM_NAtk",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": [
+        1,
+        2,
+        16,
+        14
+      ]
+    },
+    "PowerStrike": {
+      "skillId": 1002,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData\", \"PowerStrike_SkillName\", \"강력한 공격\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData\", \"PowerStrike_Description\", \"마나를 소모하여 강력한 공격을 합니다.\")",
+      "icon": "/Game/Generated/SkillIcons/Player/1002_PowerStrike.1002_PowerStrike",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASMeleeSpawnStepData",
+          "MeleeData": {
+            "AttackRange": 260,
+            "AttackAngle": 80,
+            "AttackOffset": {
+              "X": 120,
+              "Y": 0,
+              "Z": 0
+            },
+            "bShowDebugShape": true,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/SkillObj/BP_Skill_PowerStrikeImpact.BP_Skill_PowerStrikeImpact_C'",
+            "LifeSpan": 0.8
+          },
+          "bUseLastStepEndLocation": true,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "MeleeAttack",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Player"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.1002"
+      },
+      "baseDamage": 220,
+      "manaCost": 12,
+      "cooldownDuration": 3,
+      "castTime": 0.2,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Character/Animation/AM_NAtk.AM_NAtk",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 3,
+      "requiredCharacterLevel": 3,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": [
+        4,
+        5
+      ]
+    },
+    "FireBolt": {
+      "skillId": 1003,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData\", \"FireBolt_SkillName\", \"파이어볼트\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData\", \"FireBolt_Description\", \"적에게 화염구를 발사합니다.\")",
+      "icon": "/Game/Generated/SkillIcons/Player/1003_FireBolt.1003_FireBolt",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASProjectileSpawnStepData",
+          "ProjectileData": {
+            "ProjectileOffset": {
+              "X": 120,
+              "Y": 0,
+              "Z": 0
+            },
+            "MinimumRange": 120,
+            "bUseOwnerRotation": false,
+            "bFireMultipleProjectiles": false,
+            "ProjectileCount": 1,
+            "SpreadAngle": 0,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/SkillObj/BP_Skill_FireBoltProjectile.BP_Skill_FireBoltProjectile_C'",
+            "LifeSpan": 4
+          },
+          "bUseLastStepEndLocation": true,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "Magic",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Player"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.1003"
+      },
+      "baseDamage": 90,
+      "manaCost": 10,
+      "cooldownDuration": 2,
+      "castTime": 0.15,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Character/Animation/AM_NormalAttack.AM_NormalAttack",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 5,
+      "requiredCharacterLevel": 2,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": [
+        1,
+        2,
+        3,
+        5,
+        7,
+        9,
+        14
+      ]
+    },
+    "Heal": {
+      "skillId": 1004,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData\", \"Heal_SkillName\", \"치유\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData\", \"Heal_Description\", \"자신의 체력을 회복합니다.\")",
+      "icon": "/Game/Generated/SkillIcons/Player/1004_Heal.1004_Heal",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASUtilityStepData",
+          "UtilityData": {
+            "SecondarySkillActorClass": "None",
+            "SpawnOffset": {
+              "X": 0,
+              "Y": 0,
+              "Z": 0
+            },
+            "bUseOwnerRotation": true,
+            "bAttachToOwner": false,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/SkillObj/BP_Skill_HealBurst.BP_Skill_HealBurst_C'",
+            "LifeSpan": 1.2
+          },
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "Heal",
+      "targetType": "Self",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Player"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.1004"
+      },
+      "baseDamage": 70,
+      "manaCost": 18,
+      "cooldownDuration": 8,
+      "castTime": 0.2,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Character/Animation/AM_NormalAttack.AM_NormalAttack",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 3,
+      "requiredCharacterLevel": 2,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": [
+        4,
+        5
+      ]
+    },
+    "Sprint": {
+      "skillId": 1005,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData\", \"Sprint_SkillName\", \"질주\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData\", \"Sprint_Description\", \"짧은 시간 동안 이동속도를 증가시킵니다.\")",
+      "icon": "/Game/Generated/SkillIcons/Player/1005_Sprint.1005_Sprint",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASUtilityStepData",
+          "UtilityData": {
+            "SecondarySkillActorClass": "None",
+            "SpawnOffset": {
+              "X": 0,
+              "Y": 0,
+              "Z": 0
+            },
+            "bUseOwnerRotation": true,
+            "bAttachToOwner": true,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/SkillObj/BP_Skill_SprintTrail.BP_Skill_SprintTrail_C'",
+            "LifeSpan": 3
+          },
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "Buff",
+      "targetType": "Self",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Player"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.1005"
+      },
+      "baseDamage": 250,
+      "manaCost": 8,
+      "cooldownDuration": 10,
+      "castTime": 0,
+      "hitCount": 1,
+      "hitInterval": 3,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "None",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 3,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": [
+        4,
+        5
+      ]
+    },
+    "MultiShot": {
+      "skillId": 1006,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData\", \"MultiShot_SkillName\", \"다중 사격\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData\", \"MultiShot_Description\", \"여러 개의 투사체를 동시에 발사합니다.\")",
+      "icon": "/Game/Generated/SkillIcons/Player/1006_MultiShot.1006_MultiShot",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASProjectileSpawnStepData",
+          "ProjectileData": {
+            "ProjectileOffset": {
+              "X": 120,
+              "Y": 0,
+              "Z": 0
+            },
+            "MinimumRange": 120,
+            "bUseOwnerRotation": false,
+            "bFireMultipleProjectiles": true,
+            "ProjectileCount": 5,
+            "SpreadAngle": 12,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/SkillObj/BP_Skill_MultiShotProjectile.BP_Skill_MultiShotProjectile_C'",
+            "LifeSpan": 4
+          },
+          "bUseLastStepEndLocation": true,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "RangedAttack",
+      "targetType": "Direction",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Player"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.1006"
+      },
+      "baseDamage": 45,
+      "manaCost": 15,
+      "cooldownDuration": 4,
+      "castTime": 0.1,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Character/Animation/AM_NormalAttack.AM_NormalAttack",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 4,
+      "requiredCharacterLevel": 4,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        9
+      ]
+    },
+    "EarthSpike": {
+      "skillId": 1007,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData\", \"EarthSpike_SkillName\", \"대지 창\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData\", \"EarthSpike_Description\", \"지면에서 바위 창을 소환합니다.\")",
+      "icon": "/Game/Generated/SkillIcons/Player/1007_EarthSpike.1007_EarthSpike",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASGroundSpawnStepData",
+          "GroundData": {
+            "bUseOwnerRotation": false,
+            "Radius": 260,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/SkillObj/BP_Skill_EarthSpike.BP_Skill_EarthSpike_C'",
+            "LifeSpan": 1.35
+          },
+          "bUseLastStepEndLocation": true,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "Magic",
+      "targetType": "Ground",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Player"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.1007"
+      },
+      "baseDamage": 120,
+      "manaCost": 20,
+      "cooldownDuration": 6,
+      "castTime": 0.25,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Character/Animation/AM_NormalAttack.AM_NormalAttack",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 5,
+      "requiredCharacterLevel": 5,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": [
+        3,
+        4,
+        5,
+        10,
+        12
+      ]
+    },
+    "IceRain": {
+      "skillId": 1008,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData\", \"IceBlast_SkillName\", \"얼음 폭풍\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData\", \"IceBlast_Description\", \"얼음 비를 내려 피해를 입히고 둔화 시킵니다.\")",
+      "icon": "/Game/Generated/SkillIcons/Player/1008_IceRain_v2.1008_IceRain_v2",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASGroundSpawnStepData",
+          "GroundData": {
+            "bUseOwnerRotation": false,
+            "Radius": 300,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Character/Skill/Object/BP_IceRain.BP_IceRain_C'",
+            "LifeSpan": 5
+          },
+          "bUseLastStepEndLocation": true,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "Magic",
+      "targetType": "Ground",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Player"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.1008"
+      },
+      "baseDamage": 10,
+      "manaCost": 22,
+      "cooldownDuration": 8,
+      "castTime": 0.1,
+      "hitCount": 10,
+      "hitInterval": 0.5,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Character/Animation/AM_NormalAttack.AM_NormalAttack",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 4,
+      "requiredCharacterLevel": 0,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [
+        "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/GAS_Skill/GameplayEffect/GE_IceSlow2s_half.GE_IceSlow2s_half_C'"
+      ],
+      "effectsToApplyOnSelf": [],
+      "variantIds": [
+        3,
+        4,
+        5,
+        10,
+        11
+      ]
+    },
+    "Teleport": {
+      "skillId": 1009,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData\", \"Teleport_SkillName\", \"순간이동\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData\", \"Teleport_Description\", \"짧은 거리를 순간이동합니다.\")",
+      "icon": "/Game/Generated/SkillIcons/Player/1009_Teleport.1009_Teleport",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASUtilityStepData",
+          "UtilityData": {
+            "SecondarySkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/SkillObj/BP_Skill_TeleportArrival.BP_Skill_TeleportArrival_C'",
+            "SpawnOffset": {
+              "X": 0,
+              "Y": 0,
+              "Z": 0
+            },
+            "bUseOwnerRotation": true,
+            "bAttachToOwner": false,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/SkillObj/BP_Skill_TeleportDepart.BP_Skill_TeleportDepart_C'",
+            "LifeSpan": 0.9
+          },
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "Movement",
+      "targetType": "Ground",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Player"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.1009"
+      },
+      "baseDamage": 650,
+      "manaCost": 12,
+      "cooldownDuration": 12,
+      "castTime": 0,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "None",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 2,
+      "requiredCharacterLevel": 12,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": [
+        4,
+        5
+      ]
+    },
+    "Berserker": {
+      "skillId": 1010,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData\", \"Berserker_SkillName\", \"광전사\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData\", \"Berserker_Description\", \"공격력이 증가하지만 방어력이 감소합니다.\")",
+      "icon": "/Game/Generated/SkillIcons/Player/1010_Berserker.1010_Berserker",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASUtilityStepData",
+          "UtilityData": {
+            "SecondarySkillActorClass": "None",
+            "SpawnOffset": {
+              "X": 0,
+              "Y": 0,
+              "Z": 0
+            },
+            "bUseOwnerRotation": true,
+            "bAttachToOwner": true,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/SkillObj/BP_Skill_BerserkerAura.BP_Skill_BerserkerAura_C'",
+            "LifeSpan": 8
+          },
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "Buff",
+      "targetType": "Self",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Player"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.1010"
+      },
+      "baseDamage": 30,
+      "manaCost": 20,
+      "cooldownDuration": 25,
+      "castTime": 0,
+      "hitCount": 1,
+      "hitInterval": 8,
+      "damageMultiplierPerHit": 0.75,
+      "castAnimation": "None",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 15,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": [
+        4,
+        5
+      ]
+    },
+    "Dodge": {
+      "skillId": 1011,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData\", \"Dodge_SkillName\", \"회피\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData\", \"Dodge_Description\", \"짧은 거리를 회피합니다\")",
+      "icon": "/Game/Generated/SkillIcons/Player/1011_Dodge.1011_Dodge",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaDodgeAbility'",
+      "extraData": {
+        "_structType": "/Script/ARPG.GASDodgeData",
+        "DodgeStrength": 350,
+        "DodgeDuration": 0.5
+      },
+      "steps": [],
+      "skillType": "Dodge",
+      "targetType": "Self",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Player"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.1011"
+      },
+      "baseDamage": 0,
+      "manaCost": 0,
+      "cooldownDuration": 2,
+      "castTime": 0,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Character/Animation/AN_Dodge.AN_Dodge",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    },
+    "DualBossSKill_01": {
+      "skillId": 2001,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData_DualBladeBoss\", \"DualBossSKill_01_SkillName\", \"크로스 슬래시\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData_DualBladeBoss\", \"DualBossSKill_01_Description\", \"좌→우 2연속 베기\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaMeleeAbility'",
+      "extraData": {
+        "_structType": "/Script/ARPG.GASMeleeData",
+        "AttackRange": 200,
+        "AttackAngle": 60,
+        "AttackOffset": {
+          "X": 100,
+          "Y": 0,
+          "Z": 0
+        },
+        "bShowDebugShape": true,
+        "SkillActorClass": "None",
+        "LifeSpan": 0
+      },
+      "steps": [],
+      "skillType": "MeleeAttack",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster.DualBlade"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster"
+          },
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.2001"
+      },
+      "baseDamage": 20,
+      "manaCost": 0,
+      "cooldownDuration": 6,
+      "castTime": 0.4,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Monster/Boss/DualBladeBoss/Animation/Montage/AM_DualBossSlash.AM_DualBossSlash",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    },
+    "DualBossSKill_02": {
+      "skillId": 2002,
+      "skillName": "NSLOCTEXT(\"[979372C9B5824D05642629B3D4B47896]\", \"ACA749D74AD36266F6758E9B0935670C\", \"크로스 웨이브\")",
+      "description": "NSLOCTEXT(\"[979372C9B5824D05642629B3D4B47896]\", \"9462A3A841E3D798F4EB91880D0B5D07\", \"검기 발사한다.\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASProjectileSpawnStepData",
+          "ProjectileData": {
+            "ProjectileOffset": {
+              "X": 200,
+              "Y": 0,
+              "Z": 0
+            },
+            "MinimumRange": 200,
+            "bUseOwnerRotation": true,
+            "bFireMultipleProjectiles": true,
+            "ProjectileCount": 3,
+            "SpreadAngle": 15,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Character/Skill/Object/BP_DBBossSlash.BP_DBBossSlash_C'",
+            "LifeSpan": 10
+          },
+          "bUseLastStepEndLocation": true,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "RangedAttack",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster.DualBlade"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster"
+          },
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.2002"
+      },
+      "baseDamage": 35,
+      "manaCost": 0,
+      "cooldownDuration": 3,
+      "castTime": 0.2,
+      "hitCount": 19,
+      "hitInterval": 1,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Monster/Boss/DualBladeBoss/Animation/Montage/AM_DualBossDash.AM_DualBossDash",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": [
+        2
+      ]
+    },
+    "DualBossSKill_03": {
+      "skillId": 2003,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData_DualBladeBoss\", \"DualBossSKill_03_SkillName\", \"섬광 돌진\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData_DualBladeBoss\", \"DualBossSKill_03_Description\", \"빠른 직선 돌진 후 찌르기\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASChargeStepData",
+          "ChargeData": {
+            "ChargeDelay": 0.2,
+            "ChargeDuration": 0.3,
+            "UpdateTime": 0,
+            "ChargeDist": 600,
+            "PathOffsetCurve": "/Script/Engine.CurveVector'/Game/Blueprint/Monster/Boss/DualBladeBoss/CV_DashBlade.CV_DashBlade'"
+          },
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "Movement",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster.DualBlade"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster"
+          },
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.2003"
+      },
+      "baseDamage": 18,
+      "manaCost": 0,
+      "cooldownDuration": 6,
+      "castTime": 0.3,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Monster/Boss/DualBladeBoss/Animation/Montage/AM_DualBossDash.AM_DualBossDash",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [
+        "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/GAS_Skill/GE_Stun2S.GE_Stun2S_C'"
+      ],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    },
+    "DualBossSKill_04": {
+      "skillId": 2004,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData_DualBladeBoss\", \"DualBossSKill_04_SkillName\", \"패링/반격\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData_DualBladeBoss\", \"DualBossSKill_04_Description\", \"근접 공격 대응 후 반격\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [],
+      "skillType": "Passive",
+      "targetType": "Self",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster.DualBlade"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster"
+          },
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "None"
+      },
+      "coolDownTags": {
+        "TagName": "None"
+      },
+      "baseDamage": 25,
+      "manaCost": 0,
+      "cooldownDuration": 10,
+      "castTime": 0,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "None",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    },
+    "DualBossSKill_05": {
+      "skillId": 2005,
+      "skillName": "NSLOCTEXT(\"[979372C9B5824D05642629B3D4B47896]\", \"0231AA594F9A862124E7D494F4F92D15\", \"점프 내려찍기\")",
+      "description": "NSLOCTEXT(\"[979372C9B5824D05642629B3D4B47896]\", \"B05988C34DA31E224C1741911E46BEF8\", \"점프 후 내려찍기\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASChargeStepData",
+          "ChargeData": {
+            "ChargeDelay": 0.16,
+            "ChargeDuration": 0.5,
+            "UpdateTime": 0.1,
+            "ChargeDist": 600,
+            "PathOffsetCurve": "/Script/Engine.CurveVector'/Game/Blueprint/Monster/Boss/DualBladeBoss/CV_JumpBlade.CV_JumpBlade'"
+          },
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        },
+        {
+          "_structType": "/Script/ARPG.GASGroundSpawnStepData",
+          "GroundData": {
+            "bUseOwnerRotation": true,
+            "Radius": 0,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/SkillObj/BP_GroundImpact.BP_GroundImpact_C'",
+            "LifeSpan": 0.6
+          },
+          "bUseLastStepEndLocation": true,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "MeleeAttack",
+      "targetType": "Ground",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster.DualBlade"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster"
+          },
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.2005"
+      },
+      "baseDamage": 24,
+      "manaCost": 0,
+      "cooldownDuration": 14,
+      "castTime": 0.2,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Monster/Boss/DualBladeBoss/Animation/Montage/AM_DualBossJumpDash.AM_DualBossJumpDash",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    },
+    "DualBossSKill_06": {
+      "skillId": 2006,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData_DualBladeBoss\", \"DualBossSKill_06_SkillName\", \"그림자 잔상 베기\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData_DualBladeBoss\", \"DualBossSKill_06_Description\", \"잔상 생성 후 측후면 돌진 베기\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaMeleeAbility'",
+      "extraData": {},
+      "steps": [],
+      "skillType": "MeleeAttack",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster.DualBlade"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster"
+          },
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "None"
+      },
+      "coolDownTags": {
+        "TagName": "None"
+      },
+      "baseDamage": 28,
+      "manaCost": 0,
+      "cooldownDuration": 16,
+      "castTime": 0.2,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "None",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    },
+    "ZombieBullet": {
+      "skillId": 3001,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData_Monster\", \"ZombieBullet_SkillName\", \"ZombieProjectile\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData_Monster\", \"ZombieBullet_Description\", \"좀비 탄환\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASProjectileSpawnStepData",
+          "ProjectileData": {
+            "ProjectileOffset": {
+              "X": 50,
+              "Y": 0,
+              "Z": 0
+            },
+            "MinimumRange": 100,
+            "bUseOwnerRotation": true,
+            "bFireMultipleProjectiles": false,
+            "ProjectileCount": 3,
+            "SpreadAngle": 15,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Character/Skill/Object/BP_ZombieProj.BP_ZombieProj_C'",
+            "LifeSpan": 2
+          },
+          "bUseLastStepEndLocation": true,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "RangedAttack",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Monster"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "None"
+      },
+      "baseDamage": 10,
+      "manaCost": 0,
+      "cooldownDuration": 5,
+      "castTime": 0,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Monster/Bomber/Animation/AM_Bomb.AM_Bomb",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    },
+    "BomberBomb": {
+      "skillId": 3002,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData_Monster\", \"BomberBomb_SkillName\", \"Bomb\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData_Monster\", \"BomberBomb_Description\", \"자폭병 폭발\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASGroundSpawnStepData",
+          "GroundData": {
+            "bUseOwnerRotation": false,
+            "Radius": 0,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/SkillObj/BP_Explosion.BP_Explosion_C'",
+            "LifeSpan": 0
+          },
+          "bUseLastStepEndLocation": true,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "Magic",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Monster"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "None"
+      },
+      "baseDamage": 100,
+      "manaCost": 0,
+      "cooldownDuration": 100,
+      "castTime": 1,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Monster/Bomber/Animation/AM_Bomb.AM_Bomb",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [
+        "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/GAS_Skill/GE_Stun2S.GE_Stun2S_C'"
+      ],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    },
+    "BladeGuardSlash": {
+      "skillId": 3101,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData [979372C9B5824D05642629B3D4B47896]\", \"BladeGuardSlash_SkillName\", \"쌍날 베기\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData [979372C9B5824D05642629B3D4B47896]\", \"BladeGuardSlash_Description\", \"정면의 적을 베어 공격합니다.\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASMeleeSpawnStepData",
+          "MeleeData": {
+            "AttackRange": 210,
+            "AttackAngle": 110,
+            "AttackOffset": {
+              "X": 40,
+              "Y": 0,
+              "Z": 0
+            },
+            "bShowDebugShape": false,
+            "SkillActorClass": "None",
+            "LifeSpan": 0
+          },
+          "bUseLastStepEndLocation": false,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "MeleeAttack",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Monster"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.3101"
+      },
+      "baseDamage": 14,
+      "manaCost": 0,
+      "cooldownDuration": 1.8,
+      "castTime": 0.4,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Monster/Boss/DualBladeBoss/Animation/Montage/AM_DualBossSlash.AM_DualBossSlash",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    },
+    "SpitterBolt": {
+      "skillId": 3102,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData [979372C9B5824D05642629B3D4B47896]\", \"SpitterBolt_SkillName\", \"포자 탄환\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData [979372C9B5824D05642629B3D4B47896]\", \"SpitterBolt_Description\", \"준비 동작 후 정면으로 포자 탄환을 발사합니다.\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASProjectileSpawnStepData",
+          "ProjectileData": {
+            "ProjectileOffset": {
+              "X": 50,
+              "Y": 0,
+              "Z": 0
+            },
+            "MinimumRange": 100,
+            "bUseOwnerRotation": true,
+            "bFireMultipleProjectiles": false,
+            "ProjectileCount": 1,
+            "SpreadAngle": 15,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Character/Skill/Object/BP_ZombieProj.BP_ZombieProj_C'",
+            "LifeSpan": 3
+          },
+          "bUseLastStepEndLocation": true,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "RangedAttack",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Monster"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.3102"
+      },
+      "baseDamage": 12,
+      "manaCost": 0,
+      "cooldownDuration": 2.8,
+      "castTime": 0.65,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Monster/Bomber/Animation/AM_Bomb.AM_Bomb",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    },
+    "ChargerRush": {
+      "skillId": 3103,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData [979372C9B5824D05642629B3D4B47896]\", \"ChargerRush_SkillName\", \"황혼 돌격\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData [979372C9B5824D05642629B3D4B47896]\", \"ChargerRush_Description\", \"잠시 준비한 뒤 직선으로 돌진하고 도착 지점을 공격합니다.\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASChargeStepData",
+          "ChargeData": {
+            "ChargeDelay": 0,
+            "ChargeDuration": 0.45,
+            "UpdateTime": 0,
+            "ChargeDist": 500,
+            "PathOffsetCurve": "None"
+          },
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        },
+        {
+          "_structType": "/Script/ARPG.GASMeleeSpawnStepData",
+          "MeleeData": {
+            "AttackRange": 180,
+            "AttackAngle": 360,
+            "AttackOffset": {
+              "X": 0,
+              "Y": 0,
+              "Z": 0
+            },
+            "bShowDebugShape": false,
+            "SkillActorClass": "None",
+            "LifeSpan": 0
+          },
+          "bUseLastStepEndLocation": false,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "Movement",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Monster"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.3103"
+      },
+      "baseDamage": 20,
+      "manaCost": 0,
+      "cooldownDuration": 5,
+      "castTime": 0.65,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Monster/Charger/Animation/AM_ChargerRush.AM_ChargerRush",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    },
+    "WardenCrossCut": {
+      "skillId": 3201,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData [979372C9B5824D05642629B3D4B47896]\", \"WardenCrossCut_SkillName\", \"교차 베기\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData [979372C9B5824D05642629B3D4B47896]\", \"WardenCrossCut_Description\", \"준비 동작 후 정면을 두 번 벱니다.\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASMeleeSpawnStepData",
+          "MeleeData": {
+            "AttackRange": 270,
+            "AttackAngle": 110,
+            "AttackOffset": {
+              "X": 45,
+              "Y": 0,
+              "Z": 0
+            },
+            "bShowDebugShape": false,
+            "SkillActorClass": "None",
+            "LifeSpan": 0
+          },
+          "bUseLastStepEndLocation": false,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        },
+        {
+          "_structType": "/Script/ARPG.GASMeleeSpawnStepData",
+          "MeleeData": {
+            "AttackRange": 270,
+            "AttackAngle": 110,
+            "AttackOffset": {
+              "X": 45,
+              "Y": 0,
+              "Z": 0
+            },
+            "bShowDebugShape": false,
+            "SkillActorClass": "None",
+            "LifeSpan": 0
+          },
+          "bUseLastStepEndLocation": false,
+          "StartDelay": 0.4,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "MeleeAttack",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster.Warden"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster"
+          },
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.3201"
+      },
+      "baseDamage": 20,
+      "manaCost": 0,
+      "cooldownDuration": 3.2,
+      "castTime": 0.6,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenCrossCut.AM_WardenCrossCut",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    },
+    "WardenCharge": {
+      "skillId": 3202,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData [979372C9B5824D05642629B3D4B47896]\", \"WardenCharge_SkillName\", \"수문장의 돌진\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData [979372C9B5824D05642629B3D4B47896]\", \"WardenCharge_Description\", \"0.85초 준비 후 500cm 돌진하고 도착 지점을 공격합니다.\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASChargeStepData",
+          "ChargeData": {
+            "ChargeDelay": 0,
+            "ChargeDuration": 0.5,
+            "UpdateTime": 0,
+            "ChargeDist": 500,
+            "PathOffsetCurve": "None"
+          },
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        },
+        {
+          "_structType": "/Script/ARPG.GASMeleeSpawnStepData",
+          "MeleeData": {
+            "AttackRange": 260,
+            "AttackAngle": 180,
+            "AttackOffset": {
+              "X": 0,
+              "Y": 0,
+              "Z": 0
+            },
+            "bShowDebugShape": false,
+            "SkillActorClass": "None",
+            "LifeSpan": 0
+          },
+          "bUseLastStepEndLocation": false,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "MeleeAttack",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster.Warden"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster"
+          },
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.3202"
+      },
+      "baseDamage": 30,
+      "manaCost": 0,
+      "cooldownDuration": 5.5,
+      "castTime": 0.85,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenCharge.AM_WardenCharge",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    },
+    "WardenSlam": {
+      "skillId": 3203,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData [979372C9B5824D05642629B3D4B47896]\", \"WardenSlam_SkillName\", \"원형 강타\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData [979372C9B5824D05642629B3D4B47896]\", \"WardenSlam_Description\", \"0.9초 준비 후 주위 360cm를 한 번 공격합니다.\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASMeleeSpawnStepData",
+          "MeleeData": {
+            "AttackRange": 360,
+            "AttackAngle": 360,
+            "AttackOffset": {
+              "X": 0,
+              "Y": 0,
+              "Z": 0
+            },
+            "bShowDebugShape": false,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Monster/Boss/Warden/Skills/BP_WardenImpact.BP_WardenImpact_C'",
+            "LifeSpan": 0.8
+          },
+          "bUseLastStepEndLocation": false,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "MeleeAttack",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster.Warden"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster"
+          },
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.3203"
+      },
+      "baseDamage": 32,
+      "manaCost": 0,
+      "cooldownDuration": 4,
+      "castTime": 0.9,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    },
+    "WardenBladeFan": {
+      "skillId": 3204,
+      "skillName": "NSLOCTEXT(\"DT_GASSkillData [979372C9B5824D05642629B3D4B47896]\", \"WardenBladeFan_SkillName\", \"황혼의 검기\")",
+      "description": "NSLOCTEXT(\"DT_GASSkillData [979372C9B5824D05642629B3D4B47896]\", \"WardenBladeFan_Description\", \"0.75초 준비 후 부채꼴로 검기 다섯 발을 발사합니다.\")",
+      "icon": "None",
+      "abilityClass": "/Script/CoreUObject.Class'/Script/ARPG.DiaGameplayAbility'",
+      "extraData": {},
+      "steps": [
+        {
+          "_structType": "/Script/ARPG.GASProjectileSpawnStepData",
+          "ProjectileData": {
+            "ProjectileOffset": {
+              "X": 150,
+              "Y": 0,
+              "Z": 0
+            },
+            "MinimumRange": 150,
+            "bUseOwnerRotation": true,
+            "bFireMultipleProjectiles": true,
+            "ProjectileCount": 5,
+            "SpreadAngle": 15,
+            "SkillActorClass": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Monster/Boss/Warden/Skills/BP_WardenBladeWave.BP_WardenBladeWave_C'",
+            "LifeSpan": 3
+          },
+          "bUseLastStepEndLocation": true,
+          "StartDelay": 0,
+          "bWaitUntilFinished": true
+        }
+      ],
+      "skillType": "RangedAttack",
+      "targetType": "Enemy",
+      "abilityTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster.Warden"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster"
+          },
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "cancelAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "blockAbilitiesWithTag": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "manaCostTags": {
+        "TagName": "GASData.ManaCost"
+      },
+      "coolDownTags": {
+        "TagName": "GASData.CoolDown.3204"
+      },
+      "baseDamage": 24,
+      "manaCost": 0,
+      "cooldownDuration": 3.5,
+      "castTime": 0.75,
+      "hitCount": 1,
+      "hitInterval": 0,
+      "damageMultiplierPerHit": 1,
+      "castAnimation": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenBladeFan.AM_WardenBladeFan",
+      "castEffect": "None",
+      "legacyCastEffect": "None",
+      "castSound": "None",
+      "maxLevel": 1,
+      "requiredCharacterLevel": 1,
+      "prerequisiteSkills": [],
+      "effectsToApplyOnHit": [],
+      "effectsToApplyOnSelf": [],
+      "variantIds": []
+    }
+  },
+  "DT_DiaMonsterTable": {
+    "Raptor_Normal": {
+      "monsterId": "Raptor_01",
+      "level": 1,
+      "maxHP": 300,
+      "maxMP": 0,
+      "attack": 10,
+      "attackSpeed": 1,
+      "attackRange": 150,
+      "defense": 5,
+      "exp": 10,
+      "animationInstance": "/Script/Engine.AnimBlueprintGeneratedClass'/Game/Blueprint/Monster/Animation/BP_DiaInstance.BP_DiaInstance_C'",
+      "monsterMesh": "/Game/ParagonMinions/Characters/Buff/Buff_Black/Meshes/Buff_Black.Buff_Black",
+      "blackboardAsset": "/Game/Blueprint/Monster/AI/BB_DiaMonsterBoard.BB_DiaMonsterBoard",
+      "behaviorTree": "/Game/Blueprint/Monster/AI/BT_DiaMonsterTree.BT_DiaMonsterTree",
+      "monsterSkills": [],
+      "monsterTags": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "bP_MonsterAsset": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Monster/Raptor/BP_DiaRaptor.BP_DiaRaptor_C'"
+    },
+    "Raptor_Elite": {
+      "monsterId": "Raptor_02",
+      "level": 3,
+      "maxHP": 200,
+      "maxMP": 0,
+      "attack": 20,
+      "attackSpeed": 1,
+      "attackRange": 150,
+      "defense": 10,
+      "exp": 25,
+      "animationInstance": "/Script/Engine.AnimBlueprintGeneratedClass'/Game/Blueprint/Monster/Animation/BP_DiaInstance.BP_DiaInstance_C'",
+      "monsterMesh": "/Game/ParagonMinions/Characters/Buff/Buff_Black/Meshes/Buff_Black.Buff_Black",
+      "blackboardAsset": "/Game/Blueprint/Monster/AI/BB_DiaMonsterBoard.BB_DiaMonsterBoard",
+      "behaviorTree": "/Game/Blueprint/Monster/AI/BT_DiaMonsterTree.BT_DiaMonsterTree",
+      "monsterSkills": [],
+      "monsterTags": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "bP_MonsterAsset": "None"
+    },
+    "Zombie_Normal": {
+      "monsterId": "Zombie_01",
+      "level": 1,
+      "maxHP": 240,
+      "maxMP": 0,
+      "attack": 15,
+      "attackSpeed": 1,
+      "attackRange": 150,
+      "defense": 8,
+      "exp": 15,
+      "animationInstance": "/Script/Engine.AnimBlueprintGeneratedClass'/Game/Blueprint/Monster/zombie/Animation/BP_DiaZombieAnimInstance.BP_DiaZombieAnimInstance_C'",
+      "monsterMesh": "/Game/Maximo/Zombie/Zombie.Zombie",
+      "blackboardAsset": "/Game/Blueprint/Monster/AI/BB_DiaMonsterBoard.BB_DiaMonsterBoard",
+      "behaviorTree": "/Game/Blueprint/Monster/AI/BT_DiaMonsterTree.BT_DiaMonsterTree",
+      "monsterSkills": [
+        3001
+      ],
+      "monsterTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Monster"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "bP_MonsterAsset": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Monster/zombie/BP_DiaZombie.BP_DiaZombie_C'"
+    },
+    "Bomber_Normal": {
+      "monsterId": "Bomber_01",
+      "level": 2,
+      "maxHP": 150,
+      "maxMP": 0,
+      "attack": 25,
+      "attackSpeed": 1,
+      "attackRange": 150,
+      "defense": 7,
+      "exp": 30,
+      "animationInstance": "/Script/Engine.AnimBlueprintGeneratedClass'/Game/Blueprint/Monster/Bomber/Animation/ABP_DiaBomber.ABP_DiaBomber_C'",
+      "monsterMesh": "/Game/ParagonMinions/Characters/Minions/White_Camp_Minion/Meshes/Minion_melee.Minion_melee",
+      "blackboardAsset": "/Game/Blueprint/Monster/AI/BB_DiaMonsterBoard.BB_DiaMonsterBoard",
+      "behaviorTree": "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer",
+      "monsterSkills": [
+        3002
+      ],
+      "monsterTags": {
+        "GameplayTags": [],
+        "ParentTags": []
+      },
+      "bP_MonsterAsset": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Monster/Bomber/BP_DiaBomber.BP_DiaBomber_C'"
+    },
+    "DualBlade_Boss": {
+      "monsterId": "DualBlade_Boss",
+      "level": 1,
+      "maxHP": 1000,
+      "maxMP": 1000,
+      "attack": 10,
+      "attackSpeed": 1,
+      "attackRange": 150,
+      "defense": 10,
+      "exp": 10,
+      "animationInstance": "/Script/Engine.AnimBlueprintGeneratedClass'/Game/Blueprint/Monster/Boss/DualBladeBoss/Animation/BP_DualBladeAnimInstance.BP_DualBladeAnimInstance_C'",
+      "monsterMesh": "/Game/ParagonMinions/Characters/Minions/Down_Minions/Meshes/Minion_Lane_Super_Dawn.Minion_Lane_Super_Dawn",
+      "blackboardAsset": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BB_DualBladeBB.BB_DualBladeBB",
+      "behaviorTree": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss",
+      "monsterSkills": [
+        2001,
+        2002,
+        2003,
+        2004,
+        2005
+      ],
+      "monsterTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster.DualBlade"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster"
+          },
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "bP_MonsterAsset": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Monster/Boss/DualBladeBoss/BP_DualBladeBoss.BP_DualBladeBoss_C'"
+    },
+    "Zombie_Elite": {
+      "monsterId": "Zombie_02",
+      "level": 3,
+      "maxHP": 420,
+      "maxMP": 0,
+      "attack": 25,
+      "attackSpeed": 1,
+      "attackRange": 150,
+      "defense": 12,
+      "exp": 35,
+      "animationInstance": "/Script/Engine.AnimBlueprintGeneratedClass'/Game/Blueprint/Monster/zombie/Animation/BP_DiaZombieAnimInstance.BP_DiaZombieAnimInstance_C'",
+      "monsterMesh": "/Game/Maximo/Zombie/Zombie.Zombie",
+      "blackboardAsset": "/Game/Blueprint/Monster/AI/BB_DiaMonsterBoard.BB_DiaMonsterBoard",
+      "behaviorTree": "/Game/Blueprint/Monster/AI/BT_DiaMonsterTree.BT_DiaMonsterTree",
+      "monsterSkills": [
+        3001
+      ],
+      "monsterTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Monster"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "bP_MonsterAsset": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Monster/zombie/BP_DiaZombieElite.BP_DiaZombieElite_C'"
+    },
+    "BladeGuard_Normal": {
+      "monsterId": "BladeGuard_01",
+      "level": 1,
+      "maxHP": 260,
+      "maxMP": 0,
+      "attack": 12,
+      "attackSpeed": 1,
+      "attackRange": 180,
+      "defense": 8,
+      "exp": 18,
+      "animationInstance": "/Script/Engine.AnimBlueprintGeneratedClass'/Game/Blueprint/Monster/Boss/DualBladeBoss/Animation/BP_DualBladeAnimInstance.BP_DualBladeAnimInstance_C'",
+      "monsterMesh": "/Game/ParagonMinions/Characters/Minions/Down_Minions/Meshes/Minion_Lane_Super_Dawn.Minion_Lane_Super_Dawn",
+      "blackboardAsset": "/Game/Blueprint/Monster/AI/BB_DiaMonsterBoard.BB_DiaMonsterBoard",
+      "behaviorTree": "/Game/Blueprint/Monster/BladeGuard/AI/BT_DiaBladeGuard.BT_DiaBladeGuard",
+      "monsterSkills": [
+        3101
+      ],
+      "monsterTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Monster"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "bP_MonsterAsset": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Monster/BladeGuard/BP_DiaBladeGuard.BP_DiaBladeGuard_C'"
+    },
+    "Spitter_Normal": {
+      "monsterId": "Spitter_01",
+      "level": 1,
+      "maxHP": 170,
+      "maxMP": 0,
+      "attack": 10,
+      "attackSpeed": 1,
+      "attackRange": 700,
+      "defense": 4,
+      "exp": 20,
+      "animationInstance": "/Script/Engine.AnimBlueprintGeneratedClass'/Game/Blueprint/Monster/Bomber/Animation/ABP_DiaBomber.ABP_DiaBomber_C'",
+      "monsterMesh": "/Game/ParagonMinions/Characters/Minions/White_Camp_Minion/Meshes/Minion_melee.Minion_melee",
+      "blackboardAsset": "/Game/Blueprint/Monster/AI/BB_DiaMonsterBoard.BB_DiaMonsterBoard",
+      "behaviorTree": "/Game/Blueprint/Monster/Spitter/AI/BT_DiaSpitter.BT_DiaSpitter",
+      "monsterSkills": [
+        3102
+      ],
+      "monsterTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Monster"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "bP_MonsterAsset": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Monster/Spitter/BP_DiaSpitter.BP_DiaSpitter_C'"
+    },
+    "Charger_Normal": {
+      "monsterId": "Charger_01",
+      "level": 1,
+      "maxHP": 300,
+      "maxMP": 0,
+      "attack": 16,
+      "attackSpeed": 1,
+      "attackRange": 180,
+      "defense": 6,
+      "exp": 25,
+      "animationInstance": "/Script/Engine.AnimBlueprintGeneratedClass'/Game/Blueprint/Monster/Boss/DualBladeBoss/Animation/BP_DualBladeAnimInstance.BP_DualBladeAnimInstance_C'",
+      "monsterMesh": "/Game/ParagonMinions/Characters/Minions/Dusk_Minions/Meshes/Minion_Lane_Super_Dusk.Minion_Lane_Super_Dusk",
+      "blackboardAsset": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BB_DualBladeBB.BB_DualBladeBB",
+      "behaviorTree": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger",
+      "monsterSkills": [
+        3101,
+        3103
+      ],
+      "monsterTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.Monster"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "bP_MonsterAsset": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Monster/Charger/BP_DiaCharger.BP_DiaCharger_C'"
+    },
+    "Warden_Boss": {
+      "monsterId": "Warden_Boss",
+      "level": 1,
+      "maxHP": 1600,
+      "maxMP": 0,
+      "attack": 18,
+      "attackSpeed": 1,
+      "attackRange": 220,
+      "defense": 8,
+      "exp": 100,
+      "animationInstance": "/Script/Engine.AnimBlueprintGeneratedClass'/Game/Blueprint/Monster/Boss/DualBladeBoss/Animation/BP_DualBladeAnimInstance.BP_DualBladeAnimInstance_C'",
+      "monsterMesh": "/Game/ParagonMinions/Characters/Minions/Down_Minions/Meshes/Minion_Lane_Super_Dawn.Minion_Lane_Super_Dawn",
+      "blackboardAsset": "/Game/Blueprint/Monster/Boss/Warden/AI/BB_WardenBoss.BB_WardenBoss",
+      "behaviorTree": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss",
+      "monsterSkills": [
+        3201,
+        3202,
+        3203,
+        3204
+      ],
+      "monsterTags": {
+        "GameplayTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster.Warden"
+          }
+        ],
+        "ParentTags": [
+          {
+            "TagName": "SkillType.Character.BossMonster"
+          },
+          {
+            "TagName": "SkillType.Character"
+          },
+          {
+            "TagName": "SkillType"
+          }
+        ]
+      },
+      "bP_MonsterAsset": "/Script/Engine.BlueprintGeneratedClass'/Game/Blueprint/Monster/Boss/Warden/BP_WardenBoss.BP_WardenBoss_C'"
+    }
+  },
+  "DT_SpawnGroupTable": {
+    "Forest_Main": {
+      "mapId": "Forest_Main",
+      "groupName": "Forest_Main",
+      "encounterPattern": "Automatic",
+      "monsterSpawnInfos": [
+        {
+          "MonsterID": "Raptor_01",
+          "SpawnLevel": 1,
+          "SpawnWeight": 5
+        }
+      ],
+      "minTotalSpawnCount": 5,
+      "maxTotalSpawnCount": 10,
+      "minDistance": 300,
+      "maxDistance": 600,
+      "spawnInterval": 5,
+      "spawnType": "Normal"
+    },
+    "ForestEliteGroup": {
+      "mapId": "Forest_Main",
+      "groupName": "ForestEliteGroup",
+      "encounterPattern": "Automatic",
+      "monsterSpawnInfos": [
+        {
+          "MonsterID": "Raptor_02",
+          "SpawnLevel": 3,
+          "SpawnWeight": 1
+        }
+      ],
+      "minTotalSpawnCount": 1,
+      "maxTotalSpawnCount": 3,
+      "minDistance": 400,
+      "maxDistance": 700,
+      "spawnInterval": 10,
+      "spawnType": "Normal"
+    },
+    "CaveBasicGroup": {
+      "mapId": "None",
+      "groupName": "CaveBasicGroup",
+      "encounterPattern": "Automatic",
+      "monsterSpawnInfos": [
+        {
+          "MonsterID": "Monster_Bat",
+          "SpawnLevel": 2,
+          "SpawnWeight": 4
+        },
+        {
+          "MonsterID": "Monster_Skeleton",
+          "SpawnLevel": 3,
+          "SpawnWeight": 3
+        },
+        {
+          "MonsterID": "Monster_Goblin",
+          "SpawnLevel": 2,
+          "SpawnWeight": 2.5
+        }
+      ],
+      "minTotalSpawnCount": 6,
+      "maxTotalSpawnCount": 12,
+      "minDistance": 250,
+      "maxDistance": 500,
+      "spawnInterval": 4.5,
+      "spawnType": "Normal"
+    },
+    "CaveEliteGroup": {
+      "mapId": "None",
+      "groupName": "CaveEliteGroup",
+      "encounterPattern": "Automatic",
+      "monsterSpawnInfos": [
+        {
+          "MonsterID": "Monster_GoblinShaman",
+          "SpawnLevel": 5,
+          "SpawnWeight": 1
+        },
+        {
+          "MonsterID": "Monster_SkeletonMage",
+          "SpawnLevel": 4,
+          "SpawnWeight": 1.5
+        }
+      ],
+      "minTotalSpawnCount": 2,
+      "maxTotalSpawnCount": 4,
+      "minDistance": 350,
+      "maxDistance": 600,
+      "spawnInterval": 8,
+      "spawnType": "Normal"
+    },
+    "DungeonBossGroup": {
+      "mapId": "None",
+      "groupName": "DungeonBossGroup",
+      "encounterPattern": "Automatic",
+      "monsterSpawnInfos": [
+        {
+          "MonsterID": "Monster_BossTroll",
+          "SpawnLevel": 10,
+          "SpawnWeight": 1
+        }
+      ],
+      "minTotalSpawnCount": 1,
+      "maxTotalSpawnCount": 1,
+      "minDistance": 0,
+      "maxDistance": 0,
+      "spawnInterval": 0,
+      "spawnType": "Normal"
+    },
+    "DungeonMinionsGroup": {
+      "mapId": "None",
+      "groupName": "DungeonMinionsGroup",
+      "encounterPattern": "Automatic",
+      "monsterSpawnInfos": [
+        {
+          "MonsterID": "Monster_TrollMinion",
+          "SpawnLevel": 6,
+          "SpawnWeight": 3
+        },
+        {
+          "MonsterID": "Monster_Imp",
+          "SpawnLevel": 5,
+          "SpawnWeight": 2
+        }
+      ],
+      "minTotalSpawnCount": 4,
+      "maxTotalSpawnCount": 8,
+      "minDistance": 200,
+      "maxDistance": 400,
+      "spawnInterval": 3,
+      "spawnType": "Normal"
+    },
+    "DefenseWave1": {
+      "mapId": "None",
+      "groupName": "DefenseWave1",
+      "encounterPattern": "Automatic",
+      "monsterSpawnInfos": [
+        {
+          "MonsterID": "Monster_Zombie",
+          "SpawnLevel": 3,
+          "SpawnWeight": 5
+        },
+        {
+          "MonsterID": "Monster_Ghoul",
+          "SpawnLevel": 4,
+          "SpawnWeight": 2
+        }
+      ],
+      "minTotalSpawnCount": 8,
+      "maxTotalSpawnCount": 15,
+      "minDistance": 300,
+      "maxDistance": 800,
+      "spawnInterval": 2.5,
+      "spawnType": "Normal"
+    },
+    "DefenseWave2": {
+      "mapId": "None",
+      "groupName": "DefenseWave2",
+      "encounterPattern": "Automatic",
+      "monsterSpawnInfos": [
+        {
+          "MonsterID": "Monster_Zombie",
+          "SpawnLevel": 5,
+          "SpawnWeight": 3
+        },
+        {
+          "MonsterID": "Monster_Ghoul",
+          "SpawnLevel": 6,
+          "SpawnWeight": 4
+        },
+        {
+          "MonsterID": "Monster_ZombieBrute",
+          "SpawnLevel": 7,
+          "SpawnWeight": 1
+        }
+      ],
+      "minTotalSpawnCount": 10,
+      "maxTotalSpawnCount": 20,
+      "minDistance": 300,
+      "maxDistance": 800,
+      "spawnInterval": 2,
+      "spawnType": "Normal"
+    },
+    "TestRoom": {
+      "mapId": "TestRoom",
+      "groupName": "TestRoom",
+      "encounterPattern": "Ring",
+      "monsterSpawnInfos": [
+        {
+          "MonsterID": "Raptor_01",
+          "SpawnLevel": 1,
+          "SpawnWeight": 2
+        },
+        {
+          "MonsterID": "Zombie_01",
+          "SpawnLevel": 1,
+          "SpawnWeight": 3
+        },
+        {
+          "MonsterID": "BladeGuard_01",
+          "SpawnLevel": 1,
+          "SpawnWeight": 2
+        },
+        {
+          "MonsterID": "Spitter_01",
+          "SpawnLevel": 1,
+          "SpawnWeight": 2
+        },
+        {
+          "MonsterID": "Charger_01",
+          "SpawnLevel": 1,
+          "SpawnWeight": 1
+        }
+      ],
+      "minTotalSpawnCount": 4,
+      "maxTotalSpawnCount": 5,
+      "minDistance": 300,
+      "maxDistance": 500,
+      "spawnInterval": 5,
+      "spawnType": "Normal"
+    },
+    "NewRow": {
+      "mapId": "TestRoom",
+      "groupName": "TestRoomNormal",
+      "encounterPattern": "TwoFlanks",
+      "monsterSpawnInfos": [
+        {
+          "MonsterID": "Zombie_01",
+          "SpawnLevel": 1,
+          "SpawnWeight": 1
+        },
+        {
+          "MonsterID": "Bomber_01",
+          "SpawnLevel": 1,
+          "SpawnWeight": 1
+        },
+        {
+          "MonsterID": "BladeGuard_01",
+          "SpawnLevel": 1,
+          "SpawnWeight": 2
+        },
+        {
+          "MonsterID": "Spitter_01",
+          "SpawnLevel": 1,
+          "SpawnWeight": 2
+        },
+        {
+          "MonsterID": "Charger_01",
+          "SpawnLevel": 1,
+          "SpawnWeight": 1
+        }
+      ],
+      "minTotalSpawnCount": 2,
+      "maxTotalSpawnCount": 5,
+      "minDistance": 300,
+      "maxDistance": 500,
+      "spawnInterval": 5,
+      "spawnType": "Normal"
+    },
+    "NewRow_0": {
+      "mapId": "TestRoom",
+      "groupName": "TestRoomBoss",
+      "encounterPattern": "Automatic",
+      "monsterSpawnInfos": [
+        {
+          "MonsterID": "Warden_Boss",
+          "SpawnLevel": 1,
+          "SpawnWeight": 1
+        }
+      ],
+      "minTotalSpawnCount": 1,
+      "maxTotalSpawnCount": 1,
+      "minDistance": 300,
+      "maxDistance": 500,
+      "spawnInterval": 5,
+      "spawnType": "Boss"
+    }
+  }
+}

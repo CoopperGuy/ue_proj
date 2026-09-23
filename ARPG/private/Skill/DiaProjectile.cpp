@@ -24,6 +24,20 @@
 #include "GameplayEffectTypes.h"
 
 // Sets default values
+void ADiaProjectile::ApplySpawnRuntimeParams(const FDiaSkillRuntimeParams& InParams)
+{
+	Super::ApplySpawnRuntimeParams(InParams);
+	const float Size = InParams.GetMagnitude(FDiaGameplayTags::Get().GASData_Variant_BigProjectile, 1.f);
+	if (!FMath::IsNearlyEqual(Size, 1.f))
+	{
+		SetActorScale3D(GetActorScale3D() * FMath::Max(.1f, Size));
+		ProjectileSpeed *= .7f;
+		TargetSpeed *= .7f;
+		ProjectileMovement->InitialSpeed = ProjectileSpeed;
+		ProjectileMovement->MaxSpeed = ProjectileSpeed;
+	}
+}
+
 ADiaProjectile::ADiaProjectile()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.

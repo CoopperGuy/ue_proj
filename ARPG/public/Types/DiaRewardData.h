@@ -10,20 +10,21 @@ UENUM(BlueprintType)
 enum class ERewardType : uint8
 {
 	None,
-	Gold UMETA(DisplayName = "∞ÒµÂ"),
-	Item UMETA(DisplayName = "æ∆¿Ã≈€"),
-	SkillAdd UMETA(DisplayName = "Ω∫≈≥ √ﬂ∞°"),
-	SkillUpgrade UMETA(DisplayName = "Ω∫≈≥ ∑π∫ß æ˜"),
-	SkillVariant UMETA(DisplayName = "Ω∫≈≥ ∞≠»≠")
+	Gold UMETA(DisplayName = "Í≥®Îìú"),
+	Item UMETA(DisplayName = "ÏïÑÏù¥ÌÖú"),
+	SkillAdd UMETA(DisplayName = "Ïä§ÌÇ¨ Ï∂îÍ∞Ä"),
+	SkillUpgrade UMETA(DisplayName = "Ïä§ÌÇ¨ Î†àÎ≤® ÏóÖ"),
+	SkillVariant UMETA(DisplayName = "Ïä§ÌÇ¨ Í∞ïÌôî"),
+	Heal UMETA(DisplayName = "ÌöåÎ≥µ")
 };
 
 UENUM(BlueprintType)
 enum class ERewardRarity : uint8
 {
 	None,
-	Common UMETA(DisplayName = "¿œπ›"),
-	Rare UMETA(DisplayName = "»Ò±Õ"),
-	Epic UMETA(DisplayName = "øµøı"),
+	Common UMETA(DisplayName = "ÏùºÎ∞ò"),
+	Rare UMETA(DisplayName = "Ìù¨Í∑Ä"),
+	Epic UMETA(DisplayName = "ÏòÅÏõÖ"),
 };
 
 USTRUCT(BlueprintType)
@@ -66,6 +67,19 @@ struct ARPG_API FRewardData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 VariantId = 0;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float HealFraction = 0.25f;
+
+    // Identity references the authoritative room ledger, never a widget copy.
+    UPROPERTY()
+    FGuid SourceRoomGuid;
+    UPROPERTY()
+    int32 SourceOptionIndex = INDEX_NONE;
+    UPROPERTY()
+    bool bHasPreparedItem = false;
+    UPROPERTY()
+    FInventorySlot PreparedItem;
 };
 
 USTRUCT(BlueprintType)
@@ -81,4 +95,62 @@ struct ARPG_API FRewardChoiceData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FRewardData> RewardOptions;
+};
+
+USTRUCT()
+struct FRewardSkillState
+{
+	GENERATED_BODY()
+
+	int32 SkillID = 0;
+
+	int32 CurrentLevel = 0;
+	int32 MaxLevel = 0;
+
+	bool bEquipped = false;
+
+	FGameplayTagContainer BuildTags;
+
+	TSet<int32> OwnedVariants;
+
+	FRewardSkillState() = default;
+
+	FRewardSkillState(
+		int32 InSkillID,
+		int32 InCurrentLevel,
+		int32 InMaxLevel,
+		bool bInEquipped,
+		const FGameplayTagContainer& InBuildTags,
+		const TSet<int32>& InOwnedVariants)
+		: SkillID(InSkillID)
+		, CurrentLevel(InCurrentLevel)
+		, MaxLevel(InMaxLevel)
+		, bEquipped(bInEquipped)
+		, BuildTags(InBuildTags)
+		, OwnedVariants(InOwnedVariants)
+	{
+	}
+};
+
+USTRUCT(BlueprintType)
+struct ARPG_API FRewardGenerationContext
+{
+	GENERATED_BODY()
+
+	// Character
+	int32 CharacterLevel = 1;
+
+	// Skill
+	int32 AvailableSkillSlots = 0;
+	TArray<FRewardSkillState> OwnedSkills;
+
+	// Build
+	TMap<FGameplayTag, float> OptionAffinity;
+	TMap<FGameplayTag, float> BuildAffinity;
+
+	// Progress
+	int32 ClearedRoomCount = 0;
+
+	// Anti-repeat
+	//TArray<FRewardKey> RecentOfferedRewards;
 };

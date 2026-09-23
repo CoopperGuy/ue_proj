@@ -9,6 +9,8 @@ class UCurveVector;
 
 /**
  * FGASSkillData::ExtraData 의 폴리모픽 베이스.
+ * 최상위 ExtraData 필드는 레거시 호환용이다. 신규 스킬은 FGASSkillData::Steps를 사용한다.
+ * 이 파일의 Projectile/Ground/Charge 등의 설정 구조체는 StepData 내부에서도 재사용한다.
  * 에디터에서 FInstancedStruct 의 BaseStruct 메타로 이 타입을 지정하면
  * DataTable 행에서 파생 구조체를 콤보로 선택할 수 있다.
  */
@@ -20,7 +22,7 @@ struct ARPG_API FGASSkillExtraDataBase
 
 /**
  * Projectile/Ground 처럼 월드에 ADiaSkillActor 를 스폰하는 스킬 공통 설정.
- * ApplySkillObjectRemovalTimer 는 이 중간 타입으로 LifeSpan 을 읽는다.
+ * Step 내부 스폰 설정에도 재사용하며, 레거시 ExtraData 호환에서도 이 타입의 LifeSpan을 읽는다.
  */
 USTRUCT(BlueprintType)
 struct ARPG_API FGASSkillActorSpawnData : public FGASSkillExtraDataBase

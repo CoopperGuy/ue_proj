@@ -8,7 +8,9 @@
 
 class UCurveVector;
 /**
- * 
+ * 레거시 돌진 Ability. 기존 데이터/BP 호환을 위해 유지하며 신규 사용은 지양한다.
+ * 신규 스킬은 UDiaGameplayAbility + FGASSkillData::Steps의 FGASChargeStepData를 우선 사용한다.
+ * 이 클래스는 자체 ActivateAbility 경로를 사용하므로 Steps만 채워도 Step 실행으로 전환되지 않는다.
  */
 UCLASS()
 class ARPG_API UDiaChargeAbility : public UDiaGameplayAbility

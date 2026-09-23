@@ -62,20 +62,21 @@ struct ARPG_API FGASSkillData : public FTableRowBase
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TSoftObjectPtr<UTexture2D> Icon;
 
-    // GAS 관련 설정
+    // 신규 스킬은 UDiaGameplayAbility + Steps를 기본으로 사용한다. 전용 레거시 Ability는 기존 참조 호환용이다.
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TSubclassOf<UDiaGameplayAbility> AbilityClass;
 
     /**
-     * 기존 단일 실행 스킬용 추가 데이터(Projectile/Melee/Ground/Charge/Dodge 등).
-     * 신규 복합 스킬은 Steps 사용을 우선한다.
+     * 이전 실행 방식의 스킬 데이터를 유지하기 위한 필드. 신규 스킬은 단일 동작도 Steps에 작성하고 이 필드는 비운다.
+     * FGASProjectileData/GroundData 등의 구조체 자체는 Step 내부에서도 재사용하므로 사용 중단 대상이 아니다.
      */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Extra", meta = (BaseStruct = "/Script/ARPG.GASSkillExtraDataBase"))
     FInstancedStruct ExtraData;
 
     /**
-     * 복합 스킬 실행 단계.
+     * 신규 스킬의 기본 실행 경로. 단일 동작은 Step 1개, 복합 동작은 여러 Step으로 작성한다.
      * 예: ChargeStep -> GroundSpawnStep 처럼 여러 실행부를 데이터로 조합한다.
+     * 지원하지 않는 동작은 StepData와 UDiaSkillStepExecutor를 확장하고 공통 Ability에 등록한다.
      */
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Steps", meta = (BaseStruct = "/Script/ARPG.GASSkillStepDataBase"))
     TArray<FInstancedStruct> Steps;

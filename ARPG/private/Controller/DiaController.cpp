@@ -2,6 +2,9 @@
 
 
 #include "Controller/DiaController.h"
+#include "GAS/DiaAttributeSet.h"
+#include "DiaComponent/Skill/SkillObject.h"
+#include "DiaComponent/DiaSkillManagerComponent.h"
 #include "Engine/LocalPlayer.h"
 #include "Engine/EngineBaseTypes.h"
 
@@ -179,8 +182,10 @@ bool ADiaController::ApplyItemReward(const FRewardData& RewardData)
 	if (!ItemSubsystem)
 		return false;
 
-	FInventorySlot NewItemSlot;
-	ItemSubsystem->CreateInventoryInstance(NewItemSlot, RewardData.ItemId, RewardData.ItemLevel, true, RewardData.ItemQuantity);
+	FInventorySlot NewItemSlot = RewardData.PreparedItem;
+    if (!RewardData.bHasPreparedItem)
+        ItemSubsystem->CreateInventoryInstance(NewItemSlot, RewardData.ItemId, RewardData.ItemLevel, true, RewardData.ItemQuantity);
+    if (NewItemSlot.IsEmpty()) return false;
 	
 	return DiaInventoryComponent->TryAddItem(NewItemSlot);
 }
@@ -200,7 +205,10 @@ bool ADiaController::ApplySkillUpgradeReward(const FRewardData& RewardData)
 	if(!IsValid(DiaCharacter))
 		return false;
 
-	return DiaCharacter->ApplySkillLevelUpByID(RewardData.SkillId, 1);
+	const UDiaSkillManagerComponent* Skills = DiaCharacter->FindComponentByClass<UDiaSkillManagerComponent>();
+    const USkillObject* Skill = Skills ? Skills->GetSkillObjectBySkillID(RewardData.SkillId) : nullptr;
+    return Skill && Skill->GetSkillLevel() < Skill->GetSkillMaxLevel()
+        && DiaCharacter->ApplySkillLevelUpByID(RewardData.SkillId, 1);
 }
 
 bool ADiaController::ApplySkillVariantReward(const FRewardData& RewardData)
@@ -452,6 +460,14 @@ bool ADiaController::ApplyReward(const FRewardData& RewardData)
 {
 	switch (RewardData.RewardType)
 	{
+        case ERewardType::Heal:
+        {
+            ADiaBaseCharacter* DiaCharacter = Cast<ADiaBaseCharacter>(GetPawn());
+            UDiaAttributeSet* Attr = DiaCharacter ? DiaCharacter->GetAttributeSet() : nullptr;
+            if (!Attr || Attr->GetHealth() <= 0.f || Attr->GetHealth() >= Attr->GetMaxHealth()) return false;
+            Attr->SetHealth(FMath::Min(Attr->GetMaxHealth(), Attr->GetHealth() + Attr->GetMaxHealth() * FMath::Clamp(RewardData.HealFraction, 0.f, 1.f)));
+            return true;
+        }
 		case ERewardType::Gold:
 			return ApplyGoldReward(RewardData);
 		case ERewardType::Item:
@@ -513,6 +529,7 @@ void ADiaController::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotInde
 
 bool ADiaController::HandlePrimaryClick()
 {
+    if (const UHUDWidget* HUD = GetHUDWidget(); HUD && HUD->IsRewardChoiceOpen()) return true;
 	FHitResult HitResult;
 	GetHitResultUnderCursor(ECC_Visibility, false, HitResult);
 

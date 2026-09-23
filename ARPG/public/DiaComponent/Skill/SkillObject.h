@@ -26,6 +26,7 @@ public:
 	void SetSkillVariantID(int32 _VariantID) { SkillVariantIDs.Add(_VariantID); }
 	void RemoveSkillVariantID(int32 _VariantID) { SkillVariantIDs.Remove(_VariantID); }
 	void SetVariantApplyIDs(int32 _AddVariantID);
+	void ClearAppliedVariantIDs() { VariantApplyIDs.Reset(); }
 	void AddOwnedVariantID(int32 VariantID);
 	bool HasSkillVariantID(int32 VariantID) const;
 	bool HasOwnedVariantID(int32 VariantID) const;
@@ -35,6 +36,7 @@ public:
 
 	int32 GetSkillID() const { return SkillID; }
 	const FGASSkillData* GetSkillData() const;
+	FGameplayTagContainer GetSkillBuildTags() const;
 protected:
 	int32 SkillID;
 	int32 SkillLevel = 1;
@@ -44,4 +46,5 @@ protected:
 	TSet<int32> VariantApplyIDs;
 public:
 	const int32 GetSkillLevel() const { return SkillLevel; }
+	const int32 GetSkillMaxLevel() const { return GetSkillData() ? GetSkillData()->MaxLevel : 1; }
 };

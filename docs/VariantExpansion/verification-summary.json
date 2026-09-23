@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "editor_checks": 389,
+  "suites": [
+    {
+      "file": "editor-test-result.json",
+      "passed": true,
+      "checks": 175
+    },
+    {
+      "file": "elemental-regression-result.json",
+      "passed": true,
+      "checks": 177
+    },
+    {
+      "file": "frost-regression-result.json",
+      "passed": true,
+      "checks": 37
+    }
+  ],
+  "cpp_build_performed": false,
+  "combat_test_performed": false,
+  "python_files_syntax_checked": 8,
+  "actor_lifetime_corrections": {
+    "LavaEruption": {
+      "observed": 5,
+      "saved": 4
+    },
+    "ArcScatter": {
+      "observed": 5,
+      "saved": 1.2
+    },
+    "FrostRush": {
+      "observed": 5,
+      "saved": 1.8
+    }
+  }
+}

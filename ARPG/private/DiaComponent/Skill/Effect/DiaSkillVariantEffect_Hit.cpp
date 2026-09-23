@@ -16,15 +16,8 @@ void UDiaSkillVariantEffect_Pierce::Apply(const FDiaSkillVariantSpec& Spec, FDia
 
 	FSkillHitRuntime& HitRuntime = static_cast<FSkillHitRuntime&>(Runtime);
 
-	// PierceCount가 0이면 초기값 설정 (ModifierValue는 관통 횟수)
-	// 이 관통은 어차피 전역으로 쓰니 냅두는 방향으로
-	if (HitRuntime.PierceCount == 0)
-	{
-		HitRuntime.PierceCount = FMath::Max(1, static_cast<int32>(Spec.ModifierValue));
-	}
-	
-	// 히트 시 PierceCount 감소
-	HitRuntime.PierceCount -= 1;
+	// The actor consumes one hit before evaluating variants. This callback runs
+	// once per variant, so it must never decrement or refill the hit budget.
 
 	//맞은 후 스킬 복사 관련 내용
 	if(Spec.SkillTag.MatchesTagExact(FDiaGameplayTags::Get().GASData_Variant_Fork))

@@ -27,6 +27,7 @@ class ARPG_API ADiaProjectile : public ADiaSkillActor
 	
 public:	
 	ADiaProjectile();
+	virtual void ApplySpawnRuntimeParams(const FDiaSkillRuntimeParams& InParams) override;
 
 	// 발사 방향으로 속도를 설정하여 발사
 	void Launch(const FVector& Direction);

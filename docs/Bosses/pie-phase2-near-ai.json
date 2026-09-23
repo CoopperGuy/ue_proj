@@ -1,0 +1,1296 @@
+{
+  "actor": "/Game/Level/UEDPIE_0_TestRoom.TestRoom:PersistentLevel.BP_WardenBoss_C_0",
+  "player": "/Game/Level/UEDPIE_0_TestRoom.TestRoom:PersistentLevel.BP_DiaCharacter_C_0",
+  "samples": [
+    {
+      "time": 0.125,
+      "game_time": 0.333,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 60.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 0.25,
+      "game_time": 0.667,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 60.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 0.375,
+      "game_time": 1.0,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 60.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 0.5,
+      "game_time": 1.333,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 60.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 0.625,
+      "game_time": 1.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 60.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 0.75,
+      "game_time": 2.0,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 60.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 0.875,
+      "game_time": 2.333,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 60.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.0,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.125,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.132,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.139,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.147,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.181,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.216,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.224,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.232,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.241,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.249,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.258,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.266,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.274,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.283,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.291,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.299,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.307,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.316,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.324,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.332,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.341,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.349,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.357,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.366,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.374,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.382,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.391,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.399,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.407,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.416,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.424,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.432,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.441,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.449,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.457,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.466,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.474,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.483,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.491,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.499,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.507,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.516,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.524,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.532,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.541,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.549,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.557,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.566,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.574,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.583,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.591,
+      "game_time": 2.667,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.599,
+      "game_time": 3.0,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.724,
+      "game_time": 3.012,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.74,
+      "game_time": 3.012,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.748,
+      "game_time": 3.012,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 1.81,
+      "game_time": 3.345,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 1.935,
+      "game_time": 3.678,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 2.06,
+      "game_time": 4.012,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 2.185,
+      "game_time": 4.345,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 2.31,
+      "game_time": 4.678,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 2.435,
+      "game_time": 5.012,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        6970.0,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 2.56,
+      "game_time": 5.345,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 2.685,
+      "game_time": 5.678,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 2.81,
+      "game_time": 6.012,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 2.935,
+      "game_time": 6.345,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 3.06,
+      "game_time": 6.678,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 3.185,
+      "game_time": 7.012,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 3.31,
+      "game_time": 7.345,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 3.435,
+      "game_time": 7.678,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 57.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 3.56,
+      "game_time": 8.012,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 54.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 3.685,
+      "game_time": 8.345,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 54.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": "/Game/Blueprint/Monster/Boss/Warden/Animation/AM_WardenSlam.AM_WardenSlam",
+      "projectiles": []
+    },
+    {
+      "time": 3.81,
+      "game_time": 8.678,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 54.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 3.935,
+      "game_time": 9.012,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 54.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 4.06,
+      "game_time": 9.345,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 54.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 4.185,
+      "game_time": 9.678,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 54.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 4.31,
+      "game_time": 10.012,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 54.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 4.435,
+      "game_time": 10.345,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 54.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 4.56,
+      "game_time": 10.678,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 54.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 4.685,
+      "game_time": 11.012,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 54.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 4.81,
+      "game_time": 11.345,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 54.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 4.935,
+      "game_time": 11.678,
+      "action_request": 0,
+      "phase": 2,
+      "player_health": 54.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    },
+    {
+      "time": 5.06,
+      "game_time": 12.012,
+      "action_request": 3203,
+      "phase": 2,
+      "player_health": 54.0,
+      "location": [
+        7096.69,
+        2000.0,
+        122.15
+      ],
+      "montage": null,
+      "projectiles": []
+    }
+  ],
+  "elapsed": 5.060402505099773,
+  "started_at": 116.86853523924947,
+  "activation": {
+    "ai_restarted": true
+  },
+  "skill": 3203,
+  "health_before": 60,
+  "health_after": 51,
+  "abilities_after": [
+    {
+      "abilityName": "DiaGameplayAbility",
+      "level": 1,
+      "bIsActive": false
+    },
+    {
+      "abilityName": "DiaGameplayAbility",
+      "level": 1,
+      "bIsActive": false
+    },
+    {
+      "abilityName": "DiaGameplayAbility",
+      "level": 1,
+      "bIsActive": false
+    },
+    {
+      "abilityName": "DiaGameplayAbility",
+      "level": 1,
+      "bIsActive": false
+    }
+  ]
+}

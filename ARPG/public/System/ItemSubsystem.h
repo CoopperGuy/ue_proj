@@ -23,6 +23,7 @@ public:
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
     
+    TArray<FName> GetRewardEquipmentIDs(bool bCommonOnly = false) const;
     const FItemBase& GetItemData(const FName& ItemID) const;
     const FItemBase* FindItemData(const FName& ItemID) const;
     const FItemBase* FindItemData(const FItemInstance& Item) const;

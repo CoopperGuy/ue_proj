@@ -1,0 +1,1474 @@
+{
+  "/Game/Blueprint/Monster/AI/BT_DiaMonsterTree.BT_DiaMonsterTree": [
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/AI/BT_DiaMonsterTree.BT_DiaMonsterTree:BTDecorator_CheckActionRequest_2"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/AI/BT_DiaMonsterTree.BT_DiaMonsterTree:BTDecorator_IsValidSkill_1"
+      },
+      "values": {
+        "skillId": 3001,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/AI/BT_DiaMonsterTree.BT_DiaMonsterTree:UBTD_DistanceInRange_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 0,
+        "maxDistance": 250
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/AI/BT_DiaMonsterTree.BT_DiaMonsterTree:BTTask_RotateToTarget_0"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 3001,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/AI/BT_DiaMonsterTree.BT_DiaMonsterTree:BTTask_MoveToTarget_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/AI/BT_DiaMonsterTree.BT_DiaMonsterTree:BTTask_Wait_0"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 0.30000001192092896,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0.20000000298023224,
+          "key": "None"
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/AI/BT_DiaMonsterTree.BT_DiaMonsterTree:BTDecorator_CheckActionRequest_6"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/AI/BT_DiaMonsterTree.BT_DiaMonsterTree:BTTask_PlayGAS_3"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    }
+  ],
+  "/Game/Blueprint/Monster/BladeGuard/AI/BT_DiaBladeGuard.BT_DiaBladeGuard": [
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/BladeGuard/AI/BT_DiaBladeGuard.BT_DiaBladeGuard:BTDecorator_CheckActionRequest_2"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/BladeGuard/AI/BT_DiaBladeGuard.BT_DiaBladeGuard:BTDecorator_IsValidSkill_1"
+      },
+      "values": {
+        "skillId": 3101,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/BladeGuard/AI/BT_DiaBladeGuard.BT_DiaBladeGuard:UBTD_DistanceInRange_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 0,
+        "maxDistance": 250
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/BladeGuard/AI/BT_DiaBladeGuard.BT_DiaBladeGuard:BTTask_RotateToTarget_0"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 3101,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/BladeGuard/AI/BT_DiaBladeGuard.BT_DiaBladeGuard:BTTask_MoveToTarget_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/BladeGuard/AI/BT_DiaBladeGuard.BT_DiaBladeGuard:BTTask_Wait_0"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 0.30000001192092896,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0.20000000298023224,
+          "key": "None"
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/BladeGuard/AI/BT_DiaBladeGuard.BT_DiaBladeGuard:BTDecorator_CheckActionRequest_6"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/BladeGuard/AI/BT_DiaBladeGuard.BT_DiaBladeGuard:BTTask_PlayGAS_3"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    }
+  ],
+  "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer": [
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer:BTDecorator_CheckActionRequest_2"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer:UBTD_DistanceInRange_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 300,
+        "maxDistance": 1000
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer:BTTask_ChangeMovmentSpeed_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "MaxSpeed",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer:BTTask_MoveToTarget_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer:UBTD_DistanceInRange_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 200,
+        "maxDistance": 300
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer:BTTask_ChangeMovmentSpeed_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "MaxSpeed",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer:BTTask_MoveToTarget_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer:BTDecorator_IsValidSkill_1"
+      },
+      "values": {
+        "skillId": 3002,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer:BTTask_ChangeMovmentSpeed_2"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "MaxSpeed",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer:BTTask_RotateAndActiveSkill_0"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 3002,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer:BTDecorator_CheckActionRequest_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer:BTTask_MoveToForward_0"
+      },
+      "values": {
+        "moveDistance": 300
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Bomber/AI/BT_DiaBomer.BT_DiaBomer:BTTask_PlayGAS_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    }
+  ],
+  "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss": [
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTDecorator_Blackboard_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "SelfActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTTask_Wait_1"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 5,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0,
+          "key": "None"
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTDecorator_Blackboard_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "HasLineOfSight",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTTask_MoveToLastPos_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "LastKnownLocation",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTDecorator_CheckActionRequest_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:UBTDecorator_CheckPhase_1"
+      },
+      "values": {
+        "checkPhase": 1,
+        "blackboardKey": {
+          "selectedKeyName": "PhaseKey",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTDecorator_IsValidSkill_0"
+      },
+      "values": {
+        "skillId": 2001,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:UBTD_DistanceInRange_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 0,
+        "maxDistance": 250
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTTask_RotateToTarget_0"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 2001,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTDecorator_IsValidSkill_2"
+      },
+      "values": {
+        "skillId": 2003,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:UBTD_DistanceInRange_2"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 250,
+        "maxDistance": 750
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTTask_RotateToTarget_1"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 2003,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTTask_MoveToTarget_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTTask_Wait_0"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 0.30000001192092896,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0.20000000298023224,
+          "key": "None"
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:UBTDecorator_CheckPhase_0"
+      },
+      "values": {
+        "checkPhase": 2,
+        "blackboardKey": {
+          "selectedKeyName": "PhaseKey",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTDecorator_IsValidSkill_14"
+      },
+      "values": {
+        "skillId": 2002,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:UBTD_DistanceInRange_8"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 0,
+        "maxDistance": 500
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTTask_RotateToTarget_2"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 2002,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTDecorator_IsValidSkill_1"
+      },
+      "values": {
+        "skillId": 2005,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:UBTD_DistanceInRange_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 500,
+        "maxDistance": 1500
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTTask_RotateToTarget_3"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 2005,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTTask_MoveToTarget_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTTask_Wait_3"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 0.30000001192092896,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0.20000000298023224,
+          "key": "None"
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTDecorator_CheckActionRequest_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTTask_PlayGAS_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/DualBladeBoss/AI/BT_DualBladeBoss.BT_DualBladeBoss:BTTask_Wait_2"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 2,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0,
+          "key": "None"
+        }
+      }
+    }
+  ],
+  "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss": [
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTDecorator_Blackboard_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "SelfActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTTask_Wait_1"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 5,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0,
+          "key": "None"
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTDecorator_Blackboard_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "HasLineOfSight",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTTask_MoveToLastPos_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "LastKnownLocation",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTDecorator_CheckActionRequest_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:UBTDecorator_CheckPhase_1"
+      },
+      "values": {
+        "checkPhase": 1,
+        "blackboardKey": {
+          "selectedKeyName": "PhaseKey",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTDecorator_IsValidSkill_0"
+      },
+      "values": {
+        "skillId": 3201,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:UBTD_DistanceInRange_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 0,
+        "maxDistance": 300
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTTask_RotateToTarget_0"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 3201,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTDecorator_IsValidSkill_2"
+      },
+      "values": {
+        "skillId": 3202,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:UBTD_DistanceInRange_2"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 300,
+        "maxDistance": 800
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTTask_RotateToTarget_1"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 3202,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTTask_MoveToTarget_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTTask_Wait_0"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 0.15000000596046448,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0,
+          "key": "None"
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:UBTDecorator_CheckPhase_0"
+      },
+      "values": {
+        "checkPhase": 2,
+        "blackboardKey": {
+          "selectedKeyName": "PhaseKey",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTDecorator_IsValidSkill_14"
+      },
+      "values": {
+        "skillId": 3203,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:UBTD_DistanceInRange_8"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 0,
+        "maxDistance": 360
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTTask_RotateToTarget_2"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 3203,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTDecorator_IsValidSkill_1"
+      },
+      "values": {
+        "skillId": 3204,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:UBTD_DistanceInRange_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 360,
+        "maxDistance": 1300
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTTask_RotateToTarget_3"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 3204,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTTask_MoveToTarget_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTTask_Wait_3"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 0.15000000596046448,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0,
+          "key": "None"
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTDecorator_CheckActionRequest_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTTask_PlayGAS_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Boss/Warden/AI/BT_WardenBoss.BT_WardenBoss:BTTask_Wait_2"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 1.100000023841858,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0,
+          "key": "None"
+        }
+      }
+    }
+  ],
+  "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger": [
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTDecorator_Blackboard_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "SelfActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTTask_Wait_1"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 5,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0,
+          "key": "None"
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTDecorator_Blackboard_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "HasLineOfSight",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTTask_MoveToLastPos_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "LastKnownLocation",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTDecorator_CheckActionRequest_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:UBTDecorator_CheckPhase_1"
+      },
+      "values": {
+        "checkPhase": 1,
+        "blackboardKey": {
+          "selectedKeyName": "PhaseKey",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTDecorator_IsValidSkill_0"
+      },
+      "values": {
+        "skillId": 3101,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:UBTD_DistanceInRange_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 0,
+        "maxDistance": 250
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTTask_RotateToTarget_0"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 3101,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTDecorator_IsValidSkill_2"
+      },
+      "values": {
+        "skillId": 3103,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:UBTD_DistanceInRange_2"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 250,
+        "maxDistance": 650
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTTask_RotateToTarget_1"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 3103,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTTask_MoveToTarget_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTTask_Wait_0"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 0.30000001192092896,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0.20000000298023224,
+          "key": "None"
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:UBTDecorator_CheckPhase_0"
+      },
+      "values": {
+        "checkPhase": 2,
+        "blackboardKey": {
+          "selectedKeyName": "PhaseKey",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTDecorator_IsValidSkill_14"
+      },
+      "values": {
+        "skillId": 3101,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:UBTD_DistanceInRange_8"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 0,
+        "maxDistance": 250
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTTask_RotateToTarget_2"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 3101,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTDecorator_IsValidSkill_1"
+      },
+      "values": {
+        "skillId": 3103,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:UBTD_DistanceInRange_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 250,
+        "maxDistance": 650
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTTask_RotateToTarget_3"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 3103,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTTask_MoveToTarget_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTTask_Wait_3"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 0.30000001192092896,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0.20000000298023224,
+          "key": "None"
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTDecorator_CheckActionRequest_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTTask_PlayGAS_0"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Charger/AI/BT_DiaCharger.BT_DiaCharger:BTTask_Wait_2"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 2,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0,
+          "key": "None"
+        }
+      }
+    }
+  ],
+  "/Game/Blueprint/Monster/Spitter/AI/BT_DiaSpitter.BT_DiaSpitter": [
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Spitter/AI/BT_DiaSpitter.BT_DiaSpitter:BTDecorator_CheckActionRequest_2"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Spitter/AI/BT_DiaSpitter.BT_DiaSpitter:BTDecorator_IsValidSkill_1"
+      },
+      "values": {
+        "skillId": 3102,
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Spitter/AI/BT_DiaSpitter.BT_DiaSpitter:UBTD_DistanceInRange_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        },
+        "minDistance": 0,
+        "maxDistance": 900
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Spitter/AI/BT_DiaSpitter.BT_DiaSpitter:BTTask_RotateToTarget_0"
+      },
+      "values": {
+        "actionRequest": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        },
+        "skillId": 3102,
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Spitter/AI/BT_DiaSpitter.BT_DiaSpitter:BTTask_MoveToTarget_1"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "TargetActor",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Spitter/AI/BT_DiaSpitter.BT_DiaSpitter:BTTask_Wait_0"
+      },
+      "values": {
+        "waitTime": {
+          "defaultValue": 0.30000001192092896,
+          "key": "None"
+        },
+        "randomDeviation": {
+          "defaultValue": 0.20000000298023224,
+          "key": "None"
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Spitter/AI/BT_DiaSpitter.BT_DiaSpitter:BTDecorator_CheckActionRequest_6"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    },
+    {
+      "node": {
+        "refPath": "/Game/Blueprint/Monster/Spitter/AI/BT_DiaSpitter.BT_DiaSpitter:BTTask_PlayGAS_3"
+      },
+      "values": {
+        "blackboardKey": {
+          "selectedKeyName": "ActionRequest",
+          "bNoneIsAllowedValue": false
+        }
+      }
+    }
+  ]
+}

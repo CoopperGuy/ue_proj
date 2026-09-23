@@ -88,6 +88,15 @@ struct FMonsterSpawnInfo
 };
 
 
+UENUM(BlueprintType)
+enum class EDiaEncounterPattern : uint8
+{
+    Automatic,
+    Ring,
+    TwoFlanks,
+    Grid
+};
+
 USTRUCT(BlueprintType)
 struct FMapSpawnInfo : public FTableRowBase
 {
@@ -98,6 +107,9 @@ struct FMapSpawnInfo : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName GroupName;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Encounter")
+    EDiaEncounterPattern EncounterPattern = EDiaEncounterPattern::Automatic;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)	
 	TArray<FMonsterSpawnInfo> MonsterSpawnInfos;

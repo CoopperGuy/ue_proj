@@ -46,6 +46,13 @@ public:
     void ActivateAI();
     void DeactivateAI();
     void ResetMonster();
+
+    /** Preferred center-to-center distance when pursuing a combat target. */
+    float GetCombatApproachDistance() const { return CombatApproachDistance; }
+
+    bool IsAttackInProgress() const { return bAttackInProgress; }
+    void BeginAttack();
+    void FinishAttack();
     
     /**
      * 몬스터의 중력 활성화/비활성화
@@ -82,6 +89,11 @@ protected:
 protected:
     UPROPERTY()
     FName MonsterID;
+
+    float CombatApproachDistance = 150.f;
+    bool bAttackInProgress = false;
+    bool bSavedOrientToMovement = false;
+    bool bSavedControllerDesiredRotation = false;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Effects")
 	UNiagaraSystem* hitEffect;
