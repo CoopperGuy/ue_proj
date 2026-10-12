@@ -3,6 +3,9 @@
 
 #include "System/GameViewPort/DiaCustomGameViewPort.h"
 #include "GameFramework/InputSettings.h"
+#include "Engine/Console.h"
+#include "InputCoreTypes.h"
+#include "InputKeyEventArgs.h"
 
 #include "Controller/DiaController.h"
 #include "DiaComponent/UI/DiaInventoryComponent.h"
@@ -31,8 +34,13 @@ UDiaPrimaryLayout* UDiaCustomGameViewPort::CreatePrimaryLayout(APlayerController
 
 	if (IsValid(DiaPrimaryLayout))
 	{
-		DiaPrimaryLayout->SetOwningPlayer(OwningPlayer);
-		return DiaPrimaryLayout;
+		if (DiaPrimaryLayout->GetOwningPlayer() == OwningPlayer && DiaPrimaryLayout->IsInViewport())
+		{
+			return DiaPrimaryLayout;
+		}
+		// A new run has a new controller and pawn. Rebuild bindings instead of reusing the previous HUD.
+		DiaPrimaryLayout->RemoveFromParent();
+		DiaPrimaryLayout = nullptr;
 	}
 
 	UClass* WidgetClass = LoadClass<UDiaPrimaryLayout>(nullptr, TEXT("/Game/UI/System/WBP_DiaPrimaryLayOut.WBP_DiaPrimaryLayOut_C"));
@@ -70,6 +78,18 @@ void UDiaCustomGameViewPort::LostFocus(FViewport* InViewport)
 
 bool UDiaCustomGameViewPort::InputKey(const FInputKeyEventArgs& EventArgs)
 {
+	// CommonUI prioritizes the editor's Stop PIE shortcut over game input.
+	// Handle this game's Escape menu first, and consume repeat/release events
+	// so the character's Enhanced Input binding cannot toggle it a second time.
+	if (EventArgs.Key == EKeys::Escape && !(ViewportConsole && ViewportConsole->ConsoleActive()))
+	{
+		ADiaController* PlayerController = GetWorld() ? Cast<ADiaController>(GetWorld()->GetFirstPlayerController()) : nullptr;
+		if (PlayerController)
+		{
+			if (EventArgs.Event == IE_Pressed) PlayerController->ToggleMenuSystemVisibility();
+			return true;
+		}
+	}
 	return Super::InputKey(EventArgs);
 }
 

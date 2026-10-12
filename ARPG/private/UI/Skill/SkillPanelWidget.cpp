@@ -275,7 +275,7 @@ void USkillPanelWidget::AddSkillToPanel(const FGASSkillData& SkillData, int32 Sk
 	}
 
 	UTexture2D* IconTexture = nullptr;
-	if (SkillData.Icon.IsValid())
+	if (!SkillData.Icon.IsNull())
 	{
 		IconTexture = SkillData.Icon.LoadSynchronous();
 		UE_LOG(LogARPG, Log, TEXT("USkillPanelWidget::AddSkillToPanel - Icon loaded for SkillID: %d, SkillName: %s"),

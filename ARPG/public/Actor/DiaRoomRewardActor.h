@@ -10,6 +10,7 @@ class UBoxComponent;
 class UStaticMeshComponent;
 class UTextRenderComponent;
 class UPointLightComponent;
+class UStaticMesh;
 
 // Native fallback presentation: no additional Blueprint asset is required.
 UCLASS()
@@ -29,4 +30,10 @@ private:
     UPROPERTY(VisibleAnywhere) TObjectPtr<UStaticMeshComponent> Mesh;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UTextRenderComponent> Label;
     UPROPERTY(VisibleAnywhere) TObjectPtr<UPointLightComponent> Light;
+    UPROPERTY(EditDefaultsOnly, Category = "Reward|Presentation") TObjectPtr<UStaticMesh> AltarMesh;
+    UPROPERTY(EditDefaultsOnly, Category = "Reward|Presentation") TObjectPtr<UStaticMesh> TreasureMesh;
+    UPROPERTY(EditDefaultsOnly, Category = "Reward|Presentation") TObjectPtr<UStaticMesh> GoldMesh;
+    UPROPERTY(EditDefaultsOnly, Category = "Reward|Presentation") TObjectPtr<UStaticMesh> HealMesh;
+    UPROPERTY(EditDefaultsOnly, Category = "Reward|Presentation") TObjectPtr<UStaticMesh> EquipmentMesh;
+    UPROPERTY(EditDefaultsOnly, Category = "Reward|Presentation") TObjectPtr<UStaticMesh> ExitMesh;
 };

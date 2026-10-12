@@ -12,6 +12,7 @@ class UTexture2D;
 class UProgressBar;
 class UAbilitySystemComponent;
 class UMaterialInstanceDynamic;
+class USkillToolTipWidget;
 /**
  * 
  */
@@ -21,18 +22,23 @@ class ARPG_API USkillQuickSlot : public UUserWidget
 	GENERATED_BODY()
 public:
 	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
+	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 	void SetSkillQuickSlot(int32 InSkillID, UTexture2D* InSkillIcon, int32 InSkillLevel);
 	void ClearSkillQuickSlot();
-	void SetSkillID(int32 InSkillID) { SkillID = InSkillID; }
+	void SetSkillID(int32 InSkillID);
 	void SetSkillIcon(UTexture2D* InSkillIcon);
 
 	void UpdateCoolTime(UAbilitySystemComponent* ASC);
 
 	void UpdateCoolDownPercentage(float Percentage);
 	void UpdateSkillIcon(UTexture2D* InSkillIcon);
-protected:
-	private:
+private:
+	void RefreshToolTip();
+	UPROPERTY(Transient)
+	TObjectPtr<USkillToolTipWidget> SkillToolTip;
+	int32 SkillLevel = 1;
 	UPROPERTY(meta = (BindWidget))
 	UImage* SkillIconImage;
 	UPROPERTY(meta = (BindWidget))
@@ -52,5 +58,5 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Material Parameters")
     FName coolDownParamName;
 
-	int32 SkillID;
+	int32 SkillID = INDEX_NONE;
 };

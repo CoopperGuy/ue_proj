@@ -2,6 +2,9 @@
 #include "GameplayEffect.h"
 #include "System/CharacterManager.h"
 #include "GAS/DiaGameplayTags.h"
+#include "GAS/DiaEquipmentCombat.h"
+#include "GAS/Effects/Exec_Damage.h"
+#include "Types/DiaEquipmentOptionRules.h"
 #include "GameplayEffectExtension.h"
 #include "AbilitySystemComponent.h"
 #include "DiaBaseCharacter.h"
@@ -25,6 +28,8 @@ UDiaAttributeSet::UDiaAttributeSet()
 	InitExp(0.0f);
 	InitMaxExp(100.0f);
 	InitCooldownReduction(0.0f);
+	InitCritChance(0.f);
+	InitCritDamage(150.f);
 }
 
 
@@ -84,9 +89,22 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 
 	if (Data.EvaluatedData.Attribute == GetHealthAttribute())
 	{
-		// Clamp health
-		SetHealth(FMath::Clamp(GetHealth(), 0.0f, GetMaxHealth()));
-		Character->OnRecieveDamage(DeltaValue);
+        // Reconstruct pre-hit health before clamping away overkill. Only damage executions
+        // can trigger equipment: healing, costs and direct periodic modifiers cannot recurse.
+        const float HealthBefore = FMath::Clamp(GetHealth() - DeltaValue, 0.f, GetMaxHealth());
+        SetHealth(FMath::Clamp(GetHealth(), 0.f, GetMaxHealth()));
+        const bool bDamageExecution = Data.EffectSpec.Def && Data.EffectSpec.Def->Executions.ContainsByPredicate(
+            [](const FGameplayEffectExecutionDefinition& Execution)
+            {
+                return Execution.CalculationClass && Execution.CalculationClass->IsChildOf(UExec_Damage::StaticClass());
+            });
+        if (DeltaValue < 0.f && HealthBefore > 0.f && bDamageExecution
+            && IsValid(Character) && !Character->GetIsDead())
+        {
+            DiaEquipmentCombat::OnConfirmedHit(Source, GetOwningAbilitySystemComponent(),
+                DiaEquipmentOptionRules::ConfirmedHealthLoss(HealthBefore, GetHealth()), GetHealth() <= 0.f);
+        }
+        if (IsValid(Character)) Character->OnRecieveDamage(DeltaValue);
 		if (GetHealth() <= 0.f)
 		{
 			if (IsValid(Character))
@@ -126,6 +144,15 @@ void UDiaAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbac
 void UDiaAttributeSet::PostAttributeChange(const FGameplayAttribute& Attribute, float OldValue, float NewValue)
 {
 	Super::PostAttributeChange(Attribute, OldValue, NewValue);
+	// Removing equipment is an aggregator change, not an instant-effect execution.
+	if (Attribute == GetMaxHealthAttribute() && GetHealth() > NewValue)
+	{
+		SetHealth(FMath::Max(0.0f, NewValue));
+	}
+	if (Attribute == GetMaxManaAttribute() && GetMana() > NewValue)
+	{
+		SetMana(FMath::Max(0.0f, NewValue));
+	}
 	// 추가적인 후처리 로직이 필요한 경우 여기에 작성
 	UE_LOG(LogARPGAttribute, Warning,
 		TEXT("PostAttributeChange Attribute: %s, OldValue=%f, NewValue=%f"),
@@ -278,4 +305,9 @@ void UDiaAttributeSet::MakeAttributeTagMap()
 	AttributeTagMap.Add(DiaGameplayTags::ItemOption_MovementSpeed.GetTag(), GetMovementSpeedAttribute());
 	AttributeTagMap.Add(DiaGameplayTags::ItemOption_CritChance.GetTag(), GetCritChanceAttribute());
 	AttributeTagMap.Add(DiaGameplayTags::ItemOption_DamageIncreaseOption.GetTag(), GetDamageIncreaseOptionAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::ItemOption_AttackPower.GetTag(), GetAttackPowerAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::ItemOption_Defense.GetTag(), GetDefenseAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::ItemOption_MaxMana.GetTag(), GetMaxManaAttribute());
+	AttributeTagMap.Add(DiaGameplayTags::ItemOption_CritDamage.GetTag(), GetCritDamageAttribute());
+
 }

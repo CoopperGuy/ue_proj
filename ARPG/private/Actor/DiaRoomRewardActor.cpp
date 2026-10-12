@@ -30,6 +30,20 @@ ADiaRoomRewardActor::ADiaRoomRewardActor()
     static ConstructorHelpers::FObjectFinder<UStaticMesh> Shape(TEXT("/Engine/BasicShapes/Cylinder.Cylinder"));
     if (Shape.Succeeded()) Mesh->SetStaticMesh(Shape.Object);
     Mesh->SetRelativeScale3D(FVector(0.8f, 0.8f, 0.6f));
+    // Hard references retain the default reward art in cooked builds. Each slot
+    // is editable independently; missing art keeps the cylinder fallback.
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> Altar(TEXT("/Game/Art/DarkCute/Meshes/SM_DC_RewardAltar.SM_DC_RewardAltar"));
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> Treasure(TEXT("/Game/Art/DarkCute/Meshes/SM_ReliquaryChest.SM_ReliquaryChest"));
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> Gold(TEXT("/Game/Art/DarkCute/Meshes/SM_DC_GoldDrop.SM_DC_GoldDrop"));
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> Heal(TEXT("/Game/Art/DarkCute/Meshes/SM_DC_HealDrop.SM_DC_HealDrop"));
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> Equipment(TEXT("/Game/Art/DarkCute/Meshes/SM_DC_EquipmentDrop.SM_DC_EquipmentDrop"));
+    static ConstructorHelpers::FObjectFinder<UStaticMesh> Exit(TEXT("/Game/Art/DarkCute/Meshes/SM_DC_Portal.SM_DC_Portal"));
+    AltarMesh = Altar.Object;
+    TreasureMesh = Treasure.Object;
+    GoldMesh = Gold.Object;
+    HealMesh = Heal.Object;
+    EquipmentMesh = Equipment.Object;
+    ExitMesh = Exit.Object;
     Label = CreateDefaultSubobject<UTextRenderComponent>(TEXT("RewardLabel"));
     Label->SetupAttachment(HitBox);
     Label->SetRelativeLocation(FVector(0.f, 0.f, 90.f));
@@ -53,14 +67,25 @@ void ADiaRoomRewardActor::InitializeReward(const FGuid& InRoom, EDiaRoomRewardKi
     FColor Color = Kind == EDiaRoomRewardKind::Boss ? FColor(180, 100, 255) : FColor(255, 210, 65);
     const UDiaRewardSubsystem* Rewards = GetGameInstance()->GetSubsystem<UDiaRewardSubsystem>();
     const FDiaRoomRewardState* State = Rewards ? Rewards->FindRoomReward(RoomGuid) : nullptr;
+    UStaticMesh* RewardMesh = Kind == EDiaRoomRewardKind::Treasure ? TreasureMesh.Get() : AltarMesh.Get();
+    const bool bFloorCleared = State && State->bClaimed && Kind == EDiaRoomRewardKind::Boss;
+    if (bFloorCleared) RewardMesh = ExitMesh;
     if (State && State->bClaimed && Kind == EDiaRoomRewardKind::Boss) Text = TEXT("FLOOR CLEARED - CONTINUE");
     else if (Kind == EDiaRoomRewardKind::Normal && State && !State->Options.IsEmpty())
     {
         const FRewardData& Reward = State->Options[0];
-        if (Reward.RewardType == ERewardType::Gold) Text = FString::Printf(TEXT("GOLD +%d"), Reward.GoldAmount);
-        else if (Reward.RewardType == ERewardType::Heal) { Text = TEXT("HEAL 25%"); Color = FColor(100, 255, 140); }
-        else Text = TEXT("EQUIPMENT");
+        if (Reward.RewardType == ERewardType::Gold) { Text = FString::Printf(TEXT("GOLD +%d"), Reward.GoldAmount); RewardMesh = GoldMesh; }
+        else if (Reward.RewardType == ERewardType::Heal) { Text = TEXT("HEAL 25%"); Color = FColor(100, 255, 140); RewardMesh = HealMesh; }
+        else { Text = TEXT("EQUIPMENT"); RewardMesh = EquipmentMesh; }
         Mesh->SetRelativeScale3D(FVector(0.4f, 0.4f, 0.25f));
+    }
+    if (RewardMesh)
+    {
+        Mesh->SetStaticMesh(RewardMesh);
+        Mesh->SetRelativeScale3D(FVector::OneVector);
+        // GameMode places the interaction root 70 cm above the room floor.
+        Mesh->SetRelativeLocation(FVector(0.f, 0.f, -70.f));
+        Label->SetRelativeLocation(FVector(0.f, 0.f, bFloorCleared ? 210.f : 90.f));
     }
     Label->SetText(FText::FromString(Text));
     Label->SetTextRenderColor(Color);

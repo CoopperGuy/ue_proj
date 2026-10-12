@@ -135,7 +135,8 @@ void ADungeonGameMode::OnRoomRewardClaimed(FGuid RoomID)
     if (State->Kind == EDiaRoomRewardKind::Boss)
     {
         if (Actor) Actor->InitializeReward(RoomID, State->Kind);
-        if (UHUDWidget* HUD = GetHUDWidget()) HUD->ShowClearAlret(RoomID);
+        if (ADiaController* Controller = Cast<ADiaController>(GetWorld()->GetFirstPlayerController()))
+            Controller->ShowSessionResult(true);
         if (!AnnouncedStageRooms.Contains(RoomID))
         {
             AnnouncedStageRooms.Add(RoomID);

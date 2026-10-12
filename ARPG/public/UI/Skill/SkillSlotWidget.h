@@ -11,6 +11,7 @@ class UImage;
 class UTextBlock;
 class UButton;
 class UTexture2D;
+class USkillToolTipWidget;
 
 
 UCLASS()
@@ -40,6 +41,8 @@ class ARPG_API USkillSlotWidget : public UUserWidget, public IUserObjectListEntr
 public:
 	void NativeConstruct() override;
 	virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
+	virtual void NativeOnEntryReleased() override;
+	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 	void UpdateSkillInfoObject(USkillInfoObject* InSkillInfoObjectPtr);
 	void SetSkillInfo(int32 ID, UTexture2D* Icon, const FText& Name, int32 Level);
@@ -55,6 +58,12 @@ protected:
 	UFUNCTION()
 	void OnCancelButton();
 private:
+	void RefreshToolTip();
+	void ClearSkillInfo();
+
+	UPROPERTY(Transient)
+	TObjectPtr<USkillToolTipWidget> SkillToolTip;
+	int32 DisplayedSkillLevel = 1;
 	UPROPERTY(meta = (BindWidget))
 	UImage* SkillIconImage;
 	UPROPERTY(meta = (BindWidget))

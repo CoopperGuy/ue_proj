@@ -2,6 +2,8 @@
 
 
 #include "System/ItemSubsystem.h"
+#include "Types/DiaEquipmentRules.h"
+#include "Types/DiaEquipmentOptionRules.h"
 #include "UI/Item/ItemWidget.h"
 #include "UI/Item/ItemToolTipWidget.h"
 #include "Types/ItemBase.h"
@@ -160,11 +162,6 @@ TArray<FItemDropInfo> UItemSubsystem::GetRandomDropItem(const FName& MonsterID) 
     return TArray<FItemDropInfo>();
 }
 
-void UItemSubsystem::GenerateRandomStats(FItemInstance& Item, int32 Level)
-{
-    // 湲곕낯 ?ㅽ꺈??異붽?濡?蹂대꼫???ㅽ꺈 ?앹꽦
-}
-
 const FDiaItemOptionRow* UItemSubsystem::FindOptionRowByKey(const FName& OptionKey) const
 {
     if (const FDiaItemOptionRow* FoundOption = OptionCache.Find(OptionKey))
@@ -218,6 +215,31 @@ bool UItemSubsystem::CanApplyOptionToItem(
         return false;
     }
 
+    if (!ItemData->bIsEquippable || OptionRow.Weight <= 0 || !OptionRow.GrantedTag.IsValid()
+        || !FDiaGameplayTags::Get().GetItemOptionList().Contains(OptionRow.GrantedTag)
+        || !FMath::IsFinite(OptionRow.MinValue) || !FMath::IsFinite(OptionRow.MaxValue)
+        || OptionRow.MinValue > OptionRow.MaxValue)
+    {
+        if (OutFailureReason) *OutFailureReason = TEXT("disabled or unsupported option");
+        return false;
+    }
+
+    if (DiaEquipmentOptionRules::IsSpecial(OptionRow.GrantedTag))
+    {
+        auto HasSpecial = [](const TArray<FDiaActualItemOption>& Options)
+        {
+            return Options.ContainsByPredicate([](const FDiaActualItemOption& Option)
+            {
+                return DiaEquipmentOptionRules::IsSpecial(Option.GrantedTag);
+            });
+        };
+        if (ItemData->Rarity < EItemRarity::EIR_Epic || HasSpecial(Item.PrefixOptions) || HasSpecial(Item.SuffixOptions))
+        {
+            if (OutFailureReason) *OutFailureReason = TEXT("special options require epic equipment and are limited to one per item");
+            return false;
+        }
+    }
+
     const EEquipmentSlot EquipmentSlot = ItemData->EquipmentSlot;
     if (EquipmentSlot == EEquipmentSlot::EES_None || !OptionRow.SlotTypes.Contains(EquipmentSlot))
     {
@@ -267,7 +289,18 @@ bool UItemSubsystem::TryAddItemOptionByKey(
         return true;
     }
 
-    const FDiaItemOptionRow* OptionRow = FindOptionRowByKey(OptionKey);
+    const FDiaItemOptionRow* OptionRow = OptionCache.Find(OptionKey);
+    if (!OptionRow)
+    {
+        // A family name selects its strongest eligible tier, never TMap iteration order.
+        for (const auto& Pair : OptionCache)
+        {
+            const FDiaItemOptionRow& Candidate = Pair.Value;
+            if (Candidate.OptionID == OptionKey
+                && CanApplyOptionToItem(Item, Candidate, ExpectedOptionType, Level)
+                && (!OptionRow || Candidate.TierIndex < OptionRow->TierIndex)) OptionRow = &Candidate;
+        }
+    }
     if (!OptionRow)
     {
         if (OutFailureReason)
@@ -282,10 +315,27 @@ bool UItemSubsystem::TryAddItemOptionByKey(
         return false;
     }
 
+    for (const FDiaActualItemOption& Existing : Item.PrefixOptions)
+    {
+        if (Existing.OptionID == OptionRow->OptionID)
+        {
+            if (OutFailureReason) *OutFailureReason = TEXT("duplicate option family");
+            return false;
+        }
+    }
+    for (const FDiaActualItemOption& Existing : Item.SuffixOptions)
+    {
+        if (Existing.OptionID == OptionRow->OptionID)
+        {
+            if (OutFailureReason) *OutFailureReason = TEXT("duplicate option family");
+            return false;
+        }
+    }
+    const FIntPoint Budget = DiaEquipmentRules::OptionBudget(FindItemData(Item)->Rarity);
     FDiaActualItemOption ActualOption(*OptionRow);
     if (ExpectedOptionType == EItemOptionType::IOT_Prefix)
     {
-        if (!Item.CheckPrefixOptionsSize())
+        if (Item.PrefixOptions.Num() >= Budget.X)
         {
             if (OutFailureReason)
             {
@@ -298,7 +348,7 @@ bool UItemSubsystem::TryAddItemOptionByKey(
         return true;
     }
 
-    if (!Item.CheckSuffixOptionsSize())
+    if (Item.SuffixOptions.Num() >= Budget.Y)
     {
         if (OutFailureReason)
         {
@@ -313,133 +363,62 @@ bool UItemSubsystem::TryAddItemOptionByKey(
 
 void UItemSubsystem::GenerateItemOptions(FItemInstance& Item, int32 Level)
 {
-    const int32 NumPrefixOptionsToAdd = MAX_PREFIX_OPTIONS - Item.PrefixOptions.Num();
-    const int32 NumSuffixOptionsToAdd = MAX_SUFFIX_OPTIONS - Item.SuffixOptions.Num();  
+    const FItemBase* Data = FindItemData(Item);
+    if (!Data || !Data->bIsEquippable) return;
+    const FIntPoint Budget = DiaEquipmentRules::OptionBudget(Data->Rarity);
+    TSet<FName> UsedFamilies;
+    for (const FDiaActualItemOption& Option : Item.PrefixOptions) UsedFamilies.Add(Option.OptionID);
+    for (const FDiaActualItemOption& Option : Item.SuffixOptions) UsedFamilies.Add(Option.OptionID);
 
-    if (NumPrefixOptionsToAdd <= 0 && NumSuffixOptionsToAdd <= 0)
+    auto Roll = [&](EItemOptionType Type, int32 Limit, TArray<FDiaActualItemOption>& Output, bool bSpecial)
     {
-        return;
-    }
-
-#if UE_EDITOR
-    UE_LOG(LogARPG, Warning, TEXT("GenerateItemOptions: Start | ItemID: %s, Level: %d"),
-        *Item.ItemID.ToString(), Level);
-    UE_LOG(LogARPG, Warning, TEXT("GenerateItemOptions: OptionCache Num: %d"), OptionCache.Num());
-#endif
-
-    const FItemBase* ItemData = FindItemData(Item);
-    if (!ItemData)
-    {
-        UE_LOG(LogARPG, Warning, TEXT("GenerateItemOptions: item data not found. ItemID: %s"), *Item.ItemID.ToString());
-        return;
-    }
-
-    const FGameplayTagContainer& PossibleOptionTags = ItemData->PossibleItemOptionTags;
-    const EEquipmentSlot EquipmentSlot = ItemData->EquipmentSlot;
-
-	TArray<FDiaItemOptionRow> AvailablePrefixOptions;
-    TArray<FDiaItemOptionRow> AvailableSuffixOptions;
-
-    TArray<FDiaItemOptionRow> ResultPrefixOptions;
-    TArray<FDiaItemOptionRow> ResultSuffixOptions;
-
-    for(const auto& OptionRows : OptionCache)
-    {
-		bool bCanApplyOption = true;
-        const FDiaItemOptionRow& OptionRow = OptionRows.Value;
-
-        for (const FGameplayTag& RequiredTag : OptionRow.RequiredTags)
+        TArray<const FDiaItemOptionRow*> Candidates;
+        for (const auto& Pair : OptionCache)
         {
-            if (!PossibleOptionTags.HasTag(RequiredTag))
+            if (!UsedFamilies.Contains(Pair.Value.OptionID)
+                && DiaEquipmentOptionRules::IsSpecial(Pair.Value.GrantedTag) == bSpecial
+                && CanApplyOptionToItem(Item, Pair.Value, Type, Level)) Candidates.Add(&Pair.Value);
+        }
+        // Stable traversal also makes seeded automation reproducible.
+        Candidates.Sort([](const FDiaItemOptionRow& A, const FDiaItemOptionRow& B)
+        {
+            return A.GetUniqueOptionKey().LexicalLess(B.GetUniqueOptionKey());
+        });
+        while (Output.Num() < Limit && !Candidates.IsEmpty())
+        {
+            double TotalWeight = 0.0;
+            for (const FDiaItemOptionRow* Row : Candidates) TotalWeight += Row->Weight;
+            if (TotalWeight <= 0.0) break;
+            const double RollWeight = FMath::FRand() * TotalWeight;
+            double Cumulative = 0.0;
+            const FDiaItemOptionRow* Chosen = Candidates.Last();
+            for (const FDiaItemOptionRow* Row : Candidates)
             {
-                bCanApplyOption = false;
+                Cumulative += Row->Weight;
+                if (RollWeight < Cumulative) { Chosen = Row; break; }
             }
-        }
-
-        for (const FGameplayTag& BlockedTag : OptionRow.BlockedTags)
-        {
-            if (PossibleOptionTags.HasTag(BlockedTag))
+            Output.Emplace(*Chosen);
+            UsedFamilies.Add(Chosen->OptionID);
+            Candidates.RemoveAll([&](const FDiaItemOptionRow* Row)
             {
-                bCanApplyOption = false;
-            }
+                return UsedFamilies.Contains(Row->OptionID) || !CanApplyOptionToItem(Item, *Row, Type, Level);
+            });
         }
-
-		if (Level < OptionRow.RequiredItemLevelMin || Level > OptionRow.RequiredItemLevelMax)
-		{
-			bCanApplyOption = false;
-		}
-
-        if (EquipmentSlot == EEquipmentSlot::EES_None || !OptionRow.SlotTypes.Contains(EquipmentSlot))
-        {
-            bCanApplyOption = false;
-        }
-
-        if (!bCanApplyOption)
-        {
-            continue;
-        }
-
-        if (OptionRow.OptionType == EItemOptionType::IOT_Prefix)
-        {
-            AvailablePrefixOptions.Add(OptionRow);
-        }
-        else if (OptionRow.OptionType == EItemOptionType::IOT_Suffix)
-        {
-            AvailableSuffixOptions.Add(OptionRow);
-		}
-#if UE_EDITOR
-        UE_LOG(LogARPG, Warning, TEXT("OptionID: %s"), *OptionRow.OptionID.ToString());
-#endif // UE_EDITOR
-	}
-
-
-    PickupRandomValuesByWeight<FDiaItemOptionRow>(AvailablePrefixOptions,
-        [](const FDiaItemOptionRow& Row) { return static_cast<float>(Row.Weight); },
-        NumPrefixOptionsToAdd,
-        ResultPrefixOptions);
-    PickupRandomValuesByWeight<FDiaItemOptionRow>(AvailableSuffixOptions,
-        [](const FDiaItemOptionRow& Row) { return static_cast<float>(Row.Weight); },    
-        NumSuffixOptionsToAdd,
-        ResultSuffixOptions);
-
-    //?듭뀡???ｌ뼱以??    //?대??곸쑝濡?makerandomvalue瑜??몄텧?쒕떎.
-    for (const FDiaItemOptionRow& OptionRow : ResultPrefixOptions)
+    };
+    if (Data->Rarity >= EItemRarity::EIR_Epic)
     {
-        FDiaActualItemOption ActualOption(OptionRow);
-        Item.PrefixOptions.Add(ActualOption);
+        // Signature equipment reserves one suffix slot for its identity.
+        FName Signature;
+        if (Data->ItemID == TEXT("Weapon_Sword_03")) Signature = TEXT("Berserker");
+        else if (Data->ItemID == TEXT("Armor_Shield_03")) Signature = TEXT("Lifeline");
+        else if (Data->ItemID == TEXT("Acc_Amulet_02")) Signature = TEXT("Frostbound");
+        else if (Data->ItemID == TEXT("Armor_Chest_03")) Signature = TEXT("Guardian");
+        if (!Signature.IsNone() && TryAddItemOptionByKey(Item, Signature, EItemOptionType::IOT_Suffix, Level))
+            UsedFamilies.Add(Signature);
+        Roll(EItemOptionType::IOT_Suffix, 1, Item.SuffixOptions, true);
     }
-    for (const FDiaItemOptionRow& OptionRow : ResultSuffixOptions)
-    {
-        FDiaActualItemOption ActualOption(OptionRow);
-        Item.SuffixOptions.Add(ActualOption);
-	}
-
-    //濡쒓렇 ?④린湲?	//UE_LOG(LogARPG, Warning, TEXT("Generated Prefix Options:"));
- //   for (const FDiaItemOptionRow& Option : ResultPrefixOptions)
- //   {
- //       UE_LOG(LogARPG, Warning, TEXT(" - %s (Tier %d)"), *Option.DisplayName.ToString(), Option.TierIndex);
- //       if (Option.OptionType != EItemOptionType::IOT_Prefix)
- //       {
- //           UE_LOG(LogARPG, Warning, TEXT("Error: Generated option is not Prefix type! OptionID: %s"), *Option.OptionID.ToString());
-	//	}
- //       if (Option.GrantedTag.IsValid() == false)
- //       {
- //           UE_LOG(LogARPG, Warning, TEXT("Error: Generated option has invalid GrantedTag! OptionID: %s"), *Option.OptionID.ToString());
- //       }
- //   }
- //   UE_LOG(LogARPG, Warning, TEXT("Generated Suffix Options:"));
- //   for (const FDiaItemOptionRow& Option : ResultSuffixOptions)
- //   {
- //       UE_LOG(LogARPG, Warning, TEXT(" - %s (Tier %d)"), *Option.DisplayName.ToString(), Option.TierIndex);
- //       if (Option.OptionType != EItemOptionType::IOT_Prefix)
- //       {
- //           UE_LOG(LogARPG, Warning, TEXT("Error: Generated option is not Suffix type! OptionID: %s"), *Option.OptionID.ToString());
- //       }
- //       if (Option.GrantedTag.IsValid() == false)
- //       {
- //           UE_LOG(LogARPG, Warning, TEXT("Error: Generated option has invalid GrantedTag! OptionID: %s"), *Option.OptionID.ToString());
- //       }
-	//}
+    Roll(EItemOptionType::IOT_Prefix, Budget.X, Item.PrefixOptions, false);
+    Roll(EItemOptionType::IOT_Suffix, Budget.Y, Item.SuffixOptions, false);
 }
 
 const FItemBase& UItemSubsystem::GetItemData(const FName& ItemID) const
@@ -548,23 +527,23 @@ const FGameplayTagContainer* UItemSubsystem::GetPossibleItemOptionTags(const FIt
     return nullptr;
 }
 
-void UItemSubsystem::CreateInventoryInstance(FInventorySlot &OutItem, const FName &ItemID, int32 Level, bool bRandomStats, int32 Quantity)
+void UItemSubsystem::CreateInventoryInstance(FInventorySlot& OutItem, const FName& ItemID, int32 Level, bool bRandomStats, int32 Quantity)
 {
-    const FItemBase& ItemData = GetItemData(ItemID);
-    OutItem = FInventorySlot::FromBase(ItemData, FMath::Max(Quantity, 1));
-    OutItem.ItemInstance.Quantity = FMath::Max(Quantity, 1);
-	OutItem.ItemInstance.Level = Level;
-    GenerateRandomStats(OutItem.ItemInstance, Level);
-    GenerateItemOptions(OutItem.ItemInstance, Level);
+    CreateInventoryInstanceByItemBase(OutItem, GetItemData(ItemID), Level, bRandomStats, Quantity);
 }
 
 void UItemSubsystem::CreateInventoryInstanceByItemBase(FInventorySlot& OutItem, const FItemBase& ItemData, int32 Level, bool bRandomStats, int32 Quantity)
 {
-	OutItem = FInventorySlot::FromBase(ItemData, FMath::Max(Quantity, 1));
-    OutItem.ItemInstance.Quantity = FMath::Max(Quantity, 1);
-    OutItem.ItemInstance.Level = Level;
-    GenerateRandomStats(OutItem.ItemInstance, Level);
-    GenerateItemOptions(OutItem.ItemInstance, Level);
+    OutItem.Clear();
+    if (ItemData.ItemID.IsNone() || Quantity <= 0) return;
+    OutItem = FInventorySlot::FromBase(ItemData,
+        ItemData.bIsEquippable ? 1 : FMath::Clamp(Quantity, 1, FMath::Max(1, ItemData.MaxStackSize)));
+    OutItem.ItemInstance.Level = FMath::Clamp(Level, 1, 100);
+    OutItem.ItemInstance.RebuildBaseStats(ItemData);
+    if (bRandomStats && ItemData.bIsEquippable)
+    {
+        GenerateItemOptions(OutItem.ItemInstance, OutItem.ItemInstance.Level);
+    }
 }
 
 void UItemSubsystem::CreateInventoryInstanceWithOptions(
@@ -576,13 +555,9 @@ void UItemSubsystem::CreateInventoryInstanceWithOptions(
     int32 Quantity)
 {
     const FItemBase& ItemData = GetItemData(ItemID);
-    const int32 SafeQuantity = FMath::Max(Quantity, 1);
-    const int32 SafeLevel = FMath::Max(Level, 1);
-
-    OutItem = FInventorySlot::FromBase(ItemData, SafeQuantity);
-    OutItem.ItemInstance.Quantity = SafeQuantity;
-    OutItem.ItemInstance.Level = SafeLevel;
-    GenerateRandomStats(OutItem.ItemInstance, SafeLevel);
+    const int32 SafeLevel = FMath::Clamp(Level, 1, 100);
+    CreateInventoryInstanceByItemBase(OutItem, ItemData, SafeLevel, false, Quantity);
+    if (OutItem.IsEmpty()) return;
 
     for (const FName& PrefixOptionKey : PrefixOptionKeys)
     {
@@ -612,7 +587,7 @@ void UItemSubsystem::CreateInventoryInstanceWithOptions(
 const FString& UItemSubsystem::RunOptionRollStressTest(FName ItemID, int32 Count, int32 Level)
 {
     const int32 SafeCount = FMath::Clamp(Count, 1, 10000);
-    const int32 SafeLevel = FMath::Max(Level, 1);
+    const int32 SafeLevel = FMath::Clamp(Level, 1, 100);
 
     const FItemBase& ItemData = GetItemData(ItemID);
     if (ItemData.ItemID.IsNone())
@@ -639,7 +614,7 @@ const FString& UItemSubsystem::RunOptionRollStressTest(FName ItemID, int32 Count
     auto ShouldRequireAttributeMapping = [](const FGameplayTag& GrantedTag)
     {
         const FDiaGameplayTags& Tags = FDiaGameplayTags::Get();
-        return GrantedTag != Tags.ItemOptionLifeSteal
+        return !DiaEquipmentOptionRules::IsCombatOption(GrantedTag)
             && GrantedTag != Tags.ItemOptionGoldFind;
     };
 

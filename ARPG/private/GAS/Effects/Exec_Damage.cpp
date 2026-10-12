@@ -2,7 +2,8 @@
 
 
 #include "GAS/Effects/Exec_Damage.h"
-#include "GAS/Effects/DiaGE_OptionGeneric.h"
+#include "GAS/DiaEquipmentCombat.h"
+#include "AbilitySystemComponent.h"
 
 #include "GAS/DiaAttributeSet.h"
 #include "GAS/DiaGameplayTags.h"
@@ -49,6 +50,12 @@ void UExec_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionPa
 {
 	//UExec_Damage 실행을 소유한 GameplayEffectSpec(DiaGameplayEffect_Damage)의 참조
 	const FGameplayEffectSpec& Spec = ExecutionParams.GetOwningSpec();
+    UAbilitySystemComponent* SourceASC = ExecutionParams.GetSourceAbilitySystemComponent();
+    UAbilitySystemComponent* TargetASC = ExecutionParams.GetTargetAbilitySystemComponent();
+    if (!SourceASC || !TargetASC || SourceASC == TargetASC
+        || TargetASC->GetNumericAttribute(UDiaAttributeSet::GetHealthAttribute()) <= 0.f
+        || TargetASC->HasMatchingGameplayTag(FDiaGameplayTags::Get().State_Invincible)) return;
+
 
 	// SetByCaller로 주입 가능한 런타임 값(선택)
     const float DamageBase = Spec.GetSetByCallerMagnitude(
@@ -73,40 +80,14 @@ void UExec_Damage::Execute_Implementation(const FGameplayEffectCustomExecutionPa
 	CritDamage = FMath::Max(CritDamage, 100.f);
 
 	const bool bCritical = FMath::FRandRange(0.f, 100.f) < CritChance;
-	const float FinalCritMul = bCritical ? (CritDamage + CritMul) * 0.01f : 1.0f;
+	// The caller supplies a multiplier (1 is neutral); CritDamage is percentage points.
+	const float FinalCritMul = bCritical ? CritDamage * .01f * FMath::Max(CritMul, 0.f) : 1.f;
 	// 최종 공식(예시)
 	const float WeaponDamageMultiplier = WeaponDamageOption * 0.01f;
 	const float raw = FMath::Max(0.f, (DamageBase * DamageMul + (AttackPower + AttackPower * WeaponDamageMultiplier) - Defense) / Defense);
-	const float finalDamage = FMath::RoundToFloat(raw * FinalCritMul);
+	const float finalDamage = FMath::RoundToFloat(raw * FinalCritMul * DiaEquipmentCombat::DamageMultiplier(SourceASC, TargetASC));
 
 	if (finalDamage <= 0.f) return; // 가드
-
-	//UE_LOG(LogARPG, Warning, TEXT("Damage Exec: Base=%f, Atk=%f, Def=%f, Option=%f, CritMul=%f => Damage=%f"),
-	//	DamageBase, AttackPower, Defense, WeaponDamageOption, CritMul, finalDamage);
-	UAbilitySystemComponent* SourceASC = ExecutionParams.GetSourceAbilitySystemComponent();
-	if (IsValid(SourceASC))
-	{
-		FGameplayEffectQuery Query;
-		Query.EffectDefinition = UDiaGE_OptionGeneric::StaticClass();
-		TArray<FActiveGameplayEffectHandle> Handles = SourceASC->GetActiveEffects(Query);
-
-		for(FActiveGameplayEffectHandle& Handle : Handles)
-		{
-			const FActiveGameplayEffect* ActiveGE = SourceASC->GetActiveGameplayEffect(Handle);
-			if (ActiveGE)
-			{
-				//흡혈 체크
-				float LifeSteel = ActiveGE->Spec.GetSetByCallerMagnitude(FDiaGameplayTags::Get().ItemOptionLifeSteal);
-				if (LifeSteel > 0.f)
-				{
-					SourceASC->ApplyModToAttribute(
-						UDiaAttributeSet::GetHealthAttribute(),
-						EGameplayModOp::Additive,
-						finalDamage * LifeSteel * 0.01f);
-				}
-			}
-		}
-	}
 
 	// Health에 음수로 적용(감소)
 	OutExecutionOutput.AddOutputModifier(FGameplayModifierEvaluatedData(

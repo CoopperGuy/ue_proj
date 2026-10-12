@@ -140,10 +140,24 @@ struct ARPG_API FItemInstance
 
 	float MakeScaledStatValue(float BaseValue) const
 	{
-		float LevelMultiplier = 1.0f + (Level - 1) * 0.1f;
-		float QuantityMultiplier = 1.0f + (Quantity - 1) * 0.05f;
+		return (1.0f + (FMath::Clamp(Level, 1, 100) - 1) * 0.04f) * BaseValue;
+	}
 
-		return LevelMultiplier * QuantityMultiplier * BaseValue;
+	void RebuildBaseStats(const FItemBase& ItemData)
+	{
+		ModifiedStats.Reset();
+		for (const FDiaItemStatOption& BaseStat : ItemData.StatOptions)
+		{
+			FDiaItemStatOption Stat = BaseStat;
+			const FString Tag = Stat.StatTag.ToString();
+			const bool bRate = Tag.EndsWith(TEXT("CritChance")) || Tag.EndsWith(TEXT("CritDamage"))
+				|| Tag.EndsWith(TEXT("CooldownReduction")) || Tag.EndsWith(TEXT("DamageIncreaseOption"));
+			if (Stat.ScalingType == EItemOptionScalingType::IOST_Flat && !bRate)
+			{
+				Stat.Values = MakeScaledStatValue(Stat.Values);
+			}
+			ModifiedStats.Add(Stat.StatTag, Stat);
+		}
 	}
 
 	static FItemInstance FromDataTable(UDataTable* ItemTable, FName ItemID, int32 InQuantity = 1)
@@ -256,7 +270,8 @@ struct ARPG_API FEquippedItem
 	{
 		FEquippedItem Result;
 		Result.ItemInstance = FItemInstance::FromBase(ItemData);
-		Result.ItemInstance.Level = Level;
+		Result.ItemInstance.Level = FMath::Clamp(Level, 1, 100);
+		Result.ItemInstance.RebuildBaseStats(ItemData);
 		return Result;
 	}
 

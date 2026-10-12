@@ -112,55 +112,21 @@ void USkillQuickSlotWidget::NativeTick(const FGeometry& MyGeometry, float InDelt
 
 void USkillQuickSlotWidget::UpdateSkillSlot(int32 SlotIndex, int32 SkillID)
 {
-	if (SkillSlots.IsValidIndex(SlotIndex))
-	{
-		USkillQuickSlot* TargetSlot = SkillSlots[SlotIndex];
-		if (TargetSlot)
-		{
-			if (SkillID > 0)
-			{
-				UGASSkillManager* GasSkillMgr = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGASSkillManager>() : nullptr;
-				if (!GasSkillMgr)
-				{
-					TargetSlot->ClearSkillQuickSlot();
-					return;
-				}
+    if (!SkillSlots.IsValidIndex(SlotIndex) || !SkillSlots[SlotIndex]) return;
+    USkillQuickSlot* TargetSlot = SkillSlots[SlotIndex];
+    UGASSkillManager* Data = GetGameInstance() ? GetGameInstance()->GetSubsystem<UGASSkillManager>() : nullptr;
+    const FGASSkillData* SkillData = SkillID > 0 && Data ? Data->GetSkillDataPtr(SkillID) : nullptr;
+    if (!SkillData)
+    {
+        TargetSlot->ClearSkillQuickSlot();
+        return;
+    }
 
-				const FGASSkillData* FoundData = GasSkillMgr->GetSkillDataPtr(SkillID);
-				if (FoundData)
-				{
-					if (!FoundData->Icon.IsNull())
-					{
-						UTexture2D* SkillIcon = FoundData->Icon.LoadSynchronous();
-						if (SkillIcon)
-						{
-                            const APawn* Pawn = GetOwningPlayerPawn();
-                            const UDiaSkillManagerComponent* Skills = Pawn ? Pawn->FindComponentByClass<UDiaSkillManagerComponent>() : nullptr;
-                            const USkillObject* Skill = Skills ? Skills->GetSkillObjectBySkillID(SkillID) : nullptr;
-                            const int32 SkillLevel = Skill ? Skill->GetSkillLevel() : 1;
-							TargetSlot->SetSkillQuickSlot(SkillID, SkillIcon, SkillLevel);
-						}
-						else
-						{
-							TargetSlot->ClearSkillQuickSlot();
-						}
-					}
-					else
-					{
-						TargetSlot->ClearSkillQuickSlot();
-					}
-				}
-				else
-				{
-					TargetSlot->ClearSkillQuickSlot();
-				}
-			}
-			else
-			{
-				TargetSlot->ClearSkillQuickSlot();
-			}
-		}
-	}
+    const APawn* Pawn = GetOwningPlayerPawn();
+    const UDiaSkillManagerComponent* Skills = Pawn ? Pawn->FindComponentByClass<UDiaSkillManagerComponent>() : nullptr;
+    const USkillObject* Skill = Skills ? Skills->GetSkillObjectBySkillID(SkillID) : nullptr;
+    // An unavailable icon must not discard the skill identity or its tooltip.
+    TargetSlot->SetSkillQuickSlot(SkillID, SkillData->Icon.LoadSynchronous(), Skill ? Skill->GetSkillLevel() : 1);
 }
 
 void USkillQuickSlotWidget::StartCoolDownAnimation(int32 SlotIndex, UAbilitySystemComponent* ASC)

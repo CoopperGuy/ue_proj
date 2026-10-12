@@ -3,6 +3,9 @@
 #include "DiaComponent/UI/DiaEquipmentComponent.h"
 #include "DiaComponent/UI/DiaInventoryComponent.h"
 #include "DiaComponent/DiaOptionManagerComponent.h"
+#include "Controller/DiaController.h"
+#include "DiaBaseCharacter.h"
+#include "GAS/DiaAttributeSet.h"
 
 #include "System/DiaSaveGame.h"
 #include "System/ItemSubsystem.h"
@@ -78,6 +81,8 @@ void UDiaEquipmentComponent::AddDebugEvent(const FString& Message, bool bPassed)
 
 void UDiaEquipmentComponent::SaveEquipmentToSaveGame(UDiaSaveGame* SaveGameInstance) const
 {
+    if (!IsValid(SaveGameInstance)) return;
+    SaveGameInstance->EquippedItems.Reset();
 	for(const auto& EquipmentPair : EquipmentMap)
 	{
 		const EEquipmentSlot SlotType = EquipmentPair.Key;
@@ -118,7 +123,9 @@ bool UDiaEquipmentComponent::TryEquipFromInventory(const FInventorySlot& Invento
 
 	// Use component data; a UI copy can be stale or cleared by a notification.
 	const FInventorySlot SourceItem = *StoredItem;
-	const EEquipmentSlot ItemSlot = ItemSubsystem->GetEquipmentSlot(SourceItem.ItemInstance);
+    const FItemBase* ItemData = ItemSubsystem->FindItemData(SourceItem.ItemInstance);
+    if (!ItemData || !ItemData->bIsEquippable || SourceItem.ItemInstance.Quantity != 1) return false;
+	const EEquipmentSlot ItemSlot = ItemData->EquipmentSlot;
 	const bool bRingItem = ItemSlot == EEquipmentSlot::EES_RingL || ItemSlot == EEquipmentSlot::EES_RingR;
 	const bool bRingTarget = SlotType == EEquipmentSlot::EES_RingL || SlotType == EEquipmentSlot::EES_RingR;
 	if (SlotType == EEquipmentSlot::EES_None || SlotType >= EEquipmentSlot::EES_Max ||
@@ -128,6 +135,12 @@ bool UDiaEquipmentComponent::TryEquipFromInventory(const FInventorySlot& Invento
 	}
 
 	const bool bReplacingItem = GetEquippedItem(SlotType) != nullptr;
+	const ADiaController* Controller = Cast<ADiaController>(GetOwner());
+	ADiaBaseCharacter* Character = Controller ? Controller->GetPawn<ADiaBaseCharacter>() : nullptr;
+	UDiaAttributeSet* Attributes = Character ? Character->GetAttributeSet() : nullptr;
+	if (!Attributes || !Character->GetAbilitySystemComponent()) return false;
+	const float PreviousHealth = Attributes->GetHealth();
+	const float PreviousMana = Attributes->GetMana();
 	if (!InventoryComponent->RemoveItem(SourceItem.ItemInstance.InstanceID, false))
 	{
 		return false;
@@ -155,6 +168,12 @@ bool UDiaEquipmentComponent::TryEquipFromInventory(const FInventorySlot& Invento
 		OptionManagerComponent->AddOption(option);
 	}
 	OptionManagerComponent->ApplyEquipmentSlotOption(Item);
+	if (bReplacingItem)
+	{
+		// An atomic swap must not lose resources due to the temporary unequipped maximum.
+		Attributes->SetHealth(FMath::Min(PreviousHealth, Attributes->GetMaxHealth()));
+		Attributes->SetMana(FMath::Min(PreviousMana, Attributes->GetMaxMana()));
+	}
 
 	// Publish only the final state; replacement needs no intermediate empty-slot notification.
 	InventoryComponent->OnItemRemoved.Broadcast(SourceItem.ItemInstance.InstanceID);

@@ -198,6 +198,10 @@ void UDiaGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handl
 	{
 		Monster->BeginAttack();
 		bOwnsMonsterAttack = true;
+		if (UAnimMontage* MonsterMontage = Monster->GetSkillMontageOverride(SkillData.SkillID))
+		{
+			AbilityMontage = MonsterMontage;
+		}
 	}
 	if (AbilityMontage)
 	{

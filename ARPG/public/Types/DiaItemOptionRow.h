@@ -104,18 +104,7 @@ struct ARPG_API FDiaItemOptionRow : public FTableRowBase
 
 	double MakeRandomValue() const
 	{
-		double Z = 0;
-		for (int32 i = 0; i < 12; ++i)
-		{
-			Z += FMath::FRand();
-		}
-		Z -= 6.0;
-
-		double MidValue = (MinValue + MaxValue) * 0.5f;
-		double HalfRange = (MaxValue - MinValue) * 0.5f;
-
-		//12개 합의 분산은 1/12 이므로 표준편차는 sqrt(1/12) = 0.288675
-		return MidValue + HalfRange * Z * 0.1667f; 
+		return FMath::FRandRange(FMath::Min(MinValue, MaxValue), FMath::Max(MinValue, MaxValue));
 	}
 };
 
@@ -165,25 +154,5 @@ struct ARPG_API FDiaActualItemOption
 	{
 	}
 
-	FText GetOptionDescription() const
-	{
-		FString ValueStr;
-		switch (ScalingType)
-		{
-		case EItemOptionScalingType::IOST_Flat:
-			ValueStr = FString::Printf(TEXT("%.0f"), Value);
-			break;
-		case EItemOptionScalingType::IOST_Percent:
-			ValueStr = FString::Printf(TEXT("%.1f%%"), Value);
-			break;
-		case EItemOptionScalingType::IOST_Multiplier:
-			ValueStr = FString::Printf(TEXT("x%.2f"), Value);
-			break;
-		default:
-			ValueStr = FString::Printf(TEXT("%.0f"), Value);
-			break;
-		}
-		return FText::FromString(FString::Printf(TEXT("%s %s"), *DisplayName.ToString(), *ValueStr));
-	}
+	FText GetOptionDescription() const;
 };
-

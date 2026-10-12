@@ -3,6 +3,8 @@
 
 #include "Monster/DiaMonster.h"
 #include "Components/CapsuleComponent.h"
+#include "Animation/AnimMontage.h"
+#include "TimerManager.h"
 #include "Monster/Controller/DiaAIController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "DiaGameState.h"
@@ -46,6 +48,12 @@ ADiaMonster::ADiaMonster()
 	AutoPossessAI = EAutoPossessAI::Disabled;
 
 	Tags.Emplace(FDiaGameplayTags::Get().Actor_Monster.GetTagName());
+}
+
+UAnimMontage* ADiaMonster::GetSkillMontageOverride(int32 SkillID) const
+{
+	const TObjectPtr<UAnimMontage>* Montage = SkillMontageOverrides.Find(SkillID);
+	return Montage ? Montage->Get() : nullptr;
 }
 
 void ADiaMonster::InitializeFromData(const FMonsterInfo& MonsterInfo)
@@ -371,6 +379,14 @@ void ADiaMonster::PlayDieAnimation()
 
 void ADiaMonster::Die(ADiaBaseCharacter* Causer)
 {
+	if (bIsDead)
+	{
+		return;
+	}
+	GetAbilitySystemComponent()->CancelAllAbilities();
+	FinishAttack();
+	GetCharacterMovement()->StopMovementImmediately();
+	GetCharacterMovement()->DisableMovement();
 	FName DieMonsterID = this->MonsterID;
 	//BT 모두 정지
 	ADiaAIController* AIController = Cast<ADiaAIController>(GetController());
@@ -404,12 +420,30 @@ void ADiaMonster::Die(ADiaBaseCharacter* Causer)
 	
 	DropItem(DieMonsterID);
 
-	UGameInstance* GI = GetWorld()->GetGameInstance();
-	if (UMonsterManager* MM = GI->GetSubsystem<UMonsterManager>())
+	// The pool entry stays in use until the death montage finishes.
+	const float DeathDelay = bWaitForDeathAnimationBeforePooling && IsValid(DieMontage)
+		? FMath::Clamp(DieMontage->GetPlayLength(), 0.1f, 2.5f)
+		: 0.f;
+	if (DeathDelay > 0.f)
 	{
-		MM->DespawnMonster(this);
+		GetWorldTimerManager().SetTimer(DeathReturnTimerHandle, this,
+			&ADiaMonster::ReturnToPoolAfterDeath, DeathDelay, false);
 	}
+	else
+	{
+		ReturnToPoolAfterDeath();
+	}
+}
 
+void ADiaMonster::ReturnToPoolAfterDeath()
+{
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UMonsterManager* MM = GI->GetSubsystem<UMonsterManager>())
+		{
+			MM->DespawnMonster(this);
+		}
+	}
 }
 
 // SetGravity 메서드 추가
@@ -421,6 +455,18 @@ void ADiaMonster::SetGravity(bool bEnableGravity)
 void ADiaMonster::OnRecieveDamage(const float Damage)
 {
 	Super::OnRecieveDamage(Damage);
+	// Attribute callbacks pass the signed health delta: damage is negative.
+	if (Damage < 0.f && !bIsDead && GetAttributeSet()->GetHealth() > 0.f
+		&& IsValid(hitReactionMontage) && !IsAttackInProgress())
+	{
+		if (UAnimInstance* Anim = GetMesh()->GetAnimInstance())
+		{
+			if (!Anim->IsAnyMontagePlaying())
+			{
+				PlayCharacterMontage(hitReactionMontage);
+			}
+		}
+	}
 
 	float health = GetAttributeSet()->GetHealth();
 	float maxHealth = GetAttributeSet()->GetMaxHealth();

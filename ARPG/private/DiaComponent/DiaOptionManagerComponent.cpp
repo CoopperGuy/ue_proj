@@ -5,6 +5,7 @@
 #include "Controller/DiaController.h"
 #include "DiaBaseCharacter.h"
 #include "AbilitySystemComponent.h"
+#include "Engine/World.h"
 
 #include "GAS/DiaAttributeSet.h"
 
@@ -27,31 +28,36 @@ void UDiaOptionManagerComponent::BeginPlay()
 
 void UDiaOptionManagerComponent::AddOption(const FDiaActualItemOption& NewOption)
 {
-	ActiveOptions.Emplace(NewOption.OptionID, NewOption);
+    ActiveOptions.Add(NewOption);
 }
 
-void UDiaOptionManagerComponent::RemoveOption(const FDiaActualItemOption& OptionRow)
+void UDiaOptionManagerComponent::RemoveOption(const FDiaActualItemOption& Option)
 {
-	RemoveOption(OptionRow.OptionID);
+    const int32 Index = ActiveOptions.IndexOfByPredicate([&](const FDiaActualItemOption& Existing)
+    {
+        return Existing.OptionID == Option.OptionID && Existing.TierIndex == Option.TierIndex
+            && Existing.GrantedTag == Option.GrantedTag && Existing.Value == Option.Value;
+    });
+    if (Index != INDEX_NONE) ActiveOptions.RemoveAt(Index);
 }
 
 void UDiaOptionManagerComponent::RemoveOption(const FName& OptionID)
 {
-	ActiveOptions.Remove(OptionID);
+    const int32 Index = ActiveOptions.IndexOfByPredicate([&](const FDiaActualItemOption& Option)
+    {
+        return Option.OptionID == OptionID;
+    });
+    if (Index != INDEX_NONE) ActiveOptions.RemoveAt(Index);
 }
 
 FDiaActualItemOption* UDiaOptionManagerComponent::GetOptionByID(const FName& OptionID)
 {
-	if(FDiaActualItemOption* FoundOption = ActiveOptions.Find(OptionID))
-	{
-		return FoundOption;
-	}
-	return nullptr;
+    return ActiveOptions.FindByPredicate([&](const FDiaActualItemOption& Option) { return Option.OptionID == OptionID; });
 }
 
 FDiaActualItemOption* UDiaOptionManagerComponent::GetOptionByOptionRow(const FDiaActualItemOption& OptionRow)
 {
-	return GetOptionByID(OptionRow.OptionID);
+    return GetOptionByID(OptionRow.OptionID);
 }
 
 void UDiaOptionManagerComponent::ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot SlotType)
@@ -77,6 +83,12 @@ void UDiaOptionManagerComponent::ApplyEquipmentStats(const FEquippedItem& Item, 
 		UE_LOG(LogARPG, Warning, TEXT("ApplyEquipmentStats: AbilitySystemComponent가 유효하지 않습니다."));
 		return;
 	}
+
+    if (const FActiveGameplayEffectHandle* Existing = AppliedStatHandles.Find(Item.ItemInstance.InstanceID))
+    {
+        ASC->RemoveActiveGameplayEffect(*Existing);
+        AppliedStatHandles.Remove(Item.ItemInstance.InstanceID);
+    }
 
 	FGameplayEffectSpecHandle SpecHandle
 		= ASC->MakeOutgoingSpec(UDiaGE_StatApply::StaticClass(), 1.0f, ASC->MakeEffectContext());
@@ -111,7 +123,7 @@ void UDiaOptionManagerComponent::ApplyEquipmentStats(const FEquippedItem& Item, 
 	}
 
 	FActiveGameplayEffectHandle EffectHandle = ASC->ApplyGameplayEffectSpecToSelf(*Spec);
-	AppliedStatHandles.FindOrAdd(Item.ItemInstance.InstanceID, EffectHandle);
+	AppliedStatHandles.Add(Item.ItemInstance.InstanceID, EffectHandle);
 	UE_LOG(LogARPG, Warning, TEXT("스탯 적용 완료: ItemID = %s"), *Item.ItemInstance.InstanceID.ToString());
 }
 
@@ -186,15 +198,22 @@ void UDiaOptionManagerComponent::ApplyEquipmentSlotOption(const FEquippedItem& I
 		return;
 	}
 
+    if (const FActiveGameplayEffectHandle* Existing = AppliedPrefixHandles.Find(Item.ItemInstance.InstanceID))
+        ASC->RemoveActiveGameplayEffect(*Existing);
+    if (const FActiveGameplayEffectHandle* Existing = AppliedSuffixHandles.Find(Item.ItemInstance.InstanceID))
+        ASC->RemoveActiveGameplayEffect(*Existing);
+    AppliedPrefixHandles.Remove(Item.ItemInstance.InstanceID);
+    AppliedSuffixHandles.Remove(Item.ItemInstance.InstanceID);
+
 	FActiveGameplayEffectHandle PrefixHandle = MakeGameplayEffectOptions(ASC, Item.ItemInstance.PrefixOptions);
 	FActiveGameplayEffectHandle SuffixHandle = MakeGameplayEffectOptions(ASC, Item.ItemInstance.SuffixOptions);
 	if(PrefixHandle.IsValid())
 	{
-		AppliedPrefixHandles.FindOrAdd(Item.ItemInstance.InstanceID, PrefixHandle);
+		AppliedPrefixHandles.Add(Item.ItemInstance.InstanceID, PrefixHandle);
 	}
 	if (SuffixHandle.IsValid())
 	{
-		AppliedSuffixHandles.FindOrAdd(Item.ItemInstance.InstanceID, SuffixHandle);
+		AppliedSuffixHandles.Add(Item.ItemInstance.InstanceID, SuffixHandle);
 	}
 }
 
@@ -231,6 +250,12 @@ void UDiaOptionManagerComponent::ApplyitemOptionsToSpec(const TArray<FDiaActualI
 	TMap<FGameplayTag, float> OptionValueMap;
 	for (const auto& OptionRow : ItemOptions)
 	{
+        // Old saves can still contain tags from the prototype option table.
+        FGameplayTag GrantedTag = OptionRow.GrantedTag;
+        if (GrantedTag.ToString() == TEXT("Item.Option.MultiplyAdditive.DamageIncreaseOption"))
+            GrantedTag = FDiaGameplayTags::Get().ItemOptionStatDamage;
+        if (GrantedTag.ToString() == TEXT("Item.Option.Additive.CriticalChance"))
+            GrantedTag = FDiaGameplayTags::Get().ItemOptionStatCriticalChance;
 		float OptionValue = OptionRow.Value;
 		if (OptionRow.GrantedTag == FDiaGameplayTags::Get().ItemOptionStatSpeed
 			&& OptionRow.ScalingType == EItemOptionScalingType::IOST_Percent)
@@ -238,7 +263,15 @@ void UDiaOptionManagerComponent::ApplyitemOptionsToSpec(const TArray<FDiaActualI
 			OptionValue = 1.0f + OptionRow.Value * 0.01f;
 		}
 
-		OptionValueMap.Add(OptionRow.GrantedTag, OptionValue);
+        if (GrantedTag == FDiaGameplayTags::Get().ItemOptionStatSpeed)
+        {
+            float& Combined = OptionValueMap.FindOrAdd(GrantedTag, 1.0f);
+            Combined += OptionValue - 1.0f;
+        }
+        else
+        {
+            OptionValueMap.FindOrAdd(GrantedTag) += OptionValue;
+        }
 		//UE_LOG(LogARPG, Warning, TEXT("옵션 준비: %s = %f"), *OptionRow.GrantedTag.ToString(), OptionRow.Value);
 	}
 
@@ -265,9 +298,8 @@ float UDiaOptionManagerComponent::GetTotalOptionMagnitudeByTag(const FGameplayTa
 {
 	//현재는 단순히 해당 태그를 가진 옵션들의 값을 모두 더하는 형태로 구현
 	float TotalMagnitude = 0.0f;
-	for (const auto& OptionPair : ActiveOptions)
+	for (const FDiaActualItemOption& Option : ActiveOptions)
 	{
-		const FDiaActualItemOption& Option = OptionPair.Value;
 		if (Option.GrantedTag == OptionTag)
 		{
 			TotalMagnitude += Option.Value;
@@ -275,4 +307,15 @@ float UDiaOptionManagerComponent::GetTotalOptionMagnitudeByTag(const FGameplayTa
 	}
 
 	return TotalMagnitude;
+}
+
+bool UDiaOptionManagerComponent::TryActivateEquipmentProc(UAbilitySystemComponent* ASC, const FGameplayTag& Tag, float Chance, float Cooldown)
+{
+    if (!IsValid(ASC) || !ASC->GetAvatarActor() || !ASC->GetAvatarActor()->HasAuthority() || !GetWorld()) return false;
+    if (ProcOwner.Get() != ASC)
+    {
+        ProcOwner = ASC;
+        ProcCooldowns.ReadyAt.Reset();
+    }
+    return ProcCooldowns.TryActivate(Tag, GetWorld()->GetTimeSeconds(), Chance, FMath::FRand(), Cooldown);
 }

@@ -2,6 +2,7 @@
 
 
 #include "UI/Skill/SkillSlotWidget.h"
+#include "UI/Skill/SkillToolTipWidget.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
@@ -12,6 +13,8 @@
 void USkillSlotWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+	SetVisibility(ESlateVisibility::Visible);
+	RefreshToolTip();
 
 	if (IsValid(ApplyBtn))
 	{
@@ -25,11 +28,6 @@ void USkillSlotWidget::NativeConstruct()
 
 void USkillSlotWidget::SetSkillInfo(int32 ID, UTexture2D* Icon, const FText& Name, int32 Level)
 {
-	if (!IsValid(SkillIconImage) || !IsValid(SkillNameText) || !IsValid(SkillLevelText))
-	{
-		return;
-	}
-
 	SetSkillID(ID);
 	SetSkillIcon(Icon);
 	SetSkillName(Name);
@@ -56,11 +54,9 @@ void USkillSlotWidget::SetSkillName(const FText& Name)
 
 void USkillSlotWidget::SetSkillLevel(int32 Level)
 {
-	if (!IsValid(SkillLevelText))
-	{
-		return;
-	}
-	SkillLevelText->SetText(FText::AsNumber(Level));
+    DisplayedSkillLevel = FMath::Max(1, Level);
+    if (SkillLevelText) SkillLevelText->SetText(FText::AsNumber(DisplayedSkillLevel));
+    RefreshToolTip();
 }
 
 void USkillSlotWidget::OnApplyButtonClicked()
@@ -82,6 +78,7 @@ void USkillSlotWidget::OnApplyButtonClicked()
 	{
 		Character->AddSkillVariantToSkillObjcet(MainSkillID, SkillID, true);
 	}
+	RefreshToolTip();
 }
 
 void USkillSlotWidget::OnCancelButton()
@@ -103,25 +100,60 @@ void USkillSlotWidget::OnCancelButton()
 	{
 		Character->AddSkillVariantToSkillObjcet(MainSkillID, SkillID, false);
 	}
+	RefreshToolTip();
 }
 
 void USkillSlotWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 {
-	if (!IsValid(ListItemObject))
-	{
-		return;
-	}
+    UpdateSkillInfoObject(Cast<USkillInfoObject>(ListItemObject));
+    IUserObjectListEntry::NativeOnListItemObjectSet(ListItemObject);
+}
 
-	if (USkillInfoObject* SkillInfoObject = Cast<USkillInfoObject>(ListItemObject))
-	{
-		UpdateSkillInfoObject(SkillInfoObject);
-	}
+void USkillSlotWidget::NativeOnEntryReleased()
+{
+    ClearSkillInfo();
+    IUserObjectListEntry::NativeOnEntryReleased();
+}
+
+void USkillSlotWidget::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+    RefreshToolTip();
+    Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
+}
+
+void USkillSlotWidget::ClearSkillInfo()
+{
+    SkillInfoObjectPtr.Reset();
+    SkillID = MainSkillID = INDEX_NONE;
+    DisplayedSkillLevel = 1;
+    SetToolTip(nullptr);
+    SkillToolTip = nullptr;
+    SetSkillIcon(nullptr);
+    SetSkillName(FText::GetEmpty());
+    if (SkillLevelText) SkillLevelText->SetText(FText::GetEmpty());
+}
+
+void USkillSlotWidget::RefreshToolTip()
+{
+    if (SkillID <= 0)
+    {
+        SetToolTip(nullptr);
+        return;
+    }
+    if (!SkillToolTip) SkillToolTip = CreateWidget<USkillToolTipWidget>(this, USkillToolTipWidget::StaticClass());
+    const bool bVariant = SkillInfoObjectPtr.IsValid() && !SkillInfoObjectPtr->isMainSkill;
+    const ESkillToolTipContext Context = bVariant ? ESkillToolTipContext::VariantList : ESkillToolTipContext::SkillList;
+    if (SkillToolTip && SkillToolTip->SetSkill(SkillID, Context, MainSkillID, DisplayedSkillLevel))
+        SetToolTip(SkillToolTip);
+    else
+        SetToolTip(nullptr);
 }
 
 void USkillSlotWidget::UpdateSkillInfoObject(USkillInfoObject* InSkillInfoObjectPtr)
 {
 	if (!IsValid(InSkillInfoObjectPtr))
 	{
+        ClearSkillInfo();
 		return;
 	}
 

@@ -14,8 +14,8 @@ UDiaGE_OptionGeneric::UDiaGE_OptionGeneric()
 	
 	Modifiers.Empty();
 	
-	DiaGameplayEffectCompat::SetStackingType(this, EGameplayEffectStackingType::AggregateBySource);
-	StackLimitCount = INT_LEAST32_MAX;
+	DiaGameplayEffectCompat::SetStackingType(this, EGameplayEffectStackingType::None);
+	StackLimitCount = 1; // Each equipped item owns independent removable effects.
 	UE_LOG(LogARPG, Warning, TEXT("DiaGE_OptionGeneric::UDiaGE_OptionGeneric - Initializing Modifiers"));
 	//아이템 옵션 관련 태그들 적용. 만약 stat이면, attribute에서 가져와야한다.
 	for (const FGameplayTag& ItemOptionTag : FDiaGameplayTags::Get().GetItemOptionList())

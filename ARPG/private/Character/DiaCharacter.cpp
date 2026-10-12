@@ -196,6 +196,10 @@ float ADiaCharacter::TakeDamage(float DamageAmount, const FDamageEvent& DamageEv
 void ADiaCharacter::Die(ADiaBaseCharacter* Causer)
 {
     Super::Die(Causer);
+    if (ADiaController* PlayerController = GetController<ADiaController>())
+    {
+        PlayerController->ShowSessionResult(false);
+    }
 }
 
 void ADiaCharacter::UpdateHPGauge(float CurHealth, float MaxHelath)

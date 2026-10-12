@@ -201,10 +201,9 @@ namespace RewardBuild
 				return;
 			}
 
-			const TMap<FName, FDiaActualItemOption>& Options = OptionComp->GetAllOptions();
-			for (const TPair<FName, FDiaActualItemOption>& OptionPair : Options)
+			const TArray<FDiaActualItemOption>& Options = OptionComp->GetAllOptions();
+			for (const FDiaActualItemOption& OptionData : Options)
 			{
-				const FDiaActualItemOption& OptionData = OptionPair.Value;
 				if (!OptionData.GrantedTag.IsValid())
 				{
 					continue;

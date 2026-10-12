@@ -87,7 +87,7 @@ void ADiaItem::SetItemProperty(const FItemBase& _ItemData, int32 Level, int32 Qu
 
 	//CreateInventoryInstanceByItemBase 를 통해 아이템 생성
 	UItemSubsystem* ItemSubsystem = GetGameInstance()->GetSubsystem<UItemSubsystem>();
-	ItemSubsystem->CreateInventoryInstanceByItemBase(InventoryItem, _ItemData, FMath::Max(Level, 1), false, Quantity);
+	ItemSubsystem->CreateInventoryInstanceByItemBase(InventoryItem, _ItemData, FMath::Max(Level, 1), true, Quantity);
 
 	ApplyItemVisuals(_ItemData);
 }

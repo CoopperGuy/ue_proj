@@ -8,6 +8,7 @@
 #include "GameplayTagContainer.h"
 #include "Types/DiaItemOptionRow.h"
 #include "Types/ItemBase.h"
+#include "Types/DiaEquipmentOptionRules.h"
 #include "DiaOptionManagerComponent.generated.h"
 
 
@@ -33,7 +34,7 @@ public:
 	FDiaActualItemOption* GetOptionByOptionRow(const FDiaActualItemOption& OptionRow);
 
 	//모든 옵션을 반환
-	const TMap<FName, FDiaActualItemOption>& GetAllOptions() const { return ActiveOptions; }
+	const TArray<FDiaActualItemOption>& GetAllOptions() const { return ActiveOptions; }
 
 	void ApplyEquipmentStats(const FEquippedItem& Item, EEquipmentSlot SlotType);
 	void ApplyEquipmentSlotOption(const FEquippedItem& Item);
@@ -42,13 +43,16 @@ public:
 	void ApplyitemOptionsToSpec(const TArray<FDiaActualItemOption>& Options, FGameplayEffectSpec * Spec);
 
 	float GetTotalOptionMagnitudeByTag(const FGameplayTag& OptionTag) const;
+	bool TryActivateEquipmentProc(UAbilitySystemComponent* ASC, const FGameplayTag& Tag, float Chance, float Cooldown);
 private:
+	TWeakObjectPtr<UAbilitySystemComponent> ProcOwner;
+	DiaEquipmentOptionRules::FProcCooldowns ProcCooldowns;
 	//옵션을 통합적으로 포괄한 형태의 struct가 필요할 수 있을듯.
 	//우선은, 옵션 데이터 테이블의 row struct를 그대로 사용
 	//현재의 데이터들은 전부 깊은 복사가 되기 때문에 사용. 만약 포인터 같은것들이 들어가면 문제가 발생할지도
-	//Key OptionID, Value OptionRow
+	// Keep one entry per rolled option; different equipped items may share a family.
 	UPROPERTY()
-	TMap<FName, FDiaActualItemOption> ActiveOptions;
+	TArray<FDiaActualItemOption> ActiveOptions;
 
 	UPROPERTY()
 	TMap<FGuid, FActiveGameplayEffectHandle> AppliedStatHandles;

@@ -96,6 +96,7 @@ void UEquipSlot::SetItemWidget(const FInventorySlot& InItemData)
 	SlotItemWidget->SetVisibility(ESlateVisibility::Visible);
 	SlotItemWidget->InvalidateLayoutAndVolatility();
 	SlotItemWidget->SetParentSlot(this);
+	SlotItemWidget->SetIconSize(FVector2D(88.0f, 88.0f));
 
 	InvalidateLayoutAndVolatility();
 	if (IsValid(Image_Frame))

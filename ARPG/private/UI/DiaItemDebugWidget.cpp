@@ -84,7 +84,7 @@ void UDiaItemDebugWidget::RefreshDebugText()
 	}
 	else
 	{
-		const TMap<FName, FDiaActualItemOption>& ActiveOptions = OptionManagerComponent->GetAllOptions();
+		const TArray<FDiaActualItemOption>& ActiveOptions = OptionManagerComponent->GetAllOptions();
 		Text += FString::Printf(TEXT("Count: %d\n"), ActiveOptions.Num());
 		if (ActiveOptions.Num() == 0)
 		{
@@ -92,11 +92,10 @@ void UDiaItemDebugWidget::RefreshDebugText()
 		}
 		else
 		{
-			for (const auto& Pair : ActiveOptions)
+			for (const FDiaActualItemOption& Option : ActiveOptions)
 			{
-				const FDiaActualItemOption& Option = Pair.Value;
 				Text += FString::Printf(TEXT("%s | %s | %.2f\n"),
-					*Pair.Key.ToString(),
+					*Option.OptionID.ToString(),
 					*Option.GrantedTag.ToString(),
 					Option.Value);
 			}

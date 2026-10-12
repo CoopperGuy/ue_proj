@@ -33,6 +33,19 @@ namespace DiaGameplayTags
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_MovementSpeed, "Item.Option.MultiplyAdditive.MovementSpeed", "Movement speed");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_CritChance, "Item.Option.Additive.CritChance", "Critical hit chance");
 	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_DamageIncreaseOption, "Item.Option.Additive.DamageIncreaseOption", "Damage increase");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_AttackPower, "Item.Option.Additive.AttackPower", "Flat attack power");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_Defense, "Item.Option.Additive.Defense", "Flat defense");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_MaxMana, "Item.Option.Additive.MaxMana", "Maximum mana");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_CritDamage, "Item.Option.Additive.CritDamage", "Critical hit damage");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_HealthOnKill, "Item.Option.Combat.HealthOnKill", "Health restored on kill");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_ManaOnKill, "Item.Option.Combat.ManaOnKill", "Mana restored on kill");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_Execution, "Item.Option.Special.Execution", "Damage against low health targets");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_Ambush, "Item.Option.Special.Ambush", "Damage against healthy targets");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_Berserker, "Item.Option.Special.Berserker", "Damage while low health");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_Guardian, "Item.Option.Special.Guardian", "Damage reduction while low health");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_Frostbound, "Item.Option.Special.Frostbound", "Chance to slow on hit");
+	UE_DEFINE_GAMEPLAY_TAG_COMMENT(ItemOption_Lifeline, "Item.Option.Special.Lifeline", "Recover health after a low health hit");
+
 }
 
 FDiaGameplayTags FDiaGameplayTags::GameplayTags;
@@ -271,6 +284,19 @@ const TArray<FGameplayTag>& FDiaGameplayTags::GetItemOptionList()
 		DiaGameplayTags::ItemOption_MovementSpeed.GetTag(),
 		DiaGameplayTags::ItemOption_CritChance.GetTag(),
 		DiaGameplayTags::ItemOption_DamageIncreaseOption.GetTag(),
+		DiaGameplayTags::ItemOption_AttackPower.GetTag(),
+		DiaGameplayTags::ItemOption_Defense.GetTag(),
+		DiaGameplayTags::ItemOption_MaxMana.GetTag(),
+		DiaGameplayTags::ItemOption_CritDamage.GetTag(),
+		DiaGameplayTags::ItemOption_HealthOnKill.GetTag(),
+		DiaGameplayTags::ItemOption_ManaOnKill.GetTag(),
+		DiaGameplayTags::ItemOption_Execution.GetTag(),
+		DiaGameplayTags::ItemOption_Ambush.GetTag(),
+		DiaGameplayTags::ItemOption_Berserker.GetTag(),
+		DiaGameplayTags::ItemOption_Guardian.GetTag(),
+		DiaGameplayTags::ItemOption_Frostbound.GetTag(),
+		DiaGameplayTags::ItemOption_Lifeline.GetTag(),
+
 	};
 
 	return ItemOptionTags;

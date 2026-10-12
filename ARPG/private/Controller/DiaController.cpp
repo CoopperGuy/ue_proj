@@ -18,6 +18,8 @@
 
 #include "UI/DiaItemDebugWidget.h"
 #include "UI/Menu/DiaMenuSystem.h"
+#include "UI/Menu/DiaSessionMenuWidget.h"
+#include "TimerManager.h"
 
 #include "GameMode/DungeonGameMode.h"
 #include "DiaBaseCharacter.h"
@@ -114,6 +116,10 @@ ADiaController::ADiaController()
 void ADiaController::BeginPlay()
 {
 	Super::BeginPlay();
+	if (IsLocalController())
+	{
+		SessionStartupTimer = GetWorldTimerManager().SetTimerForNextTick(this, &ThisClass::InitializeSessionMenu);
+	}
 
 	UDiaCustomGameViewPort* DiaCustomGameViewPort = GetWorld() ? Cast<UDiaCustomGameViewPort>(GetWorld()->GetGameViewport()) : nullptr;
 	if (!IsValid(DiaCustomGameViewPort) || !IsValid(DiaCustomGameViewPort->CreatePrimaryLayout(this)))
@@ -227,7 +233,14 @@ void ADiaController::OnEquipItemProgress(const FEquippedItem& Item, EEquipmentSl
 		return;
 	}
 
-	DiaEquipmentComponent->EquipItem(Item, SlotType);
+	if (const FEquippedItem* Existing = DiaEquipmentComponent->GetEquippedItem(SlotType))
+    {
+        if (Existing->ItemInstance.InstanceID == Item.ItemInstance.InstanceID) return;
+        OnUnequipItemProgress(SlotType);
+    }
+    if (Item.IsEmpty()) return;
+
+    DiaEquipmentComponent->EquipItem(Item, SlotType);
 	DiaOptionManagerComponent->ApplyEquipmentStats(Item, SlotType);
 
 	for (const auto& option : Item.ItemInstance.PrefixOptions)
@@ -343,7 +356,7 @@ UHUDWidget* ADiaController::GetHUDWidget() const
 
 void ADiaController::ApplyInputRouting(EDiaInputRouting NewMode)
 {
-	CurrentUIMode = NewMode;
+	CurrentUIMode = IsSessionMenuOpen() ? EDiaInputRouting::UIOnly : NewMode;
 
 	ADiaCharacter* DiaCharacter = Cast<ADiaCharacter>(GetCharacter());
 	if (!IsValid(DiaCharacter))
@@ -381,6 +394,7 @@ bool ADiaController::IsSkillInputBlocked() const
 
 bool ADiaController::IsUIInputBlocked() const
 {
+	if (IsSessionMenuOpen()) return true;
 	if (CurrentUIMode == EDiaInputRouting::GameOnly)
 		return true;
 
@@ -485,6 +499,7 @@ bool ADiaController::ApplyReward(const FRewardData& RewardData)
 
 bool ADiaController::ToggleMenuPage(const FGameplayTag& MenuPageTag)
 {
+	if (IsSessionMenuOpen()) return false;
 	UDiaCustomGameViewPort* DiaCustomGameViewPort = GetWorld() ? Cast<UDiaCustomGameViewPort>(GetWorld()->GetGameViewport()) : nullptr;
 	if (!IsValid(DiaCustomGameViewPort))
 	{
@@ -529,6 +544,7 @@ void ADiaController::RegisteSkillOnQuickSlotWidget(int32 SkillID, int32 SlotInde
 
 bool ADiaController::HandlePrimaryClick()
 {
+    if (IsSessionMenuOpen()) return true;
     if (const UHUDWidget* HUD = GetHUDWidget(); HUD && HUD->IsRewardChoiceOpen()) return true;
 	FHitResult HitResult;
 	GetHitResultUnderCursor(ECC_Visibility, false, HitResult);
@@ -792,37 +808,31 @@ void ADiaController::CheatValidateOptionRolls(FName ItemID, int32 Count, int32 L
 
 void ADiaController::SetMenuSystemVisibility(bool bVisible)
 {
-	UDiaMenuSystem* MenuWidget = bVisible ? GetMenuSystemWidget() : MenuSystemWidget.Get();
-	if (!IsValid(MenuWidget))
+	if (bVisible)
 	{
-		UE_LOG(LogARPG_Inventory, Warning, TEXT("MenuSystemWidget is null"));
-		return;
+		if (!IsSessionMenuOpen()) ShowSessionMenu(EDiaSessionMenuScreen::Pause);
 	}
-
-	MenuWidget->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	else ResumeSession();
 }
 
 void ADiaController::ToggleMenuSystemVisibility()
 {
+	if (IsSessionMenuOpen())
+	{
+		ResumeSession();
+		return;
+	}
+
 	UDiaCustomGameViewPort* DiaCustomGameViewPort = GetWorld() ? Cast<UDiaCustomGameViewPort>(GetWorld()->GetGameViewport()) : nullptr;
-	if (!IsValid(DiaCustomGameViewPort))
-	{
-		return ;
-	}
+	UDiaPrimaryLayout* DiaPrimaryLayout = IsValid(DiaCustomGameViewPort) ? DiaCustomGameViewPort->GetDiaPrimaryLayout() : nullptr;
 
-	UDiaPrimaryLayout* DiaPrimaryLayout = DiaCustomGameViewPort->GetDiaPrimaryLayout();
-	if (!IsValid(DiaPrimaryLayout))
-	{
-		return ;
-	}
-
-	if (DiaPrimaryLayout->IsMainMenuOpen())
+	if (IsValid(DiaPrimaryLayout) && DiaPrimaryLayout->IsMainMenuOpen())
 	{
 		DiaPrimaryLayout->CloseMenu();
+		ApplyInputRouting(EDiaInputRouting::GameAndUI);
 	}
 	else
 	{
-		const bool bIsVisible = IsValid(MenuSystemWidget) && MenuSystemWidget->GetVisibility() == ESlateVisibility::Visible;
-		SetMenuSystemVisibility(!bIsVisible);
+		SetMenuSystemVisibility(true);
 	}
 }

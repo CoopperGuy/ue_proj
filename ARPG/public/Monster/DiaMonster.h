@@ -53,6 +53,7 @@ public:
     bool IsAttackInProgress() const { return bAttackInProgress; }
     void BeginAttack();
     void FinishAttack();
+    UAnimMontage* GetSkillMontageOverride(int32 SkillID) const;
     
     /**
      * 몬스터의 중력 활성화/비활성화
@@ -84,6 +85,8 @@ protected:
 	virtual void DropItem(FName DieMonsterID);
 
     void SetMonsterCollisionSetup(const FMonsterInfo& MonsterInfo);
+    void ReturnToPoolAfterDeath();
+    FTimerHandle DeathReturnTimerHandle;
     
 	void AddToExperience(ADiaBaseCharacter* Causer);
 protected:
@@ -104,6 +107,13 @@ protected:
     // 히트 리액션 몽타주
     UPROPERTY(EditDefaultsOnly, Category = "Animation")
     UAnimMontage* hitReactionMontage;
+
+    // Visual overrides retain the shared skill IDs, timings, effects and AI.
+    UPROPERTY(EditDefaultsOnly, Category = "Animation")
+    TMap<int32, TObjectPtr<UAnimMontage>> SkillMontageOverrides;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Animation")
+    bool bWaitForDeathAnimationBeforePooling = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Experience")
 	TSubclassOf<UGameplayEffect> experienceGameplayEffect;

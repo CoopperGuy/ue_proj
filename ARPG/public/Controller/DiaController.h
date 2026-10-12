@@ -20,8 +20,10 @@ class UDiaStatComponent;
 class ADiaBaseCharacter;
 class UDiaItemDebugWidget;
 class UDiaMenuSystem;
+class UDiaSessionMenuWidget;
 class UAbilitySystemComponent;
 struct FRewardData;
+enum class EDiaSessionMenuScreen : uint8;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnTargetChanged, ADiaBaseCharacter*);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnPlayerASCReady, ADiaBaseCharacter*, UAbilitySystemComponent*);
@@ -107,6 +109,14 @@ public:
 
 	void SetMenuSystemVisibility(bool bVisible);
 	void ToggleMenuSystemVisibility();
+
+	void StartSession();
+	void ResumeSession();
+	void RestartSession();
+	void ReturnToSessionTitle();
+	void QuitSession();
+	void ShowSessionResult(bool bCleared);
+	bool IsSessionMenuOpen() const;
 	// StatComponent 초기화 관련 함수들
 	//UFUNCTION()
 	//void OnStatComponentInitialized(UDiaStatComponent* StatComponent);
@@ -128,7 +138,12 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void SetupInputComponent() override;
+	void InitializeSessionMenu();
+	void ShowSessionMenu(EDiaSessionMenuScreen Screen);
+	void HideSessionMenu();
+	void ReloadSessionLevel(bool bStartImmediately);
 
 	bool ApplyGoldReward(const FRewardData& RewardData);
 	bool ApplyItemReward(const FRewardData& RewardData);
@@ -168,6 +183,13 @@ protected:
 	
 	UPROPERTY()
 	TObjectPtr<UDiaMenuSystem> MenuSystemWidget;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UDiaSessionMenuWidget> SessionMenuWidget;
+
+	FTimerHandle SessionStartupTimer;
+	bool bSessionMenuPausedWorld = false;
+	bool bSessionTravelPending = false;
 
 	UPROPERTY()
 	EDiaInputRouting CurrentUIMode = EDiaInputRouting::GameOnly;

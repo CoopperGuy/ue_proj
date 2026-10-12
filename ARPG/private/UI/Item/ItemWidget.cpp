@@ -7,6 +7,8 @@
 #include "UI/Inventory/EquipSlot.h"
 #include "UI/Item/ItemToolTipWidget.h"
 #include "Utils/InventoryUtils.h"
+#include "Types/DiaEquipmentRules.h"
+#include "Rendering/DrawElements.h"
 
 #include "System/GameViewPort/DiaCustomGameViewPort.h"
 #include "System/ItemSubsystem.h"
@@ -26,6 +28,24 @@ void UItemWidget::NativeConstruct()
 	Super::NativeConstruct();
 }
 
+int32 UItemWidget::NativePaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry,
+	const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId,
+	const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
+{
+	const int32 TopLayer = Super::NativePaint(Args, AllottedGeometry, MyCullingRect,
+		OutDrawElements, LayerId, InWidgetStyle, bParentEnabled);
+	const UItemSubsystem* Items = GetGameInstance() ? GetGameInstance()->GetSubsystem<UItemSubsystem>() : nullptr;
+	const FItemBase* Data = Items ? Items->FindItemData(ItemInfo.ItemInstance) : nullptr;
+	if (!Data || !Data->bIsEquippable || ItemInfo.IsEmpty()) return TopLayer;
+	const FVector2D Size = AllottedGeometry.GetLocalSize();
+	const TArray<FVector2D> Points = { FVector2D(1, 1), FVector2D(Size.X - 1, 1),
+		FVector2D(Size.X - 1, Size.Y - 1), FVector2D(1, Size.Y - 1), FVector2D(1, 1) };
+	FSlateDrawElement::MakeLines(OutDrawElements, TopLayer + 1, AllottedGeometry.ToPaintGeometry(),
+		Points, ESlateDrawEffect::None, DiaEquipmentRules::RarityColor(Data->Rarity)
+		* InWidgetStyle.GetColorAndOpacityTint(), true, 1.5f);
+	return TopLayer + 1;
+}
+
 //툴팁 설정을 여기서 하도록 변경
 void UItemWidget::SetItemInfo(const FInventorySlot& ItemData)
 {
@@ -42,6 +62,7 @@ void UItemWidget::SetItemInfo(const FInventorySlot& ItemData)
 
 	if (ItemIcon)
 	{
+		ItemIcon->SetBrushFromTexture(nullptr);
 		ItemIcon->SetVisibility(ESlateVisibility::Visible);
 		ItemIcon->SetColorAndOpacity(FLinearColor::White);
 		const FSoftObjectPath IconPath = ItemSubsystem ? ItemSubsystem->GetIconPath(ItemInfo.ItemInstance) : FSoftObjectPath();
@@ -112,6 +133,12 @@ void UItemWidget::SetIconSize(const FVector2D& NewSize)
 	
 	ConfigureCanvasSlot(ItemSzBox, NewSize);
 	ConfigureCanvasSlot(ItemIcon, NewSize);
+	if (UCanvasPanelSlot* IconSlot = Cast<UCanvasPanelSlot>(ItemIcon->Slot))
+	{
+		const float Side = FMath::Min(NewSize.X, NewSize.Y);
+		IconSlot->SetSize(FVector2D(Side, Side));
+		IconSlot->SetPosition((NewSize - FVector2D(Side, Side)) * 0.5f);
+	}
 	
 	// 레이아웃 강제 업데이트
 	ForceLayoutUpdate();
@@ -211,10 +238,10 @@ void UItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPoint
 	DragOperation->DragType = static_cast<EItemDragDropType>(ItemDragDropState);
 	// 드래그 시각적 위젯 생성 (원본의 복사본)
 	UItemWidget* DragVisual = FInventoryUtils::CreateItemWidget(GetWorld(), &ItemInfo);
-	DragVisual->SetItemDragDropState(ItemDragDropState);
 
 	if (IsValid(DragVisual))
 	{
+		DragVisual->SetItemDragDropState(ItemDragDropState);
 		DragVisual->SetItemInfo(ItemInfo);
 		DragVisual->SetRenderOpacity(0.5f); // 반투명하게 표시
 		
@@ -356,6 +383,12 @@ void UItemWidget::ConfigureCanvasSlot(UWidget* Widget, const FVector2D& NewSize)
 		CanvasSlot->SetSize(NewSize);
 		CanvasSlot->SetAnchors(FAnchors(0.0f, 0.0f, 0.0f, 0.0f));
 		CanvasSlot->SetAlignment(FVector2D(0.0f, 0.0f));
+		if (ParentSlot)
+		{
+			CanvasSlot->SetAnchors(FAnchors(0.5f, 0.5f));
+			CanvasSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+			CanvasSlot->SetPosition(FVector2D::ZeroVector);
+		}
 	}
 }
 

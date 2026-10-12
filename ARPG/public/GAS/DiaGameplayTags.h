@@ -36,6 +36,19 @@ namespace DiaGameplayTags
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_MovementSpeed);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_CritChance);
 	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_DamageIncreaseOption);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_AttackPower);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_Defense);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_MaxMana);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_CritDamage);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_HealthOnKill);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_ManaOnKill);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_Execution);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_Ambush);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_Berserker);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_Guardian);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_Frostbound);
+	UE_DECLARE_GAMEPLAY_TAG_EXTERN(ItemOption_Lifeline);
+
 }
 
 /**
