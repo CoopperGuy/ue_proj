@@ -1,6 +1,0 @@
-{
-  "success": true,
-  "output": "{\"Health\": 10000.0, \"MaxHealth\": 10000.0, \"AttackPower\": 15.0, \"Defense\": 8.0}",
-  "result": "None",
-  "execution_time_ms": 6.152301788330078
-}
